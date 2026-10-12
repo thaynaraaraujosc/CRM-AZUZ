@@ -177,7 +177,7 @@ export function ComentarioInstagramForm({
               className={`ig-publicacao${!data.publicacaoId ? " escolhida" : ""}`}
               onClick={() => onChange({ ...data, publicacaoId: "" })}
             >
-              <span className="ig-publicacao-todas">Qualquer publicação</span>
+              <span className="ig-publicacao-todas">{traduzir("Qualquer publicação")}</span>
             </button>
             {publicacoes.map((pub) => (
               <button

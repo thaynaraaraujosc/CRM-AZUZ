@@ -68,7 +68,7 @@ function AutomacoesConteudo() {
           ficava solta, atravessando a tela sem separar nada.
         */}
         <div className="fauto-escolher-funil">
-          <label htmlFor="funil-a-automatizar">Qual funil você quer automatizar</label>
+          <label htmlFor="funil-a-automatizar">{traduzir("Qual funil você quer automatizar")}</label>
           <select
             id="funil-a-automatizar"
             className="input"

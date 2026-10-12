@@ -66,7 +66,7 @@ export function ConfiguracoesGeraisForm({
         <div className="field">
           <label>{traduzir("Etapa relacionada")}</label>
           <select className="input" value={fluxo.etapaId ?? ""} onChange={(e) => onChange({ etapaId: e.target.value || undefined })}>
-            <option value="">Qualquer etapa</option>
+            <option value="">{traduzir("Qualquer etapa")}</option>
             {funilEscolhido.colunas.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.titulo}
@@ -94,12 +94,12 @@ export function ConfiguracoesGeraisForm({
       </div>
 
       <div className="toggle-row">
-        <span className="tl">Restringir a um horário</span>
+        <span className="tl">{traduzir("Restringir a um horário")}</span>
         <button
           type="button"
           role="switch"
           aria-checked={!!cfg.usarHorario}
-          aria-label="Restringir a um horário"
+          aria-label={traduzir("Restringir a um horário")}
           className={`toggle${cfg.usarHorario ? " on" : ""}`}
           onClick={() => onChangeConfiguracoes({ usarHorario: !cfg.usarHorario })}
         >
@@ -137,7 +137,7 @@ export function ConfiguracoesGeraisForm({
         />
       </div>
       <div className="field">
-        <label>Quando o gatilho acontecer fora desse horário</label>
+        <label>{traduzir("Quando o gatilho acontecer fora desse horário")}</label>
         <select
           className="input"
           value={cfg.foraDaJanela === "ignorar" ? "encerrar" : (cfg.foraDaJanela ?? "aguardar")}
@@ -194,7 +194,7 @@ export function ConfiguracoesGeraisForm({
 
       {cfg.limiteExecucao === "no_maximo" ? (
         <div className="field">
-          <label>Quantas vezes no máximo</label>
+          <label>{traduzir("Quantas vezes no máximo")}</label>
           <input
             className="input"
             type="number"

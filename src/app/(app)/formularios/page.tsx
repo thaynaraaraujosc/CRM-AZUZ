@@ -253,7 +253,7 @@ export default function FormulariosPage() {
             </button>
 
             <p className="int-group-h" style={{ marginTop: 22 }}>
-              Seus formulários
+              {traduzir("Seus formulários")}
             </p>
             {formularios.length === 0 ? (
               <div className="card">
@@ -388,13 +388,13 @@ export default function FormulariosPage() {
                     style={{ position: "fixed", top: menuCompartilharPos.top, left: menuCompartilharPos.left, zIndex: 200, width: 420, padding: 17 }}
                   >
                     {formularioAberto.status !== "publicado" ? (
-                      <p className="hint">Publique o formulário pra habilitar o link de compartilhamento.</p>
+                      <p className="hint">{traduzir("Publique o formulário pra habilitar o link de compartilhamento.")}</p>
                     ) : (
                       <>
                         <div className="form-link-box">
                           <p className="form-link-h" style={{ display: "flex", alignItems: "center", gap: 6 }}><IconCadeado width={13} height={13} /> {traduzir("Link privado, com senha")}</p>
                           <div className="field" style={{ padding: 0, marginBottom: 10 }}>
-                            <label>Senha de acesso</label>
+                            <label>{traduzir("Senha de acesso")}</label>
                             <input
                               className="input"
                               style={{ width: "100%" }}
@@ -500,7 +500,7 @@ export default function FormulariosPage() {
               <div className="form-builder-4areas">
                 <div className="form-builder-paginas">
                   <p className="form-painel-secao-h" style={{ padding: "12px 14px 6px" }}>
-                    Páginas
+                    {traduzir("Páginas")}
                   </p>
                   {formularioAberto.paginas.map((pagina, indice) => (
                     <div
@@ -582,7 +582,7 @@ export default function FormulariosPage() {
                     <div className="form-canvas-folha" onClick={(e) => e.stopPropagation()}>
                       {paginaAtiva.perguntas.length === 0 ? (
                         <p className="hint" style={{ padding: "40px 0", textAlign: "center" }}>
-                          Página vazia: adicione o primeiro campo abaixo.
+                          {traduzir("Página vazia: adicione o primeiro campo abaixo.")}
                         </p>
                       ) : (
                         paginaAtiva.perguntas.map((pergunta, indice) => {
@@ -868,7 +868,7 @@ function PainelPagina({
                   })
                 }
               >
-                <option value="">Sempre mostrar</option>
+                <option value="">{traduzir("Sempre mostrar")}</option>
                 {camposAnteriores.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.rotulo || labelTipoCampo(c.tipo)}
@@ -960,7 +960,7 @@ function PainelCampo({
               />
             </div>
             <div className="field">
-              <label>Placeholder</label>
+              <label>{traduzir("Placeholder")}</label>
               <input
                 className="input"
                 style={{ width: "100%" }}
@@ -1134,12 +1134,12 @@ function PainelCampo({
                   </div>
                   {estilo.corFundo || estilo.corBorda || estilo.corTexto ? (
                     <button type="button" className="link" onClick={() => onAtualizar({ estilo: undefined })}>
-                      Restaurar cores padrão
+                      {traduzir("Restaurar cores padrão")}
                     </button>
                   ) : null}
                   <div className="filters-row">
                     <div className="field" style={{ flex: 1 }}>
-                      <label>Raio da borda (px)</label>
+                      <label>{traduzir("Raio da borda (px)")}</label>
                       <input
                         className="input"
                         style={{ width: "100%" }}
@@ -1196,7 +1196,7 @@ function PainelCampo({
                 <LogicaCanvas key={pergunta.id} pergunta={pergunta} camposAnteriores={camposAnteriores} onAtualizar={onAtualizar} />
                 {logica.regras.length > 0 ? (
                   <button type="button" className="link" style={{ marginTop: 8 }} onClick={() => onAtualizar({ logica: undefined })}>
-                    Remover lógica
+                    {traduzir("Remover lógica")}
                   </button>
                 ) : null}
               </>
@@ -1358,6 +1358,7 @@ function CampoImagem({
   /** Controle extra que só faz sentido quando já existe imagem (o recorte do banner). */
   extra?: React.ReactNode;
 }) {
+  const { t: traduzir } = useIdioma();
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState("");
   /* Um endereço gravado que não desenha vira o ícone de imagem quebrada do navegador, que não diz
@@ -1424,7 +1425,7 @@ function CampoImagem({
           </label>
           {url ? (
             <button type="button" className="btn ghost" onClick={() => onMudar(undefined, undefined)}>
-              Remover
+              {traduzir("Remover")}
             </button>
           ) : null}
         </div>
@@ -1620,7 +1621,7 @@ function PainelDesign({
               checked={formulario.paginaFinal.redirecionarAutomaticamente}
               onChange={(e) => onAtualizar({ paginaFinal: { ...formulario.paginaFinal, redirecionarAutomaticamente: e.target.checked } })}
             />
-            Redirecionar automaticamente ao enviar (em vez de mostrar a mensagem)
+            {traduzir("Redirecionar automaticamente ao enviar (em vez de mostrar a mensagem)")}
           </label>
         ) : null}
       </div>
@@ -1754,7 +1755,7 @@ function PainelDesign({
               className={`fchip${formulario.tema.exibicao === "uma-por-vez" ? "" : " active"}`}
               onClick={() => atualizarTema({ exibicao: "completo" })}
             >
-              Página inteira
+              {traduzir("Página inteira")}
             </button>
             <button
               type="button"
@@ -1855,14 +1856,14 @@ function PainelDesign({
           </div>
         ) : null}
         <div className="field">
-          <label>Responsável padrão</label>
+          <label>{traduzir("Responsável padrão")}</label>
           <select
             className="input"
             style={{ width: "100%" }}
             value={formulario.integracoes?.responsavelPadrao ?? ""}
             onChange={(e) => atualizarIntegracoes({ responsavelPadrao: e.target.value || undefined })}
           >
-            <option value="">Sem responsável definido</option>
+            <option value="">{traduzir("Sem responsável definido")}</option>
             {membros.map((m) => (
               <option key={m.id} value={m.nome}>
                 {m.nome}
@@ -1927,7 +1928,7 @@ function PainelDesign({
                   </p>
                 </div>
                 <button type="button" className="btn ghost" onClick={() => onRestaurarVersao(v.id)}>
-                  Restaurar
+                  {traduzir("Restaurar")}
                 </button>
               </div>
             ))}

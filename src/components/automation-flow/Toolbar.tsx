@@ -102,7 +102,7 @@ export function Toolbar({
           <span className="flow-pendencia">
             <span className="flow-pendencia-aviso">{traduzir("Alterações não salvas")}</span>
             <button type="button" className="btn primary" onClick={onSalvarAlteracoes}>
-              Salvar
+              {traduzir("Salvar")}
             </button>
             <button type="button" className="btn ghost" onClick={onDescartarAlteracoes}>
               {traduzir("Descartar")}
@@ -139,7 +139,7 @@ export function Toolbar({
             role="tab"
             aria-selected={!modoConstrucao}
             className={`flow-toolbar-modo-btn${!modoConstrucao ? " active" : ""}`}
-            title="Revisar o fluxo sem risco de mexer em nada sem querer"
+            title={traduzir("Revisar o fluxo sem risco de mexer em nada sem querer")}
             onClick={() => modoConstrucao && onAlternarModo()}
           >
             {traduzir("Visualizar")}
@@ -148,7 +148,7 @@ export function Toolbar({
         <button type="button" className="icon-btn subtle" aria-label={traduzir("Desfazer")} title={traduzir("Desfazer (Ctrl+Z)")} disabled={!podeDesfazer || !modoConstrucao} onClick={onUndo}>
           ↶
         </button>
-        <button type="button" className="icon-btn subtle" aria-label="Refazer" title="Refazer (Ctrl+Shift+Z)" disabled={!podeRefazer || !modoConstrucao} onClick={onRedo}>
+        <button type="button" className="icon-btn subtle" aria-label={traduzir("Refazer")} title={traduzir("Refazer (Ctrl+Shift+Z)")} disabled={!podeRefazer || !modoConstrucao} onClick={onRedo}>
           ↷
         </button>
         <button type="button" className="btn ghost" disabled={!modoConstrucao} onClick={onOrganizarAutomaticamente}>
@@ -194,10 +194,10 @@ export function Toolbar({
         </div>
 
         <button type="button" className="btn ghost" onClick={onSalvarRascunho}>
-          Salvar rascunho
+          {traduzir("Salvar rascunho")}
         </button>
         <button type="button" className="btn primary" onClick={onPublicar}>
-          Publicar
+          {traduzir("Publicar")}
         </button>
       </div>
     </header>

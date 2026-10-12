@@ -247,7 +247,7 @@ export function MensagemOpcoesForm({
               >
                 ↓
               </button>
-              <button type="button" className="remove-chip" aria-label="Remover opção" onClick={() => removerOpcao(opcao.id)}>
+              <button type="button" className="remove-chip" aria-label={traduzir("Remover opção")} onClick={() => removerOpcao(opcao.id)}>
                 <IconClose width={13} height={13} />
               </button>
             </div>
@@ -384,7 +384,7 @@ export function MensagemOpcoesForm({
             min={0}
             className="input"
             value={data.esperaMinutos ?? ""}
-            placeholder="Sem prazo"
+            placeholder={traduzir("Sem prazo")}
             onChange={(e) =>
               onChange({ ...data, esperaMinutos: e.target.value ? Number(e.target.value) : undefined })
             }
@@ -404,7 +404,7 @@ export function MensagemOpcoesForm({
           min={0}
           className="input"
           value={data.tentativasMaximas ?? ""}
-          placeholder="Sem limite"
+          placeholder={traduzir("Sem limite")}
           onChange={(e) =>
             onChange({ ...data, tentativasMaximas: e.target.value ? Number(e.target.value) : undefined })
           }

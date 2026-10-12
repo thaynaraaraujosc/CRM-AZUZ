@@ -279,7 +279,7 @@ export function PainelConversa({
             <span className="upload-area-icone">
               <IconUpload width={18} height={18} />
             </span>
-            <strong>Solte o arquivo para anexar</strong>
+            <strong>{traduzir("Solte o arquivo para anexar")}</strong>
           </div>
         ) : null}
         <header className="painel-conversa-topo">
@@ -376,7 +376,7 @@ export function PainelConversa({
             />
             <div className="painel-previa-acoes">
               <button type="button" className="btn ghost" onClick={() => setPrevia(null)} disabled={enviando}>
-                Remover
+                {traduzir("Remover")}
               </button>
               <button type="button" className="btn" onClick={() => void confirmarEnvioDaPrevia()} disabled={enviando}>
                 {enviando ? "Enviando…" : "Enviar"}
@@ -588,7 +588,7 @@ export function PainelConversa({
                   <div className="input">{ultima ? `${ultima.hora} · ${resumo(ultima.texto)}` : "-"}</div>
                 </div>
                 <div className="field">
-                  <label>Recebidas / enviadas</label>
+                  <label>{traduzir("Recebidas / enviadas")}</label>
                   <div className="input">
                     {mensagens.filter((m) => m.tipo === "in").length} recebidas ·{" "}
                     {mensagens.filter((m) => m.tipo === "out").length} enviadas
@@ -629,7 +629,7 @@ export function PainelConversa({
                       ))
                   : null}
                 {linhaDoTempo.length === 0 && mensagens.length === 0 ? (
-                  <li className="hint">Sem histórico ainda.</li>
+                  <li className="hint">{traduzir("Sem histórico ainda.")}</li>
                 ) : null}
               </ol>
             ) : null}

@@ -89,7 +89,7 @@ export default function ExecucoesSociaisPage() {
             <table className="table mt8">
               <thead>
                 <tr>
-                  <th>Quando</th>
+                  <th>{traduzir("Quando")}</th>
                   <th>{traduzir("Evento")}</th>
                   <th>Contato</th>
                   <th>{traduzir("Erro")}</th>

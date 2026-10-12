@@ -112,7 +112,7 @@ export function OrganizarMeuDia({
               disabled={organizacao!.indiceAtual >= organizacao!.itens.length - 1}
               onClick={avancarOrganizacao}
             >
-              Próximo
+              {traduzir("Próximo")}
             </button>
             <button type="button" className="btn primary" onClick={concluirAtual}>
               {traduzir("Concluir item")}
@@ -129,7 +129,7 @@ export function OrganizarMeuDia({
               onClick={() => avisar("Organização do dia salva.")}
               disabled={sequencia.length === 0}
             >
-              Salvar organização
+              {traduzir("Salvar organização")}
             </button>
             <button type="button" className="btn primary" disabled={sequencia.length === 0} onClick={comecar}>
               {traduzir("Começar")}
@@ -168,7 +168,7 @@ export function OrganizarMeuDia({
                     >
                       ↓
                     </button>
-                    <button type="button" className="remove-chip" aria-label="Remover etapa" onClick={() => remover(item.id)}>
+                    <button type="button" className="remove-chip" aria-label={traduzir("Remover etapa")} onClick={() => remover(item.id)}>
                       <IconClose width={13} height={13} />
                     </button>
                   </div>

@@ -29,7 +29,7 @@ export function Recomendacoes({
   return (
     <section className="central-dia-secao">
       <div className="central-dia-secao-h">
-        <h3>Recomendações para hoje</h3>
+        <h3>{traduzir("Recomendações para hoje")}</h3>
       </div>
       <div className="central-dia-recomendacoes">
         {visiveis.map((r) => (

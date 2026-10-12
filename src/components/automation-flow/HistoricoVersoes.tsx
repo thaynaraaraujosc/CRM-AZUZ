@@ -73,7 +73,7 @@ export function HistoricoVersoes({
                   </p>
                 </div>
                 <button type="button" className="btn ghost" onClick={() => onRestaurar(v)} disabled={v.versao === versaoAtual}>
-                  Restaurar
+                  {traduzir("Restaurar")}
                 </button>
               </div>
             ))

@@ -325,7 +325,7 @@ export function ConexaoGoogleAds() {
           </p>
         ) : null}
         <p className="hint" style={{ margin: "6px 0 0" }}>
-          Quando um negócio é marcado como <b>ganho</b> no funil, o CRM avisa o Google qual clique
+          {traduzir("Quando um negócio é marcado como")} <b>ganho</b> no funil, o CRM avisa o Google qual clique
           gerou aquela venda. Os números dessa devolução ficam em <b>{traduzir("Rastreamento de anúncios")}</b>.
         </p>
       </>

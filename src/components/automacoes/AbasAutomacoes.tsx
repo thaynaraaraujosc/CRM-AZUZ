@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Navegação interna do módulo de Automações: Automatizar funil · Templates · Disparo em massa.
@@ -31,9 +32,10 @@ const ABAS = [
 ] as const;
 
 export function AbasAutomacoes() {
+  const { t: traduzir } = useIdioma();
   const pathname = usePathname() ?? "";
   return (
-    <nav className="tabs automacoes-abas" aria-label="Seções de Automações">
+    <nav className="tabs automacoes-abas" aria-label={traduzir("Seções de Automações")}>
       {ABAS.map((aba) => {
         const ativa = aba.exato
           ? pathname === aba.href || pathname.startsWith("/automacoes/editor")

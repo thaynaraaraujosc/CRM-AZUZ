@@ -212,7 +212,7 @@ export function NovaAutomacao({
         {passo === "quando" ? (
           <>
             <div className="field">
-              <label>Quando ela deve acontecer</label>
+              <label>{traduzir("Quando ela deve acontecer")}</label>
               <select
                 className="input"
                 value={quando}

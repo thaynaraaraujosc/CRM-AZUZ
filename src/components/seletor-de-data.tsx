@@ -184,7 +184,7 @@ export function SeletorDeData({
             <strong>
               {MESES[mesVisivel.getMonth()]} {mesVisivel.getFullYear()}
             </strong>
-            <button type="button" onClick={() => irParaMes(1)} aria-label="Próximo mês">
+            <button type="button" onClick={() => irParaMes(1)} aria-label={traduzir("Próximo mês")}>
               ›
             </button>
           </div>

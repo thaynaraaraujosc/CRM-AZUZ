@@ -686,7 +686,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
             <dd>{previa?.receberao ?? "…"} contatos{previa?.semDestino.length ? ` (${previa.semDestino.length} sem destino ficam de fora)` : ""}</dd>
             <dt>{usaTemplate ? "Template" : "Mensagem"}</dt>
             <dd>{usaTemplate ? templateEscolhido!.nome : corpoLivre.split("\n")[0].slice(0, 60)}</dd>
-            <dt>Quando</dt>
+            <dt>{traduzir("Quando")}</dt>
             <dd>{quando === "agora" ? "Agora" : `${data.split("-").reverse().join("/")} às ${hora}`}</dd>
             <dt>{traduzir("Duração prevista")}</dt>
             <dd>{previa ? duracaoLegivel(previa.previsao) : "…"}</dd>

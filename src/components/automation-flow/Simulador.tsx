@@ -158,7 +158,7 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
           ) : (
             <div className="mt14">
               <p className="n">
-                Resultado: <strong>{LABEL_SITUACAO[estado.situacao] ?? estado.situacao}</strong>
+                {traduzir("Resultado:")} <strong>{LABEL_SITUACAO[estado.situacao] ?? estado.situacao}</strong>
                 {estado.erro ? ` (${estado.erro})` : ""}
               </p>
 
@@ -181,7 +181,7 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
 
               {aguardandoOpcoes ? (
                 <div className="flow-sim-continuar">
-                  <p className="n">Qual resposta o contato dá?</p>
+                  <p className="n">{traduzir("Qual resposta o contato dá?")}</p>
                   <div className="flow-sim-opcoes">
                     {(esperando?.opcoes ?? []).map((op) => (
                       <button key={op.id} type="button" className="btn ghost" disabled={ocupado} onClick={() => responder(op.rotulo)}>
@@ -206,7 +206,7 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
                     </button>
                     {esperaData?.tempoMaximo ? (
                       <button type="button" className="btn ghost" disabled={ocupado} onClick={() => seguirPor("timeout")}>
-                        Simular tempo esgotado
+                        {traduzir("Simular tempo esgotado")}
                       </button>
                     ) : null}
                   </div>
@@ -227,7 +227,7 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
               {erroSetup ? <p className="flow-problema erro mt14">{erroSetup}</p> : null}
 
               <button type="button" className="btn ghost block mt14" onClick={reiniciar}>
-                Reiniciar teste
+                {traduzir("Reiniciar teste")}
               </button>
             </div>
           )}

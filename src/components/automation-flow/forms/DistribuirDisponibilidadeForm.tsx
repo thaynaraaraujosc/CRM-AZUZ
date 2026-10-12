@@ -20,7 +20,7 @@ export function DistribuirDisponibilidadeForm({
       <div className="field">
         <label>Equipe</label>
         <select className="input" value={data.equipeNome ?? ""} onChange={(e) => onChange({ ...data, equipeNome: e.target.value })}>
-          <option value="">Selecione uma equipe…</option>
+          <option value="">{traduzir("Selecione uma equipe…")}</option>
           {equipes.map((nome) => (
             <option key={nome} value={nome}>
               {nome}

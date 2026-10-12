@@ -97,7 +97,7 @@ export default function RespostasAutomaticasPage() {
   return (
     <>
       <Topbar
-        title="Respostas automáticas"
+        title={traduzir("Respostas automáticas")}
         sub="Uma frase que o robô responde sozinho, sem abrir o construtor"
         actions={
           <button type="button" className="btn primary" onClick={() => abrir(null)}>
@@ -125,7 +125,7 @@ export default function RespostasAutomaticasPage() {
             </div>
 
             <div className="field">
-              <label>Quando</label>
+              <label>{traduzir("Quando")}</label>
               <select
                 className="input"
                 value={d.quando}
@@ -185,7 +185,7 @@ export default function RespostasAutomaticasPage() {
 
             {d.quando === "comentario" ? (
               <div className="field">
-                <label>Responder o comentário em público (opcional)</label>
+                <label>{traduzir("Responder o comentário em público (opcional)")}</label>
                 <input
                   className="input"
                   value={d.respostaPublica ?? ""}
@@ -219,7 +219,7 @@ export default function RespostasAutomaticasPage() {
 
             <div className="mt8">
               <button type="button" className="btn primary" onClick={salvar}>
-                Salvar e ligar
+                {traduzir("Salvar e ligar")}
               </button>
               <button type="button" className="btn ghost" onClick={() => setEditando(null)}>
                 {traduzir("Cancelar")}
@@ -237,7 +237,7 @@ export default function RespostasAutomaticasPage() {
               <thead>
                 <tr>
                   <th>Nome</th>
-                  <th>Quando</th>
+                  <th>{traduzir("Quando")}</th>
                   <th>Situação</th>
                   <th aria-label={traduzir("Ações")} />
                 </tr>

@@ -1,6 +1,7 @@
 "use client";
 
 import { PERMISSOES_POR_MODULO } from "@/lib/configuracoes/permissoes";
+import { useIdioma } from "@/lib/idioma-context";
 
 /** Matriz de permissões por módulo (item 21/22). Reutilizada ao adicionar usuário e ao criar
  * função personalizada, pra não duplicar essa lista de checkboxes em dois lugares. */
@@ -11,6 +12,7 @@ export function MatrizPermissoes({
   selecionadas: string[];
   onChange: (novas: string[]) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const set = new Set(selecionadas);
 
   function alternar(id: string) {
@@ -35,10 +37,10 @@ export function MatrizPermissoes({
     <div className="config-permissoes">
       <div className="config-permissoes-acoes">
         <button type="button" className="btn ghost" onClick={() => onChange(PERMISSOES_POR_MODULO.flatMap((m) => m.permissoes.map((p) => p.id)))}>
-          Selecionar tudo
+          {traduzir("Selecionar tudo")}
         </button>
         <button type="button" className="btn ghost" onClick={() => onChange([])}>
-          Remover tudo
+          {traduzir("Remover tudo")}
         </button>
       </div>
       {PERMISSOES_POR_MODULO.map((modulo) => (

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 
 import { IconConfiguracoes, IconContatos, IconEquipe, IconInicio, IconRelatorios } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 const ITENS = [
   { href: "/admin", label: "Dashboard", Icon: IconInicio },
@@ -17,6 +18,7 @@ const ITENS = [
  * `Sidebar` do app normal (workspace/funis/equipe), porque esse painel é cross-tenant, não faz
  * sentido carregar dado de um workspace específico aqui. */
 export function AdminSidebar() {
+  const { t: traduzir } = useIdioma();
   const pathname = usePathname();
 
   return (
@@ -41,7 +43,7 @@ export function AdminSidebar() {
       <div className="sb-foot">
         <button type="button" className="nav-item" style={{ width: "100%", cursor: "pointer" }} onClick={() => signOut({ callbackUrl: "/login" })}>
           <IconConfiguracoes />
-          Sair
+          {traduzir("Sair")}
         </button>
       </div>
     </aside>

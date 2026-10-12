@@ -555,7 +555,7 @@ export function AutomacaoDoFunil({
                             type="button"
                             className="fauto-mini"
                             onClick={() => remover(gatilho.id)}
-                            title="Remover este gatilho"
+                            title={traduzir("Remover este gatilho")}
                           >
                             <IconClose width={10} height={10} />
                           </button>
@@ -766,7 +766,7 @@ export function AutomacaoDoFunil({
                     className="input"
                     value={(rascunho.acaoDados.etiquetasAdicionar ?? []).join(", ")}
                     onChange={(e) => mudarDados({ etiquetasAdicionar: paraLista(e.target.value) })}
-                    placeholder="Separe por vírgula"
+                    placeholder={traduzir("Separe por vírgula")}
                   />
                 </div>
                 <div className="field">
@@ -775,7 +775,7 @@ export function AutomacaoDoFunil({
                     className="input"
                     value={(rascunho.acaoDados.etiquetasRemover ?? []).join(", ")}
                     onChange={(e) => mudarDados({ etiquetasRemover: paraLista(e.target.value) })}
-                    placeholder="Separe por vírgula"
+                    placeholder={traduzir("Separe por vírgula")}
                   />
                 </div>
               </>
@@ -818,7 +818,7 @@ export function AutomacaoDoFunil({
                   <span aria-hidden="true">+</span> {traduzir("Adicionar uma condição")}
                 </button>
               )}
-              <p className="hint mt8">Sem condição, vale pra todo lead que entrar nesta etapa.</p>
+              <p className="hint mt8">{traduzir("Sem condição, vale pra todo lead que entrar nesta etapa.")}</p>
             </div>
 
             <div className="field">

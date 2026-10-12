@@ -608,7 +608,7 @@ export function CampoResposta({
     case "contato":
       return (
         <select className="input form-resposta-campo" style={{ width: "100%" }} disabled={disabled} {...props}>
-          <option value="">Selecione um contato…</option>
+          <option value="">{traduzir("Selecione um contato…")}</option>
           {contatosDisponiveis.map((c) => (
             <option key={c.id} value={c.nome}>
               {c.nome}
@@ -619,7 +619,7 @@ export function CampoResposta({
     case "responsavel":
       return (
         <select className="input form-resposta-campo" style={{ width: "100%" }} disabled={disabled} {...props}>
-          <option value="">Selecione um responsável…</option>
+          <option value="">{traduzir("Selecione um responsável…")}</option>
           {responsaveisDisponiveis.map((r) => (
             <option key={r.id} value={r.nome}>
               {r.nome}
@@ -641,7 +641,7 @@ export function CampoResposta({
         <img className="form-bloco-imagem" src={pergunta.placeholder} alt={pergunta.rotulo || ""} />
       ) : (
         <div className="form-bloco-imagem-vazia" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-          <IconImage width={14} height={14} /> Sem imagem definida
+          <IconImage width={14} height={14} /> {traduzir("Sem imagem definida")}
         </div>
       );
     default:

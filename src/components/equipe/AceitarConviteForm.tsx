@@ -83,7 +83,7 @@ export function AceitarConviteForm({ id, email, token }: { id: string; email: st
           className="input"
           type="password"
           autoComplete="new-password"
-          placeholder="Repita a senha"
+          placeholder={traduzir("Repita a senha")}
           value={confirmarSenha}
           onChange={(e) => setConfirmarSenha(e.target.value)}
           required

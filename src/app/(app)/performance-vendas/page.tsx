@@ -131,7 +131,7 @@ function PerformanceVendasPageInner() {
         <div className="grid kpi4">
           <KpiCard label="Total de negociações encerradas" value={String(totalOportunidades)} />
           <KpiCard label="Taxa de conversão" value={taxaConversao.label} formula={taxaConversao.formula} tom="acento" />
-          <KpiCard label="Receita" value={valorVendido.label} formula={valorVendido.formula} tom="acento" />
+          <KpiCard label={traduzir("Receita")} value={valorVendido.label} formula={valorVendido.formula} tom="acento" />
           <KpiCard label={traduzir("Ticket médio")} value={ticketMedio.label} formula={ticketMedio.formula} />
           <KpiCard
             label={traduzir("Meta do período")}
@@ -190,7 +190,7 @@ function PerformanceVendasPageInner() {
                 <span className="sv">{pessoaDetalhe.perdidas}</span>
               </div>
               <div className="stat-row">
-                <span className="sl">Receita</span>
+                <span className="sl">{traduzir("Receita")}</span>
                 <span className="sv">{formatarMoeda(pessoaDetalhe.receita)}</span>
               </div>
               <Link href={`/jornada-cliente`} className="link" style={{ display: "inline-block", marginTop: 8 }}>

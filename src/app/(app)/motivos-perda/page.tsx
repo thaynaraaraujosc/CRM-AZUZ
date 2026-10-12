@@ -136,7 +136,7 @@ export default function MotivosPerdaPage() {
             sub={`${perdasFiltradas.length} de ${totalPerdas} negociações`}
             formula={valorPerdido.formula}
           />
-          <KpiCard label="Quantidade perdida" value={String(perdasFiltradas.length)} />
+          <KpiCard label={traduzir("Quantidade perdida")} value={String(perdasFiltradas.length)} />
           <KpiCard
             label={traduzir("Principal motivo")}
             value={motivoPrincipal.motivo}
@@ -188,14 +188,14 @@ export default function MotivosPerdaPage() {
         <div className="grid split2">
           <ChartCard title={traduzir("Motivos por etapa")}>
             {porEtapa.length === 0 ? (
-              <p className="hint" style={{ padding: 17 }}>Sem dado ainda.</p>
+              <p className="hint" style={{ padding: 17 }}>{traduzir("Sem dado ainda.")}</p>
             ) : (
               <BarList items={porEtapa.map((g) => ({ chave: g.chave, label: g.chave, quantidade: g.total }))} />
             )}
           </ChartCard>
           <ChartCard title={traduzir("Motivos por responsável")}>
             {porResponsavel.length === 0 ? (
-              <p className="hint" style={{ padding: 17 }}>Sem dado ainda.</p>
+              <p className="hint" style={{ padding: 17 }}>{traduzir("Sem dado ainda.")}</p>
             ) : (
               <BarList items={porResponsavel.map((g) => ({ chave: g.chave, label: g.chave, quantidade: g.total }))} />
             )}
@@ -205,7 +205,7 @@ export default function MotivosPerdaPage() {
         <div className="grid split2">
           <ChartCard title={traduzir("Motivos por origem")}>
             {porOrigem.length === 0 ? (
-              <p className="hint" style={{ padding: 17 }}>Sem dado ainda.</p>
+              <p className="hint" style={{ padding: 17 }}>{traduzir("Sem dado ainda.")}</p>
             ) : (
               <BarList items={porOrigem.map((g) => ({ chave: g.chave, label: g.chave, quantidade: g.total }))} />
             )}

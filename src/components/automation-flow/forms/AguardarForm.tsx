@@ -70,7 +70,7 @@ export function AguardarForm({ data, onChange }: { data: AguardarData; onChange:
 
       {ehDuracao ? (
         <div className="field">
-          <label>Quanto tempo</label>
+          <label>{traduzir("Quanto tempo")}</label>
           <div style={{ display: "flex", gap: 6 }}>
             <input
               className="input"
@@ -79,7 +79,7 @@ export function AguardarForm({ data, onChange }: { data: AguardarData; onChange:
               min={1}
               value={data.valor ?? ""}
               onChange={(e) => onChange({ ...data, valor: e.target.value ? Number(e.target.value) : undefined })}
-              aria-label="Quantidade de tempo"
+              aria-label={traduzir("Quantidade de tempo")}
             />
             <select
               className="input"
@@ -131,7 +131,7 @@ export function AguardarForm({ data, onChange }: { data: AguardarData; onChange:
             </select>
           </div>
           <p className="hint">
-            Se ele responder antes, o fluxo continua na hora pelo caminho <strong>Respondeu</strong>.
+            {traduzir("Se ele responder antes, o fluxo continua na hora pelo caminho")} <strong>{traduzir("Respondeu")}</strong>.
             Não fica esperando o prazo acabar.
           </p>
         </div>
@@ -159,7 +159,7 @@ export function AguardarForm({ data, onChange }: { data: AguardarData; onChange:
           </div>
           {data.interromperSeResponder ? (
             <p className="hint">
-              {traduzir("O bloco passa a ter dois caminhos:")} <strong>Respondeu</strong>, seguido na hora em que
+              {traduzir("O bloco passa a ter dois caminhos:")} <strong>{traduzir("Respondeu")}</strong>, seguido na hora em que
               a mensagem dele chegar, e <strong>{traduzir("Não respondeu")}</strong>, seguido quando o tempo
               acabar. Ligue cada um ao que deve acontecer em cada caso.
             </p>

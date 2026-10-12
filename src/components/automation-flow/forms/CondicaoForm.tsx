@@ -131,7 +131,7 @@ export function CondicaoForm({
       return (
         <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label="Valor">
           <option value="">{traduzir("Selecione…")}</option>
-          <option value="sim">Sim</option>
+          <option value="sim">{traduzir("Sim")}</option>
           <option value="nao">{traduzir("Não")}</option>
         </select>
       );
@@ -299,7 +299,7 @@ export function CondicaoForm({
           <button
             type="button"
             className="remove-chip"
-            aria-label="Remover regra"
+            aria-label={traduzir("Remover regra")}
             onClick={() => removerRegra(regra.id)}
           >
             <IconClose width={13} height={13} />
@@ -315,7 +315,7 @@ export function CondicaoForm({
             className="btn ghost mt8"
             onClick={() => removerSubgrupo(sub.id)}
           >
-            Remover subgrupo
+            {traduzir("Remover subgrupo")}
           </button>
         </div>
       ))}

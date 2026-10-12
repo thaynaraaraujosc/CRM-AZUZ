@@ -44,7 +44,7 @@ export function EncaminharHumanoForm({ data, onChange }: { data: EncaminharHuman
         <div className="field">
           <label>{traduzir("Atendente")}</label>
           <select className="input" value={data.atendenteNome ?? ""} onChange={(e) => onChange({ ...data, atendenteNome: e.target.value })}>
-            <option value="">Selecionar atendente…</option>
+            <option value="">{traduzir("Selecionar atendente…")}</option>
             {membros.map((m) => (
               <option key={m.id} value={m.nome}>{m.nome}</option>
             ))}
@@ -56,7 +56,7 @@ export function EncaminharHumanoForm({ data, onChange }: { data: EncaminharHuman
         <div className="field">
           <label>Equipe</label>
           <select className="input" value={data.equipeNome ?? ""} onChange={(e) => onChange({ ...data, equipeNome: e.target.value })}>
-            <option value="">Selecionar equipe…</option>
+            <option value="">{traduzir("Selecionar equipe…")}</option>
             {equipes.map((nome) => (
               <option key={nome} value={nome}>{nome}</option>
             ))}
@@ -93,7 +93,7 @@ export function EncaminharHumanoForm({ data, onChange }: { data: EncaminharHuman
           <div className="field">
             <label>Funil</label>
             <select className="input" value={data.funilId ?? ""} onChange={(e) => onChange({ ...data, funilId: e.target.value, etapaTitulo: "" })}>
-              <option value="">Selecione um funil…</option>
+              <option value="">{traduzir("Selecione um funil…")}</option>
               {funis.map((f) => (
                 <option key={f.id} value={f.id}>{f.nome}</option>
               ))}
@@ -112,7 +112,7 @@ export function EncaminharHumanoForm({ data, onChange }: { data: EncaminharHuman
       ) : null}
 
       <div className="field">
-        <label>Quando executar</label>
+        <label>{traduzir("Quando executar")}</label>
         <select className="input" value={data.quandoModo ?? "imediato"} onChange={(e) => onChange({ ...data, quandoModo: e.target.value as "imediato" | "apos_tempo" })}>
           <option value="imediato">{traduzir("Imediatamente")}</option>
           <option value="apos_tempo">{traduzir("Após determinado tempo")}</option>

@@ -144,7 +144,7 @@ export function HistoricoExecucoes({ fluxoId, onFechar }: { fluxoId: string; onF
                           </li>
                         );
                       })}
-                      {execucao.passos.length === 0 ? <li><div><p className="r">Sem passos registrados.</p></div></li> : null}
+                      {execucao.passos.length === 0 ? <li><div><p className="r">{traduzir("Sem passos registrados.")}</p></div></li> : null}
                     </ul>
                   </>
                 ) : null}

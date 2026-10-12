@@ -1228,7 +1228,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
             <div className="modal-overlay" onClick={() => setEscolherGatilhoAberto(false)}>
               <div className="modal flow-escolher-gatilho" onClick={(e) => e.stopPropagation()}>
                 <div className="panel-h">
-                  <h4>Quando isso deve acontecer?</h4>
+                  <h4>{traduzir("Quando isso deve acontecer?")}</h4>
                   <button
                     type="button"
                     className="modal-close-btn"

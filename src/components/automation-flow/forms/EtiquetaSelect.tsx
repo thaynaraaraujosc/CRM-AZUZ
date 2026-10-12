@@ -85,7 +85,7 @@ export function EtiquetaSelect({
       ) : (
         <>
           <select className="input" value={value} onChange={(e) => onChange(e.target.value)}>
-            <option value="">Selecione uma etiqueta…</option>
+            <option value="">{traduzir("Selecione uma etiqueta…")}</option>
             {etiquetas.map((nome) => (
               <option key={nome} value={nome}>
                 {nome}

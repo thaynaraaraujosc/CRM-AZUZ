@@ -201,7 +201,7 @@ export function PlanoSecao() {
   if (carregando) {
     return (
       <div className="config-secao">
-        <CabecalhoCategoria titulo={traduzir("Plano e cobrança")} descricao="Seu plano atual, armazenamento e forma de pagamento." />
+        <CabecalhoCategoria titulo={traduzir("Plano e cobrança")} descricao={traduzir("Seu plano atual, armazenamento e forma de pagamento.")} />
         <p className="config-bloco-titulo">Carregando…</p>
       </div>
     );
@@ -212,7 +212,7 @@ export function PlanoSecao() {
 
   return (
     <div className="config-secao">
-      <CabecalhoCategoria titulo={traduzir("Plano e cobrança")} descricao="Seu plano atual, armazenamento e forma de pagamento." />
+      <CabecalhoCategoria titulo={traduzir("Plano e cobrança")} descricao={traduzir("Seu plano atual, armazenamento e forma de pagamento.")} />
 
       <div className="plano-card">
         <div>

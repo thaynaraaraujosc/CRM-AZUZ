@@ -199,7 +199,7 @@ export function StoryRespondidoForm({
             onClick={() => onChange({ ...data, storyId: "" })}
           >
             <span className="ig-publicacao-info">
-              <strong>Qualquer story, de qualquer dia</strong>
+              <strong>{traduzir("Qualquer story, de qualquer dia")}</strong>
               <span>{traduzir("O robô fica valendo pra sempre, inclusive pros stories de amanhã.")}</span>
             </span>
           </button>

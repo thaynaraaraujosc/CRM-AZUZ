@@ -64,11 +64,11 @@ export default function AmostraPage() {
         {/* ------------------------------------------------------------ botões */}
         <section className="amostra-secao">
           <h3>{traduzir("Botões")}</h3>
-          <p className="amostra-nota">Seis variantes. Cada uma com repouso, hover, foco e desabilitado.</p>
+          <p className="amostra-nota">{traduzir("Seis variantes. Cada uma com repouso, hover, foco e desabilitado.")}</p>
           <div className="amostra-linha">
             <button type="button" className="btn primary">{traduzir("Primário")}</button>
             <button type="button" className="btn acento">{traduzir("Acento")}</button>
-            <button type="button" className="btn">Secundário</button>
+            <button type="button" className="btn">{traduzir("Secundário")}</button>
             <button type="button" className="btn ghost">{traduzir("Fantasma")}</button>
             <button type="button" className="btn danger">{traduzir("Perigo")}</button>
             <button type="button" className="btn primary" disabled>{traduzir("Desabilitado")}</button>
@@ -134,7 +134,7 @@ export default function AmostraPage() {
               Corpo. É o texto que se lê de verdade, e por isso tem a medida de leitura limitada e o
               contraste mais alto do que qualquer informação de apoio.
             </p>
-            <p className="amostra-t-label">RÓTULO</p>
+            <p className="amostra-t-label">{traduzir("RÓTULO")}</p>
             <p className="amostra-t-apoio">Texto de apoio, para explicar sem competir.</p>
           </div>
         </section>
@@ -143,7 +143,7 @@ export default function AmostraPage() {
         <section className="amostra-secao">
           <h3>{traduzir("Conversa")}</h3>
           <p className="amostra-nota">
-            Recebida e enviada precisam se distinguir de longe, sem duas cores quase iguais.
+            {traduzir("Recebida e enviada precisam se distinguir de longe, sem duas cores quase iguais.")}
           </p>
           <div className="amostra-chat">
             <div className="amostra-balao amostra-balao-recebida">

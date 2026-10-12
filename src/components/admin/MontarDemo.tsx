@@ -114,7 +114,7 @@ export function MontarDemo() {
       </p>
 
       <div className="field">
-        <label htmlFor="demo-senha">Senha de acesso da conta de demonstração</label>
+        <label htmlFor="demo-senha">{traduzir("Senha de acesso da conta de demonstração")}</label>
         <input
           id="demo-senha"
           className="input"

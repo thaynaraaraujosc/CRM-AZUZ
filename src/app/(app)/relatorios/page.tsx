@@ -112,7 +112,7 @@ function RelatoriosPageInner() {
 
         <div className="card mt14">
           <div className="panel-h">
-            <h4>Relatórios gerados</h4>
+            <h4>{traduzir("Relatórios gerados")}</h4>
           </div>
           {historico.length === 0 ? (
             <p className="hint" style={{ padding: 17 }}>{traduzir("Nenhum relatório gerado ainda.")}</p>
@@ -127,7 +127,7 @@ function RelatoriosPageInner() {
                   <th>{traduzir("Período")}</th>
                   <th>{traduzir("Autor")}</th>
                   <th>{traduzir("Data")}</th>
-                  <th>Páginas</th>
+                  <th>{traduzir("Páginas")}</th>
                   <th>{traduzir("Formato")}</th>
                   <th></th>
                 </tr>

@@ -117,7 +117,7 @@ export function TransferirNegocio({
       <div className="field">
         <label>Responsável</label>
         <select className="input" value={responsavel} onChange={(e) => setResponsavel(e.target.value)}>
-          <option value="">Sem responsável</option>
+          <option value="">{traduzir("Sem responsável")}</option>
           {equipe.map((membro) => (
             <option key={membro.id} value={membro.nome}>
               {membro.nome}

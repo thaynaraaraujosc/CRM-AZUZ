@@ -111,7 +111,7 @@ export function RastreamentoSecao() {
       </div>
 
       <div className="config-bloco">
-        <p className="config-bloco-titulo">Seu link de rastreamento</p>
+        <p className="config-bloco-titulo">{traduzir("Seu link de rastreamento")}</p>
         {dados ? (
           <>
             <div className="rastreio-link-linha">
@@ -120,7 +120,7 @@ export function RastreamentoSecao() {
                 className="input rastreio-link-campo"
                 readOnly
                 value={dados.link}
-                aria-label="Seu link de rastreamento"
+                aria-label={traduzir("Seu link de rastreamento")}
                 onFocus={(e) => e.currentTarget.select()}
               />
               <button type="button" className="btn primary" onClick={() => void copiar()}>
@@ -129,7 +129,7 @@ export function RastreamentoSecao() {
             </div>
             {dados.temNumero ? (
               <p className="hint rastreio-nota">
-                Quem clicar cai no seu WhatsApp <strong>{dados.numero}</strong>, exatamente como
+                {traduzir("Quem clicar cai no seu WhatsApp")} <strong>{dados.numero}</strong>, exatamente como
                 antes. A diferença é que o CRM passa a saber de qual campanha a pessoa veio.
               </p>
             ) : (
@@ -171,7 +171,7 @@ export function RastreamentoSecao() {
               </span>
             </p>
             <p className="hint rastreio-nota">
-              Quando você marca um negócio como <strong>ganho</strong> no funil, o CRM avisa o Google
+              {traduzir("Quando você marca um negócio como")} <strong>ganho</strong> no funil, o CRM avisa o Google
               qual clique gerou aquela venda e quanto ela valeu. O envio acontece sozinho, em até
               meia hora. Na primeira vez, o CRM cria na sua conta do Google Ads uma conversão
               chamada <strong>“Venda · CRM AZUZ”</strong> — é ela que recebe esses valores.

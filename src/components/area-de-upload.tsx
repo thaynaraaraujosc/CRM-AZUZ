@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 
 import { IconAnexo, IconClose, IconUpload } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Área de envio de arquivo. A caixa tracejada com o ícone no círculo.
@@ -36,6 +37,7 @@ export function AreaDeUpload({
   disabled?: boolean;
   className?: string;
 }) {
+  const { t: traduzir } = useIdioma();
   const entradaRef = useRef<HTMLInputElement>(null);
   const [arrastando, setArrastando] = useState(false);
   const [erro, setErro] = useState("");
@@ -58,7 +60,7 @@ export function AreaDeUpload({
           {nomeDoArquivo}
         </span>
         {aoRemover && !disabled ? (
-          <button type="button" className="upload-area-remover" onClick={aoRemover} aria-label="Remover arquivo">
+          <button type="button" className="upload-area-remover" onClick={aoRemover} aria-label={traduzir("Remover arquivo")}>
             <IconClose width={12} height={12} />
           </button>
         ) : null}

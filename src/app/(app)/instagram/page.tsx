@@ -390,7 +390,7 @@ export default function InstagramConversasPage() {
                 </div>
                 <div>
                   <strong>{atual.perfil?.segueVoce == null ? "—" : atual.perfil.segueVoce ? "Sim" : "Não"}</strong>
-                  <span>Segue você</span>
+                  <span>{traduzir("Segue você")}</span>
                 </div>
               </div>
               <p className="hint">

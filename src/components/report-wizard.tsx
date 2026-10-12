@@ -533,7 +533,7 @@ export function ReportWizard({
                       invalidarPrevia();
                     }}
                   >
-                    Resumido: indicadores principais, menos páginas
+                    {traduzir("Resumido: indicadores principais, menos páginas")}
                   </button>
                   <button
                     type="button"
@@ -563,7 +563,7 @@ export function ReportWizard({
           {etapa === 3 ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <div>
-                <p className="hint" style={{ marginBottom: 8 }}>Reordenar seções</p>
+                <p className="hint" style={{ marginBottom: 8 }}>{traduzir("Reordenar seções")}</p>
                 {ordemSecoes
                   .filter((id) => secoesSelecionadas.has(id))
                   .map((id, i, arr) => {
@@ -633,7 +633,7 @@ export function ReportWizard({
                       invalidarPrevia();
                     }}
                   >
-                    Retrato
+                    {traduzir("Retrato")}
                   </button>
                   <button
                     type="button"
@@ -772,7 +772,7 @@ export function ReportWizard({
                       disabled={paginaAtualPrevia >= totalPaginasPrevia}
                       onClick={() => setPaginaAtualPrevia((p) => p + 1)}
                     >
-                      Próxima página →
+                      {traduzir("Próxima página →")}
                     </button>
                     <button type="button" className="btn ghost" onClick={gerarPrevia}>
                       {traduzir("Gerar nova prévia")}
@@ -819,7 +819,7 @@ export function ReportWizard({
               ) : (
                 <>
                   <div className="card" style={{ padding: 14 }}>
-                    <p className="hint" style={{ marginBottom: 4 }}>Relatório aprovado</p>
+                    <p className="hint" style={{ marginBottom: 4 }}>{traduzir("Relatório aprovado")}</p>
                     <p className="n" style={{ fontFamily: "var(--display)", fontWeight: 700, marginBottom: 6 }}>
                       {nomeRelatorio}
                     </p>
@@ -858,7 +858,7 @@ export function ReportWizard({
                     {traduzir("Baixar Excel (CSV)")}
                   </button>
                   <button type="button" className="btn ghost block" onClick={salvarSemBaixar} disabled={status === "gerando"}>
-                    Salvar relatório (sem baixar)
+                    {traduzir("Salvar relatório (sem baixar)")}
                   </button>
                   <button type="button" className="btn ghost block" onClick={() => irParaEtapa(2)}>
                     Voltar e editar

@@ -168,7 +168,7 @@ export function BlockLibrary({
           onChange={(e) => setBusca(e.target.value)}
           aria-label={traduzir("Buscar bloco")}
         />
-        <button type="button" className="icon-btn subtle" aria-label="Recolher biblioteca de blocos" onClick={onFechar}>
+        <button type="button" className="icon-btn subtle" aria-label={traduzir("Recolher biblioteca de blocos")} onClick={onFechar}>
           ◀
         </button>
       </div>

@@ -67,7 +67,7 @@ export function GenericForm({ node, onChange }: { node: FlowNode; onChange: (dat
             <div className="field" key={chave}>
               <label>Funil</label>
               <select className="input" value={typeof valor === "string" ? valor : ""} onChange={(e) => set(chave, e.target.value)}>
-                <option value="">Selecione um funil…</option>
+                <option value="">{traduzir("Selecione um funil…")}</option>
                 {funis.map((f) => (
                   <option key={f.id} value={f.id}>
                     {f.nome}

@@ -139,7 +139,7 @@ export default function AutomacoesSociaisPage() {
     <>
       <Topbar
         title="Instagram"
-        sub="Robôs que respondem comentário, Direct, story e menção"
+        sub={traduzir("Robôs que respondem comentário, Direct, story e menção")}
         actions={
           <button type="button" className="btn primary" onClick={() => router.push("/automacoes/social/novo")}>
             + Criar automação
@@ -176,7 +176,7 @@ export default function AutomacoesSociaisPage() {
               <option value="todos">Status: todos</option>
               <option value="ativo">{traduzir("Ligadas")}</option>
               <option value="inativo">{traduzir("Pausadas")}</option>
-              <option value="rascunho">Rascunhos</option>
+              <option value="rascunho">{traduzir("Rascunhos")}</option>
             </select>
 
             <select className="input" value={gatilho} onChange={(e) => setGatilho(e.target.value)}>
@@ -316,7 +316,7 @@ export default function AutomacoesSociaisPage() {
                       <td>{f.execucoes}</td>
                       <td>
                         {f.status === "rascunho" ? (
-                          <span className="badge badge-neutral">Rascunho</span>
+                          <span className="badge badge-neutral">{traduzir("Rascunho")}</span>
                         ) : (
                           <label className="social-toggle">
                             <input type="checkbox" checked={f.ativa} onChange={() => alternarAtivo(f.id)} />

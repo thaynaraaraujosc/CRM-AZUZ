@@ -67,9 +67,9 @@ export function CriarTarefaForm({ data, onChange }: { data: CriarTarefaData; onC
           value={data.modoResponsavel ?? "atual"}
           onChange={(e) => onChange({ ...data, modoResponsavel: e.target.value as ModoResponsavelTarefa })}
         >
-          <option value="atual">Responsável atual do lead</option>
-          <option value="pessoa">Selecionar pessoa</option>
-          <option value="equipe">Selecionar equipe</option>
+          <option value="atual">{traduzir("Responsável atual do lead")}</option>
+          <option value="pessoa">{traduzir("Selecionar pessoa")}</option>
+          <option value="equipe">{traduzir("Selecionar equipe")}</option>
         </select>
       </div>
 
@@ -116,7 +116,7 @@ export function CriarTarefaForm({ data, onChange }: { data: CriarTarefaData; onC
 
       {data.modoPrazo === "depois_de" ? (
         <div className="field">
-          <label>Quanto tempo depois</label>
+          <label>{traduzir("Quanto tempo depois")}</label>
           <div style={{ display: "flex", gap: 6 }}>
             <input
               className="input"
@@ -177,7 +177,7 @@ export function CriarTarefaForm({ data, onChange }: { data: CriarTarefaData; onC
       </div>
 
       <div className="field">
-        <label>Relacionar ao</label>
+        <label>{traduzir("Relacionar ao")}</label>
         <select
           className="input"
           value={data.relacionarA ?? "contato"}

@@ -29,7 +29,7 @@ export function TarefaEventoForm({ data, onChange }: { data: TarefaEventoData; o
   return (
     <div className="flow-form">
       <div className="field">
-        <label>Qual tarefa?</label>
+        <label>{traduzir("Qual tarefa?")}</label>
         <select
           className="input"
           value={data.filtroModo}

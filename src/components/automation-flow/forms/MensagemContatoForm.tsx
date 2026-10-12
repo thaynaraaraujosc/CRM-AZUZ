@@ -41,14 +41,14 @@ export function MensagemContatoForm({ data, onChange }: { data: MensagemContatoD
   return (
     <div className="flow-form">
       <div className="field">
-        <label>Qual contato?</label>
+        <label>{traduzir("Qual contato?")}</label>
         <select
           className="input"
           value={data.origemContato}
           onChange={(e) => onChange({ ...data, origemContato: e.target.value as OrigemContatoEnvio })}
         >
           <option value="atual">{traduzir("Contato/lead atual da automação")}</option>
-          <option value="outro">Selecionar outro contato do CRM</option>
+          <option value="outro">{traduzir("Selecionar outro contato do CRM")}</option>
           <option value="campo_dinamico">{traduzir("Campo dinâmico")}</option>
         </select>
       </div>
@@ -86,7 +86,7 @@ export function MensagemContatoForm({ data, onChange }: { data: MensagemContatoD
       <div className="field">
         <label>{traduzir("Dados que serão compartilhados")}</label>
         <div className="filters-row" style={{ margin: "0 0 6px" }}>
-          <button type="button" className="fchip" onClick={() => onChange({ ...data, camposCompartilhados: CAMPOS_COMPARTILHAVEIS.map((c) => c.valor) })}>Selecionar tudo</button>
+          <button type="button" className="fchip" onClick={() => onChange({ ...data, camposCompartilhados: CAMPOS_COMPARTILHAVEIS.map((c) => c.valor) })}>{traduzir("Selecionar tudo")}</button>
           <button type="button" className="fchip" onClick={() => onChange({ ...data, camposCompartilhados: [] })}>{traduzir("Limpar seleção")}</button>
         </div>
         {CAMPOS_COMPARTILHAVEIS.map((c) => (

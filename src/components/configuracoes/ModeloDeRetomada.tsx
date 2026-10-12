@@ -66,7 +66,7 @@ export function ModeloDeRetomada() {
 
   return (
     <div className="config-bloco">
-      <p className="config-bloco-titulo">Retomar conversa depois de 24 horas</p>
+      <p className="config-bloco-titulo">{traduzir("Retomar conversa depois de 24 horas")}</p>
       <p className="hint">
         Passadas 24 horas sem resposta da pessoa, o WhatsApp só entrega modelo aprovado. Escolha um
         aqui e as automações passam a usá-lo sozinhas nessa hora, em vez de parar.

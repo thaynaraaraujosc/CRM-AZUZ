@@ -126,7 +126,7 @@ export default function DetalheDisparoPage() {
             ) : null}
             {podeRetomar ? (
               <button type="button" className="btn ghost" disabled={ocupado} onClick={() => void controlar("retomar")}>
-                Retomar
+                {traduzir("Retomar")}
               </button>
             ) : null}
             {podeCancelar ? (
@@ -196,7 +196,7 @@ export default function DetalheDisparoPage() {
                     <th>Contato</th>
                     <th>{traduzir("Destino")}</th>
                     <th>Situação</th>
-                    <th>Quando</th>
+                    <th>{traduzir("Quando")}</th>
                     <th>{traduzir("Detalhe")}</th>
                   </tr>
                 </thead>

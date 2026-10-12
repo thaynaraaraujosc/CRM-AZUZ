@@ -29,7 +29,7 @@ export function CancelarAgendamentoForm({ data, onChange }: { data: CancelarAgen
   return (
     <div className="flow-form">
       <div className="field">
-        <label>Qual agendamento cancelar?</label>
+        <label>{traduzir("Qual agendamento cancelar?")}</label>
         <select className="input" value={data.criterio} onChange={(e) => onChange({ ...data, criterio: e.target.value as CriterioAgendamento })}>
           {CRITERIOS.map((c) => (
             <option key={c.valor} value={c.valor}>{c.label}</option>
@@ -94,7 +94,7 @@ export function CancelarAgendamentoForm({ data, onChange }: { data: CancelarAgen
             <div className="field">
               <label>{traduzir("Modelo")}</label>
               <select className="input" value={data.modeloId ?? ""} onChange={(e) => onChange({ ...data, modeloId: e.target.value })}>
-                <option value="">Selecione um modelo…</option>
+                <option value="">{traduzir("Selecione um modelo…")}</option>
                 {MODELOS_CANCELAMENTO.map((m) => (
                   <option key={m.id} value={m.id}>{m.nome}</option>
                 ))}
@@ -114,7 +114,7 @@ export function CancelarAgendamentoForm({ data, onChange }: { data: CancelarAgen
             </div>
           )}
           <div className="field">
-            <label>Quando enviar</label>
+            <label>{traduzir("Quando enviar")}</label>
             <select className="input" value={data.quandoModo ?? "imediato"} onChange={(e) => onChange({ ...data, quandoModo: e.target.value as "imediato" | "apos_tempo" })}>
               <option value="imediato">{traduzir("Imediatamente após o cancelamento")}</option>
               <option value="apos_tempo">{traduzir("Após determinado tempo")}</option>

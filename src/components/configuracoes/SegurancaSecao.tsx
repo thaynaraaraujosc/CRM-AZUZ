@@ -81,13 +81,13 @@ export function SegurancaSecao() {
 
   return (
     <div className="config-secao">
-      <CabecalhoCategoria titulo="Segurança" descricao="Senha, e-mail de acesso e sessões ativas." />
+      <CabecalhoCategoria titulo={traduzir("Segurança")} descricao={traduzir("Senha, e-mail de acesso e sessões ativas.")} />
 
       <div className="config-bloco">
         <p className="config-bloco-titulo">{traduzir("Senha")}</p>
         <div className="toggle-row" style={{ padding: "6px 0" }}>
           <span className="tl">
-            Redefinir por e-mail: enviamos um link pra <strong>{emailAtual || "seu e-mail cadastrado"}</strong>, sem precisar digitar a senha atual.
+            {traduzir("Redefinir por e-mail: enviamos um link pra")} <strong>{emailAtual || "seu e-mail cadastrado"}</strong>, sem precisar digitar a senha atual.
           </span>
           <button type="button" className="btn ghost" onClick={pedirRedefinicaoSenha} disabled={enviandoReset || resetEnviado}>
             {resetEnviado ? "Link enviado" : enviandoReset ? "Enviando…" : "Redefinir senha"}
@@ -116,7 +116,7 @@ export function SegurancaSecao() {
         ) : (
           <div className="config-grid-2">
             <div className="field">
-              <label>Senha atual</label>
+              <label>{traduzir("Senha atual")}</label>
               <input className="input" type="password" value={senhaAtual} onChange={(e) => setSenhaAtual(e.target.value)} placeholder={traduzir("Confirme sua senha")} />
             </div>
             <div className="field">
@@ -138,7 +138,7 @@ export function SegurancaSecao() {
       </div>
 
       <div className="config-bloco">
-        <p className="config-bloco-titulo">Sessões ativas</p>
+        <p className="config-bloco-titulo">{traduzir("Sessões ativas")}</p>
         {sessoes === null ? (
           <p className="hint">Carregando…</p>
         ) : (

@@ -156,7 +156,7 @@ export function EditorTemplate({
               className="btn primary"
               disabled={!!salvando || problemas.length > 0 || !editavelNaMeta}
               onClick={() => void salvar(true)}
-              title="Salva e envia pra análise da Meta"
+              title={traduzir("Salva e envia pra análise da Meta")}
             >
               {salvando === "analise" ? "Enviando…" : "Salvar e enviar para análise"}
             </button>
@@ -337,7 +337,7 @@ export function EditorTemplate({
                       disabled={!editavelNaMeta}
                     />
                     <span className="hint">{b.texto.length}/{limites.botaoMaximo}</span>
-                    <button type="button" className="btn ghost" onClick={() => setR((a) => ({ ...a, botoes: a.botoes.filter((_, j) => j !== i) }))} disabled={!editavelNaMeta} aria-label="Remover botão">
+                    <button type="button" className="btn ghost" onClick={() => setR((a) => ({ ...a, botoes: a.botoes.filter((_, j) => j !== i) }))} disabled={!editavelNaMeta} aria-label={traduzir("Remover botão")}>
                       ×
                     </button>
                   </div>

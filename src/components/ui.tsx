@@ -701,7 +701,7 @@ export function FilterBar({
                     onChange={(e) => setNomeVisao(e.target.value)}
                   />
                   <button type="button" className="btn ghost" onClick={() => salvarVisaoAtual(false)}>
-                    Salvar
+                    {traduzir("Salvar")}
                   </button>
                   <button type="button" className="btn ghost" onClick={() => salvarVisaoAtual(true)}>
                     {traduzir("Definir padrão")}

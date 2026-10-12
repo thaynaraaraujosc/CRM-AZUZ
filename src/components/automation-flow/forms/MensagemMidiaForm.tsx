@@ -275,7 +275,7 @@ export function MensagemMidiaForm({
               Substituir (upload)
             </button>
             <button type="button" className="btn ghost" onClick={removerArquivo}>
-              Remover arquivo
+              {traduzir("Remover arquivo")}
             </button>
           </div>
         </div>
@@ -311,7 +311,7 @@ export function MensagemMidiaForm({
         <div className="modal-overlay" onClick={() => setModalAberto(false)}>
           <div className="modal flow-biblioteca-modal" onClick={(e) => e.stopPropagation()}>
             <div className="panel-h">
-              <h4>Selecionar arquivo da biblioteca</h4>
+              <h4>{traduzir("Selecionar arquivo da biblioteca")}</h4>
               <button type="button" className="modal-close-btn" aria-label={traduzir("Fechar")} onClick={() => setModalAberto(false)}>
                 <IconClose width={12} height={12} />
               </button>
