@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { ESCOPOS_POR_PROVEDOR, assinarState } from "@/lib/integracoes/meta";
+import { envLimpo } from "@/lib/integracoes/env-limpo";
 
 /**
  * GET redireciona pro diálogo OAuth da Meta pra conectar o provedor pedido (`?provedor=`, default
@@ -14,7 +15,7 @@ export async function GET(request: Request) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
 
-  const appId = process.env.META_APP_ID;
+  const appId = envLimpo(process.env.META_APP_ID);
   if (!appId) {
     return NextResponse.json({ erro: "META_APP_ID não configurado no servidor" }, { status: 500 });
   }

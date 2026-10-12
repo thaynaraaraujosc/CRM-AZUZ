@@ -11,6 +11,7 @@ import {
   type Passo,
 } from "@/lib/integracoes/conectar-whatsapp-oficial";
 import { META_GRAPH_URL, type ErroGraph } from "@/lib/integracoes/meta";
+import { envLimpo } from "@/lib/integracoes/env-limpo";
 
 /**
  * Finaliza a conexão do WhatsApp Business oficial (Cloud API) depois do Embedded Signup. O popup
@@ -82,8 +83,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ erro: avisoDeContaOcupada("WhatsApp", ocupado) }, { status: 409 });
   }
 
-  const appId = process.env.META_APP_ID ?? process.env.NEXT_PUBLIC_META_APP_ID;
-  const appSecret = process.env.META_APP_SECRET;
+  const appId = envLimpo(process.env.META_APP_ID) ?? envLimpo(process.env.NEXT_PUBLIC_META_APP_ID);
+  const appSecret = envLimpo(process.env.META_APP_SECRET);
   if (!appId || !appSecret) {
     return NextResponse.json({ erro: "Integração não configurada no servidor." }, { status: 500 });
   }

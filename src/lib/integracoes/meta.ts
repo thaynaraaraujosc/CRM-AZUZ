@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { envLimpo } from "@/lib/integracoes/env-limpo";
 
 /**
  * O `wa_id` que a Meta manda no webhook às vezes vem sem o 9º dígito do celular brasileiro
@@ -73,7 +74,7 @@ export function ehTokenInvalido(codigoMeta: number | undefined): boolean {
 }
 
 function appSecret(): string {
-  const segredo = process.env.META_APP_SECRET;
+  const segredo = envLimpo(process.env.META_APP_SECRET);
   if (!segredo) throw new Error("META_APP_SECRET não configurado.");
   return segredo;
 }

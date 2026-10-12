@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { IconAlerta } from "@/components/icons";
+import { envLimpo } from "@/lib/integracoes/env-limpo";
 
 /**
  * Embedded Signup v4 da Meta. Popup hospedado por eles, aberto de dentro do CRM, que cria a conta
@@ -47,8 +48,10 @@ export function EmbeddedSignupWhatsApp({
   dadosDoNegocio?: DadosDoNegocio;
   aoConectar?: () => void;
 }) {
-  const appId = process.env.NEXT_PUBLIC_META_APP_ID;
-  const configId = process.env.NEXT_PUBLIC_META_CONFIG_ID;
+  // `envLimpo`, e não `process.env` cru: uma TABULAÇÃO colada no início do `config_id` foi a causa
+  // real da falha de conexão, e era invisível na tela. Ver `env-limpo.ts`.
+  const appId = envLimpo(process.env.NEXT_PUBLIC_META_APP_ID);
+  const configId = envLimpo(process.env.NEXT_PUBLIC_META_CONFIG_ID);
   /*
    * A VERSÃO DO DIÁLOGO É SEPARADA DA VERSÃO DAS CHAMADAS DE SERVIDOR, e isso é a correção.
    *
@@ -64,7 +67,7 @@ export function EmbeddedSignupWhatsApp({
    * Instagram e no WhatsApp que já funcionam, e não há motivo pra arriscar isso pra consertar um
    * diálogo de login.
    */
-  const versaoGraph = process.env.NEXT_PUBLIC_META_LOGIN_VERSION ?? "v26.0";
+  const versaoGraph = envLimpo(process.env.NEXT_PUBLIC_META_LOGIN_VERSION) ?? "v26.0";
 
   // Inicialização preguiçosa em vez de `setState` dentro do efeito. O SDK pode já estar carregado
   // (outro componente montou antes), e nesse caso o botão precisa nascer habilitado.

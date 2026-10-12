@@ -4,6 +4,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { encriptar } from "@/lib/integracoes/crypto";
 import { META_GRAPH_URL, verificarState } from "@/lib/integracoes/meta";
+import { envLimpo } from "@/lib/integracoes/env-limpo";
 
 /** `metadados` tem forma diferente por provedor (união estrutural que o Prisma não casa com
  * `InputJsonValue` automaticamente): o valor em runtime já é JSON puro, o cast é só pro TS. */
@@ -130,8 +131,8 @@ export async function GET(request: Request) {
     return NextResponse.redirect(redirecionarConfig);
   }
 
-  const appId = process.env.META_APP_ID;
-  const appSecret = process.env.META_APP_SECRET;
+  const appId = envLimpo(process.env.META_APP_ID);
+  const appSecret = envLimpo(process.env.META_APP_SECRET);
   if (!appId || !appSecret) {
     redirecionarConfig.searchParams.set("integracaoErro", "Integração não configurada no servidor.");
     return NextResponse.redirect(redirecionarConfig);
