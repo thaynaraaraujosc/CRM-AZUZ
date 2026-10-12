@@ -169,6 +169,23 @@ export function EmbeddedSignupWhatsApp({
       (resposta) => {
         const code = resposta.authResponse?.code;
         if (!code) {
+          /*
+           * O MOTIVO QUE A META DEVOLVE, no console, sem segredo nenhum.
+           *
+           * Quando o diálogo recusa, a mensagem que a pessoa vê ("Falha ao iniciar sessão") é
+           * genérica de propósito — a Meta não conta o motivo na tela pra não ajudar quem está
+           * sondando um app. Mas o `status` da resposta distingue os casos, e sem ele a
+           * investigação vira tentativa e erro.
+           *
+           * Só `status` e a lista de CHAVES presentes: nunca o conteúdo de `authResponse`, que
+           * numa autorização bem-sucedida carrega o código de autorização.
+           */
+          console.error(
+            "[meta] autorização não concluída. status:",
+            resposta?.status ?? "(sem status)",
+            "campos presentes:",
+            Object.keys(resposta ?? {}).join(", ") || "(resposta vazia)",
+          );
           setErro(
             telaAbandonadaRef.current
               ? `Você saiu na etapa "${telaAbandonadaRef.current}". A conexão não foi concluída.`
