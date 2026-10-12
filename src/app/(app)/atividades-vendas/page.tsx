@@ -106,10 +106,10 @@ export default function AtividadesVendasPage() {
         {grupo === "Atendimento" ? (
           <>
             <div className="grid kpi4">
-              <KpiCard label="Leads recebidos" value={String(leadsRecebidos)} href="/conversas" tom="acento" />
-              <KpiCard label="Leads atendidos" value={String(leadsAtendidos)} href="/conversas" tom="acento" />
+              <KpiCard label={traduzir("Leads recebidos")} value={String(leadsRecebidos)} href="/conversas" tom="acento" />
+              <KpiCard label={traduzir("Leads atendidos")} value={String(leadsAtendidos)} href="/conversas" tom="acento" />
               <KpiCard
-                label="Leads sem resposta"
+                label={traduzir("Leads sem resposta")}
                 value={leadsSemResposta.label}
                 formula={leadsSemResposta.formula}
                 href="/conversas"
@@ -140,7 +140,7 @@ export default function AtividadesVendasPage() {
               />
             </div>
 
-            <ChartCard title="Interações por responsável (conversas atribuídas)">
+            <ChartCard title={traduzir("Interações por responsável (conversas atribuídas)")}>
               {equipe.every((m) => conversas.filter((c) => c.atendenteSelecionado === m.nome).length === 0) ? (
                 <p className="hint" style={{ padding: 17 }}>Nenhuma conversa atribuída a um responsável ainda.</p>
               ) : (
@@ -159,7 +159,7 @@ export default function AtividadesVendasPage() {
             <div className="grid split2">
               <div className="card">
                 <div className="panel-h">
-                  <h4>Ligações</h4>
+                  <h4>{traduzir("Ligações")}</h4>
                 </div>
                 <div className="dados-nao-conectados" style={{ margin: 17 }}>
                   {traduzir("Dados não conectados: o CRM ainda não tem telefonia integrada.")}

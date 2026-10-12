@@ -223,7 +223,7 @@ export function SeletorDeData({
 
           <div className="seletor-data-rodape">
             <button type="button" onClick={() => { onChange(paraIso(new Date())); setAberto(false); }}>
-              Hoje
+              {traduzir("Hoje")}
             </button>
             {valor ? (
               <button type="button" onClick={() => { onChange(""); setAberto(false); }}>

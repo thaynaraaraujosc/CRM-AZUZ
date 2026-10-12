@@ -71,7 +71,7 @@ export function RastreamentoSecao() {
               <IconWhatsApp width={18} height={18} />
               <IconInstagram width={18} height={18} />
             </span>
-            <span className="rastreio-selo rastreio-selo-ativo">Funcionando</span>
+            <span className="rastreio-selo rastreio-selo-ativo">{traduzir("Funcionando")}</span>
           </div>
           <h4>{traduzir("Anúncios da Meta")}</h4>
           <p>
@@ -98,9 +98,9 @@ export function RastreamentoSecao() {
         <div className="rastreio-canal rastreio-canal-pronto">
           <div className="rastreio-canal-h">
             <span className="rastreio-canal-icones rastreio-google">F</span>
-            <span className="rastreio-selo rastreio-selo-ativo">Funcionando</span>
+            <span className="rastreio-selo rastreio-selo-ativo">{traduzir("Funcionando")}</span>
           </div>
-          <h4>Formulários do CRM</h4>
+          <h4>{traduzir("Formulários do CRM")}</h4>
           <p>
             Se o seu anúncio leva direto pra um formulário do CRM, não precisa de nada: o código do
             clique vem no endereço e o formulário guarda sozinho. Se ele leva pra uma página sua que

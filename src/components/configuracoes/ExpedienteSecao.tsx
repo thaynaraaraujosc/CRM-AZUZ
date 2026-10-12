@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 import { EXPEDIENTE_PADRAO, type DiasDoExpediente, type Expediente } from "@/lib/expediente";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * O horário de funcionamento do workspace.
@@ -24,6 +25,7 @@ const DIAS: { chave: keyof DiasDoExpediente; label: string }[] = [
 ];
 
 export function ExpedienteSecao() {
+  const { t: traduzir } = useIdioma();
   const [expediente, setExpediente] = useState<Expediente>(EXPEDIENTE_PADRAO);
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
@@ -95,7 +97,7 @@ export function ExpedienteSecao() {
     */
     <div className="config-secao">
       <CabecalhoCategoria
-        titulo="Horário de funcionamento"
+        titulo={traduzir("Horário de funcionamento")}
         descricao={'Usado pela pausa "só em horário de expediente", pelo follow-up de quem não respondeu e pela janela dos gatilhos de etapa. Um só, pra os três não divergirem.'}
       />
 
@@ -128,7 +130,7 @@ export function ExpedienteSecao() {
                     />
                   </div>
                 ) : (
-                  <span className="hint expediente-fechado">Fechado</span>
+                  <span className="hint expediente-fechado">{traduzir("Fechado")}</span>
                 )}
               </div>
             );

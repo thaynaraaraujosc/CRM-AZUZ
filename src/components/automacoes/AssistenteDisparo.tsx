@@ -313,7 +313,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
           ) : (
             <>
               <div className="disp-ig-conta">
-                <span className="hint">Instagram conectado</span>
+                <span className="hint">{traduzir("Instagram conectado")}</span>
                 <strong>{janela.conta ?? "conta conectada"}</strong>
               </div>
 
@@ -589,7 +589,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
                     onChange={(e) => mudarCorpoLivre(e.target.value)}
                   />
                   <div className="tpl-inserir">
-                    <span className="hint">Inserir:</span>
+                    <span className="hint">{traduzir("Inserir:")}</span>
                     {ORIGENS_DO_CONTATO.slice(0, 4).map((o) => (
                       <button key={o.origem} type="button" className="pill" onClick={() => mudarCorpoLivre(`${corpoLivre}{{${o.origem.slice("contato.".length)}}}`)}>
                         {o.label}
@@ -662,7 +662,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
                 <SeletorDeData valor={data} onChange={setData} />
               </div>
               <div className="field">
-                <label>Horário</label>
+                <label>{traduzir("Horário")}</label>
                 <input className="input" type="time" value={hora} onChange={(e) => setHora(e.target.value)} />
               </div>
             </div>

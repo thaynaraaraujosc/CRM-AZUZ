@@ -177,7 +177,7 @@ export function MensagemOpcoesForm({
 
       <div className="field">
         <div className="flow-form-label-row">
-          <label style={{ marginBottom: 0 }}>Formato de resposta</label>
+          <label style={{ marginBottom: 0 }}>{traduzir("Formato de resposta")}</label>
           <span
             className="hint"
             title="Alguns recursos interativos dependem do provedor e do tipo de conexão configurado."

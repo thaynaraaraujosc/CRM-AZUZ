@@ -166,7 +166,7 @@ export function EditorTemplate({
     >
       {!editavelNaMeta ? (
         <p className="tpl-aviso">
-          Este template já está na Meta. Pra mudar o texto, feche e use <strong>{traduzir("Duplicar")}</strong>: a cópia pode ser
+          {traduzir("Este template já está na Meta. Pra mudar o texto, feche e use")} <strong>{traduzir("Duplicar")}</strong>: a cópia pode ser
           editada e enviada pra análise como um modelo novo.
         </p>
       ) : null}
@@ -260,7 +260,7 @@ export function EditorTemplate({
               disabled={!editavelNaMeta}
             />
             <div className="tpl-inserir">
-              <span className="hint">Inserir:</span>
+              <span className="hint">{traduzir("Inserir:")}</span>
               {ORIGENS_DO_CONTATO.slice(0, 5).map((o) => {
                 const chave = o.origem.slice("contato.".length);
                 return (

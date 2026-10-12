@@ -92,7 +92,7 @@ export function ConexaoManualWhatsApp({ aoConectar }: { aoConectar?: () => void 
   if (!aberto) {
     return (
       <button type="button" className="btn ghost" style={{ marginTop: 10 }} onClick={() => setAberto(true)}>
-        Já tenho conta na API oficial. Conectar com token
+        {traduzir("Já tenho conta na API oficial. Conectar com token")}
       </button>
     );
   }
@@ -121,7 +121,7 @@ export function ConexaoManualWhatsApp({ aoConectar }: { aoConectar?: () => void 
       </div>
 
       <div className="field">
-        <label>ID da conta do WhatsApp (WABA)</label>
+        <label>{traduzir("ID da conta do WhatsApp (WABA)")}</label>
         <input
           className="input"
           type="text"
@@ -133,7 +133,7 @@ export function ConexaoManualWhatsApp({ aoConectar }: { aoConectar?: () => void 
       </div>
 
       <div className="field">
-        <label>ID do número de telefone</label>
+        <label>{traduzir("ID do número de telefone")}</label>
         <input
           className="input"
           type="text"

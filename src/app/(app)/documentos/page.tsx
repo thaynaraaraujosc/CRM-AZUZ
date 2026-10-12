@@ -382,7 +382,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
         {modelosAberto ? (
           <div className="card mb14">
             <div className="panel-h">
-              <h4>Galeria de modelos</h4>
+              <h4>{traduzir("Galeria de modelos")}</h4>
             </div>
 
             <div className="filters-row mb14" style={{ padding: "0 16px" }}>
@@ -499,7 +499,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
                   <h4>{modeloEmPreview.nome}</h4>
                   <p className="hint" style={{ margin: 0 }}>{modeloEmPreview.categoria} · {modeloEmPreview.descricao}</p>
                 </div>
-                <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setModeloPreviewId(null)}><IconClose width={12} height={12} /></button>
+                <button type="button" className="modal-close-btn" aria-label={traduzir("Fechar")} onClick={() => setModeloPreviewId(null)}><IconClose width={12} height={12} /></button>
               </div>
               <div className="doc-modelo-preview-corpo">
                 {modeloEmPreview.conteudoHtml ? (
@@ -509,7 +509,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
                 )}
               </div>
               <div className="panel-f" style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-                <button type="button" className="btn ghost" onClick={() => setModeloPreviewId(null)}>Fechar</button>
+                <button type="button" className="btn ghost" onClick={() => setModeloPreviewId(null)}>{traduzir("Fechar")}</button>
                 <button type="button" className="btn primary" onClick={() => novoDocumento(modeloEmPreview.id)}>Usar este modelo</button>
               </div>
             </div>
@@ -2647,7 +2647,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
           <button type="button" className="doc-toolbar-btn" title="Zoom: diminuir" onClick={() => setZoom((z) => Math.max(50, z - 10))}>−</button>
           <span className="hint" style={{ minWidth: 34, textAlign: "center" }}>{zoom}%</span>
           <button type="button" className="doc-toolbar-btn" title="Zoom: aumentar" onClick={() => setZoom((z) => Math.min(200, z + 10))}>+</button>
-          <button type="button" className="doc-toolbar-btn" title="Imprimir" onClick={abrirPreviaImpressao}><IconPrint width={15} height={15} /></button>
+          <button type="button" className="doc-toolbar-btn" title={traduzir("Imprimir")} onClick={abrirPreviaImpressao}><IconPrint width={15} height={15} /></button>
           <span className="doc-header-sep" />
           <button
             type="button"
@@ -2656,7 +2656,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             onClick={() => setMostrarToolbar((v) => !v)}
             style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
           >
-            <IconPaint width={14} height={14} /> Formatação
+            <IconPaint width={14} height={14} /> {traduzir("Formatação")}
           </button>
           <button
             type="button"
@@ -2681,9 +2681,9 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         <MenuTopo label={traduzir("Arquivo")} aberto={menuAberto === "arquivo"} onAbrir={() => setMenuAberto("arquivo")} onFechar={() => setMenuAberto(null)} itens={menuArquivo} />
         <MenuTopo label={traduzir("Editar")} aberto={menuAberto === "editar"} onAbrir={() => setMenuAberto("editar")} onFechar={() => setMenuAberto(null)} itens={menuEditar} />
         <MenuTopo label="Ver" aberto={menuAberto === "ver"} onAbrir={() => setMenuAberto("ver")} onFechar={() => setMenuAberto(null)} itens={menuVer} />
-        <MenuTopo label="Inserir" aberto={menuAberto === "inserir"} onAbrir={() => setMenuAberto("inserir")} onFechar={() => setMenuAberto(null)} itens={menuInserir} />
-        <MenuTopo label="Formatar" aberto={menuAberto === "formatar"} onAbrir={() => setMenuAberto("formatar")} onFechar={() => setMenuAberto(null)} itens={menuFormatar} />
-        <MenuTopo label="Ferramentas" aberto={menuAberto === "ferramentas"} onAbrir={() => setMenuAberto("ferramentas")} onFechar={() => setMenuAberto(null)} itens={menuFerramentas} />
+        <MenuTopo label={traduzir("Inserir")} aberto={menuAberto === "inserir"} onAbrir={() => setMenuAberto("inserir")} onFechar={() => setMenuAberto(null)} itens={menuInserir} />
+        <MenuTopo label={traduzir("Formatar")} aberto={menuAberto === "formatar"} onAbrir={() => setMenuAberto("formatar")} onFechar={() => setMenuAberto(null)} itens={menuFormatar} />
+        <MenuTopo label={traduzir("Ferramentas")} aberto={menuAberto === "ferramentas"} onAbrir={() => setMenuAberto("ferramentas")} onFechar={() => setMenuAberto(null)} itens={menuFerramentas} />
         <MenuTopo label={traduzir("Ajuda")} aberto={menuAberto === "ajuda"} onAbrir={() => setMenuAberto("ajuda")} onFechar={() => setMenuAberto(null)} itens={menuAjuda} />
       </div>
 
@@ -2708,12 +2708,12 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         </select>
         <span className="doc-toolbar-sep" />
         <button type="button" className="doc-toolbar-btn" style={{ fontWeight: 700 }} title="Negrito" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("bold")}>N</button>
-        <button type="button" className="doc-toolbar-btn" style={{ fontStyle: "italic" }} title="Itálico" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("italic")}>I</button>
+        <button type="button" className="doc-toolbar-btn" style={{ fontStyle: "italic" }} title={traduzir("Itálico")} onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("italic")}>I</button>
         <button type="button" className="doc-toolbar-btn" style={{ textDecoration: "underline" }} title="Sublinhado" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("underline")}>S</button>
         <SeletorCor titulo={traduzir("Cor do texto")} cores={CORES_TEXTO} onEscolher={(c) => aplicarFormatacao("foreColor", c)} rotulo="A" />
         <span className="doc-toolbar-sep" />
         <button type="button" className="doc-toolbar-btn" title={traduzir("Alinhar à esquerda")} onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("justifyLeft")}>≡◧</button>
-        <button type="button" className="doc-toolbar-btn" title="Inserir imagem" onClick={inserirImagem}><IconImage width={15} height={15} /></button>
+        <button type="button" className="doc-toolbar-btn" title={traduzir("Inserir imagem")} onClick={inserirImagem}><IconImage width={15} height={15} /></button>
         <span className="doc-toolbar-sep" />
 
         <GrupoToolbar rotulo="+ Inserir" largura={260}>
@@ -2875,7 +2875,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
           <aside className="doc-estrutura-painel">
             <div className="panel-h">
               <h4>{traduzir("Estrutura do documento")}</h4>
-              <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setEstruturaAberta(false)}><IconClose width={12} height={12} /></button>
+              <button type="button" className="modal-close-btn" aria-label={traduzir("Fechar")} onClick={() => setEstruturaAberta(false)}><IconClose width={12} height={12} /></button>
             </div>
             {estrutura.length === 0 ? (
               <p className="hint" style={{ padding: 17 }}>Use Título 1, Título 2 ou Título 3 no texto pra ver a estrutura aqui.</p>
@@ -3000,10 +3000,10 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
           <aside className="doc-lateral-painel">
             <div className="panel-h">
               <h4>Tabela</h4>
-              <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setCelulaSelecionada(null)}><IconClose width={12} height={12} /></button>
+              <button type="button" className="modal-close-btn" aria-label={traduzir("Fechar")} onClick={() => setCelulaSelecionada(null)}><IconClose width={12} height={12} /></button>
             </div>
             <div className="field">
-              <label>Linha</label>
+              <label>{traduzir("Linha")}</label>
               <div className="filters-row" style={{ margin: 0, flexWrap: "wrap" }}>
                 <button type="button" className="fchip" onClick={() => inserirLinhaTabela("acima")}>+ Acima</button>
                 <button type="button" className="fchip" onClick={() => inserirLinhaTabela("abaixo")}>+ Abaixo</button>
@@ -3026,7 +3026,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
           <aside className="doc-comentarios-painel">
             <div className="panel-h">
               <h4>Comentários</h4>
-              <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setComentariosAberto(false)}><IconClose width={12} height={12} /></button>
+              <button type="button" className="modal-close-btn" aria-label={traduzir("Fechar")} onClick={() => setComentariosAberto(false)}><IconClose width={12} height={12} /></button>
             </div>
             {doc.comentarios.length === 0 ? (
               <p className="hint" style={{ padding: 17 }}>Selecione um trecho de texto e use &quot;Inserir → Comentário&quot; pra comentar.</p>
@@ -3079,7 +3079,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                   </select>
                 </div>
                 <div className="field">
-                  <label>Fonte</label>
+                  <label>{traduzir("Fonte")}</label>
                   <SeletorFonte fontes={FONTES_DOCUMENTO} valorAtual={fonteAtual} onEscolher={(valor) => { setFonteAtual(valor); aplicarFormatacao("fontName", valor); }} />
                 </div>
                 <div className="field">
@@ -3143,7 +3143,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                   </div>
                 </div>
                 <div className="field">
-                  <label>Listas</label>
+                  <label>{traduzir("Listas")}</label>
                   <div className="filters-row" style={{ margin: 0 }}>
                     <button type="button" className="fchip" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("insertUnorderedList")}>• Marcadores</button>
                     <button type="button" className="fchip" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("insertOrderedList")}>1. Numerada</button>
@@ -3154,7 +3154,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                 </div>
                 <div className="field">
                   <button type="button" className="btn ghost block" onClick={inserirLink} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                    <IconLink width={14} height={14} /> Inserir link
+                    <IconLink width={14} height={14} /> {traduzir("Inserir link")}
                   </button>
                 </div>
                 <div className="field">
@@ -3234,14 +3234,14 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
           style={localizarPos ? { left: localizarPos.x, top: localizarPos.y, right: "auto", bottom: "auto" } : undefined}
         >
           <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setLocalizarPos)}>
-            <p className="n">Localizar e substituir</p>
-            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setLocalizarAberto(false)}><IconClose width={12} height={12} /></button>
+            <p className="n">{traduzir("Localizar e substituir")}</p>
+            <button type="button" className="modal-close-btn" aria-label={traduzir("Fechar")} onClick={() => setLocalizarAberto(false)}><IconClose width={12} height={12} /></button>
           </div>
           <div className="field" style={{ padding: "6px 0" }}>
             <input
               className="input"
               style={{ width: "100%" }}
-              placeholder="Localizar"
+              placeholder={traduzir("Localizar")}
               value={buscaTexto}
               autoFocus
               onChange={(e) => {
@@ -3290,7 +3290,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         >
           <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setContagemPos)}>
             <p className="n">{traduzir("Contagem")}</p>
-            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setContagemAberta(false)}><IconClose width={12} height={12} /></button>
+            <button type="button" className="modal-close-btn" aria-label={traduzir("Fechar")} onClick={() => setContagemAberta(false)}><IconClose width={12} height={12} /></button>
           </div>
           <div className="stat-row"><span className="sl">Palavras</span><span className="sv">{contagem.palavras}</span></div>
           <div className="stat-row"><span className="sl">{traduzir("Caracteres")}</span><span className="sv">{contagem.caracteres}</span></div>
@@ -3306,7 +3306,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         >
           <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setDetalhesPos)}>
             <p className="n">{traduzir("Detalhes do documento")}</p>
-            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setDetalhesAberto(false)}><IconClose width={12} height={12} /></button>
+            <button type="button" className="modal-close-btn" aria-label={traduzir("Fechar")} onClick={() => setDetalhesAberto(false)}><IconClose width={12} height={12} /></button>
           </div>
           <div className="stat-row"><span className="sl">{traduzir("Autor")}</span><span className="sv">{doc.autor}</span></div>
           <div className="stat-row"><span className="sl">{traduzir("Criado em")}</span><span className="sv">{formatarQuando(doc.criadoEm)}</span></div>
@@ -3323,7 +3323,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         >
           <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setAjudaPos)}>
             <p className="n">{traduzir("Central de ajuda: Documentos")}</p>
-            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setAjudaAberta(false)}><IconClose width={12} height={12} /></button>
+            <button type="button" className="modal-close-btn" aria-label={traduzir("Fechar")} onClick={() => setAjudaAberta(false)}><IconClose width={12} height={12} /></button>
           </div>
           <div className="doc-ajuda-conteudo">
             <p className="hint" style={{ marginTop: 0 }}>{traduzir("Atalhos de teclado")}</p>
@@ -3332,18 +3332,18 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             <div className="stat-row"><span className="sl">Recortar / Copiar / Colar</span><span className="sv">Ctrl+X / Ctrl+C / Ctrl+V</span></div>
             <div className="stat-row"><span className="sl">{traduzir("Colar sem formatação")}</span><span className="sv">Ctrl+Shift+V</span></div>
             <div className="stat-row"><span className="sl">Selecionar tudo</span><span className="sv">Ctrl+A</span></div>
-            <div className="stat-row"><span className="sl">Localizar / Substituir</span><span className="sv">Ctrl+F / Ctrl+H</span></div>
-            <div className="stat-row"><span className="sl">Link</span><span className="sv">Ctrl+K</span></div>
+            <div className="stat-row"><span className="sl">{traduzir("Localizar / Substituir")}</span><span className="sv">Ctrl+F / Ctrl+H</span></div>
+            <div className="stat-row"><span className="sl">{traduzir("Link")}</span><span className="sv">Ctrl+K</span></div>
             <div className="stat-row"><span className="sl">{traduzir("Comentário")}</span><span className="sv">Ctrl+Alt+M</span></div>
             <div className="stat-row"><span className="sl">{traduzir("Contagem de palavras")}</span><span className="sv">Ctrl+Shift+C</span></div>
-            <div className="stat-row"><span className="sl">Imprimir</span><span className="sv">Ctrl+P</span></div>
+            <div className="stat-row"><span className="sl">{traduzir("Imprimir")}</span><span className="sv">Ctrl+P</span></div>
             <div className="stat-row"><span className="sl">Quebra de página</span><span className="sv">Ctrl+Enter</span></div>
-            <div className="stat-row"><span className="sl">Fechar menus/janelas</span><span className="sv">Esc</span></div>
-            <p className="hint">Guia rápido</p>
+            <div className="stat-row"><span className="sl">{traduzir("Fechar menus/janelas")}</span><span className="sv">Esc</span></div>
+            <p className="hint">{traduzir("Guia rápido")}</p>
             <ul className="doc-ajuda-lista">
               <li><b>{traduzir("Arquivo")}</b>: novo documento, cópia, compartilhar, exportar (PDF/Word/TXT/RTF/HTML) e configuração da página.</li>
-              <li><b>Inserir</b> → Imagem: clique na imagem depois de inserida para redimensionar, recortar, girar e definir a quebra de texto.</li>
-              <li><b>Formatar</b> → Colunas: define 1, 2 ou 3 colunas para o documento ou para a seleção.</li>
+              <li><b>{traduzir("Inserir")}</b> → Imagem: clique na imagem depois de inserida para redimensionar, recortar, girar e definir a quebra de texto.</li>
+              <li><b>{traduzir("Formatar")}</b> → Colunas: define 1, 2 ou 3 colunas para o documento ou para a seleção.</li>
               <li><b>Ver</b> → alterna régua, caracteres não imprimíveis, modo paginado/contínuo e zoom.</li>
               <li>A auto-paginação move o texto para a página seguinte automaticamente conforme você digita.</li>
             </ul>
@@ -3356,7 +3356,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
           <div className="modal" style={{ width: "min(480px, 100%)" }} onClick={(e) => e.stopPropagation()}>
             <div className="panel-h">
               <h4>{cabecalhoRodapeAberto === "cabecalho" ? "Cabeçalho" : "Rodapé"}</h4>
-              <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setCabecalhoRodapeAberto(null)}><IconClose width={12} height={12} /></button>
+              <button type="button" className="modal-close-btn" aria-label={traduzir("Fechar")} onClick={() => setCabecalhoRodapeAberto(null)}><IconClose width={12} height={12} /></button>
             </div>
             <div style={{ padding: 20 }}>
               <p className="hint" style={{ marginTop: 0 }}>
@@ -3380,7 +3380,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                     document.execCommand("insertText", false, "{{PAGINA}}");
                   }}
                 >
-                  Inserir número da página
+                  {traduzir("Inserir número da página")}
                 </button>
                 <button
                   type="button"
@@ -3390,7 +3390,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                     document.execCommand("insertText", false, "{{TOTAL}}");
                   }}
                 >
-                  Inserir total de páginas
+                  {traduzir("Inserir total de páginas")}
                 </button>
               </div>
             </div>
@@ -3428,7 +3428,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
           <div className="modal" style={{ width: "min(420px, 100%)" }} onClick={(e) => e.stopPropagation()}>
             <div className="panel-h">
               <h4>Salvar como modelo</h4>
-              <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setSalvarModeloAberto(false)}><IconClose width={12} height={12} /></button>
+              <button type="button" className="modal-close-btn" aria-label={traduzir("Fechar")} onClick={() => setSalvarModeloAberto(false)}><IconClose width={12} height={12} /></button>
             </div>
             <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 12 }}>
               <div className="field">
@@ -3482,7 +3482,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         >
           <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setConfigPaginaPos)}>
             <p className="n">{traduzir("Configuração da página")}</p>
-            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setConfigPaginaAberto(false)}><IconClose width={12} height={12} /></button>
+            <button type="button" className="modal-close-btn" aria-label={traduzir("Fechar")} onClick={() => setConfigPaginaAberto(false)}><IconClose width={12} height={12} /></button>
           </div>
           <div className="field">
             <label>Tamanho do papel</label>
@@ -3512,7 +3512,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                 />
               </label>
               <label className="doc-margem-campo">
-                <span>Inferior</span>
+                <span>{traduzir("Inferior")}</span>
                 <input
                   type="number"
                   className="input"
@@ -3564,7 +3564,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         >
           <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setCompartilharPos)}>
             <p className="n">Compartilhar &quot;{doc.titulo}&quot;</p>
-            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setCompartilharAberto(false)}><IconClose width={12} height={12} /></button>
+            <button type="button" className="modal-close-btn" aria-label={traduzir("Fechar")} onClick={() => setCompartilharAberto(false)}><IconClose width={12} height={12} /></button>
           </div>
           <div className="field" style={{ display: "flex", gap: 8 }}>
             <input
@@ -3649,8 +3649,8 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
           style={historicoPos ? { left: historicoPos.x, top: historicoPos.y, right: "auto", bottom: "auto" } : undefined}
         >
           <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setHistoricoPos)}>
-            <p className="n">Histórico de versões</p>
-            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setHistoricoAberto(false)}><IconClose width={12} height={12} /></button>
+            <p className="n">{traduzir("Histórico de versões")}</p>
+            <button type="button" className="modal-close-btn" aria-label={traduzir("Fechar")} onClick={() => setHistoricoAberto(false)}><IconClose width={12} height={12} /></button>
           </div>
           <button
             type="button"
@@ -3694,7 +3694,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         >
           <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setColunasPos)}>
             <p className="n">{traduzir("Colunas")}</p>
-            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setColunasAberto(false)}><IconClose width={12} height={12} /></button>
+            <button type="button" className="modal-close-btn" aria-label={traduzir("Fechar")} onClick={() => setColunasAberto(false)}><IconClose width={12} height={12} /></button>
           </div>
           <div className="field">
             <label>Quantidade de colunas</label>
@@ -3726,7 +3726,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
               checked={!!doc.config.colunasLinha}
               onChange={(e) => atualizarConfigPagina(id, { colunasLinha: e.target.checked })}
             />
-            Linha divisória entre colunas
+            {traduzir("Linha divisória entre colunas")}
           </label>
           <p className="hint" style={{ marginTop: 10 }}>
             Aplica ao documento inteiro (todas as páginas). Colunas de verdade via CSS. Sem tabela.
@@ -3745,7 +3745,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         >
           <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setExportarPdfPos)}>
             <p className="n">{traduzir("Baixar como PDF")}</p>
-            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setExportarPdfAberto(false)}><IconClose width={12} height={12} /></button>
+            <button type="button" className="modal-close-btn" aria-label={traduzir("Fechar")} onClick={() => setExportarPdfAberto(false)}><IconClose width={12} height={12} /></button>
           </div>
           <p className="hint" style={{ marginBottom: 10 }}>
             {doc.titulo} · {paginasLocais.length} página(s) · {doc.config.tamanho} {doc.config.orientacao}
@@ -4063,7 +4063,7 @@ function PainelImagem({
     <aside className="doc-lateral-painel doc-img-painel">
       <div className="panel-h">
         <h4 style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>Imagem{bloqueada ? <IconCadeado width={13} height={13} /> : null}</h4>
-        <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={onFechar}><IconClose width={12} height={12} /></button>
+        <button type="button" className="modal-close-btn" aria-label={traduzir("Fechar")} onClick={onFechar}><IconClose width={12} height={12} /></button>
       </div>
 
       <div className="field">
@@ -4120,7 +4120,7 @@ function PainelImagem({
       ) : null}
 
       <div className="field">
-        <label>Girar / espelhar</label>
+        <label>{traduzir("Girar / espelhar")}</label>
         <div className="filters-row" style={{ margin: 0 }}>
           <button type="button" className="fchip" onClick={() => girar(-90)}>↺ Girar esquerda</button>
           <button type="button" className="fchip" onClick={() => girar(90)}>↻ Girar direita</button>
@@ -4295,7 +4295,7 @@ function PainelImagem({
             });
           }}
         >
-          Legenda
+          {traduzir("Legenda")}
         </button>
       </div>
 
@@ -4537,7 +4537,7 @@ function MenuContextoTexto({
       <div className="doc-context-menu-sep" />
       <button type="button" style={{ fontWeight: 700 }} onMouseDown={(e) => e.preventDefault()} onClick={onNegrito}>N Negrito</button>
       <button type="button" style={{ fontStyle: "italic" }} onMouseDown={(e) => e.preventDefault()} onClick={onItalico}>I Itálico</button>
-      <button type="button" onClick={onLink} style={{ display: "flex", alignItems: "center", gap: 6 }}><IconLink width={13} height={13} /> Link</button>
+      <button type="button" onClick={onLink} style={{ display: "flex", alignItems: "center", gap: 6 }}><IconLink width={13} height={13} /> {traduzir("Link")}</button>
       <div className="doc-context-menu-linha">
         {CORES_MENU_TEXTO.map((c) => (
           <button
@@ -4653,7 +4653,7 @@ function SeletorFonte({
         ref={btnRef}
         className="doc-toolbar-select doc-toolbar-fonte-btn"
         style={{ fontFamily: atual.valor }}
-        title="Fonte"
+        title={traduzir("Fonte")}
         onClick={() => {
           if (btnRef.current) setRect(btnRef.current.getBoundingClientRect());
           setAberto((v) => !v);

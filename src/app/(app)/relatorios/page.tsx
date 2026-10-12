@@ -92,7 +92,7 @@ function RelatoriosPageInner() {
                     {traduzir("Configurar")}
                   </button>
                   <button type="button" className="btn primary" onClick={() => abrirWizard(t.tipo)}>
-                    Gerar
+                    {traduzir("Gerar")}
                   </button>
                 </div>
                 {recentes.length > 0 ? (
@@ -128,7 +128,7 @@ function RelatoriosPageInner() {
                   <th>{traduzir("Autor")}</th>
                   <th>{traduzir("Data")}</th>
                   <th>Páginas</th>
-                  <th>Formato</th>
+                  <th>{traduzir("Formato")}</th>
                   <th></th>
                 </tr>
               </thead>
@@ -145,7 +145,7 @@ function RelatoriosPageInner() {
                     <td>{r.formato}</td>
                     <td style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                       <button type="button" className="link" onClick={() => duplicarConfiguracao(r)}>
-                        Gerar com dados atualizados
+                        {traduzir("Gerar com dados atualizados")}
                       </button>
                       <button type="button" className="link" onClick={() => duplicarConfiguracao(r)}>
                         {traduzir("Duplicar configuração")}

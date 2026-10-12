@@ -339,7 +339,7 @@ export function PlanoSecao() {
               </div>
               <div className="field">
                 <label>Nome impresso no cartão</label>
-                <input className="input" style={{ width: "100%" }} placeholder="Ex.: ANA P FERREIRA" value={nomeCartao} onChange={(e) => setNomeCartao(e.target.value)} required />
+                <input className="input" style={{ width: "100%" }} placeholder={traduzir("Ex.: ANA P FERREIRA")} value={nomeCartao} onChange={(e) => setNomeCartao(e.target.value)} required />
               </div>
               <div style={{ display: "flex", gap: 14, padding: "0 17px 14px" }}>
                 <div className="field" style={{ padding: 0, flex: 1 }}>
@@ -390,7 +390,7 @@ export function PlanoSecao() {
       ) : null}
 
       <div className="config-bloco">
-        <p className="config-bloco-titulo">Histórico</p>
+        <p className="config-bloco-titulo">{traduzir("Histórico")}</p>
         <div className="config-tabela-scroll">
           <table className="config-tabela-notif">
             <thead>
@@ -398,7 +398,7 @@ export function PlanoSecao() {
                 <th>Vencimento</th>
                 <th>Valor</th>
                 <th>Status</th>
-                <th>Fatura</th>
+                <th>{traduzir("Fatura")}</th>
               </tr>
             </thead>
             <tbody>

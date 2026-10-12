@@ -378,7 +378,7 @@ export default function InstagramConversasPage() {
                 {atual.username ? <span>@{atual.username.replace(/^@/, "")}</span> : null}
               </header>
 
-              <h4>Informações do perfil</h4>
+              <h4>{traduzir("Informações do perfil")}</h4>
               <div className="ig-perfil-numeros">
                 <div>
                   <strong>{numero(atual.perfil?.seguidores ?? null)}</strong>

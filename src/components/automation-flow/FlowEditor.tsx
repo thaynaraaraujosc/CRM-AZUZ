@@ -1180,9 +1180,9 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
               {/* O cartão do gatilho vazio: o canvas em branco de uma automação nova precisa dizer
                   o que fazer primeiro, senão a tela é uma parede. */}
               <div className="no-gatilho-vazio">
-                <span className="no-gatilho-vazio-selo">Gatilho</span>
+                <span className="no-gatilho-vazio-selo">{traduzir("Gatilho")}</span>
                 <div className="no-gatilho-vazio-corpo">
-                  <h4>Gatilho para acionar a automação</h4>
+                  <h4>{traduzir("Gatilho para acionar a automação")}</h4>
                   <button type="button" className="no-gatilho-vazio-btn" onClick={() => setLibAberta(true)}>
                     {traduzir("Adicionar gatilho +")}
                   </button>
@@ -1232,7 +1232,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                   <button
                     type="button"
                     className="modal-close-btn"
-                    aria-label="Fechar"
+                    aria-label={traduzir("Fechar")}
                     onClick={() => setEscolherGatilhoAberto(false)}
                   >
                     <IconClose width={13} height={13} />

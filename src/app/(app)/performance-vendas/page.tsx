@@ -177,7 +177,7 @@ function PerformanceVendasPageInner() {
             <div className="panel-h">
               <h4>{pessoaAberta}</h4>
               <button type="button" className="link" onClick={() => setPessoaAberta(null)}>
-                Fechar <IconClose width={11} height={11} />
+                {traduzir("Fechar")} <IconClose width={11} height={11} />
               </button>
             </div>
             <div style={{ padding: 17 }}>

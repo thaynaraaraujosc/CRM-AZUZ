@@ -36,16 +36,16 @@ export function MensagemLocalizacaoForm({ data, onChange }: { data: MensagemLoca
       <div className="field">
         <label>Origem da localização</label>
         <select className="input" value={data.origem} onChange={(e) => onChange({ ...data, origem: e.target.value as OrigemLocalizacao })}>
-          <option value="salva">Localização salva</option>
-          <option value="workspace">Localização do workspace</option>
-          <option value="endereco">Informar endereço</option>
+          <option value="salva">{traduzir("Localização salva")}</option>
+          <option value="workspace">{traduzir("Localização do workspace")}</option>
+          <option value="endereco">{traduzir("Informar endereço")}</option>
           <option value="coordenadas">{traduzir("Coordenadas")}</option>
         </select>
       </div>
 
       {data.origem === "salva" ? (
         <div className="field">
-          <label>Localização salva</label>
+          <label>{traduzir("Localização salva")}</label>
           <select className="input" value={data.localSalvoId ?? ""} onChange={(e) => onChange({ ...data, localSalvoId: e.target.value })}>
             <option value="">{traduzir("Selecione…")}</option>
             {LOCALIZACOES_SALVAS.map((l) => (
@@ -103,11 +103,11 @@ export function MensagemLocalizacaoForm({ data, onChange }: { data: MensagemLoca
       {data.origem === "coordenadas" ? (
         <div className="field" style={{ display: "flex", gap: 8 }}>
           <div style={{ flex: 1 }}>
-            <label>Latitude</label>
+            <label>{traduzir("Latitude")}</label>
             <input className="input" style={{ width: "100%" }} value={data.latitude ?? ""} onChange={(e) => onChange({ ...data, latitude: e.target.value })} />
           </div>
           <div style={{ flex: 1 }}>
-            <label>Longitude</label>
+            <label>{traduzir("Longitude")}</label>
             <input className="input" style={{ width: "100%" }} value={data.longitude ?? ""} onChange={(e) => onChange({ ...data, longitude: e.target.value })} />
           </div>
         </div>

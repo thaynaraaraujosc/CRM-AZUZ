@@ -31,6 +31,7 @@ export function Drawer({
   rodape?: ReactNode;
   children: ReactNode;
 }) {
+  const { t: traduzir } = useIdioma();
   useEffect(() => {
     if (!aberto) return;
     function onKeyDown(e: KeyboardEvent) {
@@ -56,7 +57,7 @@ export function Drawer({
             <h4>{titulo}</h4>
             {subtitulo ? <p className="hint" style={{ marginTop: 2 }}>{subtitulo}</p> : null}
           </div>
-          <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={onFechar}>
+          <button type="button" className="modal-close-btn" aria-label={traduzir("Fechar")} onClick={onFechar}>
             <IconClose width={14} height={14} />
           </button>
         </div>
@@ -94,6 +95,7 @@ export function Modal({
   rodape?: ReactNode;
   children: ReactNode;
 }) {
+  const { t: traduzir } = useIdioma();
   const larguraFinal = largura ?? TAMANHOS_MODAL[tamanho];
   useEffect(() => {
     if (!aberto) return;
@@ -117,7 +119,7 @@ export function Modal({
       >
         <div className="panel-h">
           <h4>{titulo}</h4>
-          <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={onFechar}>
+          <button type="button" className="modal-close-btn" aria-label={traduzir("Fechar")} onClick={onFechar}>
             <IconClose width={14} height={14} />
           </button>
         </div>

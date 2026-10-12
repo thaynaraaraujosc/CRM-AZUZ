@@ -83,7 +83,7 @@ export default function AmostraPage() {
         <section className="amostra-secao">
           <h3>{traduzir("Campos")}</h3>
           <p className="amostra-nota">
-            Fundo branco, borda perceptível em repouso. O azul aparece só no foco.
+            {traduzir("Fundo branco, borda perceptível em repouso. O azul aparece só no foco.")}
           </p>
           <div className="amostra-grid-2">
             <div className="field">

@@ -119,7 +119,7 @@ export default function DisparosPage() {
                             <button
                               type="button"
                               className="disp-menu-fundo"
-                              aria-label="Fechar menu"
+                              aria-label={traduzir("Fechar menu")}
                               onClick={() => setMenuAberto(null)}
                             />
                             <div className="disp-menu" role="menu">

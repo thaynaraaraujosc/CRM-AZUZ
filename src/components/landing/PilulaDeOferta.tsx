@@ -50,7 +50,7 @@ export function PilulaDeOferta({ preco }: { preco: string }) {
       <button
         type="button"
         className="lp-oferta-fechar"
-        aria-label="Fechar oferta"
+        aria-label={traduzir("Fechar oferta")}
         tabIndex={visivel ? 0 : -1}
         onClick={() => setFechada(true)}
       >

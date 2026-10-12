@@ -684,7 +684,7 @@ function JornadaClientePageInner() {
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <span className={CLASSE_ESTADO[estado]}>{estado}</span>
                   <button type="button" className="close" style={{ cursor: "pointer" }} onClick={fecharPainel}>
-                    Fechar <IconClose width={11} height={11} />
+                    {traduzir("Fechar")} <IconClose width={11} height={11} />
                   </button>
                 </div>
               </div>

@@ -174,13 +174,13 @@ export default function AutomacoesSociaisPage() {
 
             <select className="input" value={status} onChange={(e) => setStatus(e.target.value as FiltroStatus)}>
               <option value="todos">Status: todos</option>
-              <option value="ativo">Ligadas</option>
+              <option value="ativo">{traduzir("Ligadas")}</option>
               <option value="inativo">Pausadas</option>
               <option value="rascunho">Rascunhos</option>
             </select>
 
             <select className="input" value={gatilho} onChange={(e) => setGatilho(e.target.value)}>
-              <option value="todos">Gatilho: todos</option>
+              <option value="todos">{traduzir("Gatilho: todos")}</option>
               {GATILHOS_SOCIAIS.map((g) => (
                 <option key={g.tipo} value={g.tipo}>
                   {g.label}
@@ -290,7 +290,7 @@ export default function AutomacoesSociaisPage() {
                 <thead>
                   <tr>
                     <th>{traduzir("Automação")}</th>
-                    <th>Gatilho</th>
+                    <th>{traduzir("Gatilho")}</th>
                     <th>{traduzir("Criado")}</th>
                     <th>Última publicação</th>
                     <th>Execuções</th>

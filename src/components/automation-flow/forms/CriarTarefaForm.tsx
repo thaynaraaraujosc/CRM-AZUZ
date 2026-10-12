@@ -108,7 +108,7 @@ export function CriarTarefaForm({ data, onChange }: { data: CriarTarefaData; onC
           value={data.modoPrazo ?? "depois_de"}
           onChange={(e) => onChange({ ...data, modoPrazo: e.target.value as ModoPrazoTarefa })}
         >
-          <option value="imediatamente">Imediatamente</option>
+          <option value="imediatamente">{traduzir("Imediatamente")}</option>
           <option value="depois_de">{traduzir("Depois de…")}</option>
           <option value="data_especifica">{traduzir("Data e horário específicos")}</option>
         </select>
@@ -133,7 +133,7 @@ export function CriarTarefaForm({ data, onChange }: { data: CriarTarefaData; onC
               onChange={(e) => onChange({ ...data, prazoUnidade: e.target.value })}
             >
               <option value="minutos">Minutos</option>
-              <option value="horas">Horas</option>
+              <option value="horas">{traduzir("Horas")}</option>
               <option value="dias">{traduzir("Dias")}</option>
             </select>
           </div>

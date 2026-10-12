@@ -108,7 +108,7 @@ export default function NovaAutomacaoComercialPage() {
 
   return (
     <>
-      <Topbar title="Nova automação" sub="Funil comercial, pelo WhatsApp" />
+      <Topbar title="Nova automação" sub={traduzir("Funil comercial, pelo WhatsApp")} />
       <AbasAutomacoes />
 
       <div className="content">

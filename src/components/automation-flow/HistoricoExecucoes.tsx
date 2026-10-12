@@ -80,11 +80,11 @@ export function HistoricoExecucoes({ fluxoId, onFechar }: { fluxoId: string; onF
   }, [fluxoId]);
 
   return (
-    <div className="flow-side-overlay" role="dialog" aria-label="Histórico de execuções" onClick={onFechar}>
+    <div className="flow-side-overlay" role="dialog" aria-label={traduzir("Histórico de execuções")} onClick={onFechar}>
       <div className="flow-side-panel" onClick={(e) => e.stopPropagation()}>
         <div className="panel-h">
-          <h4>Histórico de execuções</h4>
-          <button type="button" className="icon-btn subtle" aria-label="Fechar histórico" onClick={onFechar}>
+          <h4>{traduzir("Histórico de execuções")}</h4>
+          <button type="button" className="icon-btn subtle" aria-label={traduzir("Fechar histórico")} onClick={onFechar}>
             <IconClose width={13} height={13} />
           </button>
         </div>

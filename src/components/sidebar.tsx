@@ -401,7 +401,7 @@ export function Sidebar() {
                   <IconRelatorios />
                   {!recolhida ? (
                     <>
-                      Inteligência comercial
+                      {traduzir("Inteligência comercial")}
                       <span className="r" style={{ marginLeft: "auto" }}>▸</span>
                     </>
                   ) : null}

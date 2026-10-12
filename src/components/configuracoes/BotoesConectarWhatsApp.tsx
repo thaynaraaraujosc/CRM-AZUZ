@@ -48,7 +48,7 @@ export function BotoesConectarWhatsApp() {
               <button
                 type="button"
                 className="modal-close-btn"
-                aria-label="Fechar"
+                aria-label={traduzir("Fechar")}
                 onClick={() => setAberto(null)}
               >
                 ×

@@ -52,7 +52,7 @@ export function ConfiguracoesGeraisForm({
         />
       </div>
       <div className="field">
-        <label>Funil relacionado</label>
+        <label>{traduzir("Funil relacionado")}</label>
         <select className="input" value={fluxo.funilId ?? ""} onChange={(e) => onChange({ funilId: e.target.value || undefined, etapaId: undefined })}>
           <option value="">Nenhum específico</option>
           {funis.map((f) => (
@@ -108,7 +108,7 @@ export function ConfiguracoesGeraisForm({
       </div>
       {cfg.usarHorario ? (
         <div className="field">
-          <label>Janela de horário</label>
+          <label>{traduzir("Janela de horário")}</label>
           <div style={{ display: "flex", gap: 6 }}>
             <input
               className="input"
@@ -128,7 +128,7 @@ export function ConfiguracoesGeraisForm({
         </div>
       ) : null}
       <div className="field">
-        <label>Fuso horário</label>
+        <label>{traduzir("Fuso horário")}</label>
         <input
           className="input"
           placeholder="America/Sao_Paulo"
@@ -175,7 +175,7 @@ export function ConfiguracoesGeraisForm({
       </div>
 
       <div className="field">
-        <label>Limite de execução</label>
+        <label>{traduzir("Limite de execução")}</label>
         <select
           className="input"
           value={cfg.limiteExecucao ?? "sempre"}

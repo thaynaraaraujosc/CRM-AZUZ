@@ -60,7 +60,7 @@ export default function EquipePage() {
                 <tr>
                   <th>Nome</th>
                   <th>Papel</th>
-                  <th>Leads atribuídos</th>
+                  <th>{traduzir("Leads atribuídos")}</th>
                   <th>O que enxerga</th>
                   <th>{traduzir("Ativo")}</th>
                 </tr>
@@ -199,7 +199,7 @@ export default function EquipePage() {
                 style={{ cursor: "pointer" }}
                 onClick={() => setSelecionado(null)}
               >
-                Fechar <IconClose width={11} height={11} />
+                {traduzir("Fechar")} <IconClose width={11} height={11} />
               </span>
             </div>
 
@@ -335,7 +335,7 @@ export default function EquipePage() {
                         Copiar
                       </button>
                       <button type="button" className="btn ghost" onClick={() => setSenhaGerada(null)}>
-                        Fechar
+                        {traduzir("Fechar")}
                       </button>
                     </div>
                   ) : (
@@ -378,7 +378,7 @@ export default function EquipePage() {
 
               <div>
                 <div className="panel-h">
-                  <h4>Leads atribuídos</h4>
+                  <h4>{traduzir("Leads atribuídos")}</h4>
                 </div>
                 {leadsDoMembro.length === 0 ? (
                   <p className="hint">Nenhum lead atribuído no momento.</p>

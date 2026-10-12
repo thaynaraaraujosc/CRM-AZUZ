@@ -126,7 +126,7 @@ export function EnviarTemplateWhatsApp({
     <Modal
       aberto
       onFechar={aoFechar}
-      titulo="Iniciar conversa com um modelo"
+      titulo={traduzir("Iniciar conversa com um modelo")}
       tamanho="lg"
       rodape={
         <>

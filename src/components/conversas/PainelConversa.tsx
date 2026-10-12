@@ -318,7 +318,7 @@ export function PainelConversa({
             >
               <IconConfiguracoes width={15} height={15} />
             </button>
-            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={aoFechar}>
+            <button type="button" className="modal-close-btn" aria-label={traduzir("Fechar")} onClick={aoFechar}>
               <IconClose width={13} height={13} />
             </button>
           </div>
@@ -394,7 +394,7 @@ export function PainelConversa({
                 <span className="wa-anexo-icone wa-anexo-icone-imagem">
                   <IconImage width={17} height={17} />
                 </span>
-                <span className="wa-anexo-label">Foto ou vídeo</span>
+                <span className="wa-anexo-label">{traduzir("Foto ou vídeo")}</span>
               </button>
               <button type="button" className="wa-anexo-item" onClick={() => arquivoDocumentoRef.current?.click()}>
                 <span className="wa-anexo-icone wa-anexo-icone-documento">

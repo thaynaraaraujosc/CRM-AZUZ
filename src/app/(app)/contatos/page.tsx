@@ -331,7 +331,7 @@ function ContatosPageInner() {
                 style={{ cursor: "pointer" }}
                 onClick={() => setNovoContatoAberto(false)}
               >
-                Fechar <IconClose width={11} height={11} />
+                {traduzir("Fechar")} <IconClose width={11} height={11} />
               </span>
             </div>
             <div className="field">
@@ -548,7 +548,7 @@ function ContatosPageInner() {
                   setConfirmandoExclusao(false);
                 }}
               >
-                Fechar <IconClose width={11} height={11} />
+                {traduzir("Fechar")} <IconClose width={11} height={11} />
               </span>
             </div>
 

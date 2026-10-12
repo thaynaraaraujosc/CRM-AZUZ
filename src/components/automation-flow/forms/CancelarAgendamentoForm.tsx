@@ -116,7 +116,7 @@ export function CancelarAgendamentoForm({ data, onChange }: { data: CancelarAgen
           <div className="field">
             <label>Quando enviar</label>
             <select className="input" value={data.quandoModo ?? "imediato"} onChange={(e) => onChange({ ...data, quandoModo: e.target.value as "imediato" | "apos_tempo" })}>
-              <option value="imediato">Imediatamente após o cancelamento</option>
+              <option value="imediato">{traduzir("Imediatamente após o cancelamento")}</option>
               <option value="apos_tempo">{traduzir("Após determinado tempo")}</option>
             </select>
           </div>
@@ -132,7 +132,7 @@ export function CancelarAgendamentoForm({ data, onChange }: { data: CancelarAgen
               />
               <select className="input" style={{ flex: 1 }} value={data.tempoUnidade ?? "minutos"} onChange={(e) => onChange({ ...data, tempoUnidade: e.target.value })}>
                 <option value="minutos">Minutos</option>
-                <option value="horas">Horas</option>
+                <option value="horas">{traduzir("Horas")}</option>
                 <option value="dias">{traduzir("Dias")}</option>
               </select>
             </div>

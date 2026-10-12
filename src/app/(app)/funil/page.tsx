@@ -726,7 +726,7 @@ function FunilPageInner() {
                 style={{ cursor: "pointer" }}
                 onClick={() => setNovaEtapaAberta(false)}
               >
-                Fechar <IconClose width={11} height={11} />
+                {traduzir("Fechar")} <IconClose width={11} height={11} />
               </span>
             </div>
             <div className="field">
@@ -771,7 +771,7 @@ function FunilPageInner() {
                 style={{ cursor: "pointer" }}
                 onClick={() => setNovoFunilAberto(false)}
               >
-                Fechar <IconClose width={11} height={11} />
+                {traduzir("Fechar")} <IconClose width={11} height={11} />
               </span>
             </div>
             <div className="field">
@@ -819,7 +819,7 @@ function FunilPageInner() {
                 style={{ cursor: "pointer" }}
                 onClick={() => setNovoNegocioAberto(false)}
               >
-                Fechar <IconClose width={11} height={11} />
+                {traduzir("Fechar")} <IconClose width={11} height={11} />
               </span>
             </div>
             <div className="field">

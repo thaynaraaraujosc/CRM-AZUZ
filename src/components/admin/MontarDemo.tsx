@@ -82,7 +82,7 @@ export function MontarDemo() {
         </div>
         <div className="config-acoes">
           <button type="button" className="btn ghost" onClick={() => setPronto(null)}>
-            Fechar
+            {traduzir("Fechar")}
           </button>
         </div>
       </div>
@@ -129,7 +129,7 @@ export function MontarDemo() {
       </div>
 
       <div className="field">
-        <label htmlFor="demo-confirmar">Escreva MONTAR para confirmar</label>
+        <label htmlFor="demo-confirmar">{traduzir("Escreva MONTAR para confirmar")}</label>
         <input
           id="demo-confirmar"
           className="input"

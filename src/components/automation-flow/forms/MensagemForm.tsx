@@ -91,8 +91,8 @@ export function MensagemForm({
             value={String(d.formularioOrigem ?? "interno")}
             onChange={(e) => set({ formularioOrigem: e.target.value })}
           >
-            <option value="interno">Formulário interno do CRM</option>
-            <option value="externo">Link externo</option>
+            <option value="interno">{traduzir("Formulário interno do CRM")}</option>
+            <option value="externo">{traduzir("Link externo")}</option>
           </select>
           {d.formularioOrigem === "externo" ? (
             <input
@@ -115,7 +115,7 @@ export function MensagemForm({
           <label>Modelo aprovado</label>
           <input
             className="input"
-            placeholder="ID do modelo no WhatsApp Business"
+            placeholder={traduzir("ID do modelo no WhatsApp Business")}
             value={String(d.templateId ?? "")}
             onChange={(e) => set({ templateId: e.target.value })}
           />

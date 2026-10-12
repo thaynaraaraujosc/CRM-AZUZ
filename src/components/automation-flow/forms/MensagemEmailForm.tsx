@@ -102,7 +102,7 @@ export function MensagemEmailForm({ data, onChange }: { data: MensagemEmailData;
       <div className="field">
         <label>Quando enviar</label>
         <select className="input" value={data.quandoModo ?? "imediato"} onChange={(e) => onChange({ ...data, quandoModo: e.target.value as "imediato" | "apos_tempo" })}>
-          <option value="imediato">Imediatamente</option>
+          <option value="imediato">{traduzir("Imediatamente")}</option>
           <option value="apos_tempo">{traduzir("Após determinado tempo")}</option>
         </select>
       </div>
@@ -119,7 +119,7 @@ export function MensagemEmailForm({ data, onChange }: { data: MensagemEmailData;
           />
           <select className="input" style={{ flex: 1 }} value={data.tempoUnidade ?? "horas"} onChange={(e) => onChange({ ...data, tempoUnidade: e.target.value })}>
             <option value="minutos">Minutos</option>
-            <option value="horas">Horas</option>
+            <option value="horas">{traduzir("Horas")}</option>
             <option value="dias">{traduzir("Dias")}</option>
           </select>
         </div>

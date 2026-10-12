@@ -19,7 +19,7 @@ export function ConcluidosHoje() {
       acaoTopo={
         concluidos.length > 0 ? (
           <button type="button" className="btn ghost" onClick={limparConcluidos}>
-            Limpar lista
+            {traduzir("Limpar lista")}
           </button>
         ) : undefined
       }

@@ -114,7 +114,7 @@ export function EncaminharHumanoForm({ data, onChange }: { data: EncaminharHuman
       <div className="field">
         <label>Quando executar</label>
         <select className="input" value={data.quandoModo ?? "imediato"} onChange={(e) => onChange({ ...data, quandoModo: e.target.value as "imediato" | "apos_tempo" })}>
-          <option value="imediato">Imediatamente</option>
+          <option value="imediato">{traduzir("Imediatamente")}</option>
           <option value="apos_tempo">{traduzir("Após determinado tempo")}</option>
         </select>
       </div>
@@ -131,7 +131,7 @@ export function EncaminharHumanoForm({ data, onChange }: { data: EncaminharHuman
           />
           <select className="input" style={{ flex: 1 }} value={data.tempoUnidade ?? "minutos"} onChange={(e) => onChange({ ...data, tempoUnidade: e.target.value })}>
             <option value="minutos">Minutos</option>
-            <option value="horas">Horas</option>
+            <option value="horas">{traduzir("Horas")}</option>
             <option value="dias">{traduzir("Dias")}</option>
           </select>
         </div>

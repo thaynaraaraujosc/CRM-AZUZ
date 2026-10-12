@@ -67,7 +67,7 @@ export function AdiarMenu({ onAdiar }: { onAdiar: (periodo: PeriodoAdiamento, da
                 <SeletorDeData valor={data} onChange={setData} />
               </div>
               <div className="field">
-                <label>Horário</label>
+                <label>{traduzir("Horário")}</label>
                 <input className="input" type="time" value={hora} onChange={(e) => setHora(e.target.value)} />
               </div>
               <button

@@ -103,6 +103,7 @@ function CampoAssinatura({
   valor?: string;
   onMudarValor?: (valor: string) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const desenhandoRef = useRef(false);
 
@@ -165,7 +166,7 @@ function CampoAssinatura({
       )}
       {interativo ? (
         <button type="button" className="link" style={{ marginTop: 4 }} onClick={limpar}>
-          Limpar assinatura
+          {traduzir("Limpar assinatura")}
         </button>
       ) : null}
     </div>

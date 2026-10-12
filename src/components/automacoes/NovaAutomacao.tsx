@@ -91,7 +91,7 @@ export function NovaAutomacao({
       <div className="nova-auto">
         <div className="nova-auto-topo">
           <strong>Nova automação</strong>
-          <button type="button" className="icon-btn subtle" aria-label="Fechar" onClick={onCancelar}>
+          <button type="button" className="icon-btn subtle" aria-label={traduzir("Fechar")} onClick={onCancelar}>
             <IconClose width={13} height={13} />
           </button>
         </div>

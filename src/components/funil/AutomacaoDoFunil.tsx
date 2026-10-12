@@ -457,7 +457,7 @@ export function AutomacaoDoFunil({
 
       <div className="fauto-corpo">
         <aside className="fauto-lado">
-          <h4>Fontes de lead</h4>
+          <h4>{traduzir("Fontes de lead")}</h4>
           {canais.length ? (
             canais.map((c) => (
               <div key={c.canal} className="fauto-fonte">
@@ -540,7 +540,7 @@ export function AutomacaoDoFunil({
                               onClick={() => void abrirFluxograma(gatilho.fluxoId!, gatilho.etapaId)}
                               title={traduzir("Abrir o fluxograma deste robô")}
                             >
-                              Gerenciar
+                              {traduzir("Gerenciar")}
                             </button>
                           ) : null}
                           <button
@@ -698,7 +698,7 @@ export function AutomacaoDoFunil({
                     disabled={salvando}
                     onClick={() => void salvar(true)}
                   >
-                    Gerenciar
+                    {traduzir("Gerenciar")}
                   </button>
                 ) : null}
                 <p className="hint mt8">

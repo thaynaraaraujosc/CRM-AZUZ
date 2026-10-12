@@ -51,7 +51,7 @@ export function Recomendacoes({
                 {traduzir("Criar tarefa")}
               </button>
               <button type="button" className="btn ghost" onClick={() => ignorarRecomendacao(r.id)}>
-                Ignorar por hoje
+                {traduzir("Ignorar por hoje")}
               </button>
             </div>
           </div>

@@ -106,7 +106,7 @@ export function VisualizarFluxo({ fluxo, onFechar }: { fluxo: FluxoAutomacao; on
             <h4>{fluxo.nome}</h4>
             {fluxo.descricao ? <p className="r" style={{ marginTop: 2 }}>{fluxo.descricao}</p> : null}
           </div>
-          <button type="button" className="icon-btn subtle" aria-label="Fechar pré-visualização" onClick={onFechar}>
+          <button type="button" className="icon-btn subtle" aria-label={traduzir("Fechar pré-visualização")} onClick={onFechar}>
             <IconClose width={13} height={13} />
           </button>
         </div>
@@ -115,7 +115,7 @@ export function VisualizarFluxo({ fluxo, onFechar }: { fluxo: FluxoAutomacao; on
           {fluxo.objetivo ? <p className="r">{fluxo.objetivo}</p> : null}
           {funcionalidades.length > 0 ? (
             <div className="flow-preview-tags">
-              <span className="hint" style={{ marginRight: 4 }}>Funcionalidades demonstradas:</span>
+              <span className="hint" style={{ marginRight: 4 }}>{traduzir("Funcionalidades demonstradas:")}</span>
               {funcionalidades.map((f) => (
                 <span key={f} className="pill secondary">
                   {f}

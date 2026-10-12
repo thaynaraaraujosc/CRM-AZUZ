@@ -438,7 +438,7 @@ export function FormularioPublico({
     return (
       <div className="form-public-page">
         <div className="form-public-card" style={{ background: "#ffffff" }}>
-          <h2>Formulário não encontrado</h2>
+          <h2>{traduzir("Formulário não encontrado")}</h2>
           <p className="hint">O link pode estar incompleto ou o formulário pode ter sido removido. Peça um link novo pra quem te enviou.</p>
         </div>
       </div>
@@ -449,7 +449,7 @@ export function FormularioPublico({
     return (
       <div className="form-public-page">
         <div className="form-public-card" style={{ background: "#ffffff" }}>
-          <h2>Formulário indisponível</h2>
+          <h2>{traduzir("Formulário indisponível")}</h2>
           <p className="hint">{traduzir("Este formulário ainda está em rascunho. Publique-o no CRM pra receber respostas.")}</p>
         </div>
       </div>

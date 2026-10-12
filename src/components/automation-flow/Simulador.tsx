@@ -110,7 +110,7 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
       <div className="flow-side-panel" onClick={(e) => e.stopPropagation()}>
         <div className="panel-h">
           <h4>Testar automação</h4>
-          <button type="button" className="icon-btn subtle" aria-label="Fechar simulador" onClick={onFechar}>
+          <button type="button" className="icon-btn subtle" aria-label={traduzir("Fechar simulador")} onClick={onFechar}>
             <IconClose width={13} height={13} />
           </button>
         </div>

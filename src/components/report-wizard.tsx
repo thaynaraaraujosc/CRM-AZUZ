@@ -400,7 +400,7 @@ export function ReportWizard({
             style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4 }}
             onClick={onFechar}
           >
-            Fechar <IconClose width={12} height={12} />
+            {traduzir("Fechar")} <IconClose width={12} height={12} />
           </button>
         </div>
 
@@ -683,7 +683,7 @@ export function ReportWizard({
                     invalidarPrevia();
                   }}
                 />
-                Incluir logotipo/marca
+                {traduzir("Incluir logotipo/marca")}
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5 }}>
                 <input
@@ -694,7 +694,7 @@ export function ReportWizard({
                     invalidarPrevia();
                   }}
                 />
-                Incluir cabeçalho em todas as páginas
+                {traduzir("Incluir cabeçalho em todas as páginas")}
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5 }}>
                 <input
@@ -705,7 +705,7 @@ export function ReportWizard({
                     invalidarPrevia();
                   }}
                 />
-                Incluir rodapé com paginação
+                {traduzir("Incluir rodapé com paginação")}
               </label>
 
               <div className="field">
@@ -715,7 +715,7 @@ export function ReportWizard({
                   style={{ width: "100%", minHeight: 60 }}
                   value={observacoesExtra}
                   onChange={(e) => setObservacoesExtra(e.target.value)}
-                  placeholder="Entra como uma seção extra no fim do documento…"
+                  placeholder={traduzir("Entra como uma seção extra no fim do documento…")}
                 />
               </div>
             </div>
@@ -775,7 +775,7 @@ export function ReportWizard({
                       Próxima página →
                     </button>
                     <button type="button" className="btn ghost" onClick={gerarPrevia}>
-                      Gerar nova prévia
+                      {traduzir("Gerar nova prévia")}
                     </button>
                   </div>
 

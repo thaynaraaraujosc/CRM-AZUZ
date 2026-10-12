@@ -80,7 +80,7 @@ export function PainelProximoPasso({
           <strong>{traduzir("Adicionar próximo passo")}</strong>
           {rotuloDaSaida ? <span>depois de &quot;{rotuloDaSaida}&quot;</span> : null}
         </div>
-        <button type="button" className="icon-btn subtle" aria-label="Fechar" onClick={onFechar}>
+        <button type="button" className="icon-btn subtle" aria-label={traduzir("Fechar")} onClick={onFechar}>
           <IconClose width={13} height={13} />
         </button>
       </div>

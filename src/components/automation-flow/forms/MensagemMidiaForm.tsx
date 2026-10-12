@@ -312,7 +312,7 @@ export function MensagemMidiaForm({
           <div className="modal flow-biblioteca-modal" onClick={(e) => e.stopPropagation()}>
             <div className="panel-h">
               <h4>Selecionar arquivo da biblioteca</h4>
-              <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setModalAberto(false)}>
+              <button type="button" className="modal-close-btn" aria-label={traduzir("Fechar")} onClick={() => setModalAberto(false)}>
                 <IconClose width={12} height={12} />
               </button>
             </div>

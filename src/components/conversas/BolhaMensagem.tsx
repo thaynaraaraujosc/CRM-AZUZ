@@ -173,7 +173,7 @@ export function BolhaMensagem({
               className="bubble-localizacao-titulo"
               style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
             >
-              <IconLocalizacao width={12} height={12} /> Localização compartilhada
+              <IconLocalizacao width={12} height={12} /> {traduzir("Localização compartilhada")}
             </span>
             <span className="bubble-localizacao-endereco">
               {endereco ?? `${lat.toFixed(5)}, ${lng.toFixed(5)}`}

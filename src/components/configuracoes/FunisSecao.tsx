@@ -66,7 +66,7 @@ export function FunisSecao() {
   return (
     <div className="config-secao">
       <CabecalhoCategoria
-        titulo="Funis e etapas"
+        titulo={traduzir("Funis e etapas")}
         descricao={traduzir("Como as negociações avançam no funil.")}
         acoes={
           <button

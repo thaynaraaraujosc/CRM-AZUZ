@@ -240,7 +240,7 @@ export default function FormulariosPage() {
     <>
       {!formularioAberto ? (
         <>
-          <Topbar title="Formulários" sub={`${formularios.length} formulário(s) criado(s)`} />
+          <Topbar title={traduzir("Formulários")} sub={`${formularios.length} formulário(s) criado(s)`} />
           <div className="content">
             <button type="button" className="form-scratch-card" onClick={abrirNovoFormulario}>
               <span className="form-scratch-icon">+</span>
@@ -392,7 +392,7 @@ export default function FormulariosPage() {
                     ) : (
                       <>
                         <div className="form-link-box">
-                          <p className="form-link-h" style={{ display: "flex", alignItems: "center", gap: 6 }}><IconCadeado width={13} height={13} /> Link privado, com senha</p>
+                          <p className="form-link-h" style={{ display: "flex", alignItems: "center", gap: 6 }}><IconCadeado width={13} height={13} /> {traduzir("Link privado, com senha")}</p>
                           <div className="field" style={{ padding: 0, marginBottom: 10 }}>
                             <label>Senha de acesso</label>
                             <input
@@ -421,7 +421,7 @@ export default function FormulariosPage() {
                           </div>
                         </div>
                         <div className="form-link-box">
-                          <p className="form-link-h" style={{ display: "flex", alignItems: "center", gap: 6 }}><IconGlobo width={13} height={13} /> Link público</p>
+                          <p className="form-link-h" style={{ display: "flex", alignItems: "center", gap: 6 }}><IconGlobo width={13} height={13} /> {traduzir("Link público")}</p>
                           <div className="key-row" style={{ padding: 0 }}>
                             <div className="key-box">
                               {origemDoSite}/f/{formularioAberto.id}
@@ -832,7 +832,7 @@ function PainelPagina({
       <p className="hint" style={{ padding: "14px 14px 0" }}>
         Nada selecionado: configurando a página.
       </p>
-      <SecaoPainel titulo="Geral">
+      <SecaoPainel titulo={traduzir("Geral")}>
         <div className="field">
           <label>Título da página</label>
           <input className="input" style={{ width: "100%" }} value={pagina.titulo} onChange={(e) => onAtualizar({ titulo: e.target.value })} />
@@ -931,7 +931,7 @@ function PainelCampo({
         {labelTipoCampo(pergunta.tipo)}
       </p>
 
-      <SecaoPainel titulo="Geral">
+      <SecaoPainel titulo={traduzir("Geral")}>
         <div className="field">
           <label>{ehLayout ? "Texto" : "Rótulo"}</label>
           <input className="input" style={{ width: "100%" }} value={pergunta.rotulo} onChange={(e) => onAtualizar({ rotulo: e.target.value })} />
@@ -1065,7 +1065,7 @@ function PainelCampo({
                     style={{ width: "100%" }}
                     value={pergunta.mascara ?? ""}
                     onChange={(e) => onAtualizar({ mascara: e.target.value || undefined })}
-                    placeholder="Ex.: 999.999.999-99 (9 = dígito)"
+                    placeholder={traduzir("Ex.: 999.999.999-99 (9 = dígito)")}
                   />
                 </div>
               ) : null}
@@ -1089,7 +1089,7 @@ function PainelCampo({
               <label>{traduzir("Largura")}</label>
               <div className="filters-row" style={{ margin: 0 }}>
                 <button type="button" className={`fchip${pergunta.largura === "total" ? " active" : ""}`} onClick={() => onAtualizar({ largura: "total" })}>
-                  Largura total
+                  {traduzir("Largura total")}
                 </button>
                 <button type="button" className={`fchip${pergunta.largura === "metade" ? " active" : ""}`} onClick={() => onAtualizar({ largura: "metade" })}>
                   Meia largura
@@ -1609,7 +1609,7 @@ function PainelDesign({
             style={{ width: "100%" }}
             value={formulario.paginaFinal.urlRedirecionamento ?? ""}
             onChange={(e) => onAtualizar({ paginaFinal: { ...formulario.paginaFinal, urlRedirecionamento: e.target.value } })}
-            placeholder="Ex.: https://wa.me/5562999999999"
+            placeholder={traduzir("Ex.: https://wa.me/5562999999999")}
           />
         </div>
         {formulario.paginaFinal.urlRedirecionamento ? (
@@ -1716,7 +1716,7 @@ function PainelDesign({
           onMudar={(url, arquivo) => atualizarTema({ imagemFundoUrl: url, fundoArquivo: arquivo })}
         />
         <div className="field">
-          <label>Layout</label>
+          <label>{traduzir("Layout")}</label>
           <div className="filters-row" style={{ margin: 0 }}>
             <button
               type="button"
@@ -1735,10 +1735,10 @@ function PainelDesign({
           </div>
         </div>
         <div className="field">
-          <label>Largura do formulário</label>
+          <label>{traduzir("Largura do formulário")}</label>
           <div className="filters-row" style={{ margin: 0 }}>
             <button type="button" className={`fchip${formulario.tema.larguraFixa ? " active" : ""}`} onClick={() => atualizarTema({ larguraFixa: true })}>
-              Largura fixa
+              {traduzir("Largura fixa")}
             </button>
             <button type="button" className={`fchip${!formulario.tema.larguraFixa ? " active" : ""}`} onClick={() => atualizarTema({ larguraFixa: false })}>
               Tela cheia
@@ -1808,13 +1808,13 @@ function PainelDesign({
 
       <div className="card" style={{ padding: 17 }}>
         <div className="panel-h" style={{ padding: 0, marginBottom: 12 }}>
-          <h4>Integrações</h4>
+          <h4>{traduzir("Integrações")}</h4>
         </div>
         <p className="hint" style={{ marginTop: 0 }}>
           Toda resposta enviada vira automaticamente um negócio no funil/etapa escolhidos e dispara automações com gatilho &quot;Formulário preenchido&quot;.
         </p>
         <div className="field">
-          <label>Funil de destino</label>
+          <label>{traduzir("Funil de destino")}</label>
           <select
             className="input"
             style={{ width: "100%" }}
@@ -1909,7 +1909,7 @@ function PainelDesign({
 
       <div className="card" style={{ padding: 17 }}>
         <div className="panel-h" style={{ padding: 0, marginBottom: 12 }}>
-          <h4>Histórico de versões</h4>
+          <h4>{traduzir("Histórico de versões")}</h4>
         </div>
         {formulario.versoes.length === 0 ? (
           <p className="hint" style={{ marginTop: 0 }}>

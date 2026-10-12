@@ -129,7 +129,7 @@ export function Toolbar({
             role="tab"
             aria-selected={modoPassos}
             className={`flow-toolbar-modo-btn${modoPassos ? " active" : ""}`}
-            title="Ler a automação como uma lista de passos, na ordem em que a pessoa é atendida"
+            title={traduzir("Ler a automação como uma lista de passos, na ordem em que a pessoa é atendida")}
             onClick={() => onModoPassos(!modoPassos)}
           >
             Passos
@@ -169,7 +169,7 @@ export function Toolbar({
           )}
         </button>
         <button type="button" className="btn ghost" onClick={onAbrirHistorico}>
-          Histórico de versões
+          {traduzir("Histórico de versões")}
         </button>
         <button type="button" className="btn ghost" onClick={onAbrirExecucoes}>
           Execuções

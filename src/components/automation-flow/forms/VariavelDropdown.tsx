@@ -4,9 +4,11 @@ import { useRef, useState } from "react";
 
 import { FloatingDropdown } from "@/components/ui";
 import { VARIAVEIS_MENSAGEM } from "./variaveis";
+import { useIdioma } from "@/lib/idioma-context";
 
 /** Botão "Inserir variável": abre a lista de tokens da spec seção 4 e devolve o escolhido. */
 export function VariavelDropdown({ onEscolher }: { onEscolher: (token: string) => void }) {
+  const { t: traduzir } = useIdioma();
   const [aberto, setAberto] = useState(false);
   const [rect, setRect] = useState<DOMRect | null>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -22,7 +24,7 @@ export function VariavelDropdown({ onEscolher }: { onEscolher: (token: string) =
           setAberto((v) => !v);
         }}
       >
-        Inserir variável ▾
+        {traduzir("Inserir variável ▾")}
       </button>
       <FloatingDropdown anchorRect={aberto ? rect : null} onClose={() => setAberto(false)} width={220}>
         {VARIAVEIS_MENSAGEM.map((v) => (

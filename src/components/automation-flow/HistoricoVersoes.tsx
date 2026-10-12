@@ -50,11 +50,11 @@ export function HistoricoVersoes({
   const ordenadas = [...(doServidor ?? versoes)].sort((a, b) => b.versao - a.versao);
 
   return (
-    <div className="flow-side-overlay" role="dialog" aria-label="Histórico de versões" onClick={onFechar}>
+    <div className="flow-side-overlay" role="dialog" aria-label={traduzir("Histórico de versões")} onClick={onFechar}>
       <div className="flow-side-panel" onClick={(e) => e.stopPropagation()}>
         <div className="panel-h">
-          <h4>Histórico de versões</h4>
-          <button type="button" className="icon-btn subtle" aria-label="Fechar histórico" onClick={onFechar}>
+          <h4>{traduzir("Histórico de versões")}</h4>
+          <button type="button" className="icon-btn subtle" aria-label={traduzir("Fechar histórico")} onClick={onFechar}>
             <IconClose width={13} height={13} />
           </button>
         </div>
