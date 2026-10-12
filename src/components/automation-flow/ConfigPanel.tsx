@@ -284,7 +284,7 @@ export function ConfigPanel({
             </div>
             <div className="flow-form">
               <div className="field">
-                <label>Título do bloco</label>
+                <label>{traduzir("Título do bloco")}</label>
                 <input
                   className="input"
                   placeholder={node.type}

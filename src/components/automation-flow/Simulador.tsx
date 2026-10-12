@@ -106,10 +106,10 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
   const esperaData = aguardandoEspera && noParado ? (noParado.data as AguardarData) : undefined;
 
   return (
-    <div className="flow-side-overlay" role="dialog" aria-label="Testar automação" onClick={onFechar}>
+    <div className="flow-side-overlay" role="dialog" aria-label={traduzir("Testar automação")} onClick={onFechar}>
       <div className="flow-side-panel" onClick={(e) => e.stopPropagation()}>
         <div className="panel-h">
-          <h4>Testar automação</h4>
+          <h4>{traduzir("Testar automação")}</h4>
           <button type="button" className="icon-btn subtle" aria-label={traduzir("Fechar simulador")} onClick={onFechar}>
             <IconClose width={13} height={13} />
           </button>
@@ -143,8 +143,8 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
                 <div className="field">
                   <label>{traduzir("Campo personalizado (opcional)")}</label>
                   <div style={{ display: "flex", gap: 6 }}>
-                    <input className="input" style={{ flex: 1 }} placeholder="nome do campo" value={campoNome} onChange={(e) => setCampoNome(e.target.value)} />
-                    <input className="input" style={{ flex: 1 }} placeholder="valor" value={campoValor} onChange={(e) => setCampoValor(e.target.value)} />
+                    <input className="input" style={{ flex: 1 }} placeholder={traduzir("nome do campo")} value={campoNome} onChange={(e) => setCampoNome(e.target.value)} />
+                    <input className="input" style={{ flex: 1 }} placeholder={traduzir("valor")} value={campoValor} onChange={(e) => setCampoValor(e.target.value)} />
                   </div>
                 </div>
               </div>

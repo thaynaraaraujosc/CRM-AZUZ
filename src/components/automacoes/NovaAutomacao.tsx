@@ -138,7 +138,7 @@ export function NovaAutomacao({
                   className={`nova-auto-escolha${semGatilho ? "" : " on"}`}
                   onClick={() => setSemGatilho(false)}
                 >
-                  <strong>Uma etapa do funil</strong>
+                  <strong>{traduzir("Uma etapa do funil")}</strong>
                   <span>{traduzir("O lead entra na etapa e a automação começa. É o caso mais comum.")}</span>
                 </button>
                 <button
@@ -148,7 +148,7 @@ export function NovaAutomacao({
                 >
                   <strong>{traduzir("Nada por enquanto")}</strong>
                   <span>
-                    Um robô solto, pra ligar numa etapa depois ou ser chamado por outro robô.
+                    {traduzir("Um robô solto, pra ligar numa etapa depois ou ser chamado por outro robô.")}
                   </span>
                 </button>
               </div>

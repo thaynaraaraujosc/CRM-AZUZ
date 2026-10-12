@@ -39,7 +39,7 @@ export function CancelarAgendamentoForm({ data, onChange }: { data: CancelarAgen
 
       {data.criterio === "tipo" ? (
         <div className="field">
-          <label>Tipo de agendamento</label>
+          <label>{traduzir("Tipo de agendamento")}</label>
           <select className="input" value={data.tipoAgendamento ?? ""} onChange={(e) => onChange({ ...data, tipoAgendamento: e.target.value })}>
             <option value="">{traduzir("Selecione…")}</option>
             {TIPOS_AGENDAMENTO.map((t) => (

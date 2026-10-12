@@ -65,7 +65,7 @@ export function Timeline({ eventos }: { eventos: Evento[] }) {
             className={`fchip${filtro === "todos" ? " active" : ""}`}
             onClick={() => setFiltro("todos")}
           >
-            Tudo
+            {traduzir("Tudo")}
           </button>
           {categoriasPresentes.map((cat) => {
             const IconeCategoria = ICONE_CATEGORIA[cat];

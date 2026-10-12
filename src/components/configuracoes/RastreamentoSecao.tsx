@@ -83,7 +83,7 @@ export function RastreamentoSecao() {
         <div className="rastreio-canal">
           <div className="rastreio-canal-h">
             <span className="rastreio-canal-icones rastreio-google">G</span>
-            <span className="rastreio-selo">Um passo</span>
+            <span className="rastreio-selo">{traduzir("Um passo")}</span>
           </div>
           <h4>{traduzir("Anúncios do Google")}</h4>
           <p>
@@ -148,7 +148,7 @@ export function RastreamentoSecao() {
           pedir — e recurso que roda escondido e não mostra resultado é indistinguível de recurso
           quebrado. Estes números são o que separa "está funcionando" de "parece que não faz nada". */}
       <div className="config-bloco">
-        <p className="config-bloco-titulo">Vendas devolvidas para o Google</p>
+        <p className="config-bloco-titulo">{traduzir("Vendas devolvidas para o Google")}</p>
         {conversoes === null ? (
           <p className="hint rastreio-nota">Carregando…</p>
         ) : !conversoes.googleConectado ? (
@@ -211,7 +211,7 @@ export function RastreamentoSecao() {
             <strong>{traduzir("Abra o editor do seu site")}</strong> e encontre o botão ou link de WhatsApp.
           </li>
           <li>
-            <strong>Troque o endereço dele por esse.</strong> No Wix, no WordPress e no Shopify isso
+            <strong>{traduzir("Troque o endereço dele por esse.")}</strong> No Wix, no WordPress e no Shopify isso
             é um campo de texto na edição do botão — não é preciso mexer em código. Se houver mais de
             um botão na página, troque todos.
           </li>

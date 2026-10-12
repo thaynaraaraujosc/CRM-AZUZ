@@ -287,7 +287,7 @@ export function EditorTemplate({
 
           {r.variaveis.length ? (
             <div className="field">
-              <label>Variáveis</label>
+              <label>{traduzir("Variáveis")}</label>
               <div className="tpl-variaveis">
                 {r.variaveis.map((v) => (
                   <div key={v.chave} className="tpl-variavel">
@@ -303,12 +303,12 @@ export function EditorTemplate({
                           {o.label} do contato
                         </option>
                       ))}
-                      <option value="texto">Texto fixo (preencho no disparo)</option>
+                      <option value="texto">{traduzir("Texto fixo (preencho no disparo)")}</option>
                     </select>
                     {v.origem === "texto" ? (
                       <input
                         className="input"
-                        placeholder="Valor padrão (opcional)"
+                        placeholder={traduzir("Valor padrão (opcional)")}
                         value={v.valor ?? ""}
                         onChange={(e) => mudarVariavel(v.chave, { valor: e.target.value })}
                         disabled={!editavelNaMeta}

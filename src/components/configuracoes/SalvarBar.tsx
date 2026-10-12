@@ -30,7 +30,7 @@ export function SalvarBar({
     <div className="config-salvar-bar">
       {dirty ? (
         <>
-          <span className="hint">Você possui alterações não salvas.</span>
+          <span className="hint">{traduzir("Você possui alterações não salvas.")}</span>
           <div className="config-salvar-bar-acoes">
             <button type="button" className="btn ghost" onClick={onDescartar}>
               {traduzir("Descartar")}

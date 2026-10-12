@@ -69,7 +69,7 @@ export function Toolbar({
   return (
     <header className="flow-toolbar">
       <div className="flow-toolbar-esq">
-        <Link href="/automacoes" className="icon-btn subtle" aria-label="Voltar pra lista de automações">
+        <Link href="/automacoes" className="icon-btn subtle" aria-label={traduzir("Voltar pra lista de automações")}>
           ←
         </Link>
 
@@ -175,7 +175,7 @@ export function Toolbar({
           Execuções
         </button>
         <button type="button" className="btn ghost" onClick={onTestar}>
-          Testar
+          {traduzir("Testar")}
         </button>
 
         <div className="flow-toolbar-toggle" title={podeAtivar ? undefined : "Publique o fluxo pra poder ativar"}>

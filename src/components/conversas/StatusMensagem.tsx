@@ -38,7 +38,7 @@ export function StatusMensagemIcone({
         </span>
         {onTentarNovamente ? (
           <button type="button" className="msg-status-retry" onClick={onTentarNovamente}>
-            Tentar novamente
+            {traduzir("Tentar novamente")}
           </button>
         ) : null}
       </span>

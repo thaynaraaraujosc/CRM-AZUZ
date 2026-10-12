@@ -86,7 +86,7 @@ export function AguardarForm({ data, onChange }: { data: AguardarData; onChange:
               style={{ flex: 1 }}
               value={data.modo}
               onChange={(e) => onChange({ ...data, modo: e.target.value as AguardarData["modo"] })}
-              aria-label="Unidade de tempo"
+              aria-label={traduzir("Unidade de tempo")}
             >
               {UNIDADES.map((u) => (
                 <option key={u.valor} value={u.valor}>
@@ -121,7 +121,7 @@ export function AguardarForm({ data, onChange }: { data: AguardarData; onChange:
               style={{ flex: 1 }}
               value={data.tempoMaximo?.unidade ?? "horas"}
               onChange={(e) => onChange({ ...data, tempoMaximo: { valor: data.tempoMaximo?.valor ?? 2, unidade: e.target.value } })}
-              aria-label="Unidade do prazo"
+              aria-label={traduzir("Unidade do prazo")}
             >
               {UNIDADES.map((u) => (
                 <option key={u.valor} value={u.valor}>

@@ -163,7 +163,7 @@ export function MensagemOpcoesForm({
 
       <div className="field">
         <div className="flow-form-label-row">
-          <label style={{ marginBottom: 0 }}>Texto</label>
+          <label style={{ marginBottom: 0 }}>{traduzir("Texto")}</label>
           <VariavelDropdown onEscolher={(t) => onChange({ ...data, texto: inserirTokenNoTexto(data.texto, t, textareaRef.current) })} />
         </div>
         <textarea
@@ -314,7 +314,7 @@ export function MensagemOpcoesForm({
                 aria-label={`Endereço da opção ${i + 1}`}
               />
               {!opcao.url?.trim() ? (
-                <p className="hint mt8">Vazio = a opção é uma resposta normal, com caminho no fluxo.</p>
+                <p className="hint mt8">{traduzir("Vazio = a opção é uma resposta normal, com caminho no fluxo.")}</p>
               ) : null}
               {opcao.url?.trim() ? (
                 <p className="hint mt8">
@@ -398,7 +398,7 @@ export function MensagemOpcoesForm({
       </div>
 
       <div className="field">
-        <label>Tolerar quantas respostas fora das opções</label>
+        <label>{traduzir("Tolerar quantas respostas fora das opções")}</label>
         <input
           type="number"
           min={0}
@@ -429,7 +429,7 @@ export function MensagemOpcoesForm({
             </p>
           </>
         ) : (
-          <p className="hint mt8">Vazio = repete a pergunta pra sempre enquanto a pessoa errar.</p>
+          <p className="hint mt8">{traduzir("Vazio = repete a pergunta pra sempre enquanto a pessoa errar.")}</p>
         )}
       </div>
     </div>

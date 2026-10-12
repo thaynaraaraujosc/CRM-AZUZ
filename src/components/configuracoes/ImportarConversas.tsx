@@ -109,7 +109,7 @@ function Painel({
         </p>
         {guardadas ? (
           <button type="button" className="btn ghost" style={{ flex: "0 0 auto" }} onClick={onTrazerMaisAntigas}>
-            Trazer as mais antigas
+            {traduzir("Trazer as mais antigas")}
           </button>
         ) : null}
         <button type="button" className="btn ghost" style={{ flex: "0 0 auto" }} onClick={onReimportar}>

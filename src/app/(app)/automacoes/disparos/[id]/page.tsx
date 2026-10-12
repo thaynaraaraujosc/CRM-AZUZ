@@ -159,13 +159,13 @@ export default function DetalheDisparoPage() {
               </div>
               {campanha.erroMensagem ? <p className="tpl-rejeicao">{campanha.erroMensagem}</p> : null}
               <div className="disp-metricas">
-                <Metrica valor={resumo.total} label="destinatários" />
-                <Metrica valor={resumo.enviadas} label="enviadas" />
-                <Metrica valor={resumo.entregues} label="entregues" />
-                <Metrica valor={resumo.lidas} label="lidas" />
-                <Metrica valor={resumo.respondidas} label="respondidas" />
-                <Metrica valor={resumo.falhas} label="falhas" destaque={resumo.falhas > 0} />
-                <Metrica valor={resumo.pendentes} label="na fila" />
+                <Metrica valor={resumo.total} label={traduzir("destinatários")} />
+                <Metrica valor={resumo.enviadas} label={traduzir("enviadas")} />
+                <Metrica valor={resumo.entregues} label={traduzir("entregues")} />
+                <Metrica valor={resumo.lidas} label={traduzir("lidas")} />
+                <Metrica valor={resumo.respondidas} label={traduzir("respondidas")} />
+                <Metrica valor={resumo.falhas} label={traduzir("falhas")} destaque={resumo.falhas > 0} />
+                <Metrica valor={resumo.pendentes} label={traduzir("na fila")} />
               </div>
               <PreviaMensagem
                 corpo={campanha.corpo}

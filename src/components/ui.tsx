@@ -709,12 +709,12 @@ export function FilterBar({
                 </div>
                 {visaoSalvaAgora ? (
                   <p className="hint" style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                    <IconCheck width={12} height={12} /> Visão salva
+                    <IconCheck width={12} height={12} /> {traduzir("Visão salva")}
                   </p>
                 ) : null}
                 {visoesSalvas.length > 0 ? (
                   <div>
-                    <p className="hint" style={{ marginBottom: 4 }}>Visões salvas</p>
+                    <p className="hint" style={{ marginBottom: 4 }}>{traduzir("Visões salvas")}</p>
                     {visoesSalvas.map((v) => (
                       <p className="hint" key={v.nome} style={{ display: "flex", alignItems: "center", gap: 4 }}>
                         <IconStar width={12} height={12} /> {v.nome}

@@ -10,7 +10,7 @@ export function AparenciaSecao() {
   const { t: traduzir } = useIdioma();
   return (
     <div className="config-secao">
-      <CabecalhoCategoria titulo={traduzir("Aparência")} descricao="Tema claro ou escuro." />
+      <CabecalhoCategoria titulo={traduzir("Aparência")} descricao={traduzir("Tema claro ou escuro.")} />
 
       <div className="config-bloco">
         <p className="config-bloco-titulo">Tema</p>

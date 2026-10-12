@@ -59,7 +59,7 @@ export function TarefaEventoForm({ data, onChange }: { data: TarefaEventoData; o
 
       {data.filtroModo === "titulo" ? (
         <div className="field">
-          <label>Título contém</label>
+          <label>{traduzir("Título contém")}</label>
           <input
             className="input"
             placeholder={traduzir("Ex.: Retornar proposta")}

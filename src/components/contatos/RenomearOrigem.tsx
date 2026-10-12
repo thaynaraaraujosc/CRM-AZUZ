@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import type { ContagemRenomeacao } from "@/app/api/contatos/renomear-origem/route";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * O aviso que aparece quando ainda existem contatos com a origem antiga "Indicação".
@@ -15,6 +16,7 @@ import type { ContagemRenomeacao } from "@/app/api/contatos/renomear-origem/rout
  * tipo de coisa que não se oferece.
  */
 export function RenomearOrigem({ aoRenomear }: { aoRenomear: () => void }) {
+  const { t: traduzir } = useIdioma();
   const [quantos, setQuantos] = useState<number | null>(null);
   const [renomeando, setRenomeando] = useState(false);
   const [feito, setFeito] = useState<number | null>(null);
@@ -58,7 +60,7 @@ export function RenomearOrigem({ aoRenomear }: { aoRenomear: () => void }) {
           {feito} contato{feito === 1 ? "" : "s"} {feito === 1 ? "passou" : "passaram"} a mostrar
           &quot;Salvo manualmente&quot;.
         </strong>
-        <span>Só a coluna Origem mudou. Nome, telefone, etapa e histórico ficaram como estavam.</span>
+        <span>{traduzir("Só a coluna Origem mudou. Nome, telefone, etapa e histórico ficaram como estavam.")}</span>
       </div>
     );
   }

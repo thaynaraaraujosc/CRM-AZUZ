@@ -42,7 +42,7 @@ export function Recomendacoes({
             </div>
             <div className="central-dia-recomendacao-acoes">
               <button type="button" className="btn ghost" onClick={() => r.filtroRelacionado && onVerItens(r.filtroRelacionado)}>
-                Ver itens
+                {traduzir("Ver itens")}
               </button>
               <button type="button" className="btn ghost" onClick={() => avisar(`Simulado: "${r.acaoSugerida}" aplicado.`)}>
                 {traduzir("Aplicar simulação")}

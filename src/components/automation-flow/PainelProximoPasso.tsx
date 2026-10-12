@@ -96,7 +96,7 @@ export function PainelProximoPasso({
       <div className="proximo-passo-lista">
         {sugeridos.length ? (
           <>
-            <p className="proximo-passo-grupo">Sugeridos aqui</p>
+            <p className="proximo-passo-grupo">{traduzir("Sugeridos aqui")}</p>
             <button type="button" className="proximo-passo-item" onClick={onFollowUp}>
               <strong>{traduzir("Adicionar follow-up")}</strong>
               <span>{traduzir("Espera a resposta por 2 horas e, se não vier, manda uma cobrança.")}</span>

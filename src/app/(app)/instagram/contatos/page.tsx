@@ -155,7 +155,7 @@ export default function InstagramContatosPage() {
                 disabled={ocupado || !etiqueta.trim()}
                 onClick={() => acaoEmMassa("desetiquetar")}
               >
-                Tirar etiqueta
+                {traduzir("Tirar etiqueta")}
               </button>
               <button type="button" className="btn ghost" onClick={() => setEscolhidos(new Set())}>
                 {traduzir("Limpar seleção")}
@@ -185,7 +185,7 @@ export default function InstagramContatosPage() {
                   </th>
                   <th>Nome</th>
                   <th>Seguidores</th>
-                  <th>Verificado</th>
+                  <th>{traduzir("Verificado")}</th>
                   <th>{traduzir("Segue você")}</th>
                   <th>Etiquetas</th>
                   <th>{traduzir("Atualizado")}</th>
@@ -260,7 +260,7 @@ export default function InstagramContatosPage() {
                             {traduzir("Copiar @")}
                           </button>
                           <button type="button" onClick={() => router.push(`/contatos?busca=${encodeURIComponent(c.nome)}`)}>
-                            Ver ficha no CRM
+                            {traduzir("Ver ficha no CRM")}
                           </button>
                         </div>
                       ) : null}

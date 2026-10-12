@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useIdioma } from "@/lib/idioma-context";
 
 type Origem = {
   plataforma: string;
@@ -26,6 +27,7 @@ const NOME_DA_PLATAFORMA: Record<string, string> = { google: "Google Ads", meta:
  * repetido em cada ficha — do tipo que faz a tela parecer quebrada.
  */
 export function OrigemDoLead({ contatoId }: { contatoId: string }) {
+  const { t: traduzir } = useIdioma();
   const [origem, setOrigem] = useState<Origem | null>(null);
 
   // Limpa ao trocar de contato AJUSTANDO DURANTE A RENDERIZAÇÃO, e não dentro do efeito (regra
@@ -59,7 +61,7 @@ export function OrigemDoLead({ contatoId }: { contatoId: string }) {
 
   return (
     <div className="field" style={{ margin: "0 17px 14px" }}>
-      <label>Veio de um anúncio</label>
+      <label>{traduzir("Veio de um anúncio")}</label>
       {linhas.map(([rotulo, valor]) => (
         <div className="stat-row" key={rotulo}>
           <span className="sl">{rotulo}</span>

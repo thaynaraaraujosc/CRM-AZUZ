@@ -84,7 +84,7 @@ export function DecisaoMultiplaForm({
             className="input"
             value={data.campoPersonalizadoNome ?? ""}
             onChange={(e) => onChange({ campoPersonalizadoNome: e.target.value })}
-            placeholder="cidade, plano, cnpj…"
+            placeholder={traduzir("cidade, plano, cnpj…")}
           />
         </div>
       ) : null}
@@ -117,7 +117,7 @@ export function DecisaoMultiplaForm({
               className="input"
               value={caminho.valor}
               onChange={(e) => alterar(i, { valor: e.target.value })}
-              placeholder="Valor (ex.: 1)"
+              placeholder={traduzir("Valor (ex.: 1)")}
               aria-label={`Valor do caminho ${i + 1}`}
             />
             <input

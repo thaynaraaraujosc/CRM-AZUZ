@@ -98,7 +98,7 @@ export default function RespostasAutomaticasPage() {
     <>
       <Topbar
         title={traduzir("Respostas automáticas")}
-        sub="Uma frase que o robô responde sozinho, sem abrir o construtor"
+        sub={traduzir("Uma frase que o robô responde sozinho, sem abrir o construtor")}
         actions={
           <button type="button" className="btn primary" onClick={() => abrir(null)}>
             + Nova resposta
@@ -152,11 +152,11 @@ export default function RespostasAutomaticasPage() {
             </div>
 
             <div className="field">
-              <label>Só quando tiver estas palavras (opcional)</label>
+              <label>{traduzir("Só quando tiver estas palavras (opcional)")}</label>
               <input
                 className="input"
                 value={d.palavras.join(", ")}
-                placeholder="quero, preço, valor"
+                placeholder={traduzir("quero, preço, valor")}
                 onChange={(e) =>
                   setEditando({
                     ...editando,
@@ -204,7 +204,7 @@ export default function RespostasAutomaticasPage() {
               <input
                 className="input"
                 value={d.etiqueta ?? ""}
-                placeholder="Veio do Instagram"
+                placeholder={traduzir("Veio do Instagram")}
                 onChange={(e) => setEditando({ ...editando, dados: { ...d, etiqueta: e.target.value } })}
               />
             </div>
@@ -229,7 +229,7 @@ export default function RespostasAutomaticasPage() {
         ) : null}
 
         <section className="card">
-          <h3>Suas respostas</h3>
+          <h3>{traduzir("Suas respostas")}</h3>
           {!respostas.length ? (
             <p className="hint">{traduzir("Nenhuma ainda.")}</p>
           ) : (

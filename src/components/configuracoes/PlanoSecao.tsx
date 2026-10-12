@@ -285,7 +285,7 @@ export function PlanoSecao() {
             <span className="preco-nome">AZUZ CRM {PLANOS.completo.nome}</span>
             {assinatura?.status === "ativa" ? <span className="pill on">{traduzir("Plano atual")}</span> : null}
           </div>
-          <p className="preco-desc">Tudo que o CRM faz, sem limite de funil e sem cobrar por usuário.</p>
+          <p className="preco-desc">{traduzir("Tudo que o CRM faz, sem limite de funil e sem cobrar por usuário.")}</p>
           <p className="preco-valor">
             {formatarMoeda(PLANOS.completo.valor)}
             <span className="preco-periodo">/mês</span>
@@ -395,7 +395,7 @@ export function PlanoSecao() {
           <table className="config-tabela-notif">
             <thead>
               <tr>
-                <th>Vencimento</th>
+                <th>{traduzir("Vencimento")}</th>
                 <th>Valor</th>
                 <th>Status</th>
                 <th>{traduzir("Fatura")}</th>
@@ -414,7 +414,7 @@ export function PlanoSecao() {
                     <td>{NOME_STATUS_COBRANCA[c.status] ?? c.status}</td>
                     <td>
                       <a className="btn ghost" href={c.invoiceUrl} target="_blank" rel="noreferrer">
-                        Ver fatura
+                        {traduzir("Ver fatura")}
                       </a>
                     </td>
                   </tr>

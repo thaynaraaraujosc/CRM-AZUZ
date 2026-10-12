@@ -43,7 +43,7 @@ export function AgendarConsultaForm({ data, onChange }: { data: AgendarConsultaD
       </div>
 
       <div className="field">
-        <label>Tipo de serviço</label>
+        <label>{traduzir("Tipo de serviço")}</label>
         <input
           className="input"
           placeholder={traduzir("Ex.: Consulta de retorno")}

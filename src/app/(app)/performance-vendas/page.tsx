@@ -129,8 +129,8 @@ function PerformanceVendasPageInner() {
         ) : null}
 
         <div className="grid kpi4">
-          <KpiCard label="Total de negociações encerradas" value={String(totalOportunidades)} />
-          <KpiCard label="Taxa de conversão" value={taxaConversao.label} formula={taxaConversao.formula} tom="acento" />
+          <KpiCard label={traduzir("Total de negociações encerradas")} value={String(totalOportunidades)} />
+          <KpiCard label={traduzir("Taxa de conversão")} value={taxaConversao.label} formula={taxaConversao.formula} tom="acento" />
           <KpiCard label={traduzir("Receita")} value={valorVendido.label} formula={valorVendido.formula} tom="acento" />
           <KpiCard label={traduzir("Ticket médio")} value={ticketMedio.label} formula={ticketMedio.formula} />
           <KpiCard
@@ -139,7 +139,7 @@ function PerformanceVendasPageInner() {
             sub={`${valorVendido.label} de ${formatarMoeda(meta)}`}
           />
           <KpiCard
-            label="Valor perdido"
+            label={traduzir("Valor perdido")}
             value={valorPerdido.label}
             sub={`Principal motivo: ${motivoPrincipal.motivo}`}
             href="/motivos-perda"
@@ -194,7 +194,7 @@ function PerformanceVendasPageInner() {
                 <span className="sv">{formatarMoeda(pessoaDetalhe.receita)}</span>
               </div>
               <Link href={`/jornada-cliente`} className="link" style={{ display: "inline-block", marginTop: 8 }}>
-                Ver atividades desta pessoa →
+                {traduzir("Ver atividades desta pessoa →")}
               </Link>
             </div>
           </div>
@@ -240,7 +240,7 @@ function PerformanceVendasPageInner() {
           <div className="panel-h">
             <h4>Motivos de perda</h4>
             <Link href="/motivos-perda" className="link">
-              Ver análise completa de perdas →
+              {traduzir("Ver análise completa de perdas →")}
             </Link>
           </div>
           <div style={{ padding: 17 }}>

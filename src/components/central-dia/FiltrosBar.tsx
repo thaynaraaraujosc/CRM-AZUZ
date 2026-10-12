@@ -113,8 +113,8 @@ export function FiltrosBar() {
             <div className="field">
               <label>{traduzir("Prioridade")}</label>
               <select className="input" value={filtros.prioridade} onChange={(e) => setFiltros({ prioridade: e.target.value })}>
-                <option value="Todas">Todas</option>
-                <option value="urgente">Urgente</option>
+                <option value="Todas">{traduzir("Todas")}</option>
+                <option value="urgente">{traduzir("Urgente")}</option>
                 <option value="atencao">{traduzir("Precisa de atenção")}</option>
                 <option value="oportunidade">{traduzir("Oportunidade")}</option>
               </select>

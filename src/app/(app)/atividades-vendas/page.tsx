@@ -118,7 +118,7 @@ export default function AtividadesVendasPage() {
 
             <div className="card">
               <div className="panel-h">
-                <h4>Tempo de primeira resposta por responsável</h4>
+                <h4>{traduzir("Tempo de primeira resposta por responsável")}</h4>
               </div>
               <div className="dados-nao-conectados" style={{ margin: 17 }}>
                 Dados não conectados: o CRM ainda não rastreia qual responsável atendeu cada

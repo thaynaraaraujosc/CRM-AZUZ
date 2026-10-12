@@ -770,7 +770,7 @@ export function AutomacaoDoFunil({
                   />
                 </div>
                 <div className="field">
-                  <label>Tirar etiquetas</label>
+                  <label>{traduzir("Tirar etiquetas")}</label>
                   <input
                     className="input"
                     value={(rascunho.acaoDados.etiquetasRemover ?? []).join(", ")}
@@ -806,7 +806,7 @@ export function AutomacaoDoFunil({
                     className="fauto-mini"
                     onClick={() => setRascunho({ ...rascunho, condicao: null })}
                   >
-                    Tirar a condição
+                    {traduzir("Tirar a condição")}
                   </button>
                 </>
               ) : (

@@ -29,7 +29,7 @@ export default function AmostraPage() {
           <div className="topbar-title-row">
             <h2>{traduzir("Amostra do sistema visual")}</h2>
           </div>
-          <p className="sub">Todos os componentes, em todos os estados, numa tela só</p>
+          <p className="sub">{traduzir("Todos os componentes, em todos os estados, numa tela só")}</p>
         </div>
         <div className="top-actions">
           <button type="button" className="btn primary" onClick={() => setModalAberto(true)}>
@@ -125,17 +125,17 @@ export default function AmostraPage() {
 
         {/* ------------------------------------------------------------ tipografia */}
         <section className="amostra-secao">
-          <h3>Tipografia</h3>
+          <h3>{traduzir("Tipografia")}</h3>
           <div className="card amostra-tipo">
-            <p className="amostra-t-page">Título de página</p>
-            <p className="amostra-t-secao">Título de seção</p>
-            <p className="amostra-t-card">Título de card</p>
+            <p className="amostra-t-page">{traduzir("Título de página")}</p>
+            <p className="amostra-t-secao">{traduzir("Título de seção")}</p>
+            <p className="amostra-t-card">{traduzir("Título de card")}</p>
             <p className="amostra-t-corpo">
               Corpo. É o texto que se lê de verdade, e por isso tem a medida de leitura limitada e o
               contraste mais alto do que qualquer informação de apoio.
             </p>
             <p className="amostra-t-label">{traduzir("RÓTULO")}</p>
-            <p className="amostra-t-apoio">Texto de apoio, para explicar sem competir.</p>
+            <p className="amostra-t-apoio">{traduzir("Texto de apoio, para explicar sem competir.")}</p>
           </div>
         </section>
 
@@ -159,7 +159,7 @@ export default function AmostraPage() {
 
         {/* ------------------------------------------------------------ tabela */}
         <section className="amostra-secao">
-          <h3>Tabela</h3>
+          <h3>{traduzir("Tabela")}</h3>
           <div className="card amostra-tabela-caixa">
             <table className="tbl">
               <thead>

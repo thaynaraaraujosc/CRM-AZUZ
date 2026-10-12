@@ -66,7 +66,7 @@ export default function DisparosPage() {
     <>
       <Topbar
         title={traduzir("Disparo em massa")}
-        sub="Uma mensagem para muitos contatos, enviada aos poucos"
+        sub={traduzir("Uma mensagem para muitos contatos, enviada aos poucos")}
         actions={
           <button type="button" className="btn primary" onClick={() => setAssistente(true)}>
             + Novo disparo
@@ -124,7 +124,7 @@ export default function DisparosPage() {
                             />
                             <div className="disp-menu" role="menu">
                               <Link className="dropdown-item" href={`/automacoes/disparos/${c.id}`} role="menuitem">
-                                Ver detalhes
+                                {traduzir("Ver detalhes")}
                               </Link>
                               <button
                                 type="button"
@@ -144,12 +144,12 @@ export default function DisparosPage() {
                     </div>
                   </div>
                   <Link href={`/automacoes/disparos/${c.id}`} className="disp-metricas">
-                    <Metrica valor={n.total} label="destinatários" />
-                    <Metrica valor={n.enviadas} label="enviadas" />
-                    <Metrica valor={n.entregues} label="entregues" />
-                    <Metrica valor={n.lidas} label="lidas" />
-                    <Metrica valor={n.respondidas} label="respondidas" />
-                    <Metrica valor={n.falhas} label="falhas" destaque={n.falhas > 0} />
+                    <Metrica valor={n.total} label={traduzir("destinatários")} />
+                    <Metrica valor={n.enviadas} label={traduzir("enviadas")} />
+                    <Metrica valor={n.entregues} label={traduzir("entregues")} />
+                    <Metrica valor={n.lidas} label={traduzir("lidas")} />
+                    <Metrica valor={n.respondidas} label={traduzir("respondidas")} />
+                    <Metrica valor={n.falhas} label={traduzir("falhas")} destaque={n.falhas > 0} />
                   </Link>
                 </div>
               );

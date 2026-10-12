@@ -111,7 +111,7 @@ function ResultadoNode({ data }: NodeProps<ResultadoRFNode>) {
         <select className="input" value={modo} onChange={(e) => onMudarModo(e.target.value as LogicaCampo["modo"])}>
           <option value="mostrar_se">{traduzir("Mostrar este campo")}</option>
           <option value="ocultar_se">{traduzir("Ocultar este campo")}</option>
-          <option value="obrigatorio_se">Tornar obrigatório</option>
+          <option value="obrigatorio_se">{traduzir("Tornar obrigatório")}</option>
         </select>
         <p className="hint" style={{ margin: "2px 0 0" }}>
           {rotuloCampo}

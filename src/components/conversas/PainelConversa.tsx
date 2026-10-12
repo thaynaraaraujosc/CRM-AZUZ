@@ -584,7 +584,7 @@ export function PainelConversa({
                   {mensagens.length} {mensagens.length === 1 ? "mensagem" : "mensagens"} nesta conversa.
                 </p>
                 <div className="field">
-                  <label>Última mensagem</label>
+                  <label>{traduzir("Última mensagem")}</label>
                   <div className="input">{ultima ? `${ultima.hora} · ${resumo(ultima.texto)}` : "-"}</div>
                 </div>
                 <div className="field">

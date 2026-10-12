@@ -109,7 +109,7 @@ export function ConexaoManualWhatsApp({ aoConectar }: { aoConectar?: () => void 
       </p>
 
       <div className="field">
-        <label>Token de acesso permanente</label>
+        <label>{traduzir("Token de acesso permanente")}</label>
         <input
           className="input"
           type="password"
@@ -151,7 +151,7 @@ export function ConexaoManualWhatsApp({ aoConectar }: { aoConectar?: () => void 
           type="text"
           inputMode="numeric"
           maxLength={6}
-          placeholder="opcional"
+          placeholder={traduzir("opcional")}
           value={pinExistente}
           onChange={(e) => setPinExistente(e.target.value)}
         />

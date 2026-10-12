@@ -269,10 +269,10 @@ export function MensagemMidiaForm({
           </div>
           <div className="flow-midia-preview-acoes">
             <button type="button" className="btn ghost" onClick={() => setModalAberto(true)}>
-              Substituir (biblioteca)
+              {traduzir("Substituir (biblioteca)")}
             </button>
             <button type="button" className="btn ghost" onClick={() => fileInputRef.current?.click()}>
-              Substituir (upload)
+              {traduzir("Substituir (upload)")}
             </button>
             <button type="button" className="btn ghost" onClick={removerArquivo}>
               {traduzir("Remover arquivo")}

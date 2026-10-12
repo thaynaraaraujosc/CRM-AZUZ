@@ -617,12 +617,12 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
                             {o.label} do contato
                           </option>
                         ))}
-                        <option value="texto">Texto fixo</option>
+                        <option value="texto">{traduzir("Texto fixo")}</option>
                       </select>
                       {v.origem === "texto" ? (
                         <input
                           className="input"
-                          placeholder="Valor pra todo mundo"
+                          placeholder={traduzir("Valor pra todo mundo")}
                           value={v.valor ?? ""}
                           onChange={(e) => setVariaveis((atual) => atual.map((x) => (x.chave === v.chave ? { ...x, valor: e.target.value } : x)))}
                         />

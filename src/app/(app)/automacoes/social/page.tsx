@@ -173,7 +173,7 @@ export default function AutomacoesSociaisPage() {
             </div>
 
             <select className="input" value={status} onChange={(e) => setStatus(e.target.value as FiltroStatus)}>
-              <option value="todos">Status: todos</option>
+              <option value="todos">{traduzir("Status: todos")}</option>
               <option value="ativo">{traduzir("Ligadas")}</option>
               <option value="inativo">{traduzir("Pausadas")}</option>
               <option value="rascunho">{traduzir("Rascunhos")}</option>
@@ -192,7 +192,7 @@ export default function AutomacoesSociaisPage() {
               <button
                 type="button"
                 className={`icon-btn${visao === "lista" ? " on" : ""}`}
-                aria-label="Ver em lista"
+                aria-label={traduzir("Ver em lista")}
                 aria-pressed={visao === "lista"}
                 onClick={() => setVisao("lista")}
               >
@@ -201,7 +201,7 @@ export default function AutomacoesSociaisPage() {
               <button
                 type="button"
                 className={`icon-btn${visao === "grade" ? " on" : ""}`}
-                aria-label="Ver em grade"
+                aria-label={traduzir("Ver em grade")}
                 aria-pressed={visao === "grade"}
                 onClick={() => setVisao("grade")}
               >
@@ -231,7 +231,7 @@ export default function AutomacoesSociaisPage() {
                   className={`social-pasta${pastaAberta === null ? " on" : ""}`}
                   onClick={() => setPastaAberta(null)}
                 >
-                  <strong>Todas</strong>
+                  <strong>{traduzir("Todas")}</strong>
                   <span>{fluxos.filter((f) => f.area === "social" && !f.arquivada).length}</span>
                 </button>
                 {pastas.map((p) => (
@@ -292,7 +292,7 @@ export default function AutomacoesSociaisPage() {
                     <th>{traduzir("Automação")}</th>
                     <th>{traduzir("Gatilho")}</th>
                     <th>{traduzir("Criado")}</th>
-                    <th>Última publicação</th>
+                    <th>{traduzir("Última publicação")}</th>
                     <th>Execuções</th>
                     <th>Situação</th>
                     <th aria-label={traduzir("Ações")} />

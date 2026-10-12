@@ -182,7 +182,7 @@ export function StoryRespondidoForm({
       <div className="field">
         <label>{traduzir("Em qual story")}</label>
         <p className="hint">
-          Story dura 24 horas. A lista abaixo é o que está no ar agora, buscado na hora.
+          {traduzir("Story dura 24 horas. A lista abaixo é o que está no ar agora, buscado na hora.")}
         </p>
 
         {escolhidoSumiu ? (

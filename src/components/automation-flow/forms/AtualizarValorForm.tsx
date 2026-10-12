@@ -16,13 +16,13 @@ export function AtualizarValorForm({ data, onChange }: { data: AtualizarValorDat
           onChange={(e) => onChange({ ...data, modo: e.target.value as ModoAtualizarValor })}
         >
           <option value="definir">{traduzir("Definir novo valor")}</option>
-          <option value="somar">Somar ao valor atual</option>
-          <option value="subtrair">Subtrair do valor atual</option>
+          <option value="somar">{traduzir("Somar ao valor atual")}</option>
+          <option value="subtrair">{traduzir("Subtrair do valor atual")}</option>
         </select>
       </div>
 
       <div className="field">
-        <label>Valor (R$)</label>
+        <label>{traduzir("Valor (R$)")}</label>
         <input
           className="input"
           type="number"

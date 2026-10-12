@@ -834,7 +834,7 @@ function PainelPagina({
       </p>
       <SecaoPainel titulo={traduzir("Geral")}>
         <div className="field">
-          <label>Título da página</label>
+          <label>{traduzir("Título da página")}</label>
           <input className="input" style={{ width: "100%" }} value={pagina.titulo} onChange={(e) => onAtualizar({ titulo: e.target.value })} />
         </div>
         <div className="field">
@@ -938,7 +938,7 @@ function PainelCampo({
         </div>
         {pergunta.tipo === "imagem_bloco" ? (
           <div className="field">
-            <label>URL da imagem</label>
+            <label>{traduzir("URL da imagem")}</label>
             <input
               className="input"
               style={{ width: "100%" }}
@@ -969,7 +969,7 @@ function PainelCampo({
               />
             </div>
             <div className="field">
-              <label>Valor padrão</label>
+              <label>{traduzir("Valor padrão")}</label>
               <input
                 className="input"
                 style={{ width: "100%" }}
@@ -978,7 +978,7 @@ function PainelCampo({
               />
             </div>
             <div className="field">
-              <label>Texto de ajuda</label>
+              <label>{traduzir("Texto de ajuda")}</label>
               <input
                 className="input"
                 style={{ width: "100%" }}
@@ -1032,7 +1032,7 @@ function PainelCampo({
       {!ehLayout ? (
         <>
           {comMinMax || comMascara || comRegex ? (
-            <SecaoPainel titulo="Validação">
+            <SecaoPainel titulo={traduzir("Validação")}>
               {comMinMax ? (
                 <div className="filters-row">
                   <div className="field" style={{ flex: 1 }}>
@@ -1180,7 +1180,7 @@ function PainelCampo({
           <SecaoPainel titulo={traduzir("Características")}>
             <label className="hint" style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
               <input type="checkbox" checked={pergunta.somenteLeitura} onChange={(e) => onAtualizar({ somenteLeitura: e.target.checked })} />
-              Somente leitura
+              {traduzir("Somente leitura")}
             </label>
             <label className="hint" style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <input type="checkbox" checked={pergunta.oculta} onChange={(e) => onAtualizar({ oculta: e.target.checked })} />
@@ -1190,7 +1190,7 @@ function PainelCampo({
 
           <SecaoPainel titulo={traduzir("Lógica")}>
             {camposAnteriores.length === 0 ? (
-              <p className="hint">Só é possível condicionar à resposta de um campo anterior nesta página.</p>
+              <p className="hint">{traduzir("Só é possível condicionar à resposta de um campo anterior nesta página.")}</p>
             ) : (
               <>
                 <LogicaCanvas key={pergunta.id} pergunta={pergunta} camposAnteriores={camposAnteriores} onAtualizar={onAtualizar} />
@@ -1605,7 +1605,7 @@ function PainelDesign({
           />
         </div>
         <div className="field">
-          <label>URL de redirecionamento (opcional)</label>
+          <label>{traduzir("URL de redirecionamento (opcional)")}</label>
           <input
             className="input"
             style={{ width: "100%" }}
@@ -1703,7 +1703,7 @@ function PainelDesign({
                 aria-label={traduzir("Parte da imagem que aparece na faixa")}
               />
               <div className="form-banner-corte-legenda">
-                <span>Topo</span>
+                <span>{traduzir("Topo")}</span>
                 <span>{traduzir("Meio")}</span>
                 <span>{traduzir("Base")}</span>
               </div>
@@ -1725,7 +1725,7 @@ function PainelDesign({
               className={`fchip${formulario.tema.layout === "coluna-unica" ? " active" : ""}`}
               onClick={() => atualizarTema({ layout: "coluna-unica" })}
             >
-              Uma coluna
+              {traduzir("Uma coluna")}
             </button>
             <button
               type="button"
@@ -1743,7 +1743,7 @@ function PainelDesign({
               {traduzir("Largura fixa")}
             </button>
             <button type="button" className={`fchip${!formulario.tema.larguraFixa ? " active" : ""}`} onClick={() => atualizarTema({ larguraFixa: false })}>
-              Tela cheia
+              {traduzir("Tela cheia")}
             </button>
           </div>
         </div>
@@ -1762,7 +1762,7 @@ function PainelDesign({
               className={`fchip${formulario.tema.exibicao === "uma-por-vez" ? " active" : ""}`}
               onClick={() => atualizarTema({ exibicao: "uma-por-vez" })}
             >
-              Uma pergunta por vez
+              {traduzir("Uma pergunta por vez")}
             </button>
           </div>
         </div>
@@ -1788,7 +1788,7 @@ function PainelDesign({
               className={`fchip${formulario.tema.mostrarTitulo !== false ? " active" : ""}`}
               onClick={() => atualizarTema({ mostrarTitulo: formulario.tema.mostrarTitulo === false })}
             >
-              Título da página
+              {traduzir("Título da página")}
             </button>
             <button
               type="button"
@@ -1888,13 +1888,13 @@ function PainelDesign({
             id="pixel-meta"
             className="input"
             style={{ width: "100%" }}
-            placeholder="Só os números, ex.: 1234567890"
+            placeholder={traduzir("Só os números, ex.: 1234567890")}
             value={formulario.integracoes?.pixelMeta ?? ""}
             onChange={(e) => atualizarIntegracoes({ pixelMeta: e.target.value.trim() || undefined })}
           />
         </div>
         <div className="field">
-          <label htmlFor="tag-google">Tag do Google</label>
+          <label htmlFor="tag-google">{traduzir("Tag do Google")}</label>
           <input
             id="tag-google"
             className="input"

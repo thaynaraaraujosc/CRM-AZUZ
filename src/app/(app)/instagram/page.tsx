@@ -386,7 +386,7 @@ export default function InstagramConversasPage() {
                 </div>
                 <div>
                   <strong>{atual.perfil?.verificado == null ? "—" : atual.perfil.verificado ? "Sim" : "Não"}</strong>
-                  <span>Verificado</span>
+                  <span>{traduzir("Verificado")}</span>
                 </div>
                 <div>
                   <strong>{atual.perfil?.segueVoce == null ? "—" : atual.perfil.segueVoce ? "Sim" : "Não"}</strong>

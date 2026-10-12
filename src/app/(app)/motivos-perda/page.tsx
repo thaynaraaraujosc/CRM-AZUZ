@@ -131,7 +131,7 @@ export default function MotivosPerdaPage() {
 
         <div className="grid kpi4">
           <KpiCard
-            label="Valor perdido"
+            label={traduzir("Valor perdido")}
             value={valorPerdido.label}
             sub={`${perdasFiltradas.length} de ${totalPerdas} negociações`}
             formula={valorPerdido.formula}

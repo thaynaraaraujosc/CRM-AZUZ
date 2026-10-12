@@ -373,7 +373,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
             value={ordenacao}
             onChange={(e) => setOrdenacao(e.target.value as typeof ordenacao)}
           >
-            <option value="edicao">Última edição</option>
+            <option value="edicao">{traduzir("Última edição")}</option>
             <option value="criacao">{traduzir("Criação")}</option>
             <option value="nome">Nome</option>
           </select>
@@ -398,7 +398,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
             </div>
 
             <div className="filters-row mb14" style={{ padding: "0 16px", flexWrap: "wrap" }}>
-              <button type="button" className={`fchip${categoriaModelo === "todas" ? " active" : ""}`} onClick={() => setCategoriaModelo("todas")}>Todas as categorias</button>
+              <button type="button" className={`fchip${categoriaModelo === "todas" ? " active" : ""}`} onClick={() => setCategoriaModelo("todas")}>{traduzir("Todas as categorias")}</button>
               {CATEGORIAS_MODELO.map((c) => (
                 <button type="button" key={c} className={`fchip${categoriaModelo === c ? " active" : ""}`} onClick={() => setCategoriaModelo(c)}>{c}</button>
               ))}
@@ -448,7 +448,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
                           className="btn primary"
                           onClick={(e) => { e.stopPropagation(); novoDocumento(m.id); }}
                         >
-                          Usar este modelo
+                          {traduzir("Usar este modelo")}
                         </button>
                         <button
                           type="button"
@@ -510,7 +510,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
               </div>
               <div className="panel-f" style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
                 <button type="button" className="btn ghost" onClick={() => setModeloPreviewId(null)}>{traduzir("Fechar")}</button>
-                <button type="button" className="btn primary" onClick={() => novoDocumento(modeloEmPreview.id)}>Usar este modelo</button>
+                <button type="button" className="btn primary" onClick={() => novoDocumento(modeloEmPreview.id)}>{traduzir("Usar este modelo")}</button>
               </div>
             </div>
           </div>
@@ -2376,7 +2376,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       window.alert("Nenhum título encontrado: use os estilos de título no texto primeiro.");
       return;
     }
-    inserirNaPagina(`<p><b>Sumário</b></p><ul>${titulos.map((t) => `<li>${t}</li>`).join("")}</ul>`);
+    inserirNaPagina(`<p><b>{traduzir("Sumário")}</b></p><ul>${titulos.map((t) => `<li>${t}</li>`).join("")}</ul>`);
   }
 
   function extrairEstrutura() {
@@ -2619,7 +2619,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   return (
     <div className="doc-editor-shell">
       <div className="doc-editor-header">
-        <button type="button" className="doc-voltar-btn" onClick={onFechar} aria-label="Voltar pra lista">
+        <button type="button" className="doc-voltar-btn" onClick={onFechar} aria-label={traduzir("Voltar pra lista")}>
           ←
         </button>
         <IconDoc width={22} height={22} />
@@ -2644,9 +2644,9 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         <div className="doc-header-acoes">
           <button type="button" className="doc-toolbar-btn" title={traduzir("Desfazer")} disabled={!podeDesfazer} onMouseDown={(e) => e.preventDefault()} onClick={desfazer}>↶</button>
           <button type="button" className="doc-toolbar-btn" title={traduzir("Refazer")} disabled={!podeRefazer} onMouseDown={(e) => e.preventDefault()} onClick={refazer}>↷</button>
-          <button type="button" className="doc-toolbar-btn" title="Zoom: diminuir" onClick={() => setZoom((z) => Math.max(50, z - 10))}>−</button>
+          <button type="button" className="doc-toolbar-btn" title={traduzir("Zoom: diminuir")} onClick={() => setZoom((z) => Math.max(50, z - 10))}>−</button>
           <span className="hint" style={{ minWidth: 34, textAlign: "center" }}>{zoom}%</span>
-          <button type="button" className="doc-toolbar-btn" title="Zoom: aumentar" onClick={() => setZoom((z) => Math.min(200, z + 10))}>+</button>
+          <button type="button" className="doc-toolbar-btn" title={traduzir("Zoom: aumentar")} onClick={() => setZoom((z) => Math.min(200, z + 10))}>+</button>
           <button type="button" className="doc-toolbar-btn" title={traduzir("Imprimir")} onClick={abrirPreviaImpressao}><IconPrint width={15} height={15} /></button>
           <span className="doc-header-sep" />
           <button
@@ -2680,7 +2680,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       <div className={`doc-menu-bar${mostrarToolbar ? "" : " doc-menu-bar-fim"}`}>
         <MenuTopo label={traduzir("Arquivo")} aberto={menuAberto === "arquivo"} onAbrir={() => setMenuAberto("arquivo")} onFechar={() => setMenuAberto(null)} itens={menuArquivo} />
         <MenuTopo label={traduzir("Editar")} aberto={menuAberto === "editar"} onAbrir={() => setMenuAberto("editar")} onFechar={() => setMenuAberto(null)} itens={menuEditar} />
-        <MenuTopo label="Ver" aberto={menuAberto === "ver"} onAbrir={() => setMenuAberto("ver")} onFechar={() => setMenuAberto(null)} itens={menuVer} />
+        <MenuTopo label={traduzir("Ver")} aberto={menuAberto === "ver"} onAbrir={() => setMenuAberto("ver")} onFechar={() => setMenuAberto(null)} itens={menuVer} />
         <MenuTopo label={traduzir("Inserir")} aberto={menuAberto === "inserir"} onAbrir={() => setMenuAberto("inserir")} onFechar={() => setMenuAberto(null)} itens={menuInserir} />
         <MenuTopo label={traduzir("Formatar")} aberto={menuAberto === "formatar"} onAbrir={() => setMenuAberto("formatar")} onFechar={() => setMenuAberto(null)} itens={menuFormatar} />
         <MenuTopo label={traduzir("Ferramentas")} aberto={menuAberto === "ferramentas"} onAbrir={() => setMenuAberto("ferramentas")} onFechar={() => setMenuAberto(null)} itens={menuFerramentas} />
@@ -2701,7 +2701,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             aplicarFormatacao("fontName", valor);
           }}
         />
-        <select className="doc-toolbar-select" defaultValue={TAMANHOS_FONTE_DOC[1].valor} aria-label="Tamanho da fonte" onChange={(e) => aplicarFormatacao("fontSize", e.target.value)}>
+        <select className="doc-toolbar-select" defaultValue={TAMANHOS_FONTE_DOC[1].valor} aria-label={traduzir("Tamanho da fonte")} onChange={(e) => aplicarFormatacao("fontSize", e.target.value)}>
           {TAMANHOS_FONTE_DOC.map((t) => (
             <option key={t.label} value={t.valor}>{t.label}</option>
           ))}
@@ -2709,7 +2709,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         <span className="doc-toolbar-sep" />
         <button type="button" className="doc-toolbar-btn" style={{ fontWeight: 700 }} title={traduzir("Negrito")} onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("bold")}>N</button>
         <button type="button" className="doc-toolbar-btn" style={{ fontStyle: "italic" }} title={traduzir("Itálico")} onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("italic")}>I</button>
-        <button type="button" className="doc-toolbar-btn" style={{ textDecoration: "underline" }} title="Sublinhado" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("underline")}>S</button>
+        <button type="button" className="doc-toolbar-btn" style={{ textDecoration: "underline" }} title={traduzir("Sublinhado")} onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("underline")}>S</button>
         <SeletorCor titulo={traduzir("Cor do texto")} cores={CORES_TEXTO} onEscolher={(c) => aplicarFormatacao("foreColor", c)} rotulo="A" />
         <span className="doc-toolbar-sep" />
         <button type="button" className="doc-toolbar-btn" title={traduzir("Alinhar à esquerda")} onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("justifyLeft")}>≡◧</button>
@@ -2720,7 +2720,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
           <div style={{ maxHeight: 420, overflowY: "auto" }}>
             <p className="doc-menu-categoria">{traduzir("Conteúdo")}</p>
             <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={() => inserirNaPagina("<div>Novo texto</div>")}>
-              <span className="n" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><IconText width={13} height={13} /> Texto</span>
+              <span className="n" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><IconText width={13} height={13} /> {traduzir("Texto")}</span>
             </button>
             <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={() => inserirNaPagina('<div style="border:1px solid #999;padding:8px;display:inline-block;">{traduzir("Caixa de texto")}</div>')}>
               <span className="n">▭ Caixa de texto</span>
@@ -2746,7 +2746,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
               <span className="n" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><IconAnexo width={13} height={13} /> {traduzir("Arquivo")}</span>
             </button>
             <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={inserirSimbolo}>
-              <span className="n">Ícone</span>
+              <span className="n">{traduzir("Ícone")}</span>
             </button>
             <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={() => aplicarFormatacao("insertHorizontalRule")}>
               <span className="n">. Linha</span>
@@ -2878,7 +2878,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
               <button type="button" className="modal-close-btn" aria-label={traduzir("Fechar")} onClick={() => setEstruturaAberta(false)}><IconClose width={12} height={12} /></button>
             </div>
             {estrutura.length === 0 ? (
-              <p className="hint" style={{ padding: 17 }}>Use Título 1, Título 2 ou Título 3 no texto pra ver a estrutura aqui.</p>
+              <p className="hint" style={{ padding: 17 }}>{traduzir("Use Título 1, Título 2 ou Título 3 no texto pra ver a estrutura aqui.")}</p>
             ) : (
               estrutura.map((item, i) => (
                 <button
@@ -2999,7 +2999,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         ) : celulaSelecionada ? (
           <aside className="doc-lateral-painel">
             <div className="panel-h">
-              <h4>Tabela</h4>
+              <h4>{traduzir("Tabela")}</h4>
               <button type="button" className="modal-close-btn" aria-label={traduzir("Fechar")} onClick={() => setCelulaSelecionada(null)}><IconClose width={12} height={12} /></button>
             </div>
             <div className="field">
@@ -3064,7 +3064,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
               <button type="button" className="modal-close-btn" aria-label={traduzir("Recolher painel")} onClick={() => setPainelLateralAberto(false)}><IconClose width={12} height={12} /></button>
             </div>
             <div className="doc-painel-tabs">
-              <button type="button" className={`doc-painel-tab${abaPainelPadrao === "texto" ? " on" : ""}`} onClick={() => setAbaPainelPadrao("texto")}>Texto</button>
+              <button type="button" className={`doc-painel-tab${abaPainelPadrao === "texto" ? " on" : ""}`} onClick={() => setAbaPainelPadrao("texto")}>{traduzir("Texto")}</button>
               <button type="button" className={`doc-painel-tab${abaPainelPadrao === "pagina" ? " on" : ""}`} onClick={() => setAbaPainelPadrao("pagina")}>{traduzir("Página")}</button>
             </div>
 
@@ -3083,7 +3083,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                   <SeletorFonte fontes={FONTES_DOCUMENTO} valorAtual={fonteAtual} onEscolher={(valor) => { setFonteAtual(valor); aplicarFormatacao("fontName", valor); }} />
                 </div>
                 <div className="field">
-                  <label>Tamanho</label>
+                  <label>{traduzir("Tamanho")}</label>
                   <select className="input" defaultValue={TAMANHOS_FONTE_DOC[1].valor} onChange={(e) => aplicarFormatacao("fontSize", e.target.value)}>
                     {TAMANHOS_FONTE_DOC.map((t) => (
                       <option key={t.label} value={t.valor}>{t.label}</option>
@@ -3166,7 +3166,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             ) : (
               <>
                 <div className="field">
-                  <label>Tamanho do papel</label>
+                  <label>{traduzir("Tamanho do papel")}</label>
                   <select className="input" value={doc.config.tamanho} onChange={(e) => atualizarConfigPagina(id, { tamanho: e.target.value as TamanhoPapel })}>
                     <option value="A4">A4</option>
                     <option value="Carta">{traduzir("Carta")}</option>
@@ -3258,7 +3258,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             />
           </div>
           <div className="field" style={{ padding: "6px 0" }}>
-            <input className="input" style={{ width: "100%" }} placeholder="Substituir por" value={substituirTexto} onChange={(e) => setSubstituirTexto(e.target.value)} />
+            <input className="input" style={{ width: "100%" }} placeholder={traduzir("Substituir por")} value={substituirTexto} onChange={(e) => setSubstituirTexto(e.target.value)} />
           </div>
           <label className="hint" style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
             <input type="checkbox" checked={diferenciarCase} onChange={(e) => { setDiferenciarCase(e.target.checked); setBuscaIndiceAtual(0); }} />
@@ -3276,8 +3276,8 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             <button type="button" className="btn ghost" style={{ flex: 1 }} onClick={localizarProximo}>{traduzir("Próxima ▸")}</button>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
-            <button type="button" className="btn ghost" style={{ flex: 1 }} onClick={substituirAtual}>Substituir</button>
-            <button type="button" className="btn primary" style={{ flex: 1 }} onClick={substituirTodos}>Substituir todos</button>
+            <button type="button" className="btn ghost" style={{ flex: 1 }} onClick={substituirAtual}>{traduzir("Substituir")}</button>
+            <button type="button" className="btn primary" style={{ flex: 1 }} onClick={substituirTodos}>{traduzir("Substituir todos")}</button>
           </div>
         </div>
       ) : null}
@@ -3310,7 +3310,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
           </div>
           <div className="stat-row"><span className="sl">{traduzir("Autor")}</span><span className="sv">{doc.autor}</span></div>
           <div className="stat-row"><span className="sl">{traduzir("Criado em")}</span><span className="sv">{formatarQuando(doc.criadoEm)}</span></div>
-          <div className="stat-row"><span className="sl">Última edição</span><span className="sv">{formatarQuando(doc.atualizadoEm)}</span></div>
+          <div className="stat-row"><span className="sl">{traduzir("Última edição")}</span><span className="sv">{formatarQuando(doc.atualizadoEm)}</span></div>
           <div className="stat-row"><span className="sl">{traduzir("Palavras")}</span><span className="sv">{contagem.palavras}</span></div>
         </div>
       ) : null}
@@ -3344,7 +3344,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
               <li><b>{traduzir("Arquivo")}</b>: novo documento, cópia, compartilhar, exportar (PDF/Word/TXT/RTF/HTML) e configuração da página.</li>
               <li><b>{traduzir("Inserir")}</b> → Imagem: clique na imagem depois de inserida para redimensionar, recortar, girar e definir a quebra de texto.</li>
               <li><b>{traduzir("Formatar")}</b> → Colunas: define 1, 2 ou 3 colunas para o documento ou para a seleção.</li>
-              <li><b>Ver</b> → alterna régua, caracteres não imprimíveis, modo paginado/contínuo e zoom.</li>
+              <li><b>{traduzir("Ver")}</b> → alterna régua, caracteres não imprimíveis, modo paginado/contínuo e zoom.</li>
               <li>A auto-paginação move o texto para a página seguinte automaticamente conforme você digita.</li>
             </ul>
           </div>
@@ -3485,7 +3485,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             <button type="button" className="modal-close-btn" aria-label={traduzir("Fechar")} onClick={() => setConfigPaginaAberto(false)}><IconClose width={12} height={12} /></button>
           </div>
           <div className="field">
-            <label>Tamanho do papel</label>
+            <label>{traduzir("Tamanho do papel")}</label>
             <select className="input" style={{ width: "100%" }} value={doc.config.tamanho} onChange={(e) => atualizarConfigPagina(id, { tamanho: e.target.value as TamanhoPapel })}>
               <option value="A4">A4</option>
               <option value="Carta">{traduzir("Carta")}</option>
@@ -3503,7 +3503,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             <label>{traduzir("Margens (mm): cada lado é independente")}</label>
             <div className="doc-margens-grid">
               <label className="doc-margem-campo">
-                <span>Superior</span>
+                <span>{traduzir("Superior")}</span>
                 <input
                   type="number"
                   className="input"
@@ -3753,8 +3753,8 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
           <div className="field">
             <label>{traduzir("O que exportar")}</label>
             <div className="filters-row" style={{ margin: 0, flexWrap: "wrap" }}>
-              <button type="button" className={`fchip${escopoExportar === "todas" ? " active" : ""}`} onClick={() => setEscopoExportar("todas")}>Todas as páginas</button>
-              <button type="button" className={`fchip${escopoExportar === "atual" ? " active" : ""}`} onClick={() => setEscopoExportar("atual")}>Só a página atual</button>
+              <button type="button" className={`fchip${escopoExportar === "todas" ? " active" : ""}`} onClick={() => setEscopoExportar("todas")}>{traduzir("Todas as páginas")}</button>
+              <button type="button" className={`fchip${escopoExportar === "atual" ? " active" : ""}`} onClick={() => setEscopoExportar("atual")}>{traduzir("Só a página atual")}</button>
               <button type="button" className={`fchip${escopoExportar === "especificas" ? " active" : ""}`} onClick={() => setEscopoExportar("especificas")}>{traduzir("Páginas específicas")}</button>
             </div>
           </div>
@@ -4076,7 +4076,7 @@ function PainelImagem({
       <p className="hint" style={{ marginBottom: 8 }}>Dimensões atuais: {larguraAtual}×{alturaAtual}px</p>
 
       <div className="field">
-        <label>Unidade</label>
+        <label>{traduzir("Unidade")}</label>
         <div className="filters-row" style={{ margin: 0 }}>
           <button type="button" className={`fchip${unidadeTamanho === "px" ? " active" : ""}`} onClick={() => setUnidadeTamanho("px")}>{traduzir("Pixels")}</button>
           <button type="button" className={`fchip${unidadeTamanho === "cm" ? " active" : ""}`} onClick={() => setUnidadeTamanho("cm")}>{traduzir("Centímetros")}</button>
@@ -4167,7 +4167,7 @@ function PainelImagem({
       <div className="field">
         <label>{traduzir("Cortar (% de cada lado)")}</label>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-          <input type="number" className="input" placeholder="Topo" value={cortarTopo} onChange={(e) => setCortarTopo(Number(e.target.value) || 0)} />
+          <input type="number" className="input" placeholder={traduzir("Topo")} value={cortarTopo} onChange={(e) => setCortarTopo(Number(e.target.value) || 0)} />
           <input type="number" className="input" placeholder={traduzir("Direita")} value={cortarDireita} onChange={(e) => setCortarDireita(Number(e.target.value) || 0)} />
           <input type="number" className="input" placeholder={traduzir("Baixo")} value={cortarBaixo} onChange={(e) => setCortarBaixo(Number(e.target.value) || 0)} />
           <input type="number" className="input" placeholder={traduzir("Esquerda")} value={cortarEsquerda} onChange={(e) => setCortarEsquerda(Number(e.target.value) || 0)} />
@@ -4206,7 +4206,7 @@ function PainelImagem({
           defaultValue={100}
           onChange={(e) => onMudar((img) => { img.style.opacity = String(Number(e.target.value) / 100); })}
           style={{ width: "100%", marginTop: 10 }}
-          title="Transparência"
+          title={traduzir("Transparência")}
         />
         <input
           type="range"
@@ -4247,7 +4247,7 @@ function PainelImagem({
         <label>{traduzir("Efeitos")}</label>
         <div className="filters-row" style={{ margin: 0 }}>
           <button type="button" className="fchip" onClick={() => aplicarPresetEfeito("pb")}>{traduzir("Preto e branco")}</button>
-          <button type="button" className="fchip" onClick={() => aplicarPresetEfeito("sepia")}>Sépia</button>
+          <button type="button" className="fchip" onClick={() => aplicarPresetEfeito("sepia")}>{traduzir("Sépia")}</button>
           <button type="button" className="fchip" onClick={() => aplicarPresetEfeito("nenhum")}>{traduzir("Nenhum")}</button>
         </div>
         <label className="hint" style={{ display: "block", marginTop: 8 }}>{traduzir("Desfoque")}</label>
@@ -4271,7 +4271,7 @@ function PainelImagem({
             if (novo !== null) onMudar((img) => { img.alt = novo; });
           }}
         >
-          Texto alternativo
+          {traduzir("Texto alternativo")}
         </button>
         <button
           type="button"
@@ -4300,7 +4300,7 @@ function PainelImagem({
       </div>
 
       <div className="field" style={{ display: "flex", gap: 8 }}>
-        <button type="button" className="btn ghost" style={{ flex: 1 }} onClick={onSubstituir}>Substituir</button>
+        <button type="button" className="btn ghost" style={{ flex: 1 }} onClick={onSubstituir}>{traduzir("Substituir")}</button>
         <button type="button" className="btn ghost" style={{ flex: 1 }} onClick={onDuplicar}>{traduzir("Duplicar")}</button>
       </div>
       <div className="field" style={{ display: "flex", gap: 8 }}>
@@ -4460,7 +4460,7 @@ function MenuContextoImagem({
       style={{ left: pos.x + ajuste.x, top: pos.y + ajuste.y }}
       onContextMenu={(e) => e.preventDefault()}
     >
-      <button type="button" onClick={onSubstituir} style={{ display: "flex", alignItems: "center", gap: 6 }}><IconRepeat width={13} height={13} /> Substituir imagem</button>
+      <button type="button" onClick={onSubstituir} style={{ display: "flex", alignItems: "center", gap: 6 }}><IconRepeat width={13} height={13} /> {traduzir("Substituir imagem")}</button>
       <button type="button" onClick={onDuplicar}>⧉ Duplicar</button>
       <div className="doc-context-menu-sep" />
       <div className="doc-context-menu-linha">

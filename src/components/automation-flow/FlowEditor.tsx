@@ -1171,7 +1171,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           {!modoConstrucao && rfNodes.length === 0 ? (
             <div className="flow-inicio-vazio">
               <p className="flow-inicio-vazio-titulo">{traduzir("Esse fluxo ainda não tem nenhum bloco.")}</p>
-              <p className="flow-inicio-vazio-sub">Troque pro modo Construir pra montar a automação.</p>
+              <p className="flow-inicio-vazio-sub">{traduzir("Troque pro modo Construir pra montar a automação.")}</p>
             </div>
           ) : null}
 
@@ -1216,7 +1216,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           {modoConstrucao && rfNodes.length === 0 && area !== "social" && !inicioNoFunil ? (
             <div className="flow-inicio-vazio">
               <p className="flow-inicio-vazio-titulo">{traduzir("Como esta automação deve começar?")}</p>
-              <p className="flow-inicio-vazio-sub">Toda automação começa a partir de um gatilho.</p>
+              <p className="flow-inicio-vazio-sub">{traduzir("Toda automação começa a partir de um gatilho.")}</p>
               <button type="button" className="btn primary" onClick={() => setEscolherGatilhoAberto(true)}>
                 + Escolher gatilho
               </button>
@@ -1266,7 +1266,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                     setLibAberta(true);
                   }}
                 >
-                  Ver todos os gatilhos
+                  {traduzir("Ver todos os gatilhos")}
                 </button>
               </div>
             </div>

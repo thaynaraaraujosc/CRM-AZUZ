@@ -8490,7 +8490,7 @@ function ConversasPageInner() {
             />
           </div>
           <div className="field" style={{ padding: "0 0 10px" }}>
-            <label>Texto</label>
+            <label>{traduzir("Texto")}</label>
             <textarea
               className="input"
               style={{ width: "100%", minHeight: 60, resize: "vertical" }}

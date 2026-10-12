@@ -124,7 +124,7 @@ export function MontarDemo() {
           minLength={8}
           required
           autoComplete="new-password"
-          placeholder="pelo menos 8 caracteres"
+          placeholder={traduzir("pelo menos 8 caracteres")}
         />
       </div>
 

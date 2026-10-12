@@ -140,7 +140,7 @@ export default function NovaAutomacaoComercialPage() {
               <IconAutomacoes width={26} height={26} aria-hidden="true" />
               <strong>{traduzir("Montar do zero")}</strong>
               <span>
-                Você escolhe a etapa e o momento, e monta bloco a bloco num canvas em branco.
+                {traduzir("Você escolhe a etapa e o momento, e monta bloco a bloco num canvas em branco.")}
               </span>
             </button>
 

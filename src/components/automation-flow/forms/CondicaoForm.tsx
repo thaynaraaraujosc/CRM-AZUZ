@@ -232,7 +232,7 @@ export function CondicaoForm({
   return (
     <div className="flow-cond-grupo" style={{ marginLeft: nivel > 0 ? 12 : 0 }}>
       <div className="flow-cond-grupo-h">
-        <div className="seg-picker" role="group" aria-label="Tipo do grupo de condições">
+        <div className="seg-picker" role="group" aria-label={traduzir("Tipo do grupo de condições")}>
           {(["E", "OU", "NAO"] as const).map((tipo) => (
             <button
               key={tipo}
@@ -293,7 +293,7 @@ export function CondicaoForm({
               placeholder={traduzir("Até")}
               value={regra.valorFim ?? ""}
               onChange={(e) => atualizarRegra(regra.id, { valorFim: e.target.value })}
-              aria-label="Valor final (entre)"
+              aria-label={traduzir("Valor final (entre)")}
             />
           ) : null}
           <button

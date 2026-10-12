@@ -649,7 +649,7 @@ export function ReportWizard({
               </div>
 
               <div className="field">
-                <label>Tamanho do papel</label>
+                <label>{traduzir("Tamanho do papel")}</label>
                 <div className="filters-row">
                   <button
                     type="button"
@@ -792,7 +792,7 @@ export function ReportWizard({
 
                   <div className="filters-row" style={{ margin: 0 }}>
                     <button type="button" className="btn ghost" onClick={() => irParaEtapa(2)}>
-                      Voltar e editar
+                      {traduzir("Voltar e editar")}
                     </button>
                     <button
                       type="button"
@@ -830,7 +830,7 @@ export function ReportWizard({
                       Arquivo: {nomeArquivoRelatorio(nomeRelatorio, periodoLabel(periodo))}
                     </p>
                     <button type="button" className="link" onClick={() => setEtapa(4)} style={{ marginTop: 6 }}>
-                      Visualizar novamente
+                      {traduzir("Visualizar novamente")}
                     </button>
                   </div>
 
@@ -847,7 +847,7 @@ export function ReportWizard({
                   {status === "erro" ? (
                     <p className="hint" style={{ color: "var(--danger)", display: "flex", alignItems: "center", gap: 4 }}>
                       <IconClose width={12} height={12} /> {mensagemErro || "Algo deu errado."}{" "}
-                      <button type="button" className="link" onClick={baixarPdf}>Tentar novamente</button>
+                      <button type="button" className="link" onClick={baixarPdf}>{traduzir("Tentar novamente")}</button>
                     </p>
                   ) : null}
 
@@ -861,7 +861,7 @@ export function ReportWizard({
                     {traduzir("Salvar relatório (sem baixar)")}
                   </button>
                   <button type="button" className="btn ghost block" onClick={() => irParaEtapa(2)}>
-                    Voltar e editar
+                    {traduzir("Voltar e editar")}
                   </button>
                   <button type="button" className="btn ghost block" disabled title={traduzir("Ainda não disponível nesta versão")}>
                     {traduzir("Programar envio (indisponível: recurso em desenvolvimento)")}

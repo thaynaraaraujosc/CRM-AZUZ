@@ -30,7 +30,7 @@ export function CriarTarefaForm({ data, onChange }: { data: CriarTarefaData; onC
   return (
     <div className="flow-form">
       <div className="field">
-        <label>Tipo de tarefa</label>
+        <label>{traduzir("Tipo de tarefa")}</label>
         <select className="input" value={data.categoria ?? ""} onChange={(e) => onChange({ ...data, categoria: e.target.value })}>
           {CATEGORIAS_TAREFA.map((c) => (
             <option key={c} value={c}>

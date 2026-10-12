@@ -52,10 +52,10 @@ export default function ExecucoesSociaisPage() {
         actions={
           <div className="social-periodo">
             <button type="button" className={`seg-chip${soErros ? "" : " on"}`} onClick={() => setSoErros(false)}>
-              Todas
+              {traduzir("Todas")}
             </button>
             <button type="button" className={`seg-chip${soErros ? " on" : ""}`} onClick={() => setSoErros(true)}>
-              Só erros
+              {traduzir("Só erros")}
             </button>
           </div>
         }

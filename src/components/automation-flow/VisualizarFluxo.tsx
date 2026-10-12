@@ -134,7 +134,7 @@ export function VisualizarFluxo({ fluxo, onFechar }: { fluxo: FluxoAutomacao; on
 
         <div className="section-foot">
           <button type="button" className="btn ghost" onClick={() => setSimuladorAberto(true)}>
-            Testar no simulador
+            {traduzir("Testar no simulador")}
           </button>
           <button type="button" className="btn ghost" onClick={editar}>
             {traduzir("Editar")}

@@ -90,7 +90,7 @@ export function MensagemEmailForm({ data, onChange }: { data: MensagemEmailData;
       </div>
 
       <div className="field">
-        <label>Usar modelo salvo</label>
+        <label>{traduzir("Usar modelo salvo")}</label>
         <select className="input" value={data.modeloId ?? ""} onChange={(e) => onChange({ ...data, modeloId: e.target.value })}>
           <option value="">{traduzir("Nenhum")}</option>
           {MODELOS_EMAIL.map((m) => (
