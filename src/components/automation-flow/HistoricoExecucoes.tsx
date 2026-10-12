@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { IconBloqueado, IconCheck, IconClose, IconErro, IconPause, IconPular } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * "Rodou? Parou onde?": a pergunta mais comum sobre automação, que até aqui não tinha resposta.
@@ -55,6 +56,7 @@ function quando(iso: string): string {
 }
 
 export function HistoricoExecucoes({ fluxoId, onFechar }: { fluxoId: string; onFechar: () => void }) {
+  const { t: traduzir } = useIdioma();
   const [execucoes, setExecucoes] = useState<Execucao[] | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [aberta, setAberta] = useState<string | null>(null);
@@ -124,7 +126,7 @@ export function HistoricoExecucoes({ fluxoId, onFechar }: { fluxoId: string; onF
                       <p className="hint">Continua em {quando(execucao.aguardandoAte)}.</p>
                     ) : null}
                     {execucao.aguardandoEvento && !execucao.aguardandoAte ? (
-                      <p className="hint">Esperando o contato responder: sem prazo.</p>
+                      <p className="hint">{traduzir("Esperando o contato responder: sem prazo.")}</p>
                     ) : null}
 
                     <ul className="flow-sim-passos">

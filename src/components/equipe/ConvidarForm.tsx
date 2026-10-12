@@ -90,7 +90,7 @@ export function ConvidarForm() {
           <input className="input" style={{ width: "100%" }} value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome completo" />
         </div>
         <div className="field">
-          <label>E-mail (vai ser o login dele)</label>
+          <label>{traduzir("E-mail (vai ser o login dele)")}</label>
           <input
             className="input"
             style={{ width: "100%" }}
@@ -109,7 +109,7 @@ export function ConvidarForm() {
               style={{ width: "100%" }}
               value={nomePapelCustom}
               onChange={(e) => setNomePapelCustom(e.target.value)}
-              placeholder="Ex.: Estoquista, Financeiro…"
+              placeholder={traduzir("Ex.: Estoquista, Financeiro…")}
             />
           ) : null}
         </div>

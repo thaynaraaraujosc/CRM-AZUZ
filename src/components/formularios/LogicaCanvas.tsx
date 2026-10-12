@@ -62,7 +62,7 @@ function CondicaoNode({ data }: NodeProps<CondicaoRFNode>) {
   const escondeValor = regra.operador === "preenchido" || regra.operador === "vazio";
   return (
     <div className="flow-node form-logica-node">
-      <button type="button" className="form-logica-node-excluir" title="Excluir condição" onClick={onExcluir}>
+      <button type="button" className="form-logica-node-excluir" title={traduzir("Excluir condição")} onClick={onExcluir}>
         <IconClose width={13} height={13} />
       </button>
       <div className="flow-node-header">
@@ -99,12 +99,13 @@ function CondicaoNode({ data }: NodeProps<CondicaoRFNode>) {
 }
 
 function ResultadoNode({ data }: NodeProps<ResultadoRFNode>) {
+  const { t: traduzir } = useIdioma();
   const { modo, rotuloCampo, onMudarModo } = data;
   return (
     <div className="flow-node form-logica-node form-logica-node-resultado">
       <Handle type="target" position={Position.Top} className="flow-handle" />
       <div className="flow-node-header">
-        <span className="flow-node-categoria">ENTÃO</span>
+        <span className="flow-node-categoria">{traduzir("ENTÃO")}</span>
       </div>
       <div className="flow-node-body form-logica-node-corpo">
         <select className="input" value={modo} onChange={(e) => onMudarModo(e.target.value as LogicaCampo["modo"])}>

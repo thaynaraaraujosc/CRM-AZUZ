@@ -57,7 +57,7 @@ export function AtualizarCampoForm({
           value={data.campoNome ?? ""}
           onChange={(e) => onChange({ ...data, campoNome: e.target.value })}
         >
-          <option value="">Escolha o campo</option>
+          <option value="">{traduzir("Escolha o campo")}</option>
           {sumiu ? <option value={data.campoNome}>{data.campoNome} (campo apagado)</option> : null}
           <optgroup label={traduzir("Campos do lead")}>
             {CAMPOS_NATIVOS.map((c) => (

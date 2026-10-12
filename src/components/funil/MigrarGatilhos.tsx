@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import type { ResultadoDaMigracao } from "@/lib/funil/migrar-gatilhos";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * O aviso que aparece quando existem automações com o gatilho ainda dentro do fluxo.
@@ -16,6 +17,7 @@ import type { ResultadoDaMigracao } from "@/lib/funil/migrar-gatilhos";
  * cego é o tipo de coisa que não se oferece.
  */
 export function MigrarGatilhos({ aoMigrar }: { aoMigrar: () => void }) {
+  const { t: traduzir } = useIdioma();
   const [previa, setPrevia] = useState<ResultadoDaMigracao | null>(null);
   const [aberto, setAberto] = useState(false);
   const [migrando, setMigrando] = useState(false);
@@ -60,7 +62,7 @@ export function MigrarGatilhos({ aoMigrar }: { aoMigrar: () => void }) {
           {feito} automaç{feito === 1 ? "ão passou" : "ões passaram"} a ser executada
           {feito === 1 ? "" : "s"} pela etapa.
         </strong>
-        <span>Elas já aparecem na grade abaixo. Os blocos de gatilho continuam nos fluxos.</span>
+        <span>{traduzir("Elas já aparecem na grade abaixo. Os blocos de gatilho continuam nos fluxos.")}</span>
       </div>
     );
   }

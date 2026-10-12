@@ -1152,13 +1152,13 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
               <Panel position="top-center">
                 <div className="flow-selection-bar">
                   <span>{selectedNodeIds.length} selecionado(s)</span>
-                  <button type="button" className="btn ghost" title="Duplicar (Ctrl+D)" onClick={duplicarSelecionados}>
-                    Duplicar
+                  <button type="button" className="btn ghost" title={traduzir("Duplicar (Ctrl+D)")} onClick={duplicarSelecionados}>
+                    {traduzir("Duplicar")}
                   </button>
                   <button
                     type="button"
                     className="btn ghost"
-                    title="Excluir (Delete)"
+                    title={traduzir("Excluir (Delete)")}
                     onClick={() => removerNodes(selectedNodeIds)}
                   >
                     {traduzir("Excluir")}
@@ -1170,7 +1170,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
 
           {!modoConstrucao && rfNodes.length === 0 ? (
             <div className="flow-inicio-vazio">
-              <p className="flow-inicio-vazio-titulo">Esse fluxo ainda não tem nenhum bloco.</p>
+              <p className="flow-inicio-vazio-titulo">{traduzir("Esse fluxo ainda não tem nenhum bloco.")}</p>
               <p className="flow-inicio-vazio-sub">Troque pro modo Construir pra montar a automação.</p>
             </div>
           ) : null}
@@ -1319,7 +1319,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                         setMenuContexto(null);
                       }}
                     >
-                      Duplicar
+                      {traduzir("Duplicar")}
                     </button>
                     <button
                       type="button"

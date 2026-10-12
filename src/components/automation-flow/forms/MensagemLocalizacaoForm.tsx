@@ -63,7 +63,7 @@ export function MensagemLocalizacaoForm({ data, onChange }: { data: MensagemLoca
         <>
           <div className="field">
             <label>Nome do local</label>
-            <input className="input" placeholder="Ex.: Sede" value={data.nomeLocal ?? ""} onChange={(e) => onChange({ ...data, nomeLocal: e.target.value })} />
+            <input className="input" placeholder={traduzir("Ex.: Sede")} value={data.nomeLocal ?? ""} onChange={(e) => onChange({ ...data, nomeLocal: e.target.value })} />
           </div>
           <div className="field">
             <label>Endereço</label>
@@ -144,7 +144,7 @@ export function MensagemLocalizacaoForm({ data, onChange }: { data: MensagemLoca
           <textarea
             className="input"
             style={{ width: "100%", minHeight: 60, resize: "vertical" }}
-            placeholder="Ex.: Estamos te esperando neste endereço."
+            placeholder={traduzir("Ex.: Estamos te esperando neste endereço.")}
             value={data.mensagem ?? ""}
             onChange={(e) => onChange({ ...data, mensagem: e.target.value })}
           />

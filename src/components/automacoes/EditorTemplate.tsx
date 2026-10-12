@@ -166,7 +166,7 @@ export function EditorTemplate({
     >
       {!editavelNaMeta ? (
         <p className="tpl-aviso">
-          Este template já está na Meta. Pra mudar o texto, feche e use <strong>Duplicar</strong>: a cópia pode ser
+          Este template já está na Meta. Pra mudar o texto, feche e use <strong>{traduzir("Duplicar")}</strong>: a cópia pode ser
           editada e enviada pra análise como um modelo novo.
         </p>
       ) : null}
@@ -179,7 +179,7 @@ export function EditorTemplate({
             <input
               className="input"
               value={r.nome}
-              placeholder="Ex.: Retomar atendimento"
+              placeholder={traduzir("Ex.: Retomar atendimento")}
               onChange={(e) => setR((a) => ({ ...a, nome: e.target.value }))}
               disabled={!editavelNaMeta}
             />
@@ -332,7 +332,7 @@ export function EditorTemplate({
                       className="input"
                       value={b.texto}
                       maxLength={limites.botaoMaximo}
-                      placeholder="Ex.: Sim, quero continuar"
+                      placeholder={traduzir("Ex.: Sim, quero continuar")}
                       onChange={(e) => setR((a) => ({ ...a, botoes: a.botoes.map((x, j) => (j === i ? { texto: e.target.value } : x)) }))}
                       disabled={!editavelNaMeta}
                     />

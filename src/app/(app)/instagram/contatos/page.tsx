@@ -137,7 +137,7 @@ export default function InstagramContatosPage() {
               <strong>{escolhidos.size} escolhido(s)</strong>
               <input
                 className="input"
-                placeholder="Etiqueta"
+                placeholder={traduzir("Etiqueta")}
                 value={etiqueta}
                 onChange={(e) => setEtiqueta(e.target.value)}
               />
@@ -147,7 +147,7 @@ export default function InstagramContatosPage() {
                 disabled={ocupado || !etiqueta.trim()}
                 onClick={() => acaoEmMassa("etiquetar")}
               >
-                Etiquetar
+                {traduzir("Etiquetar")}
               </button>
               <button
                 type="button"
@@ -180,7 +180,7 @@ export default function InstagramContatosPage() {
                       type="checkbox"
                       checked={todosMarcados}
                       onChange={alternarTodos}
-                      aria-label="Escolher todos"
+                      aria-label={traduzir("Escolher todos")}
                     />
                   </th>
                   <th>Nome</th>
@@ -246,7 +246,7 @@ export default function InstagramContatosPage() {
                               setMenuAberto(null);
                             }}
                           >
-                            Etiquetar só este
+                            {traduzir("Etiquetar só este")}
                           </button>
                           <button
                             type="button"

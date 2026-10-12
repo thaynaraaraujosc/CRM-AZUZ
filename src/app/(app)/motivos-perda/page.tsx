@@ -144,7 +144,7 @@ export default function MotivosPerdaPage() {
             formula={motivoPrincipal.formula}
           />
           <KpiCard
-            label="Etapa mais afetada"
+            label={traduzir("Etapa mais afetada")}
             value={etapaMaisAfetada?.etapa ?? "-"}
             sub={etapaMaisAfetada ? `${etapaMaisAfetada.total} perdas` : undefined}
             href="/funil"
@@ -168,7 +168,7 @@ export default function MotivosPerdaPage() {
           )}
         </ChartCard>
 
-        <ChartCard title="Evolução das perdas no período">
+        <ChartCard title={traduzir("Evolução das perdas no período")}>
           {serieDiaria.length === 0 ? (
             <p className="hint" style={{ padding: 17 }}>{traduzir("Ainda sem movimento suficiente pra traçar uma evolução.")}</p>
           ) : (

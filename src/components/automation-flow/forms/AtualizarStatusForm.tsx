@@ -32,7 +32,7 @@ export function AtualizarStatusForm({ data, onChange }: { data: AtualizarStatusD
           <textarea
             className="input"
             style={{ width: "100%", minHeight: 60, resize: "vertical" }}
-            placeholder="Ex.: Sem retorno do lead"
+            placeholder={traduzir("Ex.: Sem retorno do lead")}
             value={data.motivoPerda ?? ""}
             onChange={(e) => onChange({ ...data, motivoPerda: e.target.value })}
           />

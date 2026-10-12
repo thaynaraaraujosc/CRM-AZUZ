@@ -74,7 +74,7 @@ function RelatoriosPageInner() {
 
   return (
     <>
-      <Topbar title="Relatórios" sub="Escolha o tipo de relatório. O conteúdo e os filtros você ajusta no assistente" />
+      <Topbar title="Relatórios" sub={traduzir("Escolha o tipo de relatório. O conteúdo e os filtros você ajusta no assistente")} />
 
       <div className="content">
         <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: 14 }}>
@@ -148,7 +148,7 @@ function RelatoriosPageInner() {
                         Gerar com dados atualizados
                       </button>
                       <button type="button" className="link" onClick={() => duplicarConfiguracao(r)}>
-                        Duplicar configuração
+                        {traduzir("Duplicar configuração")}
                       </button>
                       <button type="button" className="link" onClick={() => excluir(r.id)} style={{ color: "var(--danger)" }}>
                         {traduzir("Excluir")}

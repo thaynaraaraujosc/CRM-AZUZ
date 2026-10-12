@@ -64,7 +64,7 @@ export function ConfiguracoesGeraisForm({
       </div>
       {funilEscolhido ? (
         <div className="field">
-          <label>Etapa relacionada</label>
+          <label>{traduzir("Etapa relacionada")}</label>
           <select className="input" value={fluxo.etapaId ?? ""} onChange={(e) => onChange({ etapaId: e.target.value || undefined })}>
             <option value="">Qualquer etapa</option>
             {funilEscolhido.colunas.map((c) => (
@@ -145,7 +145,7 @@ export function ConfiguracoesGeraisForm({
         >
           <option value="aguardar">{traduzir("Aguardar e continuar quando abrir")}</option>
           <option value="continuar">{traduzir("Continuar mesmo assim")}</option>
-          <option value="encerrar">Encerrar a execução</option>
+          <option value="encerrar">{traduzir("Encerrar a execução")}</option>
         </select>
         <p className="hint">
           {cfg.foraDaJanela === "continuar"
@@ -233,12 +233,12 @@ export function ConfiguracoesGeraisForm({
       </div>
 
       <div className="toggle-row">
-        <span className="tl">Esperas e botões de verdade</span>
+        <span className="tl">{traduzir("Esperas e botões de verdade")}</span>
         <button
           type="button"
           role="switch"
           aria-checked={cfg.motorNovo !== false}
-          aria-label="Esperas e botões de verdade"
+          aria-label={traduzir("Esperas e botões de verdade")}
           className={`toggle${cfg.motorNovo !== false ? " on" : ""}`}
           onClick={() => onChangeConfiguracoes({ motorNovo: cfg.motorNovo === false })}
         >

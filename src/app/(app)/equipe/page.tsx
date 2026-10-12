@@ -209,7 +209,7 @@ export default function EquipePage() {
                   <h4>{traduzir("Acesso")}</h4>
                 </div>
                 <div className="field">
-                  <label>E-mail cadastrado</label>
+                  <label>{traduzir("E-mail cadastrado")}</label>
                   {emailEdit === null ? (
                     <div className="equipe-email-linha">
                       <div className="input">{membro.email}</div>
@@ -224,7 +224,7 @@ export default function EquipePage() {
                         type="email"
                         value={emailEdit}
                         onChange={(e) => setEmailEdit(e.target.value)}
-                        aria-label="E-mail do membro"
+                        aria-label={traduzir("E-mail do membro")}
                       />
                       <button
                         type="button"

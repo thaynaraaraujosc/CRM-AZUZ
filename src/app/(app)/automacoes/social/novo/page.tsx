@@ -94,7 +94,7 @@ export default function NovaAutomacaoSocialPage() {
         ) : (
           <section className="card">
             <div className="social-secao-topo">
-              <h3>Escolha o modelo</h3>
+              <h3>{traduzir("Escolha o modelo")}</h3>
               <button type="button" className="btn ghost" onClick={() => setEscolhendoModelo(false)}>
                 {traduzir("Voltar")}
               </button>

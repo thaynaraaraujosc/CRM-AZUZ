@@ -42,7 +42,7 @@ export function ThemeToggle() {
         aria-pressed={tema === "dark"}
         onClick={() => escolher("dark")}
       >
-        Escuro
+        {traduzir("Escuro")}
       </button>
     </div>
   );

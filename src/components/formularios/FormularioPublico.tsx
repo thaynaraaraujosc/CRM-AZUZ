@@ -450,7 +450,7 @@ export function FormularioPublico({
       <div className="form-public-page">
         <div className="form-public-card" style={{ background: "#ffffff" }}>
           <h2>Formulário indisponível</h2>
-          <p className="hint">Este formulário ainda está em rascunho. Publique-o no CRM pra receber respostas.</p>
+          <p className="hint">{traduzir("Este formulário ainda está em rascunho. Publique-o no CRM pra receber respostas.")}</p>
         </div>
       </div>
     );
@@ -461,7 +461,7 @@ export function FormularioPublico({
       <div className="form-public-page">
         <div className="form-public-card" style={{ background: "#ffffff" }}>
           <h2>
-            <IconCadeado width={16} height={16} aria-hidden="true" /> Este link precisa de uma senha
+            <IconCadeado width={16} height={16} aria-hidden="true" /> {traduzir("Este link precisa de uma senha")}
           </h2>
           <p className="hint">Peça o link completo (com a chave de acesso) pra quem te enviou.</p>
         </div>
@@ -537,7 +537,7 @@ export function FormularioPublico({
             pessoa entende que não é ela que está fazendo algo errado, e ninguém envia em branco. */}
         {camposDaPagina.length === 0 ? (
           <p className="hint" style={{ margin: "10px 0" }}>
-            Este formulário ainda não tem perguntas. Avise quem te mandou o link.
+            {traduzir("Este formulário ainda não tem perguntas. Avise quem te mandou o link.")}
           </p>
         ) : null}
 

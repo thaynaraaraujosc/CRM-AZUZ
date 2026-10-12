@@ -62,7 +62,7 @@ export function CancelarAgendamentoForm({ data, onChange }: { data: CancelarAgen
       ) : null}
 
       <div className="toggle-row">
-        <span className="tl">Enviar mensagem ao contato?</span>
+        <span className="tl">{traduzir("Enviar mensagem ao contato?")}</span>
         <button
           type="button"
           role="switch"

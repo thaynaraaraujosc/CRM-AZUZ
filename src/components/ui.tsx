@@ -728,7 +728,7 @@ export function FilterBar({
 
         {onExportar ? (
           <button type="button" className="btn ghost" onClick={onExportar}>
-            Exportar
+            {traduzir("Exportar")}
           </button>
         ) : null}
       </div>

@@ -162,7 +162,7 @@ export function Toolbar({
         >
           {entenderFluxoAtivo ? (
             <>
-              <IconCheck width={12} height={12} aria-hidden="true" /> Entender fluxo
+              <IconCheck width={12} height={12} aria-hidden="true" /> {traduzir("Entender fluxo")}
             </>
           ) : (
             "Entender fluxo"

@@ -46,7 +46,7 @@ export function AgendarConsultaForm({ data, onChange }: { data: AgendarConsultaD
         <label>Tipo de serviço</label>
         <input
           className="input"
-          placeholder="Ex.: Consulta de retorno"
+          placeholder={traduzir("Ex.: Consulta de retorno")}
           value={data.tipoServico ?? ""}
           onChange={(e) => onChange({ ...data, tipoServico: e.target.value })}
         />

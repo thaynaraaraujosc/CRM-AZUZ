@@ -97,7 +97,7 @@ export function SegurancaSecao() {
       </div>
 
       <div className="config-bloco">
-        <p className="config-bloco-titulo">E-mail de acesso</p>
+        <p className="config-bloco-titulo">{traduzir("E-mail de acesso")}</p>
         {!trocandoEmail ? (
           <div className="toggle-row" style={{ padding: "6px 0" }}>
             <span className="tl">{emailAtual}</span>
@@ -134,7 +134,7 @@ export function SegurancaSecao() {
             </div>
           </div>
         )}
-        {emailAlterado ? <p className="hint">E-mail alterado. Use o novo e-mail (com a mesma senha) da próxima vez que entrar.</p> : null}
+        {emailAlterado ? <p className="hint">{traduzir("E-mail alterado. Use o novo e-mail (com a mesma senha) da próxima vez que entrar.")}</p> : null}
       </div>
 
       <div className="config-bloco">
@@ -147,7 +147,7 @@ export function SegurancaSecao() {
               <div className="config-linha-clicavel" key={s.id} style={{ cursor: "default" }}>
                 <div>
                   <p className="n">
-                    {s.dispositivo} {s.atual ? <span className="pill on">Esta sessão</span> : null}
+                    {s.dispositivo} {s.atual ? <span className="pill on">{traduzir("Esta sessão")}</span> : null}
                   </p>
                   <p className="r">
                     {s.ip ? `${s.ip} · ` : ""}conectado desde {formatarData(s.criadoEm)}
@@ -155,7 +155,7 @@ export function SegurancaSecao() {
                 </div>
                 {!s.atual ? (
                   <button type="button" className="btn danger" onClick={() => encerrarSessao(s.id)}>
-                    Encerrar sessão
+                    {traduzir("Encerrar sessão")}
                   </button>
                 ) : null}
               </div>

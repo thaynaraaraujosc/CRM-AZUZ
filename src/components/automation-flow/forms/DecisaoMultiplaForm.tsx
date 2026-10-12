@@ -138,7 +138,7 @@ export function DecisaoMultiplaForm({
         </button>
 
         <p className="hint" style={{ marginTop: 8 }}>
-          Existe sempre uma saída <strong>&quot;Qualquer outra&quot;</strong>, e ela não some: um
+          {traduzir("Existe sempre uma saída")} <strong>&quot;Qualquer outra&quot;</strong>, e ela não some: um
           valor que ninguém previu precisa ter pra onde ir, senão a automação para em silêncio no
           meio da conversa.
         </p>

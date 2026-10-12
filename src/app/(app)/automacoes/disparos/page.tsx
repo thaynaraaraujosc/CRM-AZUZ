@@ -65,7 +65,7 @@ export default function DisparosPage() {
   return (
     <>
       <Topbar
-        title="Disparo em massa"
+        title={traduzir("Disparo em massa")}
         sub="Uma mensagem para muitos contatos, enviada aos poucos"
         actions={
           <button type="button" className="btn primary" onClick={() => setAssistente(true)}>
@@ -135,7 +135,7 @@ export default function DisparosPage() {
                                   setAExcluir(c);
                                 }}
                               >
-                                Excluir disparo
+                                {traduzir("Excluir disparo")}
                               </button>
                             </div>
                           </>
@@ -161,10 +161,10 @@ export default function DisparosPage() {
       {/* Reusa o modal que já existe no produto (`.modal-overlay`/`.modal`), em vez de um segundo
           conjunto de estilos que divergiria do primeiro na próxima correção de tema. */}
       {aExcluir ? (
-        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Excluir disparo">
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label={traduzir("Excluir disparo")}>
           <div className="modal" style={{ width: "min(480px, 100%)" }}>
             <div className="modal-cabecalho">
-              <strong className="int-title">Excluir este disparo do histórico?</strong>
+              <strong className="int-title">{traduzir("Excluir este disparo do histórico?")}</strong>
             </div>
             <div className="modal-corpo">
               <p>

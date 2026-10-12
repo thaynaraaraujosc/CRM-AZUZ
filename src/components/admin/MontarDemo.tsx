@@ -77,7 +77,7 @@ export function MontarDemo() {
           nessa conta.
         </p>
         <div className="field">
-          <label htmlFor="demo-acesso">Entre com este e-mail e a senha que você definiu</label>
+          <label htmlFor="demo-acesso">{traduzir("Entre com este e-mail e a senha que você definiu")}</label>
           <input id="demo-acesso" className="input" readOnly value={pronto.email} />
         </div>
         <div className="config-acoes">

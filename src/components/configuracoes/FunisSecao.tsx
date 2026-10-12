@@ -113,7 +113,7 @@ export function FunisSecao() {
               <label>{traduzir("Ações")}</label>
               <div style={{ display: "flex", gap: 6 }}>
                 <button type="button" className="btn ghost" onClick={() => duplicarFunil(funilAberto.id)}>
-                  Duplicar
+                  {traduzir("Duplicar")}
                 </button>
                 <button type="button" className="btn danger" onClick={() => excluirFunil(funilAberto.id)}>
                   {traduzir("Arquivar")}
@@ -122,7 +122,7 @@ export function FunisSecao() {
             </div>
           </div>
 
-          <p className="config-bloco-titulo">Etapas (arraste pra reordenar)</p>
+          <p className="config-bloco-titulo">{traduzir("Etapas (arraste pra reordenar)")}</p>
           <div className="config-etapas-lista">
             {funilAberto.colunas.map((etapa: ColunaFunil) => (
               <div

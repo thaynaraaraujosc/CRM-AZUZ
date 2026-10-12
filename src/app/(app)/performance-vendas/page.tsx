@@ -201,7 +201,7 @@ function PerformanceVendasPageInner() {
         ) : null}
 
         <ChartCard
-          title="Evolução no período"
+          title={traduzir("Evolução no período")}
           action={
             <div className="filters-row" style={{ margin: 0 }}>
               {METRICAS_EVOLUCAO.map((m) => (

@@ -43,7 +43,7 @@ export default function EditorFluxoPage({ params }: { params: Promise<{ id: stri
   if (id !== "novo" && !fluxos.some((f) => f.id === fluxoId)) {
     return (
       <div className="flow-shell-empty">
-        <p>Esse fluxo não existe (mais).</p>
+        <p>{traduzir("Esse fluxo não existe (mais).")}</p>
       </div>
     );
   }

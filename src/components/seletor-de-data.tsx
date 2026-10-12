@@ -173,7 +173,7 @@ export function SeletorDeData({
         <div
           className="seletor-data-painel"
           role="dialog"
-          aria-label="Escolher data"
+          aria-label={traduzir("Escolher data")}
           ref={painelRef}
           style={posicaoDoPainel()}
         >

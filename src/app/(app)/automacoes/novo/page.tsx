@@ -159,7 +159,7 @@ export default function NovaAutomacaoComercialPage() {
         {caminho === "modelos" && !modelo ? (
           <section className="card">
             <div className="social-secao-topo">
-              <h3>Escolha o modelo</h3>
+              <h3>{traduzir("Escolha o modelo")}</h3>
               <button type="button" className="btn ghost" onClick={() => setCaminho("escolher")}>
                 {traduzir("Voltar")}
               </button>
@@ -200,7 +200,7 @@ export default function NovaAutomacaoComercialPage() {
             <p className="hint">{modelo.descricao}</p>
 
             <div className="field">
-              <label htmlFor="modelo-funil">Em qual funil</label>
+              <label htmlFor="modelo-funil">{traduzir("Em qual funil")}</label>
               <select
                 id="modelo-funil"
                 className="input"
@@ -219,14 +219,14 @@ export default function NovaAutomacaoComercialPage() {
             </div>
 
             <div className="field">
-              <label htmlFor="modelo-etapa">Em qual etapa ele começa</label>
+              <label htmlFor="modelo-etapa">{traduzir("Em qual etapa ele começa")}</label>
               <select
                 id="modelo-etapa"
                 className="input"
                 value={etapaId}
                 onChange={(e) => setEtapaId(e.target.value)}
               >
-                <option value="">Escolha a etapa</option>
+                <option value="">{traduzir("Escolha a etapa")}</option>
                 {etapas.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.titulo}
@@ -265,7 +265,7 @@ export default function NovaAutomacaoComercialPage() {
                 {criando ? "Criando…" : "Criar e abrir o robô"}
               </button>
               <button type="button" className="btn ghost" onClick={() => setModeloId(null)}>
-                Escolher outro modelo
+                {traduzir("Escolher outro modelo")}
               </button>
             </div>
           </section>

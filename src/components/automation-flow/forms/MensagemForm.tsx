@@ -231,6 +231,7 @@ function EscolherFormulario({
   formularioId: string;
   onEscolher: (id: string) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const { formularios } = useFormularios();
   // O formulário escolhido pode ter sido apagado depois. Some da lista, e o bloco apontaria pra um
   // id invisível: melhor mostrar que ele sumiu do que parecer que nada foi escolhido.
@@ -239,7 +240,7 @@ function EscolherFormulario({
   return (
     <>
       <select className="input mt8" value={formularioId} onChange={(e) => onEscolher(e.target.value)}>
-        <option value="">Escolha um formulário</option>
+        <option value="">{traduzir("Escolha um formulário")}</option>
         {sumiu ? <option value={formularioId}>Formulário apagado ({formularioId})</option> : null}
         {formularios.map((f) => (
           <option key={f.id} value={f.id}>

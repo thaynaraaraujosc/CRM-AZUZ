@@ -367,7 +367,7 @@ export function PainelConversa({
             )}
             <input
               className="input"
-              placeholder="Escreva uma legenda (opcional)"
+              placeholder={traduzir("Escreva uma legenda (opcional)")}
               value={legendaPrevia}
               onChange={(e) => setLegendaPrevia(e.target.value)}
               onKeyDown={(e) => {
@@ -400,7 +400,7 @@ export function PainelConversa({
                 <span className="wa-anexo-icone wa-anexo-icone-documento">
                   <IconDoc width={17} height={17} />
                 </span>
-                <span className="wa-anexo-label">Documento</span>
+                <span className="wa-anexo-label">{traduzir("Documento")}</span>
               </button>
               <button type="button" className="wa-anexo-item" onClick={() => void compartilharLocalizacao()}>
                 <span className="wa-anexo-icone wa-anexo-icone-localizacao">
@@ -541,7 +541,7 @@ export function PainelConversa({
             {aba === "negociacao" ? (
               <>
                 <div className="field">
-                  <label>Etapa atual</label>
+                  <label>{traduzir("Etapa atual")}</label>
                   <div className="input">{etapaAtual ?? "Fora do funil"}</div>
                 </div>
                 <div className="field">

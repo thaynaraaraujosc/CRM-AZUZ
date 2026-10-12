@@ -270,7 +270,7 @@ export function MensagemOpcoesForm({
               </select>
               {(opcao.comparacao ?? "padrao") === "padrao" ? (
                 <p className="hint mt8">
-                  Aceita o número da opção, o texto dela e as respostas alternativas abaixo.
+                  {traduzir("Aceita o número da opção, o texto dela e as respostas alternativas abaixo.")}
                 </p>
               ) : null}
               {(opcao.comparacao ?? "padrao") !== "padrao" && opcao.comparacao !== "qualquer" ? (
@@ -305,7 +305,7 @@ export function MensagemOpcoesForm({
               ) : null}
             </div>
             <div className="flow-opcao-alternativas">
-              <label>Endereço do link</label>
+              <label>{traduzir("Endereço do link")}</label>
               <input
                 className="input"
                 placeholder="https://…"
@@ -377,7 +377,7 @@ export function MensagemOpcoesForm({
       </div>
 
       <div className="field">
-        <label>Esperar a resposta por</label>
+        <label>{traduzir("Esperar a resposta por")}</label>
         <div className="funil-auto-horas">
           <input
             type="number"

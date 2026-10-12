@@ -62,7 +62,7 @@ export function TarefaEventoForm({ data, onChange }: { data: TarefaEventoData; o
           <label>Título contém</label>
           <input
             className="input"
-            placeholder="Ex.: Retornar proposta"
+            placeholder={traduzir("Ex.: Retornar proposta")}
             value={data.tituloContem ?? ""}
             onChange={(e) => onChange({ ...data, tituloContem: e.target.value })}
           />

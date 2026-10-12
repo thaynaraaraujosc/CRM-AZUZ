@@ -43,7 +43,7 @@ export default function AmostraPage() {
         <section className="amostra-secao">
           <h3>Níveis de profundidade</h3>
           <p className="amostra-nota">
-            Cinco planos. Cada um se reconhece por sombra e borda, não por cor diferente.
+            {traduzir("Cinco planos. Cada um se reconhece por sombra e borda, não por cor diferente.")}
           </p>
           <div className="amostra-grid">
             {[
@@ -69,7 +69,7 @@ export default function AmostraPage() {
             <button type="button" className="btn primary">Primário</button>
             <button type="button" className="btn acento">{traduzir("Acento")}</button>
             <button type="button" className="btn">Secundário</button>
-            <button type="button" className="btn ghost">Fantasma</button>
+            <button type="button" className="btn ghost">{traduzir("Fantasma")}</button>
             <button type="button" className="btn danger">Perigo</button>
             <button type="button" className="btn primary" disabled>{traduzir("Desabilitado")}</button>
           </div>
@@ -183,7 +183,7 @@ export default function AmostraPage() {
       {modalAberto ? (
         <>
           <div className="amostra-veu" onClick={() => setModalAberto(false)} aria-hidden="true" />
-          <div className="amostra-modal" role="dialog" aria-label="Exemplo de modal">
+          <div className="amostra-modal" role="dialog" aria-label={traduzir("Exemplo de modal")}>
             <div className="amostra-modal-h">
               <h4>{traduzir("Desconectar o Google Ads?")}</h4>
             </div>

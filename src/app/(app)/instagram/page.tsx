@@ -305,7 +305,7 @@ export default function InstagramConversasPage() {
 
         <section className="ig-conversa">
           {!atual ? (
-            <p className="hint ig-vazio">Escolha uma conversa à esquerda.</p>
+            <p className="hint ig-vazio">{traduzir("Escolha uma conversa à esquerda.")}</p>
           ) : (
             <>
               <header className="ig-conversa-topo">
@@ -345,7 +345,7 @@ export default function InstagramConversasPage() {
                 <div className="ig-escrever-linha">
                   <textarea
                     className="input"
-                    placeholder="Escreva a resposta…"
+                    placeholder={traduzir("Escreva a resposta…")}
                     value={texto}
                     maxLength={1000}
                     disabled={!atual.dentroDaJanela || enviando}

@@ -162,7 +162,7 @@ export function ComentarioInstagramForm({
       </div>
 
       <div className="field">
-        <label>Em qual publicação</label>
+        <label>{traduzir("Em qual publicação")}</label>
         {erroPublicacoes ? (
           <p className="hint">
             Não deu pra carregar suas publicações: {erroPublicacoes} A automação continua valendo pra qualquer

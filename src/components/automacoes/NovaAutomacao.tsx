@@ -114,7 +114,7 @@ export function NovaAutomacao({
                 autoFocus
               />
               <p className="hint mt8">
-                Esse é o nome que aparece na lista e no gatilho da etapa. Dá pra trocar depois.
+                {traduzir("Esse é o nome que aparece na lista e no gatilho da etapa. Dá pra trocar depois.")}
               </p>
             </div>
             <div className="nova-auto-fim">
@@ -166,7 +166,7 @@ export function NovaAutomacao({
                       setEtapaId("");
                     }}
                   >
-                    <option value="">Escolha o funil</option>
+                    <option value="">{traduzir("Escolha o funil")}</option>
                     {funis.map((f) => (
                       <option key={f.id} value={f.id}>
                         {f.nome}

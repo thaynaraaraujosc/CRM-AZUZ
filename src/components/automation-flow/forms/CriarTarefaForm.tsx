@@ -44,7 +44,7 @@ export function CriarTarefaForm({ data, onChange }: { data: CriarTarefaData; onC
         <label>Título</label>
         <input
           className="input"
-          placeholder="Ex.: Retornar contato"
+          placeholder={traduzir("Ex.: Retornar contato")}
           value={data.titulo}
           onChange={(e) => onChange({ ...data, titulo: e.target.value })}
         />

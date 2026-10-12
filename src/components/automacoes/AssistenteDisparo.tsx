@@ -407,9 +407,9 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
 
             {audiencia.modo === "etiqueta" ? (
               <div className="field">
-                <label>Etiqueta</label>
+                <label>{traduzir("Etiqueta")}</label>
                 <select className="input" value={audiencia.valor ?? ""} onChange={(e) => setAudiencia({ modo: "etiqueta", valor: e.target.value })}>
-                  <option value="">Escolha…</option>
+                  <option value="">{traduzir("Escolha…")}</option>
                   {(opcoes?.etiquetas ?? []).map((e) => (
                     <option key={e.valor} value={e.valor}>
                       {e.valor} ({e.total})
@@ -424,7 +424,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
               <div className="field">
                 <label>Origem</label>
                 <select className="input" value={audiencia.valor ?? ""} onChange={(e) => setAudiencia({ modo: "origem", valor: e.target.value })}>
-                  <option value="">Escolha…</option>
+                  <option value="">{traduzir("Escolha…")}</option>
                   {(opcoes?.origens ?? []).map((o) => (
                     <option key={o.valor} value={o.valor}>
                       {o.valor} ({o.total})
@@ -438,7 +438,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
               <div className="field">
                 <label>{audiencia.modo === "funil" ? "Funil" : "Etapa"}</label>
                 <select className="input" value={audiencia.valor ?? ""} onChange={(e) => setAudiencia({ modo: audiencia.modo, valor: e.target.value })}>
-                  <option value="">Escolha…</option>
+                  <option value="">{traduzir("Escolha…")}</option>
                   {(opcoes?.funis ?? []).map((f) =>
                     audiencia.modo === "funil" ? (
                       <option key={f.id} value={f.id}>
@@ -529,7 +529,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
                 ) : null}
               </>
             ) : (
-              <p className="hint">Escolha o público pra ver quantos recebem.</p>
+              <p className="hint">{traduzir("Escolha o público pra ver quantos recebem.")}</p>
             )}
           </aside>
         </div>
@@ -545,7 +545,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
                 aqui com o status, mas não podem ser escolhidos.
               </p>
             ) : (
-              <p className="hint">Escolha um template ou escreva a mensagem agora.</p>
+              <p className="hint">{traduzir("Escolha um template ou escreva a mensagem agora.")}</p>
             )}
 
             <div className="modelo-lista disp-templates">
@@ -649,7 +649,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
         <div className="disp-passo">
           <div className="disp-modos">
             <button type="button" className={`pill${quando === "agora" ? " on" : ""}`} onClick={() => setQuando("agora")}>
-              Enviar agora
+              {traduzir("Enviar agora")}
             </button>
             <button type="button" className={`pill${quando === "agendar" ? " on" : ""}`} onClick={() => setQuando("agendar")}>
               {traduzir("Agendar")}
@@ -688,7 +688,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
             <dd>{usaTemplate ? templateEscolhido!.nome : corpoLivre.split("\n")[0].slice(0, 60)}</dd>
             <dt>Quando</dt>
             <dd>{quando === "agora" ? "Agora" : `${data.split("-").reverse().join("/")} às ${hora}`}</dd>
-            <dt>Duração prevista</dt>
+            <dt>{traduzir("Duração prevista")}</dt>
             <dd>{previa ? duracaoLegivel(previa.previsao) : "…"}</dd>
           </dl>
           <PreviaMensagem corpo={corpo} variaveis={variaveis} botoes={botoes} assunto={limites?.exigeAssunto ? assunto : null} />

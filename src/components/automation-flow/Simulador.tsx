@@ -137,7 +137,7 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
                   <input className="input" value={origem} onChange={(e) => setOrigem(e.target.value)} />
                 </div>
                 <div className="field">
-                  <label>Etiquetas (separadas por vírgula)</label>
+                  <label>{traduzir("Etiquetas (separadas por vírgula)")}</label>
                   <input className="input" value={etiquetas} onChange={(e) => setEtiquetas(e.target.value)} />
                 </div>
                 <div className="field">

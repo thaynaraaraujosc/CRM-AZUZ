@@ -200,7 +200,7 @@ export default function RespostasAutomaticasPage() {
             ) : null}
 
             <div className="field">
-              <label>Etiquetar o contato (opcional)</label>
+              <label>{traduzir("Etiquetar o contato (opcional)")}</label>
               <input
                 className="input"
                 value={d.etiqueta ?? ""}

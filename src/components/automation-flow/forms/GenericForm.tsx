@@ -39,7 +39,7 @@ export function GenericForm({ node, onChange }: { node: FlowNode; onChange: (dat
   }
 
   if (chaves.length === 0) {
-    return <p className="hint">Esse bloco não tem opções. Só o título/observação, ali em cima.</p>;
+    return <p className="hint">{traduzir("Esse bloco não tem opções. Só o título/observação, ali em cima.")}</p>;
   }
 
   const funilEscolhidoId = typeof d.funilId === "string" ? d.funilId : undefined;
@@ -55,7 +55,7 @@ export function GenericForm({ node, onChange }: { node: FlowNode; onChange: (dat
           return (
             <EtiquetaSelect
               key={chave}
-              label="Etiqueta"
+              label={traduzir("Etiqueta")}
               value={typeof valor === "string" ? valor : ""}
               onChange={(nome) => set(chave, nome)}
             />

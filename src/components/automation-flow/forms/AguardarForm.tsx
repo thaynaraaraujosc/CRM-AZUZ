@@ -100,7 +100,7 @@ export function AguardarForm({ data, onChange }: { data: AguardarData; onChange:
 
       {data.modo === "ate_resposta" ? (
         <div className="field">
-          <label>Esperar no máximo</label>
+          <label>{traduzir("Esperar no máximo")}</label>
           <div style={{ display: "flex", gap: 6 }}>
             <input
               className="input"

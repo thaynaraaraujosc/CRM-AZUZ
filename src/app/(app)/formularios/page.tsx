@@ -286,7 +286,7 @@ export default function FormulariosPage() {
                         role="button"
                         tabIndex={0}
                         aria-label={`Excluir formulário ${f.nome}`}
-                        title="Excluir formulário"
+                        title={traduzir("Excluir formulário")}
                         style={{ cursor: "pointer", color: "var(--text-faint)" }}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -347,7 +347,7 @@ export default function FormulariosPage() {
                   abrirFormulario(novoId);
                 }}
               >
-                Duplicar
+                {traduzir("Duplicar")}
               </button>
               <button
                 type="button"
@@ -400,7 +400,7 @@ export default function FormulariosPage() {
                               style={{ width: "100%" }}
                               value={formularioAberto.senha ?? ""}
                               onChange={(e) => atualizarFormulario(formularioAberto.id, { senha: e.target.value })}
-                              placeholder="Escolha uma senha, ex.: vitta2026"
+                              placeholder={traduzir("Escolha uma senha, ex.: vitta2026")}
                             />
                             {/* Sem senha os dois links são o mesmo endereço, e o de cima não tranca
                                 nada. Dizer isso aqui evita a pessoa mandar um "link privado" que
@@ -536,7 +536,7 @@ export default function FormulariosPage() {
                         <button
                           type="button"
                           className="form-pagina-acao-btn"
-                          title="Duplicar página"
+                          title={traduzir("Duplicar página")}
                           onClick={() => duplicarPagina(formularioAberto.id, pagina.id)}
                         >
                           ⧉
@@ -544,7 +544,7 @@ export default function FormulariosPage() {
                         <button
                           type="button"
                           className="form-pagina-acao-btn"
-                          title="Excluir página"
+                          title={traduzir("Excluir página")}
                           disabled={formularioAberto.paginas.length <= 1}
                           onClick={() => {
                             if (formularioAberto.paginas.length <= 1) return;
@@ -627,7 +627,7 @@ export default function FormulariosPage() {
                                 </button>
                                 <button
                                   type="button"
-                                  title="Duplicar"
+                                  title={traduzir("Duplicar")}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     duplicarPergunta(formularioAberto.id, paginaAtiva.id, pergunta.id);
@@ -688,7 +688,7 @@ export default function FormulariosPage() {
                     </div>
                   ) : (
                     <p className="hint" style={{ padding: 40, textAlign: "center" }}>
-                      Escolha uma página à esquerda.
+                      {traduzir("Escolha uma página à esquerda.")}
                     </p>
                   )}
                 </div>
@@ -1635,7 +1635,7 @@ function PainelDesign({
               {traduzir("Claro")}
             </button>
             <button type="button" className={`fchip${formulario.tema.temaEscuro ? " active" : ""}`} onClick={() => trocarTema(true)}>
-              Escuro
+              {traduzir("Escuro")}
             </button>
           </div>
         </div>
@@ -1730,7 +1730,7 @@ function PainelDesign({
               className={`fchip${formulario.tema.layout === "duas-colunas" ? " active" : ""}`}
               onClick={() => atualizarTema({ layout: "duas-colunas" })}
             >
-              Duas colunas
+              {traduzir("Duas colunas")}
             </button>
           </div>
         </div>
@@ -1838,7 +1838,7 @@ function PainelDesign({
         </div>
         {funilSelecionado ? (
           <div className="field">
-            <label>Etapa inicial</label>
+            <label>{traduzir("Etapa inicial")}</label>
             <select
               className="input"
               style={{ width: "100%" }}

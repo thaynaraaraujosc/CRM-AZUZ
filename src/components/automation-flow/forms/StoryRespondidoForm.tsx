@@ -180,7 +180,7 @@ export function StoryRespondidoForm({
       </div>
 
       <div className="field">
-        <label>Em qual story</label>
+        <label>{traduzir("Em qual story")}</label>
         <p className="hint">
           Story dura 24 horas. A lista abaixo é o que está no ar agora, buscado na hora.
         </p>

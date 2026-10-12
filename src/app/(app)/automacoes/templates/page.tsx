@@ -140,7 +140,7 @@ export default function TemplatesPage() {
                       </button>
                     ) : null}
                     <button type="button" className="btn ghost" disabled={ocupado === `${t.id}:duplicar`} onClick={() => void acao(t, "duplicar")}>
-                      Duplicar
+                      {traduzir("Duplicar")}
                     </button>
                     <button type="button" className="btn ghost tpl-excluir" disabled={ocupado === `${t.id}:excluir`} onClick={() => void acao(t, "excluir")}>
                       {traduzir("Excluir")}

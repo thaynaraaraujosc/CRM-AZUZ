@@ -140,7 +140,7 @@ export function TransferirNegocio({
       <div className="field">
         <label>{traduzir("Etapa")}</label>
         <select className="input" value={etapaId} onChange={(e) => setEtapaId(e.target.value)}>
-          <option value="">Escolha a etapa</option>
+          <option value="">{traduzir("Escolha a etapa")}</option>
           {/* Só as etapas do funil selecionado. Nunca as de outro funil misturadas. */}
           {etapasDoFunil.map((coluna) => (
             <option key={coluna.id} value={coluna.id}>

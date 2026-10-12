@@ -637,7 +637,7 @@ export function AutomacaoDoFunil({
             </div>
 
             <div className="field">
-              <label>Executar</label>
+              <label>{traduzir("Executar")}</label>
               <select
                 className="input"
                 value={rascunho.quando}
@@ -742,7 +742,7 @@ export function AutomacaoDoFunil({
                   value={rascunho.acaoDados.etapaDestinoId ?? ""}
                   onChange={(e) => mudarDados({ etapaDestinoId: e.target.value })}
                 >
-                  <option value="">Escolha a etapa</option>
+                  <option value="">{traduzir("Escolha a etapa")}</option>
                   {colunas.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.titulo}

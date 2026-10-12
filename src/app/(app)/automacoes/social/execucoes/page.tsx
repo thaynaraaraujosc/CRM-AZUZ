@@ -7,6 +7,7 @@ import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
 import { AbasSocial } from "@/components/social/AbasSocial";
 import { TabelaExecucoes } from "@/components/automacoes/TabelaExecucoes";
 import type { PainelExecucoes } from "@/app/api/automacoes/execucoes/route";
+import { useIdioma } from "@/lib/idioma-context";
 
 function quando(iso: string): string {
   return new Date(iso).toLocaleString("pt-BR");
@@ -21,6 +22,7 @@ function quando(iso: string): string {
  * nesse caso, é procurar no lugar errado.
  */
 export default function ExecucoesSociaisPage() {
+  const { t: traduzir } = useIdioma();
   const [soErros, setSoErros] = useState(false);
   const [resposta, setResposta] = useState<{ paraErros: boolean; dados: PainelExecucoes | null } | null>(null);
 
@@ -76,7 +78,7 @@ export default function ExecucoesSociaisPage() {
         </section>
 
         <section className="card mt16">
-          <h3>Eventos que nem chegaram a virar execução</h3>
+          <h3>{traduzir("Eventos que nem chegaram a virar execução")}</h3>
           <p className="hint">
             O webhook chegou e falhou antes de qualquer robô rodar: token vencido, permissão que a
             conta perdeu, comentário sem autor. Quando o erro está aqui, o defeito não está no fluxo.
@@ -88,9 +90,9 @@ export default function ExecucoesSociaisPage() {
               <thead>
                 <tr>
                   <th>Quando</th>
-                  <th>Evento</th>
+                  <th>{traduzir("Evento")}</th>
                   <th>Contato</th>
-                  <th>Erro</th>
+                  <th>{traduzir("Erro")}</th>
                 </tr>
               </thead>
               <tbody>

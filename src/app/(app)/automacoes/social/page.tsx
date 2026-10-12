@@ -346,7 +346,7 @@ export default function AutomacoesSociaisPage() {
                                 if (copia) router.push(`/automacoes/editor/${copia.id}`);
                               }}
                             >
-                              Duplicar
+                              {traduzir("Duplicar")}
                             </button>
                             <button
                               type="button"

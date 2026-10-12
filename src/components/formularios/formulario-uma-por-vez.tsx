@@ -126,7 +126,7 @@ export function FormularioUmaPorVez({
   if (!passo) {
     return (
       <p className="hint" style={{ margin: "10px 0" }}>
-        Este formulário ainda não tem perguntas. Avise quem te mandou o link.
+        {traduzir("Este formulário ainda não tem perguntas. Avise quem te mandou o link.")}
       </p>
     );
   }

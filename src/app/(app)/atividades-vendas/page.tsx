@@ -176,7 +176,7 @@ export default function AtividadesVendasPage() {
             </div>
             <div className="card">
               <div className="panel-h">
-                <h4>Documentos enviados</h4>
+                <h4>{traduzir("Documentos enviados")}</h4>
               </div>
               <div className="dados-nao-conectados" style={{ margin: 17 }}>
                 {traduzir("Dados não conectados: vincule documentos a conversas pra ver esse total aqui.")}

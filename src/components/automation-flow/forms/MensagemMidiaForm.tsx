@@ -207,7 +207,7 @@ export function MensagemMidiaForm({
             className="flow-midia-origem-btn"
             onClick={() => setModalAberto(true)}
           >
-            <IconFolder width={13} height={13} aria-hidden="true" /> Escolher da biblioteca
+            <IconFolder width={13} height={13} aria-hidden="true" /> {traduzir("Escolher da biblioteca")}
           </button>
           <button
             type="button"
@@ -301,7 +301,7 @@ export function MensagemMidiaForm({
           ref={legendaRef}
           className="input"
           style={{ width: "100%", minHeight: 70, resize: "vertical" }}
-          placeholder="Ex.: Vou te enviar nosso catálogo com os modelos que trabalhamos."
+          placeholder={traduzir("Ex.: Vou te enviar nosso catálogo com os modelos que trabalhamos.")}
           value={data.legenda ?? ""}
           onChange={(e) => set({ legenda: e.target.value })}
         />

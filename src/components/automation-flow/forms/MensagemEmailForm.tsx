@@ -23,9 +23,9 @@ export function MensagemEmailForm({ data, onChange }: { data: MensagemEmailData;
       <div className="field">
         <label>{traduzir("Destinatário")}</label>
         <select className="input" value={data.destinatarioModo} onChange={(e) => onChange({ ...data, destinatarioModo: e.target.value as DestinatarioEmailModo })}>
-          <option value="contato_email">E-mail do contato deste fluxo</option>
+          <option value="contato_email">{traduzir("E-mail do contato deste fluxo")}</option>
           <option value="outro_campo">Outro campo de e-mail do contato</option>
-          <option value="especifico">E-mail específico</option>
+          <option value="especifico">{traduzir("E-mail específico")}</option>
           <option value="responsavel">Responsável do lead</option>
           <option value="campo_personalizado">{traduzir("Campo personalizado")}</option>
         </select>
@@ -129,7 +129,7 @@ export function MensagemEmailForm({ data, onChange }: { data: MensagemEmailData;
         <label>Se o contato não tiver e-mail</label>
         <select className="input" value={data.seSemEmail ?? "continuar"} onChange={(e) => onChange({ ...data, seSemEmail: e.target.value as SeSemEmailModo })}>
           <option value="continuar">{traduzir("Continuar fluxo sem enviar")}</option>
-          <option value="encerrar">Encerrar fluxo</option>
+          <option value="encerrar">{traduzir("Encerrar fluxo")}</option>
           <option value="criar_tarefa">{traduzir("Criar tarefa para o responsável")}</option>
           <option value="caminho_alternativo">Seguir por caminho alternativo</option>
         </select>
