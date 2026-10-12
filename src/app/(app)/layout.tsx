@@ -18,7 +18,6 @@ import { DocumentosProvider } from "@/lib/documentos-context";
 import { EquipeProvider } from "@/lib/equipe-context";
 import { FormulariosProvider } from "@/lib/formularios-context";
 import { FunisProvider } from "@/lib/funis-context";
-import { IdiomaProvider } from "@/lib/idioma-context";
 import { MensagensExtraProvider } from "@/lib/mensagens-extra-context";
 import { NotificacoesProvider } from "@/lib/notificacoes-context";
 
@@ -42,7 +41,6 @@ export default async function AppLayout({
 
   return (
     <SessionProvider>
-    <IdiomaProvider>
     <FunisProvider>
       <ContatosProvider>
       <ConversasProvider>
@@ -78,7 +76,6 @@ export default async function AppLayout({
       </ConversasProvider>
       </ContatosProvider>
     </FunisProvider>
-    </IdiomaProvider>
     </SessionProvider>
   );
 }
