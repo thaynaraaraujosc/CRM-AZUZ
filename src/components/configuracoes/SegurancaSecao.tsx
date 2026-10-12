@@ -16,7 +16,7 @@ function formatarData(iso: string): string {
  * tentativa, que nunca chegaram a ser aplicados de verdade) e sessões ativas reais (`SessaoAtiva`,
  * criada no login em `src/lib/auth.ts`. Dispositivo/navegador parseados do User-Agent real). */
 export function SegurancaSecao() {
-  const { t } = useIdioma();
+  const { t: traduzir } = useIdioma();
   const { data: sessao } = useSession();
   const emailAtual = sessao?.user?.email ?? "";
 
@@ -84,7 +84,7 @@ export function SegurancaSecao() {
       <CabecalhoCategoria titulo="Segurança" descricao="Senha, e-mail de acesso e sessões ativas." />
 
       <div className="config-bloco">
-        <p className="config-bloco-titulo">{t("Senha")}</p>
+        <p className="config-bloco-titulo">{traduzir("Senha")}</p>
         <div className="toggle-row" style={{ padding: "6px 0" }}>
           <span className="tl">
             Redefinir por e-mail: enviamos um link pra <strong>{emailAtual || "seu e-mail cadastrado"}</strong>, sem precisar digitar a senha atual.

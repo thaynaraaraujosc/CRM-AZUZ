@@ -9,6 +9,7 @@ import { IconClose } from "@/components/icons";
 import { PERMISSOES_POR_MODULO } from "@/lib/configuracoes/permissoes";
 import { Toggle, Topbar } from "@/components/ui";
 import { ehVazio } from "@/lib/vazio";
+import { useIdioma } from "@/lib/idioma-context";
 
 const LABEL_PERMISSAO: Record<string, string> = Object.fromEntries(
   PERMISSOES_POR_MODULO.flatMap((grupo) => grupo.permissoes.map((p) => [p.id, `${grupo.modulo} · ${p.label}`])),
@@ -20,6 +21,7 @@ function classePapel(papel: string) {
 }
 
 export default function EquipePage() {
+  const { t: traduzir } = useIdioma();
   const { membros: equipe, alternarAtivo, removerMembro, resetarSenha, editarMembro } = useEquipe();
   const { contatos } = useContatos();
   const [selecionado, setSelecionado] = useState<string | null>(null);
@@ -190,7 +192,7 @@ export default function EquipePage() {
                   setSelecionado(null);
                 }}
               >
-                Excluir
+                {traduzir("Excluir")}
               </button>
               <span
                 className="close"
@@ -212,7 +214,7 @@ export default function EquipePage() {
                     <div className="equipe-email-linha">
                       <div className="input">{membro.email}</div>
                       <button type="button" className="btn ghost" onClick={() => setEmailEdit(membro.email)}>
-                        Editar
+                        {traduzir("Editar")}
                       </button>
                     </div>
                   ) : (

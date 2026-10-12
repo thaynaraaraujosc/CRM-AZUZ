@@ -8,6 +8,7 @@ import { useFunis } from "@/lib/funis-context";
 import { FilterBar, KpiCard, PERIODO_PADRAO, type FiltroDef, type PeriodoValor } from "@/components/ui";
 import { IconClose } from "@/components/icons";
 import { BarList, ChartCard, LineChart } from "@/components/charts";
+import { useIdioma } from "@/lib/idioma-context";
 import {
   calcularMotivoPrincipalPerda,
   calcularPorResponsavel,
@@ -43,6 +44,7 @@ export default function PerformanceVendasPage() {
 }
 
 function PerformanceVendasPageInner() {
+  const { t: traduzir } = useIdioma();
   const { funis } = useFunis();
   const { membros: equipe } = useEquipe();
   const [periodo, setPeriodo] = useState<PeriodoValor>(PERIODO_PADRAO);
@@ -130,7 +132,7 @@ function PerformanceVendasPageInner() {
           <KpiCard label="Total de negociações encerradas" value={String(totalOportunidades)} />
           <KpiCard label="Taxa de conversão" value={taxaConversao.label} formula={taxaConversao.formula} tom="acento" />
           <KpiCard label="Receita" value={valorVendido.label} formula={valorVendido.formula} tom="acento" />
-          <KpiCard label="Ticket médio" value={ticketMedio.label} formula={ticketMedio.formula} />
+          <KpiCard label={traduzir("Ticket médio")} value={ticketMedio.label} formula={ticketMedio.formula} />
           <KpiCard
             label="Meta do período"
             value={`${percentualMeta}%`}
@@ -180,7 +182,7 @@ function PerformanceVendasPageInner() {
             </div>
             <div style={{ padding: 17 }}>
               <div className="stat-row">
-                <span className="sl">Vendas</span>
+                <span className="sl">{traduzir("Vendas")}</span>
                 <span className="sv">{pessoaDetalhe.vendidas}</span>
               </div>
               <div className="stat-row">

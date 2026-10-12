@@ -24,6 +24,7 @@ import type { Rastreamento } from "@/lib/formularios/rastreamento";
 import { valoresDoEndereco } from "@/lib/formularios/preencher-endereco";
 import type { EnderecoDoCep } from "@/lib/formularios/documentos";
 import { IconCadeado, IconCheck } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 type OpcaoNome = { id: string; nome: string };
 
@@ -279,6 +280,7 @@ export function FormularioPublico({
    *  identificadores, nunca o resto das integrações (funil, etapa, responsável). */
   rastreamento?: Rastreamento;
 }) {
+  const { t: traduzir } = useIdioma();
   // Carregados só depois de montar (não no initializer do useState). Essa página é pré-renderizada
   // no servidor sem `id` disponível; ler direto no initializer faria o HTML da primeira renderização
   // no cliente divergir do HTML do servidor (hydration mismatch).
@@ -561,7 +563,7 @@ export function FormularioPublico({
           <div className="filters-row" style={{ marginTop: 14 }}>
             {paginaIndice > 0 ? (
               <button type="button" className="btn ghost" onClick={voltar}>
-                Voltar
+                {traduzir("Voltar")}
               </button>
             ) : null}
             <button type="button" className="btn block" style={{ background: tema.corBotao, color: "#fff" }} onClick={avancar}>

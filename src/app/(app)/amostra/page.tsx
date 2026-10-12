@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * A prova visual do sistema, numa página só.
@@ -17,6 +18,7 @@ import { useState } from "react";
  * Não tem dado real nem chamada a API: é uma vitrine. Sair do ar não afeta nada do produto.
  */
 export default function AmostraPage() {
+  const { t: traduzir } = useIdioma();
   const [aba, setAba] = useState("elevacao");
   const [modalAberto, setModalAberto] = useState(false);
 
@@ -89,7 +91,7 @@ export default function AmostraPage() {
               <input id="a-nome" className="input" placeholder="Clínica Aurora" />
             </div>
             <div className="field">
-              <label htmlFor="a-sel">Etapa</label>
+              <label htmlFor="a-sel">{traduzir("Etapa")}</label>
               <select id="a-sel" className="input" defaultValue="novo">
                 <option value="novo">Novo lead</option>
                 <option value="prop">Proposta</option>
@@ -117,7 +119,7 @@ export default function AmostraPage() {
             <span className="amostra-selo">Neutro</span>
             <span className="amostra-selo amostra-selo-acento">Ativo</span>
             <span className="amostra-selo amostra-selo-ok">Conectado</span>
-            <span className="amostra-selo amostra-selo-erro">Perdido</span>
+            <span className="amostra-selo amostra-selo-erro">{traduzir("Perdido")}</span>
           </div>
         </section>
 
@@ -163,9 +165,9 @@ export default function AmostraPage() {
               <thead>
                 <tr>
                   <th>Campanha</th>
-                  <th>Investimento</th>
-                  <th>Leads</th>
-                  <th>Custo / lead</th>
+                  <th>{traduzir("Investimento")}</th>
+                  <th>{traduzir("Leads")}</th>
+                  <th>{traduzir("Custo / lead")}</th>
                 </tr>
               </thead>
               <tbody>

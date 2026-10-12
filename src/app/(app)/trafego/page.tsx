@@ -12,6 +12,7 @@ import { useGoogleAds } from "@/components/trafego/useGoogleAds";
 import { acharNoCrm, normalizarNome, usePorCampanha } from "@/components/trafego/usePorCampanha";
 import { FilterBar, KpiCard, PERIODO_PADRAO, type FiltroDef, type PeriodoValor } from "@/components/ui";
 import { ChartCard, FunnelSteps } from "@/components/charts";
+import { useIdioma } from "@/lib/idioma-context";
 import {
   calcularInvestimentoTrafego,
   calcularLeadsTrafego,
@@ -53,6 +54,7 @@ function rotuloDoFiltro(valor: string): string {
 }
 
 export default function TrafegoPage() {
+  const { t: traduzir } = useIdioma();
   const { funis } = useFunis();
   const { contatos } = useContatos();
   const [periodo, setPeriodo] = useState<PeriodoValor>(PERIODO_PADRAO);
@@ -270,7 +272,7 @@ export default function TrafegoPage() {
           <div className="topbar-title-row">
             <h2>Tráfego</h2>
           </div>
-          <p className="sub">Da aquisição de leads até a receita atribuída às campanhas</p>
+          <p className="sub">{traduzir("Da aquisição de leads até a receita atribuída às campanhas")}</p>
         </div>
         <div className="top-actions">
           {adsIntegracao?.status === "conectado" ? (
@@ -284,7 +286,7 @@ export default function TrafegoPage() {
             </>
           ) : (
             <a className="btn ghost" href="/api/integracoes/meta/conectar?provedor=meta_ads">
-              Conectar Meta Ads
+              {traduzir("Conectar Meta Ads")}
             </a>
           )}
           {mostrarGoogle ? (
@@ -302,12 +304,12 @@ export default function TrafegoPage() {
               </>
             ) : (
               <a className="btn ghost" href="/api/integracoes/google-ads/conectar">
-                Conectar Google Ads
+                {traduzir("Conectar Google Ads")}
               </a>
             )
           ) : null}
           <Link className="btn primary" href="/relatorios?tipo=trafego">
-            Gerar relatório de tráfego
+            {traduzir("Gerar relatório de tráfego")}
           </Link>
         </div>
       </div>
@@ -321,7 +323,7 @@ export default function TrafegoPage() {
         {mostrarGoogle && statusGoogle.status === "erro" ? (
           <div className="card mb14">
             <div className="dados-nao-conectados trafego-vazio">
-              <strong>A conexão com o Google Ads parou de funcionar.</strong>
+              <strong>{traduzir("A conexão com o Google Ads parou de funcionar.")}</strong>
               <span>{statusGoogle.erroMensagem ?? "Conecte de novo para voltar a ler as campanhas."}</span>
             </div>
           </div>
@@ -368,22 +370,22 @@ export default function TrafegoPage() {
           </div>
         ) : (
         <div className="grid kpi6">
-          <KpiCard label="Investido" value={investido.label} formula={investido.formula} />
-          <KpiCard label="Leads" value={leads.label} formula={leads.formula} href="/funil" />
+          <KpiCard label={traduzir("Investido")} value={investido.label} formula={investido.formula} />
+          <KpiCard label={traduzir("Leads")} value={leads.label} formula={leads.formula} href="/funil" />
           <KpiCard
-            label="Custo / lead"
+            label={traduzir("Custo / lead")}
             value={formatarMoeda(custoPorLead)}
             formula="Investido em tráfego ÷ leads gerados, nas campanhas filtradas"
           />
-          <KpiCard label="Vendas" value={String(vendas)} href="/performance-vendas" />
-          <KpiCard label="Custo / venda" value={formatarMoeda(custoPorVenda)} />
+          <KpiCard label={traduzir("Vendas")} value={String(vendas)} href="/performance-vendas" />
+          <KpiCard label={traduzir("Custo / venda")} value={formatarMoeda(custoPorVenda)} />
           <KpiCard label="ROAS" value={roas.label} formula={roas.formula} />
         </div>
         )}
 
-        <ChartCard title="Funil de tráfego">
+        <ChartCard title={traduzir("Funil de tráfego")}>
           {funilSteps.length === 0 ? (
-            <p className="hint trafego-aviso">Crie um funil com etapas pra ver essa visão aqui.</p>
+            <p className="hint trafego-aviso">{traduzir("Crie um funil com etapas pra ver essa visão aqui.")}</p>
           ) : (
             <FunnelSteps etapas={funilSteps} />
           )}
@@ -391,11 +393,11 @@ export default function TrafegoPage() {
 
         <div className="card mb14">
           <div className="panel-h">
-            <h4>Desempenho por campanha</h4>
+            <h4>{traduzir("Desempenho por campanha")}</h4>
             <div className="filters-row" style={{ margin: 0 }}>
               <input
                 className="input"
-                placeholder="Pesquisar campanha…"
+                placeholder={traduzir("Pesquisar campanha…")}
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}
                 style={{ width: 180 }}
@@ -410,7 +412,7 @@ export default function TrafegoPage() {
               <thead>
                 <tr>
                   <th></th>
-                  <th>Plataforma</th>
+                  <th>{traduzir("Plataforma")}</th>
                   <th style={{ cursor: "pointer" }} onClick={() => alternarOrdenacao("nome")}>
                     Campanha {ordenarPor === "nome" ? (ordemDesc ? "↓" : "↑") : ""}
                   </th>
@@ -429,16 +431,16 @@ export default function TrafegoPage() {
                   <th style={{ cursor: "pointer" }} onClick={() => alternarOrdenacao("roas")}>
                     ROAS {ordenarPor === "roas" ? (ordemDesc ? "↓" : "↑") : ""}
                   </th>
-                  <th className="trafego-col-crm">Leads no CRM</th>
-                  <th className="trafego-col-crm">Vendas no CRM</th>
-                  <th className="trafego-col-crm">ROAS real</th>
+                  <th className="trafego-col-crm">{traduzir("Leads no CRM")}</th>
+                  <th className="trafego-col-crm">{traduzir("Vendas no CRM")}</th>
+                  <th className="trafego-col-crm">{traduzir("ROAS real")}</th>
                 </tr>
               </thead>
               <tbody>
                 {linhasCampanha.length === 0 ? (
                   <tr>
                     <td colSpan={11}>
-                      <p className="hint trafego-aviso">Nenhuma campanha com esses filtros.</p>
+                      <p className="hint trafego-aviso">{traduzir("Nenhuma campanha com esses filtros.")}</p>
                     </td>
                   </tr>
                 ) : null}
@@ -479,7 +481,7 @@ export default function TrafegoPage() {
                       {c.assistidas > 0 ? (
                         <span
                           className="trafego-cpl-crm"
-                          title="Vendas em que esta campanha participou sem ter trazido o lead"
+                          title={traduzir("Vendas em que esta campanha participou sem ter trazido o lead")}
                         >
                           +{c.assistidas} assistida{c.assistidas === 1 ? "" : "s"}
                         </span>
@@ -507,7 +509,7 @@ export default function TrafegoPage() {
             enxerga o que acontece dentro dela. As três da direita são o que o <strong>CRM</strong>{" "}
             registrou de verdade — lead que virou contato e negócio marcado como ganho no funil. O
             ROAS real cruza os dois: receita do seu funil dividida pelo que a plataforma cobrou.{" "}
-            <strong>Assistida</strong> é venda em que a campanha participou sem ter trazido o lead —
+            <strong>{traduzir("Assistida")}</strong> é venda em que a campanha participou sem ter trazido o lead —
             a pessoa viu o anúncio, não comprou, e voltou por outro caminho. Desligar uma campanha
             com muitas assistidas costuma derrubar junto a que estava fechando.
             {leadsSemCampanha > 0 ? (
@@ -531,19 +533,19 @@ export default function TrafegoPage() {
             </div>
             <div className="trafego-detalhe-corpo">
               <div className="stat-row">
-                <span className="sl">Plataforma</span>
+                <span className="sl">{traduzir("Plataforma")}</span>
                 <span className="sv">{rotuloPlataforma(campanhaDetalhe.plataforma)}</span>
               </div>
               <div className="stat-row">
-                <span className="sl">Investimento</span>
+                <span className="sl">{traduzir("Investimento")}</span>
                 <span className="sv">{formatarMoeda(parseSubCampanha(campanhaDetalhe.sub).investido)}</span>
               </div>
               <div className="stat-row">
-                <span className="sl">Leads</span>
+                <span className="sl">{traduzir("Leads")}</span>
                 <span className="sv">{parseSubCampanha(campanhaDetalhe.sub).leads}</span>
               </div>
               <div className="stat-row">
-                <span className="sl">Vendas</span>
+                <span className="sl">{traduzir("Vendas")}</span>
                 <span className="sv">{campanhaDetalhe.vendas ?? 0}</span>
               </div>
               <div className="stat-row">
@@ -559,7 +561,7 @@ export default function TrafegoPage() {
                 className="link"
                 style={{ display: "inline-block", marginTop: 8 }}
               >
-                Ver leads dessa plataforma →
+                {traduzir("Ver leads dessa plataforma →")}
               </Link>
               <p className="hint" style={{ marginTop: 10 }}>
                 Evolução no período, anúncios individuais e motivos de perda por campanha entram aqui
@@ -569,15 +571,15 @@ export default function TrafegoPage() {
           </div>
         ) : null}
 
-        <ChartCard title="Origens">
+        <ChartCard title={traduzir("Origens")}>
           <div className="table-wrap">
             <table className="tbl">
               <thead>
                 <tr>
                   <th>Origem</th>
-                  <th>Leads</th>
-                  <th>Vendas</th>
-                  <th>Investimento</th>
+                  <th>{traduzir("Leads")}</th>
+                  <th>{traduzir("Vendas")}</th>
+                  <th>{traduzir("Investimento")}</th>
                 </tr>
               </thead>
               <tbody>

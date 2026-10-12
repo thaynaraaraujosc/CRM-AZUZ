@@ -6,6 +6,7 @@ import Link from "next/link";
 
 import { IconCheck, IconClose, IconStar } from "./icons";
 import { SeletorDeData } from "./seletor-de-data";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Drawer lateral genérico: mesmo padrão CSS (`.flow-side-overlay`/`.flow-side-panel`) já usado
@@ -552,6 +553,7 @@ export function FilterBar({
   /** Chave usada só pra rotular a visão salva (front-end, sem persistência real ainda). */
   viewKey?: string;
 }) {
+  const { t: traduzir } = useIdioma();
   const [principalAberto, setPrincipalAberto] = useState(false);
   const [principalRect, setPrincipalRect] = useState<DOMRect | null>(null);
 
@@ -677,14 +679,14 @@ export function FilterBar({
                 ) : null}
                 <div className="filterbar-foot">
                   <button type="button" className="link" onClick={limparTudo}>
-                    Limpar tudo
+                    {traduzir("Limpar tudo")}
                   </button>
                   <button
                     type="button"
                     className="btn primary"
                     onClick={() => setMaisAberto(false)}
                   >
-                    Aplicar
+                    {traduzir("Aplicar")}
                   </button>
                 </div>
                 <div className="filterbar-salvar">
@@ -752,7 +754,7 @@ export function FilterBar({
           ))}
           {(filtrosAtivos.length > 0 || periodoAtivo) && onLimpar ? (
             <button type="button" className="link" onClick={limparTudo} style={{ fontSize: 11 }}>
-              Limpar
+              {traduzir("Limpar")}
             </button>
           ) : null}
         </div>

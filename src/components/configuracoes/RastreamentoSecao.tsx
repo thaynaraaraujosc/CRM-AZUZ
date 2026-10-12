@@ -28,7 +28,7 @@ type Conversoes = {
  * trabalho já está feita, senão a impressão é de que nada funciona até ela configurar tudo.
  */
 export function RastreamentoSecao() {
-  const { t } = useIdioma();
+  const { t: traduzir } = useIdioma();
   const [dados, setDados] = useState<Resposta | null>(null);
   const [conversoes, setConversoes] = useState<Conversoes | null>(null);
   const [copiado, setCopiado] = useState(false);
@@ -60,7 +60,7 @@ export function RastreamentoSecao() {
   return (
     <div className="config-secao">
       <CabecalhoCategoria
-        titulo={t("Rastreamento de anúncios")}
+        titulo={traduzir("Rastreamento de anúncios")}
         descricao="Saber de qual anúncio veio cada lead, e devolver a venda para a plataforma de anúncio, para que ela procure mais gente parecida com quem compra."
       />
 
@@ -154,7 +154,7 @@ export function RastreamentoSecao() {
         ) : !conversoes.googleConectado ? (
           <p className="hint rastreio-nota">
             Conecte o Google Ads em{" "}
-            <Link href="/configuracoes?categoria=integracoes">{t("Integrações e aplicativos")}</Link> para
+            <Link href="/configuracoes?categoria=integracoes">{traduzir("Integrações e aplicativos")}</Link> para
             que o CRM possa avisar o Google quando um lead vira venda. Sem isso ele continua
             otimizando para conseguir cliques, e não clientes.
           </p>

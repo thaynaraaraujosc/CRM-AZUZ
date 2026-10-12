@@ -28,6 +28,7 @@ import { Modal, Topbar } from "@/components/ui";
 import { PerguntaVisualizacao } from "@/components/campo-resposta";
 import { classesDoCartao, estiloDoBanner, estiloDoCartao } from "@/components/formularios/FormularioPublico";
 import { LogicaCanvas } from "@/components/formularios/LogicaCanvas";
+import { useIdioma } from "@/lib/idioma-context";
 
 type AbaBuilder = "editar" | "design" | "respostas";
 type Dispositivo = "desktop" | "tablet" | "celular";
@@ -71,6 +72,7 @@ function SecaoPainel({ titulo, children }: { titulo: string; children: React.Rea
 }
 
 export default function FormulariosPage() {
+  const { t: traduzir } = useIdioma();
   const {
     formularios,
     criarFormulario,
@@ -325,7 +327,7 @@ export default function FormulariosPage() {
 
             <span className="topbar-tabs" style={{ marginLeft: 8 }}>
               <button type="button" className={`topbar-tab${abaBuilder === "editar" ? " active" : ""}`} onClick={() => setAbaBuilder("editar")}>
-                Editar
+                {traduzir("Editar")}
               </button>
               <button type="button" className={`topbar-tab${abaBuilder === "design" ? " active" : ""}`} onClick={() => setAbaBuilder("design")}>
                 Design
@@ -615,7 +617,7 @@ export default function FormulariosPage() {
                               <div className="form-campo-acoes">
                                 <button
                                   type="button"
-                                  title="Editar"
+                                  title={traduzir("Editar")}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setCampoSelecionadoId(pergunta.id);
@@ -657,7 +659,7 @@ export default function FormulariosPage() {
                                 </button>
                                 <button
                                   type="button"
-                                  title="Excluir"
+                                  title={traduzir("Excluir")}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     removerPergunta(formularioAberto.id, paginaAtiva.id, pergunta.id);
@@ -913,6 +915,7 @@ function PainelCampo({
   camposAnteriores: PerguntaFormulario[];
   onAtualizar: (patch: Partial<PerguntaFormulario>) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const ehLayout = TIPOS_LAYOUT.includes(pergunta.tipo);
   const comOpcoes = pergunta.tipo === "lista_suspensa" || pergunta.tipo === "opcao_unica" || pergunta.tipo === "multipla_escolha";
   const comMinMax = pergunta.tipo === "numero" || pergunta.tipo === "texto_curto" || pergunta.tipo === "texto_longo";
@@ -1082,7 +1085,7 @@ function PainelCampo({
 
           <SecaoPainel titulo="Aparência">
             <div className="field">
-              <label>Largura</label>
+              <label>{traduzir("Largura")}</label>
               <div className="filters-row" style={{ margin: 0 }}>
                 <button type="button" className={`fchip${pergunta.largura === "total" ? " active" : ""}`} onClick={() => onAtualizar({ largura: "total" })}>
                   Largura total

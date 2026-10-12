@@ -19,6 +19,7 @@ import { Simulador } from "./Simulador";
 import { nodeTypes } from "./nodes";
 import { CORES_CATEGORIA, autoLayout, domainEdgesToRF, domainNodesToRF } from "./utils";
 import { IconClose } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Lista "funcionalidades utilizadas": derivada AO VIVO dos nós reais do
@@ -69,6 +70,7 @@ function CanvasPreview({ fluxo }: { fluxo: FluxoAutomacao }) {
 }
 
 export function VisualizarFluxo({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar: () => void }) {
+  const { t: traduzir } = useIdioma();
   const router = useRouter();
   const { duplicarFluxo } = useAutomationFlows();
   const [simuladorAberto, setSimuladorAberto] = useState(false);
@@ -135,7 +137,7 @@ export function VisualizarFluxo({ fluxo, onFechar }: { fluxo: FluxoAutomacao; on
             Testar no simulador
           </button>
           <button type="button" className="btn ghost" onClick={editar}>
-            Editar
+            {traduzir("Editar")}
           </button>
           <button type="button" className="btn primary" disabled={duplicando} onClick={duplicarEUsar}>
             {duplicando ? "Duplicando…" : "Duplicar e usar"}

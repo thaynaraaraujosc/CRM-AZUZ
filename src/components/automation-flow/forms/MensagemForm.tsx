@@ -10,6 +10,7 @@ import { inserirTokenNoTexto } from "./variaveis";
 import { useFormularios } from "@/lib/formularios-context";
 import { avisoDeJanela, canaisDaAreaParaBloco } from "./canais";
 import type { AreaAutomacao } from "@/lib/canais/capacidades";
+import { useIdioma } from "@/lib/idioma-context";
 
 
 /**
@@ -30,6 +31,7 @@ export function MensagemForm({
   /** Trocar o tipo do bloco. É o que faz "+ Botão de ação" virar uma pergunta. */
   onTrocarTipo?: (nodeId: string, tipo: FlowNodeType, data: Record<string, unknown>) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const d = node.data as Record<string, unknown>;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const canais = canaisDaAreaParaBloco(area);
@@ -122,7 +124,7 @@ export function MensagemForm({
 
       {temNomeContato ? (
         <div className="field">
-          <label>Nome do contato</label>
+          <label>{traduzir("Nome do contato")}</label>
           <input className="input" value={String(d.nomeContato ?? "")} onChange={(e) => set({ nomeContato: e.target.value })} />
         </div>
       ) : null}

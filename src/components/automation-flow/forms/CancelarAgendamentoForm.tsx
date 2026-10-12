@@ -2,6 +2,7 @@
 
 import { useEquipe } from "@/lib/equipe-context";
 import type { CancelarAgendamentoData, CriterioAgendamento, OrigemMensagemCancelamento } from "@/lib/automation-flow/types";
+import { useIdioma } from "@/lib/idioma-context";
 
 const TIPOS_AGENDAMENTO = ["Consulta", "Reunião", "Retorno", "Visita", "Demonstração", "Avaliação", "Outro"];
 
@@ -23,6 +24,7 @@ const CRITERIOS: { valor: CriterioAgendamento; label: string }[] = [
 /** Ação "Cancelar agendamento" (item 2). Qual agendamento cancelar, e opcionalmente qual mensagem
  * de cancelamento enviar ao contato. */
 export function CancelarAgendamentoForm({ data, onChange }: { data: CancelarAgendamentoData; onChange: (novo: CancelarAgendamentoData) => void }) {
+  const { t: traduzir } = useIdioma();
   const { membros: equipe } = useEquipe();
   return (
     <div className="flow-form">
@@ -39,7 +41,7 @@ export function CancelarAgendamentoForm({ data, onChange }: { data: CancelarAgen
         <div className="field">
           <label>Tipo de agendamento</label>
           <select className="input" value={data.tipoAgendamento ?? ""} onChange={(e) => onChange({ ...data, tipoAgendamento: e.target.value })}>
-            <option value="">Selecione…</option>
+            <option value="">{traduzir("Selecione…")}</option>
             {TIPOS_AGENDAMENTO.map((t) => (
               <option key={t} value={t}>{t}</option>
             ))}
@@ -51,7 +53,7 @@ export function CancelarAgendamentoForm({ data, onChange }: { data: CancelarAgen
         <div className="field">
           <label>Responsável</label>
           <select className="input" value={data.responsavel ?? ""} onChange={(e) => onChange({ ...data, responsavel: e.target.value })}>
-            <option value="">Selecione…</option>
+            <option value="">{traduzir("Selecione…")}</option>
             {equipe.map((m) => (
               <option key={m.id} value={m.nome}>{m.nome}</option>
             ))}

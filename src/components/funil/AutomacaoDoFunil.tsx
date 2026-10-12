@@ -9,6 +9,7 @@ import { CondicaoForm } from "@/components/automation-flow/forms/CondicaoForm";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { MigrarGatilhos } from "./MigrarGatilhos";
 import type { GrupoCondicoes } from "@/lib/automation-flow/types";
+import { useIdioma } from "@/lib/idioma-context";
 import {
   ACAO_ROTULO,
   CATEGORIAS_GATILHO,
@@ -177,6 +178,7 @@ export function AutomacaoDoFunil({
   colunas: ColunaResumo[];
   onFechar?: () => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const router = useRouter();
   const { recarregarFluxos } = useAutomationFlows();
   const [gatilhos, setGatilhos] = useState<GatilhoEtapaVisao[]>([]);
@@ -446,7 +448,7 @@ export function AutomacaoDoFunil({
         <strong>{funilNome ?? "Automação do funil"}</strong>
         {onFechar ? (
           <button type="button" className="btn ghost" onClick={onFechar}>
-            Voltar
+            {traduzir("Voltar")}
           </button>
         ) : null}
       </div>
@@ -620,7 +622,7 @@ export function AutomacaoDoFunil({
             </div>
 
             <div className="field">
-              <label>Etapa</label>
+              <label>{traduzir("Etapa")}</label>
               <select
                 className="input"
                 value={rascunho.etapaId}

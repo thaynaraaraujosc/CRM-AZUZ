@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { Topbar } from "@/components/ui";
 import { ReportWizard, type ConfiguracaoRelatorio, type RelatorioGerado } from "@/components/report-wizard";
 import { TIPOS_RELATORIO, type TipoRelatorio } from "@/lib/relatorio-conteudo";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Central de relatórios: entra numa seleção clara de tipos (nunca direto
@@ -22,6 +23,7 @@ export default function RelatoriosPage() {
 }
 
 function RelatoriosPageInner() {
+  const { t: traduzir } = useIdioma();
   const searchParams = useSearchParams();
   const tipoQuery = searchParams.get("tipo") as TipoRelatorio | null;
 
@@ -149,7 +151,7 @@ function RelatoriosPageInner() {
                         Duplicar configuração
                       </button>
                       <button type="button" className="link" onClick={() => excluir(r.id)} style={{ color: "var(--danger)" }}>
-                        Excluir
+                        {traduzir("Excluir")}
                       </button>
                     </td>
                   </tr>

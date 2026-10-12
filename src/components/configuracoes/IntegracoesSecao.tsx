@@ -99,7 +99,7 @@ function LinhaReal({
  * funciona): cada integração nova entra aqui trocando de lista, não com um botão fake.
  */
 export function IntegracoesSecao() {
-  const { t } = useIdioma();
+  const { t: traduzir } = useIdioma();
   const { data: sessao } = useSession();
   const whatsappMeta = useIntegracaoMeta("meta_whatsapp");
   const instagram = useIntegracaoMeta("meta_instagram");
@@ -138,7 +138,7 @@ export function IntegracoesSecao() {
 
   return (
     <div className="config-secao">
-      <CabecalhoCategoria titulo={t("Integrações e aplicativos")} descricao={t("Conexões que já funcionam de verdade e uma prévia do que vem por aí.")} />
+      <CabecalhoCategoria titulo={traduzir("Integrações e aplicativos")} descricao={traduzir("Conexões que já funcionam de verdade e uma prévia do que vem por aí.")} />
 
       {numeroRepetido ? (
         <p className="int-aviso-conflito">
@@ -149,11 +149,11 @@ export function IntegracoesSecao() {
       ) : null}
 
       <div className="int-group">
-        <p className="int-group-h">{t("Prontas pra usar")}</p>
+        <p className="int-group-h">{traduzir("Prontas pra usar")}</p>
         <div className="card">
           <LinhaReal
             icone={<IconWhatsApp width={20} height={20} />}
-            titulo={t("WhatsApp Business (API oficial)")}
+            titulo={traduzir("WhatsApp Business (API oficial)")}
             sub={
               oficialLigada
                 ? numeroOficial
@@ -166,7 +166,7 @@ export function IntegracoesSecao() {
           />
           <LinhaReal
             icone={<IconWhatsApp width={20} height={20} />}
-            titulo={t("WhatsApp via QR Code")}
+            titulo={traduzir("WhatsApp via QR Code")}
             sub={
               qrCodeLigada
                 ? `Número conectado${numeroQrCode ? `: ${numeroQrCode}` : ""}`
@@ -199,14 +199,14 @@ export function IntegracoesSecao() {
           />
           <LinhaReal
             icone={<IconInstagram width={20} height={20} />}
-            titulo={t("Instagram Direct")}
+            titulo={traduzir("Instagram Direct")}
             sub={instagram.integracao?.status === "conectado" ? "Conta conectada" : "Conecte via Meta Business Manager"}
             conectado={instagram.integracao?.status === "conectado"}
             painel={<ConexaoInstagram />}
           />
           <LinhaReal
             icone={<IconCalendar width={19} height={19} style={{ color: "var(--blue)" }} />}
-            titulo={t("Meta Ads")}
+            titulo={traduzir("Meta Ads")}
             sub={metaAds.integracao?.status === "conectado" ? "Alimenta o painel de Tráfego automaticamente" : "Conecte pra ver essa origem no painel de Tráfego"}
             conectado={metaAds.integracao?.status === "conectado"}
             painel={<ConexaoMetaAds />}
@@ -214,7 +214,7 @@ export function IntegracoesSecao() {
           {statusGoogle.disponivel ? (
             <LinhaReal
               icone={<span className="rastreio-canal-icones rastreio-google">G</span>}
-              titulo={t("Google Ads")}
+              titulo={traduzir("Google Ads")}
               sub={
                 statusGoogle.status === "conectado"
                   ? "Lê suas campanhas e devolve as vendas fechadas pro Google"
@@ -230,7 +230,7 @@ export function IntegracoesSecao() {
               conserto, senão o diagnóstico vira "o CRM não integra com o Google", que é falso. */}
           {!statusGoogle.disponivel && sessao?.user?.superAdmin ? (
             <p className="hint" style={{ padding: "10px 14px", margin: 0 }}>
-              <b>{t("Google Ads não aparece nesta instalação.")}</b> A integração existe e está pronta, mas
+              <b>{traduzir("Google Ads não aparece nesta instalação.")}</b> A integração existe e está pronta, mas
               ela só é desenhada quando <code>GOOGLE_ADS_CLIENT_ID</code>,{" "}
               <code>GOOGLE_ADS_CLIENT_SECRET</code> e <code>GOOGLE_ADS_LOGIN_CUSTOMER_ID</code>{" "}
               estiverem definidas no servidor. Enquanto faltar alguma, nenhum cliente vê o botão —

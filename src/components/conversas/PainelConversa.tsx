@@ -10,6 +10,7 @@ import { IconClose, IconConfiguracoes, IconDoc, IconEnviar, IconImage, IconLocal
 import { TransferirNegocio } from "@/components/funil/TransferirNegocio";
 import { useFunis } from "@/lib/funis-context";
 import { ehVazio } from "@/lib/vazio";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Painel de conversa completo, em popup: a janela que abre ao clicar num card do Funil.
@@ -46,6 +47,7 @@ export function PainelConversa({
   etapaAtual?: string;
   aoFechar: () => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const { mensagensExtraPorContato, setMensagensExtraPorContato } = useMensagensExtra();
   const { contatos, salvarDadosContato } = useContatos();
 
@@ -567,7 +569,7 @@ export function PainelConversa({
                   </div>
                 </div>
                 <button type="button" className="btn ghost block" onClick={() => setTransferindo(true)}>
-                  Transferir de funil
+                  {traduzir("Transferir de funil")}
                 </button>
                 <p className="hint" style={{ margin: "8px 0 0" }}>
                   Arrastar o card no funil atrás desta janela também move. E nesse caminho a

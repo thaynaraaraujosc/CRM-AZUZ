@@ -46,6 +46,7 @@ import { ListaDePassos } from "./ListaDePassos";
 import { PainelProximoPasso } from "./PainelProximoPasso";
 import { nodeTypes } from "./nodes";
 import { IconClose, IconExpandir } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 import {
   CORES_CATEGORIA,
   autoLayout,
@@ -106,6 +107,7 @@ function explicacaoDoNo(flowNode: DomainFlowNode, funis: Funil[]): string {
 }
 
 function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
+  const { t: traduzir } = useIdioma();
   const { fluxos, carregado, recarregarFluxos, atualizarFluxo, publicarFluxo, restaurarVersao, alternarAtivo } =
     useAutomationFlows();
   const fluxo = fluxos.find((f) => f.id === fluxoId);
@@ -1159,7 +1161,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                     title="Excluir (Delete)"
                     onClick={() => removerNodes(selectedNodeIds)}
                   >
-                    Excluir
+                    {traduzir("Excluir")}
                   </button>
                 </div>
               </Panel>
@@ -1336,7 +1338,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                         setMenuContexto(null);
                       }}
                     >
-                      Excluir
+                      {traduzir("Excluir")}
                     </button>
                   </div>
                 );

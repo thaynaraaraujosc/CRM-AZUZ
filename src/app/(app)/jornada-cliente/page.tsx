@@ -37,6 +37,7 @@ import {
   type HistoricoRecente,
 } from "@/lib/jornada-recentes";
 import { ReportWizard } from "@/components/report-wizard";
+import { useIdioma } from "@/lib/idioma-context";
 
 const CANAIS: Canal[] = ["WhatsApp", "Instagram"];
 const ESTADOS: EstadoCicloDeVida[] = ["Novo lead", "Em atendimento", "Em negociação", "Cliente", "Perdido"];
@@ -78,6 +79,7 @@ export default function JornadaClientePage() {
 }
 
 function JornadaClientePageInner() {
+  const { t: traduzir } = useIdioma();
   const searchParams = useSearchParams();
   const { data: sessao } = useSession();
   const nomeUsuario = sessao?.user?.name ?? "";
@@ -394,7 +396,7 @@ function JornadaClientePageInner() {
           <div className="topbar-title-row">
             <h2>Jornada do cliente</h2>
           </div>
-          <p className="sub">A jornada completa de um contato. Desde a primeira entrada até a última interação</p>
+          <p className="sub">{traduzir("A jornada completa de um contato. Desde a primeira entrada até a última interação")}</p>
         </div>
       </div>
 
@@ -403,16 +405,16 @@ function JornadaClientePageInner() {
           <label className="search jornada-search">
             <IconSearch />
             <input
-              placeholder="Pesquisar por nome, telefone, e-mail ou empresa..."
+              placeholder={traduzir("Pesquisar por nome, telefone, e-mail ou empresa...")}
               value={busca}
               onChange={(e) => {
                 setBusca(e.target.value);
                 setPagina(1);
               }}
-              aria-label="Pesquisar contato"
+              aria-label={traduzir("Pesquisar contato")}
             />
             {busca ? (
-              <button type="button" className="jornada-busca-limpar" onClick={() => setBusca("")} aria-label="Limpar pesquisa">
+              <button type="button" className="jornada-busca-limpar" onClick={() => setBusca("")} aria-label={traduzir("Limpar pesquisa")}>
                 <IconClose width={11} height={11} />
               </button>
             ) : null}
@@ -456,14 +458,14 @@ function JornadaClientePageInner() {
               ))}
               <div className="filterbar-foot">
                 <button type="button" className="link" onClick={limparFiltros}>
-                  Limpar
+                  {traduzir("Limpar")}
                 </button>
                 <div style={{ display: "flex", gap: 8 }}>
                   <button type="button" className="btn ghost" onClick={() => setFiltrosAberto(false)}>
                     Cancelar
                   </button>
                   <button type="button" className="btn primary" onClick={() => setFiltrosAberto(false)}>
-                    Aplicar
+                    {traduzir("Aplicar")}
                   </button>
                 </div>
               </div>
@@ -482,7 +484,7 @@ function JornadaClientePageInner() {
               </span>
             ))}
             <button type="button" className="link" onClick={limparFiltros} style={{ fontSize: 11 }}>
-              Limpar tudo
+              {traduzir("Limpar tudo")}
             </button>
           </div>
         ) : null}
@@ -525,7 +527,7 @@ function JornadaClientePageInner() {
                     setColunasAberto((v) => !v);
                   }}
                 >
-                  Colunas ▾
+                  {traduzir("Colunas ▾")}
                 </button>
                 <FloatingDropdown
                   anchorRect={colunasAberto ? colunasRect : null}
@@ -551,7 +553,7 @@ function JornadaClientePageInner() {
             {buscando ? (
               <p className="hint" style={{ padding: 17 }}>Carregando…</p>
             ) : ordenados.length === 0 ? (
-              <p className="hint" style={{ padding: 17 }}>Nenhum contato encontrado.</p>
+              <p className="hint" style={{ padding: 17 }}>{traduzir("Nenhum contato encontrado.")}</p>
             ) : (
               <>
                 <div className="table-wrap">
@@ -632,7 +634,7 @@ function JornadaClientePageInner() {
                 </div>
                 <div className="jornada-paginacao">
                   <div className="filters-row" style={{ margin: 0 }}>
-                    <span className="hint">Por página:</span>
+                    <span className="hint">{traduzir("Por página:")}</span>
                     {[5, 10, 25].map((n) => (
                       <button
                         key={n}
@@ -655,7 +657,7 @@ function JornadaClientePageInner() {
                       Página {paginaAtual} de {totalPaginas}
                     </span>
                     <button type="button" className="btn ghost" disabled={paginaAtual >= totalPaginas} onClick={() => setPagina((p) => p + 1)}>
-                      Próxima →
+                      {traduzir("Próxima →")}
                     </button>
                   </div>
                 </div>
@@ -689,22 +691,22 @@ function JornadaClientePageInner() {
 
               <div className="jornada-painel-acoes">
                 <Link className="btn ghost" href={`/conversas?contato=${encodeURIComponent(contato.nome)}`}>
-                  Abrir conversa
+                  {traduzir("Abrir conversa")}
                 </Link>
                 <Link className="btn ghost" href={`/contatos`}>
-                  Abrir contato
+                  {traduzir("Abrir contato")}
                 </Link>
                 <button type="button" className="btn ghost" onClick={() => setNotaAberta((v) => !v)}>
-                  Adicionar anotação
+                  {traduzir("Adicionar anotação")}
                 </button>
                 <Link className="btn ghost" href="/equipe">
-                  Alterar responsável
+                  {traduzir("Alterar responsável")}
                 </Link>
                 <Link className="btn ghost" href="/funil">
-                  Abrir negociação
+                  {traduzir("Abrir negociação")}
                 </Link>
                 <button type="button" className="btn primary" onClick={() => setWizardAberto(true)}>
-                  Gerar relatório
+                  {traduzir("Gerar relatório")}
                 </button>
               </div>
 
@@ -713,31 +715,31 @@ function JornadaClientePageInner() {
                   <textarea
                     className="input"
                     style={{ width: "100%", minHeight: 60 }}
-                    placeholder="Escreva a anotação…"
+                    placeholder={traduzir("Escreva a anotação…")}
                     value={notaTexto}
                     onChange={(e) => setNotaTexto(e.target.value)}
                   />
                   <button type="button" className="btn primary" disabled={!notaTexto.trim()} onClick={adicionarAnotacao}>
-                    Salvar anotação
+                    {traduzir("Salvar anotação")}
                   </button>
                 </div>
               ) : null}
 
               <div className="jornada-resumo-grid">
-                <ResumoItem label="Primeira entrada" value={resumo.primeiraEntrada} vazio="Não disponível" />
+                <ResumoItem label={traduzir("Primeira entrada")} value={resumo.primeiraEntrada} vazio="Não disponível" />
                 <ResumoItem label="Origem" value={resumo.origem} />
-                <ResumoItem label="Canal inicial" value={resumo.canalInicial} vazio="Não disponível" />
-                <ResumoItem label="Tempo até 1ª resposta" value={resumo.tempoAtePrimeiraResposta} vazio="Não disponível" />
-                <ResumoItem label="Negociações" value={String(resumo.quantidadeNegociacoes)} />
-                <ResumoItem label="Compras" value={String(resumo.quantidadeCompras)} />
-                <ResumoItem label="Receita acumulada" value={resumo.receitaAcumulada} vazio="Ainda não ocorreu" />
-                <ResumoItem label="Ticket médio" value={resumo.ticketMedio} vazio="Ainda não ocorreu" />
-                <ResumoItem label="Última compra" value={resumo.ultimaCompra} vazio="Ainda não ocorreu" />
+                <ResumoItem label={traduzir("Canal inicial")} value={resumo.canalInicial} vazio="Não disponível" />
+                <ResumoItem label={traduzir("Tempo até 1ª resposta")} value={resumo.tempoAtePrimeiraResposta} vazio="Não disponível" />
+                <ResumoItem label={traduzir("Negociações")} value={String(resumo.quantidadeNegociacoes)} />
+                <ResumoItem label={traduzir("Compras")} value={String(resumo.quantidadeCompras)} />
+                <ResumoItem label={traduzir("Receita acumulada")} value={resumo.receitaAcumulada} vazio="Ainda não ocorreu" />
+                <ResumoItem label={traduzir("Ticket médio")} value={resumo.ticketMedio} vazio="Ainda não ocorreu" />
+                <ResumoItem label={traduzir("Última compra")} value={resumo.ultimaCompra} vazio="Ainda não ocorreu" />
                 <ResumoItem label="Última interação" value={resumo.ultimaInteracao} />
               </div>
 
               <div className="panel-h divided">
-                <h4>Linha do tempo</h4>
+                <h4>{traduzir("Linha do tempo")}</h4>
               </div>
               <div style={{ padding: 17 }}>
                 <Timeline eventos={eventos} />
@@ -745,7 +747,7 @@ function JornadaClientePageInner() {
             </div>
           ) : (
             <div className="card jornada-painel-vazio">
-              <p className="hint">Selecione um contato na lista pra ver a jornada completa dele.</p>
+              <p className="hint">{traduzir("Selecione um contato na lista pra ver a jornada completa dele.")}</p>
             </div>
           )}
         </div>
@@ -789,10 +791,11 @@ function SecaoContatosRecentes({
   onFavoritar: (nome: string) => void;
   onRemover: (id: string) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   if (recentes.length === 0) {
     return (
       <div className="card mb14 jornada-recentes-vazio">
-        <p className="hint">Contatos que você abrir vão aparecer aqui, pra acesso rápido.</p>
+        <p className="hint">{traduzir("Contatos que você abrir vão aparecer aqui, pra acesso rápido.")}</p>
       </div>
     );
   }
@@ -802,7 +805,7 @@ function SecaoContatosRecentes({
   return (
     <div className="card mb14">
       <div className="panel-h">
-        <h4>Contatos recentes</h4>
+        <h4>{traduzir("Contatos recentes")}</h4>
         {recentes.length > 4 ? (
           <button type="button" className="link" onClick={onVerTodos}>
             {verTodos ? "Ver menos" : "Ver todos"}
@@ -827,10 +830,10 @@ function SecaoContatosRecentes({
                 </div>
               </button>
               <div className="jornada-recente-acoes">
-                <button type="button" onClick={() => onFavoritar(c.nome)} title="Favoritar" aria-label="Favoritar">
+                <button type="button" onClick={() => onFavoritar(c.nome)} title={traduzir("Favoritar")} aria-label={traduzir("Favoritar")}>
                   <IconStar width={13} height={13} fill={c.favorito ? "currentColor" : "none"} />
                 </button>
-                <button type="button" onClick={() => onRemover(c.id)} title="Remover dos recentes" aria-label="Remover dos recentes">
+                <button type="button" onClick={() => onRemover(c.id)} title={traduzir("Remover dos recentes")} aria-label={traduzir("Remover dos recentes")}>
                   <IconClose width={11} height={11} />
                 </button>
               </div>
@@ -851,10 +854,11 @@ function SecaoHistoricosRecentes({
   contatos: Contato[];
   onContinuar: (id: string) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   if (recentes.length === 0) {
     return (
       <div className="card mb14 jornada-recentes-vazio">
-        <p className="hint">Jornadas que você consultar ficam registradas aqui.</p>
+        <p className="hint">{traduzir("Jornadas que você consultar ficam registradas aqui.")}</p>
       </div>
     );
   }
@@ -862,16 +866,16 @@ function SecaoHistoricosRecentes({
   return (
     <div className="card mb14">
       <div className="panel-h">
-        <h4>Históricos visualizados recentemente</h4>
+        <h4>{traduzir("Históricos visualizados recentemente")}</h4>
       </div>
       <div className="table-wrap">
         <table className="tbl">
           <thead>
             <tr>
               <th>Contato</th>
-              <th>Última visualização</th>
-              <th>Última interação registrada</th>
-              <th>Etapa</th>
+              <th>{traduzir("Última visualização")}</th>
+              <th>{traduzir("Última interação registrada")}</th>
+              <th>{traduzir("Etapa")}</th>
               <th>Responsável</th>
               <th></th>
             </tr>
@@ -889,7 +893,7 @@ function SecaoHistoricosRecentes({
                   <td>{r.responsavel}</td>
                   <td>
                     <button type="button" className="link" onClick={() => onContinuar(c.id)}>
-                      Continuar visualização
+                      {traduzir("Continuar visualização")}
                     </button>
                   </td>
                 </tr>

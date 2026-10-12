@@ -1,6 +1,7 @@
 "use client";
 
 import type { AtualizarStatusData, StatusNegocio } from "@/lib/automation-flow/types";
+import { useIdioma } from "@/lib/idioma-context";
 
 const STATUS: { valor: StatusNegocio; label: string }[] = [
   { valor: "em_andamento", label: "Em andamento" },
@@ -10,12 +11,13 @@ const STATUS: { valor: StatusNegocio; label: string }[] = [
 
 /** Ação "Atualizar status": status do negócio, com motivo obrigatório quando marcado como perdido. */
 export function AtualizarStatusForm({ data, onChange }: { data: AtualizarStatusData; onChange: (novo: AtualizarStatusData) => void }) {
+  const { t: traduzir } = useIdioma();
   return (
     <div className="flow-form">
       <div className="field">
         <label>Novo status</label>
         <select className="input" value={data.status} onChange={(e) => onChange({ ...data, status: e.target.value })}>
-          <option value="">Selecione…</option>
+          <option value="">{traduzir("Selecione…")}</option>
           {STATUS.map((s) => (
             <option key={s.valor} value={s.valor}>
               {s.label}
@@ -26,7 +28,7 @@ export function AtualizarStatusForm({ data, onChange }: { data: AtualizarStatusD
 
       {data.status === "perdido" ? (
         <div className="field">
-          <label>Motivo da perda</label>
+          <label>{traduzir("Motivo da perda")}</label>
           <textarea
             className="input"
             style={{ width: "100%", minHeight: 60, resize: "vertical" }}

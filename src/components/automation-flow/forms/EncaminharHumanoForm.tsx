@@ -4,6 +4,7 @@ import { useEquipe } from "@/lib/equipe-context";
 import { useFunis } from "@/lib/funis-context";
 import type { EncaminharHumanoData, MetodoDistribuicaoAtendimento, ModoDestinoAtendimento } from "@/lib/automation-flow/types";
 import { useEquipesDisponiveis } from "./useEquipesDisponiveis";
+import { useIdioma } from "@/lib/idioma-context";
 
 const DESTINOS: { valor: ModoDestinoAtendimento; label: string }[] = [
   { valor: "atendente", label: "Atendente específico" },
@@ -22,6 +23,7 @@ const METODOS: { valor: MetodoDistribuicaoAtendimento; label: string }[] = [
 /** Ação "Encaminhar pra atendimento humano" (item 1). Obriga escolher pra onde o lead vai, e
  * opcionalmente move ele de etapa/funil junto. */
 export function EncaminharHumanoForm({ data, onChange }: { data: EncaminharHumanoData; onChange: (novo: EncaminharHumanoData) => void }) {
+  const { t: traduzir } = useIdioma();
   const { funis } = useFunis();
   const { membros } = useEquipe();
   const equipes = useEquipesDisponiveis();
@@ -98,7 +100,7 @@ export function EncaminharHumanoForm({ data, onChange }: { data: EncaminharHuman
             </select>
           </div>
           <div className="field">
-            <label>Etapa</label>
+            <label>{traduzir("Etapa")}</label>
             <select className="input" value={data.etapaTitulo ?? ""} onChange={(e) => onChange({ ...data, etapaTitulo: e.target.value })} disabled={!funilEscolhido}>
               <option value="">{funilEscolhido ? "Selecione uma etapa…" : "Escolha um funil primeiro"}</option>
               {(funilEscolhido?.colunas ?? []).map((c) => (

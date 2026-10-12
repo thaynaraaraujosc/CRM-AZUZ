@@ -8,6 +8,7 @@ import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { MODELOS_SOCIAIS } from "@/lib/social/modelos-rapidos";
 import { IconAutomacoes, IconDoc, IconSparkle } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Como começar uma automação do Instagram.
@@ -21,6 +22,7 @@ import { IconAutomacoes, IconDoc, IconSparkle } from "@/components/icons";
  * quebrar a confiança na tela inteira: quem tenta uma vez e não funciona não tenta as outras duas.
  */
 export default function NovaAutomacaoSocialPage() {
+  const { t: traduzir } = useIdioma();
   const router = useRouter();
   const { criarFluxo } = useAutomationFlows();
   const [escolhendoModelo, setEscolhendoModelo] = useState(false);
@@ -94,7 +96,7 @@ export default function NovaAutomacaoSocialPage() {
             <div className="social-secao-topo">
               <h3>Escolha o modelo</h3>
               <button type="button" className="btn ghost" onClick={() => setEscolhendoModelo(false)}>
-                Voltar
+                {traduzir("Voltar")}
               </button>
             </div>
             <p className="hint">

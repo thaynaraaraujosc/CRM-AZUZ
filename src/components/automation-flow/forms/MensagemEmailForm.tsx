@@ -2,6 +2,7 @@
 
 import type { DestinatarioEmailModo, MensagemEmailData, SeSemEmailModo } from "@/lib/automation-flow/types";
 import { IconAlerta } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 // Mocado: contas de e-mail configuradas no workspace, sem conexão real.
 const CONTAS_EMAIL: string[] = [];
@@ -16,6 +17,7 @@ const MODELOS_EMAIL = [
 /** Ação "Enviar e-mail" (item 5). O destinatário precisa estar ligado dinamicamente ao lead da
  * automação, não só um assunto/corpo soltos. */
 export function MensagemEmailForm({ data, onChange }: { data: MensagemEmailData; onChange: (novo: MensagemEmailData) => void }) {
+  const { t: traduzir } = useIdioma();
   return (
     <div className="flow-form">
       <div className="field">
@@ -61,7 +63,7 @@ export function MensagemEmailForm({ data, onChange }: { data: MensagemEmailData;
           <p className="hint"><IconAlerta width={12} height={12} aria-hidden="true" /> Configure uma conta de e-mail antes de utilizar este bloco.</p>
         ) : (
           <select className="input" value={data.remetente ?? ""} onChange={(e) => onChange({ ...data, remetente: e.target.value })}>
-            <option value="">Selecione…</option>
+            <option value="">{traduzir("Selecione…")}</option>
             {CONTAS_EMAIL.map((c) => (
               <option key={c} value={c}>{c}</option>
             ))}

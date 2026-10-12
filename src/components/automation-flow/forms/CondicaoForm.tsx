@@ -12,6 +12,7 @@ import { useEquipesDisponiveis } from "./useEquipesDisponiveis";
 import { useEtiquetasDisponiveis } from "./EtiquetaSelect";
 import { SeletorDeData } from "@/components/seletor-de-data";
 import { IconClose } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 type CategoriaCampo = "Conversa" | "Funil / Negócio" | "Contato" | "Atividade";
 
@@ -103,6 +104,7 @@ export function CondicaoForm({
   onChange: (novo: GrupoCondicoes) => void;
   nivel?: number;
 }) {
+  const { t: traduzir } = useIdioma();
   function atualizarRegra(id: string, patch: Partial<RegraCondicao>) {
     onChange({ ...grupo, regras: grupo.regras.map((r) => (r.id === id ? { ...r, ...patch } : r)) });
   }
@@ -128,7 +130,7 @@ export function CondicaoForm({
     if (CAMPOS_SIM_NAO.has(regra.campo)) {
       return (
         <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label="Valor">
-          <option value="">Selecione…</option>
+          <option value="">{traduzir("Selecione…")}</option>
           <option value="sim">Sim</option>
           <option value="nao">Não</option>
         </select>
@@ -137,7 +139,7 @@ export function CondicaoForm({
     if (regra.campo === "canal") {
       return (
         <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label="Valor">
-          <option value="">Selecione…</option>
+          <option value="">{traduzir("Selecione…")}</option>
           {CANAIS.map((c) => (
             <option key={c.valor} value={c.valor}>
               {c.label}
@@ -149,7 +151,7 @@ export function CondicaoForm({
     if (regra.campo === "etiqueta") {
       return (
         <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label="Valor">
-          <option value="">Selecione…</option>
+          <option value="">{traduzir("Selecione…")}</option>
           {etiquetas.map((nome) => (
             <option key={nome} value={nome}>
               {nome}
@@ -161,7 +163,7 @@ export function CondicaoForm({
     if (regra.campo === "funil") {
       return (
         <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label="Valor">
-          <option value="">Selecione…</option>
+          <option value="">{traduzir("Selecione…")}</option>
           {funis.map((f) => (
             <option key={f.id} value={f.nome}>
               {f.nome}
@@ -173,7 +175,7 @@ export function CondicaoForm({
     if (regra.campo === "etapa") {
       return (
         <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label="Valor">
-          <option value="">Selecione…</option>
+          <option value="">{traduzir("Selecione…")}</option>
           {etapas.map((titulo) => (
             <option key={titulo} value={titulo}>
               {titulo}
@@ -185,7 +187,7 @@ export function CondicaoForm({
     if (regra.campo === "responsavel") {
       return (
         <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label="Valor">
-          <option value="">Selecione…</option>
+          <option value="">{traduzir("Selecione…")}</option>
           {membros.map((m) => (
             <option key={m.id} value={m.nome}>
               {m.nome}
@@ -197,7 +199,7 @@ export function CondicaoForm({
     if (regra.campo === "equipe") {
       return (
         <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label="Valor">
-          <option value="">Selecione…</option>
+          <option value="">{traduzir("Selecione…")}</option>
           {equipes.map((nome) => (
             <option key={nome} value={nome}>
               {nome}
@@ -209,7 +211,7 @@ export function CondicaoForm({
     if (regra.campo === "dia_semana") {
       return (
         <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label="Valor">
-          <option value="">Selecione…</option>
+          <option value="">{traduzir("Selecione…")}</option>
           {DIAS_SEMANA.map((d) => (
             <option key={d} value={d}>
               {d}
@@ -288,7 +290,7 @@ export function CondicaoForm({
           {regra.operador === "entre" ? (
             <input
               className="input"
-              placeholder="Até"
+              placeholder={traduzir("Até")}
               value={regra.valorFim ?? ""}
               onChange={(e) => atualizarRegra(regra.id, { valorFim: e.target.value })}
               aria-label="Valor final (entre)"

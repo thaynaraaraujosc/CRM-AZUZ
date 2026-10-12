@@ -18,6 +18,7 @@ import { gerarLinhaDoTempo } from "@/lib/timeline";
 import { rotuloDeAtividade } from "@/lib/funis/atividade";
 import { VAZIO, ehVazio } from "@/lib/vazio";
 import { ORDENS, ordenarContatos, origemNoFiltro, type OrdemContatos } from "@/lib/contatos/ordenacao";
+import { useIdioma } from "@/lib/idioma-context";
 
 const CANAIS_PREFERIDOS = ["WhatsApp", "Instagram"] as const;
 
@@ -63,6 +64,7 @@ function CamposExtrasFieldset({
   valores: CamposExtras;
   onChange: (patch: Partial<CamposExtras>) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   return (
     <div className="config-grid-2">
       <div className="field">
@@ -78,7 +80,7 @@ function CamposExtrasFieldset({
         <input className="input" value={valores.cargo} onChange={(e) => onChange({ cargo: e.target.value })} />
       </div>
       <div className="field">
-        <label>Telefone fixo</label>
+        <label>{traduzir("Telefone fixo")}</label>
         <input className="input" value={valores.telefoneFixo} onChange={(e) => onChange({ telefoneFixo: e.target.value })} />
       </div>
       <div className="field">
@@ -86,13 +88,13 @@ function CamposExtrasFieldset({
         <input className="input" value={valores.cidade} onChange={(e) => onChange({ cidade: e.target.value })} />
       </div>
       <div className="field">
-        <label>Estado</label>
+        <label>{traduzir("Estado")}</label>
         <input className="input" value={valores.estado} onChange={(e) => onChange({ estado: e.target.value })} />
       </div>
       <div className="field">
         <label>País</label>
         <select className="input" value={valores.pais} onChange={(e) => onChange({ pais: e.target.value })}>
-          <option value="">Selecione…</option>
+          <option value="">{traduzir("Selecione…")}</option>
           {PAISES.map((p) => (
             <option key={p} value={p}>
               {p}
@@ -103,7 +105,7 @@ function CamposExtrasFieldset({
       <div className="field">
         <label>Canal preferido</label>
         <select className="input" value={valores.canalPreferido} onChange={(e) => onChange({ canalPreferido: e.target.value })}>
-          <option value="">Selecione…</option>
+          <option value="">{traduzir("Selecione…")}</option>
           {CANAIS_PREFERIDOS.map((c) => (
             <option key={c} value={c}>
               {c}
@@ -125,6 +127,7 @@ function CamposExtrasFieldset({
 }
 
 function ContatosPageInner() {
+  const { t: traduzir } = useIdioma();
   const searchParams = useSearchParams();
   const { contatos, criarContato, atualizarContato, excluirContato } = useContatos();
   const { conversas } = useConversas();
@@ -295,8 +298,8 @@ function ContatosPageInner() {
             <label className="search">
               <IconSearch />
               <input
-                placeholder="Buscar nome, @, telefone ou e-mail…"
-                aria-label="Buscar contato"
+                placeholder={traduzir("Buscar nome, @, telefone ou e-mail…")}
+                aria-label={traduzir("Buscar contato")}
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}
               />
@@ -317,7 +320,7 @@ function ContatosPageInner() {
           <section className="open-conv mb14">
             <div className="open-conv-h">
               <div>
-                <p className="n">Novo contato</p>
+                <p className="n">{traduzir("Novo contato")}</p>
                 <p className="s">
                   Esses dados também podem ser preenchidos depois, direto na
                   conversa dele no WhatsApp
@@ -339,7 +342,7 @@ function ContatosPageInner() {
                 type="text"
                 value={nomeNovo}
                 onChange={(e) => setNomeNovo(e.target.value)}
-                placeholder="Ex.: Marina Costa"
+                placeholder={traduzir("Ex.: Marina Costa")}
               />
             </div>
             <div className="field">
@@ -350,22 +353,22 @@ function ContatosPageInner() {
                 type="email"
                 value={emailNovo}
                 onChange={(e) => setEmailNovo(e.target.value)}
-                placeholder="Ex.: marina@email.com"
+                placeholder={traduzir("Ex.: marina@email.com")}
               />
             </div>
             <div className="field">
-              <label>Número do WhatsApp</label>
+              <label>{traduzir("Número do WhatsApp")}</label>
               <input
                 className="input"
                 style={{ width: "100%" }}
                 type="text"
                 value={whatsappNovo}
                 onChange={(e) => setWhatsappNovo(e.target.value)}
-                placeholder="Ex.: (62) 9XXXX-XXXX"
+                placeholder={traduzir("Ex.: (62) 9XXXX-XXXX")}
               />
             </div>
             <div className="field">
-              <label>Data de aniversário</label>
+              <label>{traduzir("Data de aniversário")}</label>
               <input
                 className="input"
                 style={{ width: "100%" }}
@@ -383,7 +386,7 @@ function ContatosPageInner() {
                 type="text"
                 value={enderecoNovo}
                 onChange={(e) => setEnderecoNovo(e.target.value)}
-                placeholder="Onde ele mora"
+                placeholder={traduzir("Onde ele mora")}
               />
             </div>
             <CamposExtrasFieldset valores={extrasNovo} onChange={(patch) => setExtrasNovo((prev) => ({ ...prev, ...patch }))} />
@@ -393,7 +396,7 @@ function ContatosPageInner() {
                 className="btn primary block"
                 onClick={salvarNovoContato}
               >
-                Criar contato
+                {traduzir("Criar contato")}
               </button>
             </div>
           </section>
@@ -405,7 +408,7 @@ function ContatosPageInner() {
         <div className="contatos-barra">
           <ChipFilters options={filtrosContatos} initial={0} onChange={(v) => setFiltroOrigem(v)} />
           <label className="contatos-ordenar">
-            <span>Ordenar por</span>
+            <span>{traduzir("Ordenar por")}</span>
             <select className="input" value={ordem} onChange={(e) => setOrdem(e.target.value as OrdemContatos)}>
               {ORDENS.map((o) => (
                 <option key={o.valor} value={o.valor}>
@@ -423,7 +426,7 @@ function ContatosPageInner() {
                 <tr>
                   <th>Nome</th>
                   <th>Origem</th>
-                  <th>Etapa</th>
+                  <th>{traduzir("Etapa")}</th>
                   <th>Responsável</th>
                   <th>Última interação</th>
                   <th>Valor</th>
@@ -519,12 +522,12 @@ function ContatosPageInner() {
                     className="btn primary"
                     style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
                   >
-                    <IconWhatsApp width={14} height={14} /> Enviar WhatsApp
+                    <IconWhatsApp width={14} height={14} /> {traduzir("Enviar WhatsApp")}
                   </a>
                 ) : null}
                 {!editandoContato ? (
                   <button type="button" className="btn ghost" onClick={abrirEdicao}>
-                    Editar
+                    {traduzir("Editar")}
                   </button>
                 ) : null}
                 <button
@@ -533,7 +536,7 @@ function ContatosPageInner() {
                   style={{ color: "var(--danger)" }}
                   onClick={() => setConfirmandoExclusao(true)}
                 >
-                  Excluir
+                  {traduzir("Excluir")}
                 </button>
               </div>
               <span
@@ -558,7 +561,7 @@ function ContatosPageInner() {
                 </p>
                 <div className="filters-row" style={{ margin: 0 }}>
                   <button type="button" className="btn danger" onClick={confirmarExclusao}>
-                    Excluir contato
+                    {traduzir("Excluir contato")}
                   </button>
                   <button type="button" className="btn ghost" onClick={() => setConfirmandoExclusao(false)}>
                     Cancelar
@@ -574,7 +577,7 @@ function ContatosPageInner() {
               </div>
             </div>
             <div className="field">
-              <label>Etapa no funil</label>
+              <label>{traduzir("Etapa no funil")}</label>
               <div className="input">{noFunil ? noFunil.etapa : "-"}</div>
             </div>
             <div className="field">
@@ -602,7 +605,7 @@ function ContatosPageInner() {
                   />
                 </div>
                 <div className="field">
-                  <label>Número do WhatsApp</label>
+                  <label>{traduzir("Número do WhatsApp")}</label>
                   <input
                     className="input"
                     style={{ width: "100%" }}
@@ -612,7 +615,7 @@ function ContatosPageInner() {
                   />
                 </div>
                 <div className="field">
-                  <label>Data de aniversário</label>
+                  <label>{traduzir("Data de aniversário")}</label>
                   <input
                     className="input"
                     style={{ width: "100%" }}
@@ -634,7 +637,7 @@ function ContatosPageInner() {
                 <CamposExtrasFieldset valores={extrasEdit} onChange={(patch) => setExtrasEdit((prev) => ({ ...prev, ...patch }))} />
                 <div className="filters-row" style={{ padding: "0 17px 14px" }}>
                   <button type="button" className="btn primary" onClick={salvarEdicao}>
-                    Salvar alterações
+                    {traduzir("Salvar alterações")}
                   </button>
                   <button type="button" className="btn ghost" onClick={() => setEditandoContato(false)}>
                     Cancelar
@@ -648,11 +651,11 @@ function ContatosPageInner() {
                   <div className="input">{contato.email || "-"}</div>
                 </div>
                 <div className="field">
-                  <label>Número do WhatsApp</label>
+                  <label>{traduzir("Número do WhatsApp")}</label>
                   <div className="input">{contato.whatsapp || "-"}</div>
                 </div>
                 <div className="field">
-                  <label>Data de aniversário</label>
+                  <label>{traduzir("Data de aniversário")}</label>
                   <div className="input">{contato.nascimento || "-"}</div>
                 </div>
                 <div className="field">
@@ -673,7 +676,7 @@ function ContatosPageInner() {
                     <div className="input">{contato.cargo || "-"}</div>
                   </div>
                   <div className="field">
-                    <label>Telefone fixo</label>
+                    <label>{traduzir("Telefone fixo")}</label>
                     <div className="input">{contato.telefoneFixo || "-"}</div>
                   </div>
                   <div className="field">
@@ -681,7 +684,7 @@ function ContatosPageInner() {
                     <div className="input">{contato.cidade || "-"}</div>
                   </div>
                   <div className="field">
-                    <label>Estado</label>
+                    <label>{traduzir("Estado")}</label>
                     <div className="input">{contato.estado || "-"}</div>
                   </div>
                   <div className="field">
@@ -701,9 +704,9 @@ function ContatosPageInner() {
             )}
 
             <div className="panel-h divided">
-              <h4>Linha do tempo</h4>
+              <h4>{traduzir("Linha do tempo")}</h4>
               <a href={`/jornada-cliente?contato=${contato.id}`} className="link">
-                Ver jornada completa
+                {traduzir("Ver jornada completa")}
               </a>
             </div>
             <Timeline

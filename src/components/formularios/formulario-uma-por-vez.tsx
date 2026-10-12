@@ -12,6 +12,7 @@ import {
   type PerguntaFormulario,
 } from "@/lib/formularios-context";
 import { erroDaPergunta, passosDoFormulario, type PassoDoFormulario } from "@/lib/formularios/passo-a-passo";
+import { useIdioma } from "@/lib/idioma-context";
 
 type OpcaoNome = { id: string; nome: string };
 
@@ -42,6 +43,7 @@ export function FormularioUmaPorVez({
    *  seguintes já chegam preenchidos. */
   aoAcharEndereco?: (endereco: EnderecoDoCep) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const passos = useMemo(() => passosDoFormulario(formulario, valores), [formulario, valores]);
   const [indice, setIndice] = useState(0);
   const [erro, setErro] = useState<string | null>(null);
@@ -158,7 +160,7 @@ export function FormularioUmaPorVez({
       <div className="filters-row" style={{ marginTop: 14 }}>
         {atual > 0 ? (
           <button type="button" className="btn ghost" onClick={voltar} disabled={enviando}>
-            Voltar
+            {traduzir("Voltar")}
           </button>
         ) : null}
         <button

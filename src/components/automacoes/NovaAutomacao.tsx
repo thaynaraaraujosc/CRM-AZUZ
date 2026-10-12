@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { IconClose } from "@/components/icons";
 import { useFunis } from "@/lib/funis-context";
+import { useIdioma } from "@/lib/idioma-context";
 import {
   CATEGORIAS_GATILHO,
   QUANDO_ROTULO,
@@ -36,6 +37,7 @@ export function NovaAutomacao({
   /** Recebe o id do robô criado, pra quem chamou abrir o editor. */
   onCriado: (fluxoId: string) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const { funis } = useFunis();
 
   const [passo, setPasso] = useState<Passo>("nome");
@@ -173,7 +175,7 @@ export function NovaAutomacao({
                   </select>
                 </div>
                 <div className="field">
-                  <label>Etapa</label>
+                  <label>{traduzir("Etapa")}</label>
                   <select
                     className="input"
                     value={etapaId}
@@ -201,7 +203,7 @@ export function NovaAutomacao({
                 {semGatilho ? "Criar robô" : "Continuar"}
               </button>
               <button type="button" className="btn ghost" onClick={() => setPasso("nome")}>
-                Voltar
+                {traduzir("Voltar")}
               </button>
             </div>
           </>
@@ -247,7 +249,7 @@ export function NovaAutomacao({
                 {salvando ? "Criando…" : "Criar e montar o robô"}
               </button>
               <button type="button" className="btn ghost" onClick={() => setPasso("onde")}>
-                Voltar
+                {traduzir("Voltar")}
               </button>
             </div>
           </>

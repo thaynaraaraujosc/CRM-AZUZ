@@ -15,7 +15,7 @@ import { useIdioma } from "@/lib/idioma-context";
  * devolve ele de volta, então o campo nunca é preenchido de novo com o valor salvo.
  */
 export function ConexaoManualWhatsApp({ aoConectar }: { aoConectar?: () => void }) {
-  const { t } = useIdioma();
+  const { t: traduzir } = useIdioma();
   const [aberto, setAberto] = useState(false);
   const [accessToken, setAccessToken] = useState("");
   const [wabaId, setWabaId] = useState("");
@@ -67,7 +67,7 @@ export function ConexaoManualWhatsApp({ aoConectar }: { aoConectar?: () => void 
       <div style={{ marginTop: 10 }}>
         {pin ? (
           <>
-            <p className="int-title" style={{ margin: 0 }}>{t("Conectado! Guarde este PIN:")}</p>
+            <p className="int-title" style={{ margin: 0 }}>{traduzir("Conectado! Guarde este PIN:")}</p>
             <p style={{ fontSize: 28, fontWeight: 700, letterSpacing: 4, margin: "8px 0" }}>{pin}</p>
             <p className="hint" style={{ margin: 0 }}>
               É o PIN de verificação em duas etapas do seu número na Meta. Ele não aparece de novo.

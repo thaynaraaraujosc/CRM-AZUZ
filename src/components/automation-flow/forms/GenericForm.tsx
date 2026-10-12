@@ -4,6 +4,7 @@ import { useEquipe } from "@/lib/equipe-context";
 import { useFunis } from "@/lib/funis-context";
 import type { FlowNode } from "@/lib/automation-flow/types";
 import { EtiquetaSelect } from "./EtiquetaSelect";
+import { useIdioma } from "@/lib/idioma-context";
 
 /** Rótulo amigável a partir do nome da chave (`etapaTitulo` -> "Etapa titulo"). */
 function rotuloDaChave(chave: string): string {
@@ -27,6 +28,7 @@ const CHAVES_OCULTAS = new Set(["variaveis", "candidatos", "anexos", "variaveisU
  * foi criado) e escolhe o melhor controle pra cada uma por heurística de nome/tipo.
  */
 export function GenericForm({ node, onChange }: { node: FlowNode; onChange: (data: Record<string, unknown>) => void }) {
+  const { t: traduzir } = useIdioma();
   const { funis } = useFunis();
   const { membros: equipe } = useEquipe();
   const d = node.data as Record<string, unknown>;
@@ -79,7 +81,7 @@ export function GenericForm({ node, onChange }: { node: FlowNode; onChange: (dat
         if (CHAVES_ETAPA_TITULO.has(chave)) {
           return (
             <div className="field" key={chave}>
-              <label>Etapa</label>
+              <label>{traduzir("Etapa")}</label>
               <select className="input" value={typeof valor === "string" ? valor : ""} onChange={(e) => set(chave, e.target.value)} disabled={!funilEscolhido}>
                 <option value="">{funilEscolhido ? "Selecione uma etapa…" : "Escolha um funil primeiro"}</option>
                 {(funilEscolhido?.colunas ?? []).map((c) => (
@@ -95,7 +97,7 @@ export function GenericForm({ node, onChange }: { node: FlowNode; onChange: (dat
         if (CHAVES_ETAPA_ID.has(chave)) {
           return (
             <div className="field" key={chave}>
-              <label>Etapa</label>
+              <label>{traduzir("Etapa")}</label>
               <select className="input" value={typeof valor === "string" ? valor : ""} onChange={(e) => set(chave, e.target.value)} disabled={!funilEscolhido}>
                 <option value="">{funilEscolhido ? "Qualquer etapa" : "Escolha um funil primeiro"}</option>
                 {(funilEscolhido?.colunas ?? []).map((c) => (
@@ -113,7 +115,7 @@ export function GenericForm({ node, onChange }: { node: FlowNode; onChange: (dat
             <div className="field" key={chave}>
               <label>{rotuloDaChave(chave)}</label>
               <select className="input" value={typeof valor === "string" ? valor : ""} onChange={(e) => set(chave, e.target.value)}>
-                <option value="">Selecione…</option>
+                <option value="">{traduzir("Selecione…")}</option>
                 {equipe.map((m) => (
                   <option key={m.id} value={m.nome}>
                     {m.nome}

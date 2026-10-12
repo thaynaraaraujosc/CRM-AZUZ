@@ -14,7 +14,7 @@ export function CategoriasNav({
   ativa: CategoriaId;
   onSelecionar: (id: CategoriaId) => void;
 }) {
-  const { t } = useIdioma();
+  const { t: traduzir } = useIdioma();
   const [busca, setBusca] = useState("");
   const termo = busca.trim().toLowerCase();
 
@@ -22,10 +22,10 @@ export function CategoriasNav({
     <nav className="config-nav" aria-label="Categorias de configuração">
       <input
         className="input config-nav-busca"
-        placeholder={t("Buscar configuração…")}
+        placeholder={traduzir("Buscar configuração…")}
         value={busca}
         onChange={(e) => setBusca(e.target.value)}
-        aria-label={t("Buscar configuração")}
+        aria-label={traduzir("Buscar configuração")}
       />
       {GRUPOS_CONFIGURACOES.map((grupo) => {
         const categoriasFiltradas = termo

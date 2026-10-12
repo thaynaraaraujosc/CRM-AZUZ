@@ -17,6 +17,7 @@ import {
 } from "@/lib/metrics";
 import { slugId } from "@/lib/ids";
 import type { NegocioCard } from "@/lib/data";
+import { useIdioma } from "@/lib/idioma-context";
 
 const CORES_MOTIVO: Record<string, string> = {
   "Achou caro": "#d64545",
@@ -33,6 +34,7 @@ type PerdaComEtapa = NegocioCard & { etapa: string; funil: string };
  * Funil): sem dado fictício, workspace sem nenhuma perda registrada mostra vazio.
  */
 export default function MotivosPerdaPage() {
+  const { t: traduzir } = useIdioma();
   const { funis } = useFunis();
   const { membros: equipe } = useEquipe();
   const [periodo, setPeriodo] = useState<PeriodoValor>(PERIODO_PADRAO);
@@ -231,7 +233,7 @@ export default function MotivosPerdaPage() {
                 <th>Negociação</th>
                 <th>Responsável</th>
                 <th>Motivo</th>
-                <th>Etapa</th>
+                <th>{traduzir("Etapa")}</th>
                 <th>Origem</th>
                 <th>Valor</th>
                 <th>Data</th>

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { IconCalendar } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Seletor de data do CRM. O calendário que a gente controla.
@@ -79,6 +80,7 @@ export function SeletorDeData({
   /** Data por extenso não cabe em campos estreitos lado a lado (De/Até): mostra 30/09/2026. */
   curto?: boolean;
 }) {
+  const { t: traduzir } = useIdioma();
   const [aberto, setAberto] = useState(false);
   const selecionada = daIso(valor);
   const [mesVisivel, setMesVisivel] = useState(() => selecionada ?? new Date());
@@ -225,7 +227,7 @@ export function SeletorDeData({
             </button>
             {valor ? (
               <button type="button" onClick={() => { onChange(""); setAberto(false); }}>
-                Limpar
+                {traduzir("Limpar")}
               </button>
             ) : null}
           </div>

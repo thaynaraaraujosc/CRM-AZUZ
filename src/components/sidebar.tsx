@@ -119,7 +119,7 @@ function IndoPara() {
 }
 
 export function Sidebar() {
-  const { t } = useIdioma();
+  const { t: traduzir } = useIdioma();
   const pathname = usePathname();
   const { data: sessao } = useSession();
   // Aberta por padrão pra quem entra. Só recolhe se a própria pessoa pedir (guardado por
@@ -283,7 +283,7 @@ export function Sidebar() {
         >
           {!recolhida ? (
             <>
-              <p className="l">{t("Workspace")}</p>
+              <p className="l">{traduzir("Workspace")}</p>
               <p className="v">{nomeEmpresa}</p>
             </>
           ) : (
@@ -331,7 +331,7 @@ export function Sidebar() {
                 </div>
               </div>
               <div className="field">
-                <label>{t("Nome da empresa")}</label>
+                <label>{traduzir("Nome da empresa")}</label>
                 {souAdmin ? (
                   <div style={{ display: "flex", gap: 6 }}>
                     <input
@@ -350,7 +350,7 @@ export function Sidebar() {
                 )}
               </div>
               <div className="panel-h divided">
-                <h4>{t("Quem está logado agora")}</h4>
+                <h4>{traduzir("Quem está logado agora")}</h4>
               </div>
               <div className="field">
                 <label>Nome</label>
@@ -361,7 +361,7 @@ export function Sidebar() {
                 <div className="input">{currentUser.email}</div>
               </div>
               <div className="field">
-                <label>{t("Papel")}</label>
+                <label>{traduzir("Papel")}</label>
                 <div className="input">{currentUser.role}</div>
               </div>
                 </div>
@@ -422,13 +422,13 @@ export function Sidebar() {
                 prefetch
                 className={`nav-item${href === "/conversas" ? " nav-item-whatsapp" : ""}${active ? " active" : ""}`}
                 aria-current={active ? "page" : undefined}
-                title={recolhida ? t(label) : undefined}
+                title={recolhida ? traduzir(label) : undefined}
               >
                 <Icon />
                 {!recolhida ? (
                   <>
-                    {t(label)}
-                    {href === "/azuz-ia" ? <span className="nav-badge-em-breve">{t("Em breve")}</span> : null}
+                    {traduzir(label)}
+                    {href === "/azuz-ia" ? <span className="nav-badge-em-breve">{traduzir("Em breve")}</span> : null}
                   </>
                 ) : null}
                 <IndoPara />
@@ -561,7 +561,7 @@ export function Sidebar() {
                   {souAdmin ? (
                     <>
                       <div className="dropdown-item" style={{ cursor: "default" }}>
-                        <span className="n">{t("Trocar de conta")}</span>
+                        <span className="n">{traduzir("Trocar de conta")}</span>
                         <span className="r">Você está como {currentUser.name}</span>
                       </div>
                       {outrosMembros.map((m) => (

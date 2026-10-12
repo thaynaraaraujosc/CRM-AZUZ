@@ -8,6 +8,7 @@ import { EditorTemplate, type TemplateSalvo } from "@/components/automacoes/Edit
 import { PreviaMensagem } from "@/components/automacoes/PreviaMensagem";
 import { CANAIS_TEMPLATE_OFERECIDOS, LIMITES, STATUS_LABEL, type CanalTemplate } from "@/lib/templates/regras";
 import type { CanalDisponivel } from "@/app/api/canais/route";
+import { useIdioma } from "@/lib/idioma-context";
 
 const BADGE_POR_STATUS: Record<string, string> = {
   rascunho: "badge-neutral",
@@ -24,6 +25,7 @@ const BADGE_POR_STATUS: Record<string, string> = {
  * o status vem da Meta; nos outros canais o template fica pronto ao salvar.
  */
 export default function TemplatesPage() {
+  const { t: traduzir } = useIdioma();
   const [templates, setTemplates] = useState<TemplateSalvo[] | null>(null);
   const [canais, setCanais] = useState<CanalDisponivel[]>([]);
   const [editando, setEditando] = useState<TemplateSalvo | null | "novo">(null);
@@ -129,7 +131,7 @@ export default function TemplatesPage() {
                   <footer className="tpl-card-acoes">
                     {podeEditar ? (
                       <button type="button" className="btn ghost" onClick={() => setEditando(t)}>
-                        Editar
+                        {traduzir("Editar")}
                       </button>
                     ) : null}
                     {podeAnalise ? (
@@ -141,7 +143,7 @@ export default function TemplatesPage() {
                       Duplicar
                     </button>
                     <button type="button" className="btn ghost tpl-excluir" disabled={ocupado === `${t.id}:excluir`} onClick={() => void acao(t, "excluir")}>
-                      Excluir
+                      {traduzir("Excluir")}
                     </button>
                   </footer>
                 </article>

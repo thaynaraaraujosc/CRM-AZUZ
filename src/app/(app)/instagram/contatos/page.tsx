@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 
 import { IconMaisOpcoes, IconSearch } from "@/components/icons";
 import type { ContatoInstagram } from "@/app/api/instagram/contatos/route";
+import { useIdioma } from "@/lib/idioma-context";
 
 function quando(iso: string): string {
   const minutos = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
@@ -40,6 +41,7 @@ function iniciais(nome: string): string {
  * em massa: o estrago de um clique errado numa seleção grande não tem desfazer.
  */
 export default function InstagramContatosPage() {
+  const { t: traduzir } = useIdioma();
   const router = useRouter();
   const [contatos, setContatos] = useState<ContatoInstagram[] | null>(null);
   const [menuAberto, setMenuAberto] = useState<string | null>(null);
@@ -156,7 +158,7 @@ export default function InstagramContatosPage() {
                 Tirar etiqueta
               </button>
               <button type="button" className="btn ghost" onClick={() => setEscolhidos(new Set())}>
-                Limpar seleção
+                {traduzir("Limpar seleção")}
               </button>
             </div>
           ) : null}
@@ -235,7 +237,7 @@ export default function InstagramContatosPage() {
                       {menuAberto === c.id ? (
                         <div className="social-menu-opcoes" role="menu">
                           <button type="button" onClick={() => router.push("/instagram")}>
-                            Abrir conversa
+                            {traduzir("Abrir conversa")}
                           </button>
                           <button
                             type="button"

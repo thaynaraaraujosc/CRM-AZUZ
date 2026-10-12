@@ -14,6 +14,7 @@ import { useFunis } from "@/lib/funis-context";
 import { useMensagensExtra } from "@/lib/mensagens-extra-context";
 import { PERIODO_PADRAO, PeriodoPicker, periodoLabel, type PeriodoValor } from "@/components/ui";
 import { IconAlerta, IconCheck, IconClose, IconRelogio } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 import {
   estimarPaginas,
   gerarPdfRelatorio,
@@ -96,6 +97,7 @@ export function ReportWizard({
   onFechar: () => void;
   onGerado: (registro: RelatorioGerado) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const { data: sessao } = useSession();
   const { funis } = useFunis();
   const { contatos } = useContatos();
@@ -877,7 +879,7 @@ export function ReportWizard({
           <div style={{ display: "flex", gap: 8 }}>
             {etapa > 0 ? (
               <button type="button" className="btn ghost" onClick={() => irParaEtapa(etapa - 1)}>
-                Voltar
+                {traduzir("Voltar")}
               </button>
             ) : null}
             {etapa < ETAPAS.length - 1 && etapa !== 4 ? (

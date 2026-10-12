@@ -26,18 +26,18 @@ const PERIODOS = [
 ];
 
 function Numero({ valor, label, ajuda }: { valor: number; label: string; ajuda?: string }) {
-  const { t, localeNumero } = useIdioma();
+  const { t: traduzir, localeNumero } = useIdioma();
   return (
     <div className="social-numero">
       <strong>{valor.toLocaleString(localeNumero)}</strong>
-      <span>{t(label)}</span>
-      {ajuda ? <em>{t(ajuda)}</em> : null}
+      <span>{traduzir(label)}</span>
+      {ajuda ? <em>{traduzir(ajuda)}</em> : null}
     </div>
   );
 }
 
 export default function SocialPage() {
-  const { t, localeNumero } = useIdioma();
+  const { t: traduzir, localeNumero } = useIdioma();
   const [dias, setDias] = useState(7);
   // O período pedido viaja JUNTO com a resposta. Assim "carregando" é derivado (a resposta que
   // tenho não é do período que estou mostrando) em vez de ser um segundo estado que precisa ser
@@ -65,8 +65,8 @@ export default function SocialPage() {
   return (
     <>
       <Topbar
-        title={t("Social")}
-        sub={t("Instagram: o que chegou, o que os robôs fizeram e o que a Meta informa")}
+        title={traduzir("Social")}
+        sub={traduzir("Instagram: o que chegou, o que os robôs fizeram e o que a Meta informa")}
         actions={
           <div className="social-periodo">
             {PERIODOS.map((p) => (
@@ -76,7 +76,7 @@ export default function SocialPage() {
                 className={`seg-chip${dias === p.dias ? " on" : ""}`}
                 onClick={() => setDias(p.dias)}
               >
-                {t(p.label)}
+                {traduzir(p.label)}
               </button>
             ))}
           </div>
@@ -89,26 +89,26 @@ export default function SocialPage() {
         <div className="social-conteudo">
         {painel && !painel.conectado ? (
           <section className="card" style={{ marginBottom: "var(--space-3)" }}>
-            <strong>{t("O Instagram não está conectado.")}</strong>
+            <strong>{traduzir("O Instagram não está conectado.")}</strong>
             <p className="hint mt8">
               {painel.motivoDesconectado}{" "}
-              {t("Os números do CRM abaixo continuam valendo pro que já foi registrado.")}
+              {traduzir("Os números do CRM abaixo continuam valendo pro que já foi registrado.")}
             </p>
             <Link className="btn primary mt8" href="/configuracoes?categoria=integracoes">
-              {t("Ver conexões")}
+              {traduzir("Ver conexões")}
             </Link>
           </section>
         ) : null}
 
         <section className="card">
-          <h3>{t("O que o CRM registrou")}</h3>
+          <h3>{traduzir("O que o CRM registrou")}</h3>
           <p className="hint">
-            {t("Contado neste banco, nos últimos {dias} dias. É exato: cada número aqui é uma linha que existe.", {
+            {traduzir("Contado neste banco, nos últimos {dias} dias. É exato: cada número aqui é uma linha que existe.", {
               dias: painel?.periodoDias ?? dias,
             })}
           </p>
           {carregando && !painel ? (
-            <p className="hint mt8">{t("Carregando…")}</p>
+            <p className="hint mt8">{traduzir("Carregando…")}</p>
           ) : painel ? (
             <div className="social-numeros mt8">
               <Numero valor={painel.crm.directs} label="Mensagens no Direct" />
@@ -120,15 +120,15 @@ export default function SocialPage() {
               <Numero valor={painel.crm.automacoesIniciadas} label="Automações sociais iniciadas" />
             </div>
           ) : (
-            <p className="hint mt8">{t("Não deu pra carregar agora.")}</p>
+            <p className="hint mt8">{traduzir("Não deu pra carregar agora.")}</p>
           )}
         </section>
 
         {painel?.conectado ? (
           <section className="card mt16">
-            <h3>{t("O que o Instagram informa")}</h3>
+            <h3>{traduzir("O que o Instagram informa")}</h3>
             <p className="hint">
-              {t(
+              {traduzir(
                 "Vem da API da Meta. Depende do tipo da conta e das permissões concedidas, então pode faltar item: o que ela recusa aparece abaixo, com o motivo dela.",
               )}
             </p>
@@ -148,30 +148,30 @@ export default function SocialPage() {
             ) : null}
 
             {painel.instagram?.perfilErro ? (
-              <p className="hint mt8">{t("Perfil: {erro}", { erro: painel.instagram.perfilErro })}</p>
+              <p className="hint mt8">{traduzir("Perfil: {erro}", { erro: painel.instagram.perfilErro })}</p>
             ) : null}
 
             {painel.instagram?.recusadas.length ? (
               <div className="mt8">
-                <p className="hint">{t("Não disponíveis nesta conta:")}</p>
+                <p className="hint">{traduzir("Não disponíveis nesta conta:")}</p>
                 <ul className="hint">
                   {painel.instagram.recusadas.map((r) => (
                     <li key={r.chave}>
-                      <strong>{t(r.label)}</strong>: {r.motivo}
+                      <strong>{traduzir(r.label)}</strong>: {r.motivo}
                     </li>
                   ))}
                 </ul>
               </div>
             ) : null}
 
-            {!painel.instagram ? <p className="hint mt8">{t("Não deu pra falar com a Meta agora.")}</p> : null}
+            {!painel.instagram ? <p className="hint mt8">{traduzir("Não deu pra falar com a Meta agora.")}</p> : null}
           </section>
         ) : null}
 
         <section className="card mt16">
-          <h3>{t("Seus robôs do Instagram")}</h3>
+          <h3>{traduzir("Seus robôs do Instagram")}</h3>
           <p className="hint">
-            {t(
+            {traduzir(
               "O acompanhamento do Instagram é aqui, não no funil. Quem chega pelo Direct vira contato, com @, foto e etiqueta, e não vira card: o funil comercial é do WhatsApp. Cada linha abaixo é um robô, contado em execução de verdade nos últimos {dias} dias.",
               { dias: painel?.periodoDias ?? dias },
             )}
@@ -182,12 +182,12 @@ export default function SocialPage() {
               <table className="table">
                 <thead>
                   <tr>
-                    <th>{t("Robô")}</th>
-                    <th>{t("Situação")}</th>
-                    <th className="num">{t("Rodou")}</th>
-                    <th className="num">{t("Em andamento")}</th>
-                    <th className="num">{t("Erros")}</th>
-                    <th>{t("Última vez")}</th>
+                    <th>{traduzir("Robô")}</th>
+                    <th>{traduzir("Situação")}</th>
+                    <th className="num">{traduzir("Rodou")}</th>
+                    <th className="num">{traduzir("Em andamento")}</th>
+                    <th className="num">{traduzir("Erros")}</th>
+                    <th>{traduzir("Última vez")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -198,7 +198,7 @@ export default function SocialPage() {
                       </td>
                       <td>
                         <span className={`badge ${r.ligado ? "badge-success" : "badge-neutral"}`}>
-                          {r.ligado ? t("Ligado") : t("Desligado")}
+                          {r.ligado ? traduzir("Ligado") : traduzir("Desligado")}
                         </span>
                       </td>
                       <td className="num">{r.execucoes.toLocaleString(localeNumero)}</td>
@@ -214,19 +214,19 @@ export default function SocialPage() {
             </div>
           ) : (
             <p className="hint mt8">
-              {carregando ? t("Carregando…") : t("Nenhum robô de Instagram ainda.")}
+              {carregando ? traduzir("Carregando…") : traduzir("Nenhum robô de Instagram ainda.")}
             </p>
           )}
 
           <div className="social-atalhos mt16">
             <Link className="btn primary" href="/automacoes/social">
-              {t("Abrir automações")}
+              {traduzir("Abrir automações")}
             </Link>
             <Link className="btn" href="/automacoes/social/execucoes">
-              {t("Ver execuções e erros")}
+              {traduzir("Ver execuções e erros")}
             </Link>
             <Link className="btn" href="/instagram/contatos">
-              {t("Contatos do Instagram")}
+              {traduzir("Contatos do Instagram")}
             </Link>
           </div>
         </section>

@@ -54,6 +54,7 @@ import {
   IconText,
 } from "@/components/icons";
 import { FloatingDropdown, Topbar } from "@/components/ui";
+import { useIdioma } from "@/lib/idioma-context";
 
 /* Web Speech API: não faz parte do lib.dom.d.ts padrão do TypeScript, então declaramos o mínimo usado aqui. */
 interface ReconhecimentoDeVoz {
@@ -256,6 +257,7 @@ const ABAS: { valor: Aba; label: string }[] = [
 ];
 
 function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
+  const { t: traduzir } = useIdioma();
   const {
     documentos,
     criarDocumento,
@@ -387,7 +389,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
               <button type="button" className={`fchip${abaModelos === "todos" ? " active" : ""}`} onClick={() => setAbaModelos("todos")}>Todos</button>
               <button type="button" className={`fchip${abaModelos === "recomendados" ? " active" : ""}`} onClick={() => setAbaModelos("recomendados")}>Recomendados</button>
               <button type="button" className={`fchip${abaModelos === "recentes" ? " active" : ""}`} onClick={() => setAbaModelos("recentes")}>Recentes</button>
-              <button type="button" className={`fchip${abaModelos === "favoritos" ? " active" : ""}`} onClick={() => setAbaModelos("favoritos")}>Favoritos</button>
+              <button type="button" className={`fchip${abaModelos === "favoritos" ? " active" : ""}`} onClick={() => setAbaModelos("favoritos")}>{traduzir("Favoritos")}</button>
               <button type="button" className={`fchip${abaModelos === "meus" ? " active" : ""}`} onClick={() => setAbaModelos("meus")}>Meus modelos ({modelosPersonalizados.length})</button>
               <label className="search" style={{ marginLeft: "auto", width: 220 }}>
                 <IconSearch />
@@ -439,7 +441,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
                           className="btn ghost"
                           onClick={(e) => { e.stopPropagation(); setModeloPreviewId(m.id); }}
                         >
-                          Visualizar
+                          {traduzir("Visualizar")}
                         </button>
                         <button
                           type="button"
@@ -822,6 +824,7 @@ function GrupoToolbar({ rotulo, icone, largura = 220, children }: { rotulo: stri
 }
 
 function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void }) {
+  const { t: traduzir } = useIdioma();
   const { data: sessao } = useSession();
   const currentUser = { initials: sessao?.user?.initials ?? "" };
   const {
@@ -1217,7 +1220,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       <div className="content">
         <p className="hint">Documento não encontrado.</p>
         <button type="button" className="btn ghost" onClick={onFechar}>
-          Voltar
+          {traduzir("Voltar")}
         </button>
       </div>
     );
@@ -2676,7 +2679,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
 
       <div className={`doc-menu-bar${mostrarToolbar ? "" : " doc-menu-bar-fim"}`}>
         <MenuTopo label="Arquivo" aberto={menuAberto === "arquivo"} onAbrir={() => setMenuAberto("arquivo")} onFechar={() => setMenuAberto(null)} itens={menuArquivo} />
-        <MenuTopo label="Editar" aberto={menuAberto === "editar"} onAbrir={() => setMenuAberto("editar")} onFechar={() => setMenuAberto(null)} itens={menuEditar} />
+        <MenuTopo label={traduzir("Editar")} aberto={menuAberto === "editar"} onAbrir={() => setMenuAberto("editar")} onFechar={() => setMenuAberto(null)} itens={menuEditar} />
         <MenuTopo label="Ver" aberto={menuAberto === "ver"} onAbrir={() => setMenuAberto("ver")} onFechar={() => setMenuAberto(null)} itens={menuVer} />
         <MenuTopo label="Inserir" aberto={menuAberto === "inserir"} onAbrir={() => setMenuAberto("inserir")} onFechar={() => setMenuAberto(null)} itens={menuInserir} />
         <MenuTopo label="Formatar" aberto={menuAberto === "formatar"} onAbrir={() => setMenuAberto("formatar")} onFechar={() => setMenuAberto(null)} itens={menuFormatar} />
@@ -3548,7 +3551,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             />
           </div>
           <button type="button" className="btn primary block" onClick={() => setConfigPaginaAberto(false)}>
-            Aplicar
+            {traduzir("Aplicar")}
           </button>
         </div>
       ) : null}
@@ -3729,7 +3732,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             Aplica ao documento inteiro (todas as páginas). Colunas de verdade via CSS. Sem tabela.
           </p>
           <button type="button" className="btn primary block" onClick={() => setColunasAberto(false)}>
-            Aplicar
+            {traduzir("Aplicar")}
           </button>
         </div>
       ) : null}
@@ -3861,6 +3864,7 @@ function PainelImagem({
   onDuplicar: () => void;
   onIniciarRedimensionar: (e: React.MouseEvent) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const [manterProporcao, setManterProporcao] = useState(true);
   const [unidadeTamanho, setUnidadeTamanho] = useState<"px" | "cm" | "%">("px");
   const [cortarTopo, setCortarTopo] = useState(0);
@@ -4169,7 +4173,7 @@ function PainelImagem({
           <input type="number" className="input" placeholder="Esquerda" value={cortarEsquerda} onChange={(e) => setCortarEsquerda(Number(e.target.value) || 0)} />
         </div>
         <button type="button" className="btn ghost block" style={{ marginTop: 8, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }} onClick={aplicarCorte}>
-          <IconCrop width={14} height={14} /> Aplicar corte
+          <IconCrop width={14} height={14} /> {traduzir("Aplicar corte")}
         </button>
       </div>
 
@@ -4300,8 +4304,8 @@ function PainelImagem({
         <button type="button" className="btn ghost" style={{ flex: 1 }} onClick={onDuplicar}>Duplicar</button>
       </div>
       <div className="field" style={{ display: "flex", gap: 8 }}>
-        <button type="button" className="btn ghost" style={{ flex: 1 }} onClick={restaurarOriginal}>Restaurar original</button>
-        <button type="button" className="btn ghost" style={{ flex: 1, color: "var(--danger)" }} onClick={onExcluir}>Excluir</button>
+        <button type="button" className="btn ghost" style={{ flex: 1 }} onClick={restaurarOriginal}>{traduzir("Restaurar original")}</button>
+        <button type="button" className="btn ghost" style={{ flex: 1, color: "var(--danger)" }} onClick={onExcluir}>{traduzir("Excluir")}</button>
       </div>
     </aside>
   );
@@ -4434,6 +4438,7 @@ function MenuContextoImagem({
   onBloquear: () => void;
   onExcluir: () => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const ref = useRef<HTMLDivElement>(null);
   const [ajuste, setAjuste] = useState({ x: 0, y: 0 });
   useFecharAoClicarFora(ref, true, onFechar);
@@ -4469,7 +4474,7 @@ function MenuContextoImagem({
         {bloqueada ? <IconCadeadoAberto width={13} height={13} /> : <IconCadeado width={13} height={13} />} {bloqueada ? "Desbloquear" : "Bloquear"}
       </button>
       <div className="doc-context-menu-sep" />
-      <button type="button" className="perigo" onClick={onExcluir} style={{ display: "flex", alignItems: "center", gap: 6 }}><IconLixeira width={13} height={13} /> Excluir</button>
+      <button type="button" className="perigo" onClick={onExcluir} style={{ display: "flex", alignItems: "center", gap: 6 }}><IconLixeira width={13} height={13} /> {traduzir("Excluir")}</button>
     </div>
   );
 }

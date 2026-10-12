@@ -11,6 +11,7 @@ import type {
 import { CATEGORIAS_TAREFA } from "./TarefaEventoForm";
 import { useEquipesDisponiveis } from "./useEquipesDisponiveis";
 import { SeletorDeData } from "@/components/seletor-de-data";
+import { useIdioma } from "@/lib/idioma-context";
 
 const PRIORIDADES: { valor: PrioridadeTarefa; label: string }[] = [
   { valor: "baixa", label: "Baixa" },
@@ -22,6 +23,7 @@ const PRIORIDADES: { valor: PrioridadeTarefa; label: string }[] = [
 /** Ação "Criar tarefa" (item 16). Tipo, título, descrição, responsável, prazo, prioridade e a que
  * relacionar, tudo configurável direto no bloco. */
 export function CriarTarefaForm({ data, onChange }: { data: CriarTarefaData; onChange: (novo: CriarTarefaData) => void }) {
+  const { t: traduzir } = useIdioma();
   const equipes = useEquipesDisponiveis();
   const { membros: equipe } = useEquipe();
 
@@ -75,7 +77,7 @@ export function CriarTarefaForm({ data, onChange }: { data: CriarTarefaData; onC
         <div className="field">
           <label>Pessoa</label>
           <select className="input" value={data.responsavel ?? ""} onChange={(e) => onChange({ ...data, responsavel: e.target.value })}>
-            <option value="">Selecione…</option>
+            <option value="">{traduzir("Selecione…")}</option>
             {equipe.map((m) => (
               <option key={m.id} value={m.nome}>
                 {m.nome}
@@ -89,7 +91,7 @@ export function CriarTarefaForm({ data, onChange }: { data: CriarTarefaData; onC
         <div className="field">
           <label>Equipe</label>
           <select className="input" value={data.equipe ?? ""} onChange={(e) => onChange({ ...data, equipe: e.target.value })}>
-            <option value="">Selecione…</option>
+            <option value="">{traduzir("Selecione…")}</option>
             {equipes.map((nome) => (
               <option key={nome} value={nome}>
                 {nome}

@@ -12,6 +12,7 @@ import {
 import { IconAnexo, IconClose, IconDoc, IconImage, IconMic, IconStar, IconVideoCam } from "@/components/icons";
 import { SeletorDeData } from "@/components/seletor-de-data";
 import { AreaDeUpload } from "@/components/area-de-upload";
+import { useIdioma } from "@/lib/idioma-context";
 
 function lerComoDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -264,6 +265,7 @@ export function CampoResposta({
   /** O CEP achou o endereço: quem desenha o formulário decide o que preencher com ele. */
   aoAcharEndereco?: (endereco: EnderecoDoCep) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const disabled = !interativo || pergunta.somenteLeitura;
   function aoMudar(v: string) {
     onMudarValor?.(pergunta.mascara ? aplicarMascara(v, pergunta.mascara) : v);
@@ -487,7 +489,7 @@ export function CampoResposta({
     case "lista_suspensa":
       return (
         <select className="input form-resposta-campo" style={{ width: "100%" }} disabled={disabled} {...props}>
-          <option value="">Selecione…</option>
+          <option value="">{traduzir("Selecione…")}</option>
           {(pergunta.opcoes ?? []).map((op, i) => (
             <option key={i} value={op}>
               {op}

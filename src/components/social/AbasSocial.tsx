@@ -49,21 +49,21 @@ function Item({
   Icon: (props: SVGProps<SVGSVGElement>) => React.ReactElement;
   pathname: string;
 }) {
-  const { t } = useIdioma();
+  const { t: traduzir } = useIdioma();
   const ativo = exato ? pathname === href : pathname.startsWith(href);
   return (
     <Link href={href} className={`social-menu-item${ativo ? " on" : ""}`} aria-current={ativo ? "page" : undefined}>
       <Icon width={15} height={15} />
-      <span>{t(label)}</span>
+      <span>{traduzir(label)}</span>
     </Link>
   );
 }
 
 export function AbasSocial() {
-  const { t } = useIdioma();
+  const { t: traduzir } = useIdioma();
   const pathname = usePathname() ?? "";
   return (
-    <nav className="social-menu" aria-label={t("Seções do Instagram")}>
+    <nav className="social-menu" aria-label={traduzir("Seções do Instagram")}>
       {PRINCIPAIS.map((i) => (
         <Item key={i.href} {...i} pathname={pathname} />
       ))}

@@ -236,7 +236,9 @@ function telefoneParaWhatsapp(bruto: string): string | null {
  * atalhos de "Mensagem no WhatsApp" e "Ligar" pra quem recebe. No CRM ficava um número solto, e
  * quem atendia tinha que selecionar e copiar na mão pra ligar ou abrir a conversa.
  */
-function renderizarTextoComLinks(texto: string): ReactNode[] {
+/* `traduzir` entra por parâmetro, não por hook: esta é uma função comum que devolve nós, não um
+   componente, e hook só pode ser chamado de dentro de um. */
+function renderizarTextoComLinks(texto: string, traduzir: (s: string) => string): ReactNode[] {
   // `String.split` com grupos de captura intercala os pedaços não casados com os casados. Com dois
   // grupos, cada trecho casado vira uma dupla (url, telefone) em que só um dos dois é preenchido.
   // Mais seguro que re-testar a regex global (que mantém `lastIndex` entre chamadas e dá resultado
@@ -268,7 +270,7 @@ function renderizarTextoComLinks(texto: string): ReactNode[] {
               WhatsApp
             </a>
             <a href={`tel:+${numero}`} className="wa-telefone-acao">
-              Ligar
+              {traduzir("Ligar")}
             </a>
           </span>
         </span>
@@ -511,7 +513,7 @@ function useFecharAoClicarFora(
 function ConversasPageInner() {
   // Tradução da interface (ver `idioma-context.tsx`). Frase sem tradução cadastrada sai em
   // português, então acrescentar idioma aqui nunca deixa a tela em branco.
-  const { t, localeNumero } = useIdioma();
+  const { t: traduzir, localeNumero } = useIdioma();
   const searchParams = useSearchParams();
   const { funis, setFunis, atribuirContatoAoFunil } = useFunis();
 
@@ -1336,7 +1338,7 @@ function ConversasPageInner() {
   function estrelaFavorita(chave: string) {
     if (!mensagensFavoritas.has(chave)) return null;
     return (
-      <span className="wa-msg-favorita" title={t("Favoritada")}>
+      <span className="wa-msg-favorita" title={traduzir("Favoritada")}>
         <IconStar width={11} height={11} fill="currentColor" />
       </span>
     );
@@ -1348,8 +1350,8 @@ function ConversasPageInner() {
       <button
         type="button"
         className="wa-msg-menu-btn"
-        aria-label={t("Mais ações dessa mensagem")}
-        title={t("Mais ações")}
+        aria-label={traduzir("Mais ações dessa mensagem")}
+        title={traduzir("Mais ações")}
         onClick={(e) => {
           e.stopPropagation();
           abrirMenuMensagem(chave, e.currentTarget.getBoundingClientRect());
@@ -3808,7 +3810,7 @@ function ConversasPageInner() {
       ) : null}
       <Topbar
         title="WhatsApp"
-        sub="A caixa de entrada do WhatsApp, oficial e por QR Code"
+        sub={traduzir("A caixa de entrada do WhatsApp, oficial e por QR Code")}
         actions={
           <>
             <button
@@ -3835,7 +3837,7 @@ function ConversasPageInner() {
                   setAtendenteTopAberto(false);
                 }}
               >
-                <span className="n">{t("Todos")}</span>
+                <span className="n">{traduzir("Todos")}</span>
               </button>
               {atendentesDisponiveis.map((nome) => (
                 <button
@@ -3877,7 +3879,7 @@ function ConversasPageInner() {
                   setCanalTopAberto(false);
                 }}
               >
-                <span className="n">{t("Todos")}</span>
+                <span className="n">{traduzir("Todos")}</span>
               </button>
               {canaisDisponiveis.map((origem) => (
                 <button
@@ -3904,13 +3906,13 @@ function ConversasPageInner() {
       <div className="content wa-content wa-whatsapp">
         <aside className="wa-list">
           <div className="wa-list-head">
-            <span>{t("Conversas")}</span>
+            <span>{traduzir("Conversas")}</span>
             <span className="wa-list-head-acoes">
               <button
                 type="button"
                 className={`wa-list-refresh${sincronizando ? " spinning" : ""}`}
-                aria-label={t("Recarregar conversas")}
-                title={t("Recarregar conversas: use se as mensagens do celular conectado saírem de sincronia")}
+                aria-label={traduzir("Recarregar conversas")}
+                title={traduzir("Recarregar conversas: use se as mensagens do celular conectado saírem de sincronia")}
                 onClick={sincronizarConversas}
               >
                 <IconRefresh width={14} height={14} />
@@ -3918,8 +3920,8 @@ function ConversasPageInner() {
               <button
                 type="button"
                 className="wa-list-config"
-                aria-label={t("Configurações das conversas")}
-                title={t("Configurações das conversas")}
+                aria-label={traduzir("Configurações das conversas")}
+                title={traduzir("Configurações das conversas")}
                 onClick={abrirConfigConversas}
               >
                 <IconConfiguracoes width={15} height={15} />
@@ -3930,8 +3932,8 @@ function ConversasPageInner() {
             <label className="search wa-search">
               <IconSearch />
               <input
-                placeholder={t("Pesquisar ou começar uma nova conversa")}
-                aria-label={t("Pesquisar conversa")}
+                placeholder={traduzir("Pesquisar ou começar uma nova conversa")}
+                aria-label={traduzir("Pesquisar conversa")}
                 value={buscaConversa}
                 onChange={(e) => setBuscaConversa(e.target.value)}
               />
@@ -3958,7 +3960,7 @@ function ConversasPageInner() {
             onClose={() => setFiltroAberto(false)}
             width={240}
           >
-            <p className="dropdown-titulo">{t("Mostrar")}</p>
+            <p className="dropdown-titulo">{traduzir("Mostrar")}</p>
             {FILTROS_CONVERSA.map((f) => (
               <button
                 type="button"
@@ -3986,7 +3988,7 @@ function ConversasPageInner() {
               <span className="n">Arquivadas ({conversas.filter((c) => c.arquivada).length})</span>
             </button>
 
-            <p className="dropdown-titulo">{t("Conexão")}</p>
+            <p className="dropdown-titulo">{traduzir("Conexão")}</p>
             {CANAIS_CONVERSA.map((canal) => {
               const quantidade =
                 canal.valor === "todos"
@@ -4025,7 +4027,7 @@ function ConversasPageInner() {
                   setFiltroAberto(false);
                 }}
               >
-                <span className="n">{t("Limpar filtro")}</span>
+                <span className="n">{traduzir("Limpar filtro")}</span>
               </button>
             ) : null}
           </FloatingDropdown>
@@ -4035,7 +4037,7 @@ function ConversasPageInner() {
               grupo. Quem salvava um contato não tinha por onde falar com ele. */}
           {contatosSemConversa.length > 0 ? (
             <div className="conversa-contatos-novos">
-              <p className="hint">{t("Começar uma conversa")}</p>
+              <p className="hint">{traduzir("Começar uma conversa")}</p>
               {contatosSemConversa.map((c) => (
                 <button
                   key={c.id}
@@ -4117,7 +4119,7 @@ function ConversasPageInner() {
                         </span>
                       ) : null}
                       {c.ehGrupo ? (
-                        <span className="wa-pin-icone" title={t("Grupo do WhatsApp")}>
+                        <span className="wa-pin-icone" title={traduzir("Grupo do WhatsApp")}>
                           <IconEquipe width={11} height={11} />
                         </span>
                       ) : null}
@@ -4128,7 +4130,7 @@ function ConversasPageInner() {
                         </span>
                       ) : null}
                       {silenciadas.has(c.id) ? (
-                        <span className="wa-mute-icone" title={t("Silenciada")}>
+                        <span className="wa-mute-icone" title={traduzir("Silenciada")}>
                           <IconMudo width={11} height={11} />
                         </span>
                       ) : null}
@@ -4170,7 +4172,7 @@ function ConversasPageInner() {
                     {distinguirConexao && conexaoDaConversa(c.contaCanal) ? (
                       <span
                         className="tag wa-conexao-tag"
-                        title={t("A resposta sai por esta mesma conexão")}
+                        title={traduzir("A resposta sai por esta mesma conexão")}
                       >
                         {ROTULO_CONEXAO[conexaoDaConversa(c.contaCanal)!]}
                       </span>
@@ -4179,7 +4181,7 @@ function ConversasPageInner() {
                       {c.origem}
                     </span>
                     {!c.ehGrupo && etapaAtualDoContato(c.nome) ? (
-                      <span className="tag wa-etapa-funil-tag" title={t("Etapa atual no funil")}>
+                      <span className="tag wa-etapa-funil-tag" title={traduzir("Etapa atual no funil")}>
                         {etapaAtualDoContato(c.nome)}
                       </span>
                     ) : null}
@@ -4219,7 +4221,7 @@ function ConversasPageInner() {
                         style={{ width: "100%", textAlign: "left" }}
                         onClick={() => marcarComoNaoLida(c.id)}
                       >
-                        <span className="n">{t("Marcar como não lida")}</span>
+                        <span className="n">{traduzir("Marcar como não lida")}</span>
                       </button>
                       <button
                         type="button"
@@ -4256,7 +4258,7 @@ function ConversasPageInner() {
                         style={{ width: "100%", textAlign: "left" }}
                         onClick={() => encerrarAtendimento(c.id)}
                       >
-                        <span className="n">{t("Encerrar atendimento")}</span>
+                        <span className="n">{traduzir("Encerrar atendimento")}</span>
                       </button>
                       <div className="dropdown-sep" />
                       <button
@@ -4270,7 +4272,7 @@ function ConversasPageInner() {
                           setRowMenuAberto(null);
                         }}
                       >
-                        <span className="n">{t("Excluir conversa")}</span>
+                        <span className="n">{traduzir("Excluir conversa")}</span>
                       </button>
                     </FloatingDropdown>
                   ) : null}
@@ -4323,7 +4325,7 @@ function ConversasPageInner() {
               type="button"
               className={`gear-btn wa-main-gear${infoAberto ? " active" : ""}`}
               aria-pressed={infoAberto}
-              aria-label={t("Ver atributos do contato")}
+              aria-label={traduzir("Ver atributos do contato")}
               onClick={() => setInfoAberto((v) => !v)}
             >
               <IconConfiguracoes />
@@ -4364,14 +4366,14 @@ function ConversasPageInner() {
             }}
           >
             {arrastandoArquivo ? (
-              <div className="wa-dragover-aviso">{t("Solte o arquivo pra anexar")}</div>
+              <div className="wa-dragover-aviso">{traduzir("Solte o arquivo pra anexar")}</div>
             ) : null}
             {/* A curtida já foi desfeita na tela quando isso aparece. O aviso existe pra explicar
                 POR QUE o coração sumiu (janela de 24h vencida, conta desconectada), em vez de
                 deixar parecer que o clique não funcionou. */}
             {localizacaoBuscando ? (
               <span className="hint" style={{ alignSelf: "center" }}>
-                Obtendo sua localização…
+                {traduzir("Obtendo sua localização…")}
               </span>
             ) : null}
             {localizacaoErro ? (
@@ -4380,7 +4382,7 @@ function ConversasPageInner() {
                 className="wa-campo-erro"
                 style={{ alignSelf: "center", background: "none", border: "none", cursor: "pointer" }}
                 onClick={() => setLocalizacaoErro(null)}
-                title={t("Dispensar")}
+                title={traduzir("Dispensar")}
               >
                 ⚠ {localizacaoErro}
               </button>
@@ -4391,7 +4393,7 @@ function ConversasPageInner() {
                 className="wa-campo-erro"
                 style={{ alignSelf: "center", background: "none", border: "none", cursor: "pointer" }}
                 onClick={() => setErroCurtir(null)}
-                title={t("Dispensar")}
+                title={traduzir("Dispensar")}
               >
                 ⚠ {erroCurtir}
               </button>
@@ -4417,7 +4419,7 @@ function ConversasPageInner() {
               if (msg.apagadaParaTodos) {
                 return (
                   <div className="bubble sistema-apagada" key={chave} data-msg-chave={chave}>
-                    Esta mensagem foi apagada.
+                    {traduzir("Esta mensagem foi apagada.")}
                   </div>
                 );
               }
@@ -4463,17 +4465,17 @@ function ConversasPageInner() {
                     const texto = aplicarMencoes(textoCru, aberta.participantesGrupo);
                     return texto.length > 500 && !mensagensExpandidas.has(chave) ? (
                       <>
-                        {renderizarTextoComLinks(texto.slice(0, 500))}…{" "}
+                        {renderizarTextoComLinks(texto.slice(0, 500), traduzir)}…{" "}
                         <button
                           type="button"
                           className="wa-ler-mais"
                           onClick={() => setMensagensExpandidas((prev) => new Set(prev).add(chave))}
                         >
-                          Ler mais
+                          {traduzir("Ler mais")}
                         </button>
                       </>
                     ) : (
-                      renderizarTextoComLinks(texto)
+                      renderizarTextoComLinks(texto, traduzir)
                     );
                   }}
                 />
@@ -4503,8 +4505,8 @@ function ConversasPageInner() {
             <button
               type="button"
               className="chat-attach-btn"
-              aria-label={t("Anexar")}
-              title={t("Anexar")}
+              aria-label={traduzir("Anexar")}
+              title={traduzir("Anexar")}
               onClick={(e) => {
                 if (anexoAberto) {
                   setAnexoAberto(false);
@@ -4546,8 +4548,8 @@ function ConversasPageInner() {
                   <button
                     type="button"
                     className="chat-audio-btn chat-audio-btn-lixeira"
-                    aria-label={t("Excluir gravação")}
-                    title={t("Excluir gravação")}
+                    aria-label={traduzir("Excluir gravação")}
+                    title={traduzir("Excluir gravação")}
                     onClick={pedirDescartarGravacao}
                   >
                     <IconLixeira width={14} height={14} />
@@ -4564,12 +4566,12 @@ function ConversasPageInner() {
                   <button
                     type="button"
                     className="chat-audio-btn chat-audio-btn-concluir"
-                    aria-label={t("Concluir gravação")}
-                    title={t("Concluir gravação")}
+                    aria-label={traduzir("Concluir gravação")}
+                    title={traduzir("Concluir gravação")}
                     onClick={concluirGravacao}
                     style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
                   >
-                    <IconCheck width={13} height={13} /> Concluir
+                    <IconCheck width={13} height={13} /> {traduzir("Concluir")}
                   </button>
                 </div>
               ) : audioPreview ? (
@@ -4618,8 +4620,8 @@ function ConversasPageInner() {
                   <button
                     type="button"
                     className="chat-audio-btn"
-                    aria-label={t("Gravar de novo")}
-                    title={t("Gravar de novo")}
+                    aria-label={traduzir("Gravar de novo")}
+                    title={traduzir("Gravar de novo")}
                     onClick={regravarAudio}
                   >
                     ↺
@@ -4627,8 +4629,8 @@ function ConversasPageInner() {
                   <button
                     type="button"
                     className="chat-audio-btn chat-audio-btn-lixeira"
-                    aria-label={t("Excluir áudio")}
-                    title={t("Excluir áudio")}
+                    aria-label={traduzir("Excluir áudio")}
+                    title={traduzir("Excluir áudio")}
                     onClick={pedirDescartarGravacao}
                   >
                     <IconLixeira width={14} height={14} />
@@ -4636,13 +4638,13 @@ function ConversasPageInner() {
                   <button
                     type="button"
                     className="chat-audio-btn chat-audio-btn-enviar"
-                    aria-label={t("Enviar áudio")}
-                    title={t("Enviar áudio")}
+                    aria-label={traduzir("Enviar áudio")}
+                    title={traduzir("Enviar áudio")}
                     disabled={audioEnviando}
                     onClick={enviarAudioGravado}
                     style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
                   >
-                    {audioEnviando ? "Enviando…" : <><IconEnviar width={13} height={13} /> {t("Enviar")}</>}
+                    {audioEnviando ? "Enviando…" : <><IconEnviar width={13} height={13} /> {traduzir("Enviar")}</>}
                   </button>
                 </div>
               ) : (
@@ -4651,7 +4653,7 @@ function ConversasPageInner() {
                     <div className="chat-audio-erro">
                       <span>{audioPermissaoErro}</span>
                       <button type="button" className="link" onClick={() => setAudioPermissaoErro(null)}>
-                        {t("Dispensar")}
+                        {traduzir("Dispensar")}
                       </button>
                     </div>
                   ) : null}
@@ -4669,7 +4671,7 @@ function ConversasPageInner() {
                       <button
                         type="button"
                         className="chat-respondendo-fechar"
-                        aria-label={t("Cancelar resposta")}
+                        aria-label={traduzir("Cancelar resposta")}
                         onClick={() => setRespondendoMensagem(null)}
                       >
                         <IconClose width={11} height={11} />
@@ -4680,7 +4682,7 @@ function ConversasPageInner() {
                     ref={mensagemInputRef}
                     className="box chat-input-campo"
                     rows={1}
-                    placeholder={t("Digite uma mensagem... (/ para respostas rápidas, // para automações)")}
+                    placeholder={traduzir("Digite uma mensagem... (/ para respostas rápidas, // para automações)")}
                     value={mensagemTexto}
                     onChange={(e) => {
                       setMensagemTexto(e.target.value);
@@ -4729,7 +4731,7 @@ function ConversasPageInner() {
                 <div className="chat-sugestoes">
                   {respostasDoFunil.length === 0 ? (
                     <p className="hint" style={{ padding: "8px 10px" }}>
-                      Nenhuma resposta rápida salva pra esse funil ainda.
+                      {traduzir("Nenhuma resposta rápida salva pra esse funil ainda.")}
                     </p>
                   ) : (
                     respostasDoFunil.map((r) => (
@@ -4751,7 +4753,7 @@ function ConversasPageInner() {
                 <div className="chat-sugestoes">
                   {automacoesDoFunil.length === 0 ? (
                     <p className="hint" style={{ padding: "8px 10px" }}>
-                      Nenhuma automação publicada nesse funil ainda.
+                      {traduzir("Nenhuma automação publicada nesse funil ainda.")}
                     </p>
                   ) : (
                     automacoesDoFunil.map((a) => (
@@ -4773,8 +4775,8 @@ function ConversasPageInner() {
               <button
                 type="button"
                 className="chat-emoji-btn"
-                aria-label={t("Emojis")}
-                title={t("Emojis")}
+                aria-label={traduzir("Emojis")}
+                title={traduzir("Emojis")}
                 onClick={(e) => {
                   setEmojiRect(e.currentTarget.getBoundingClientRect());
                   setEmojiAberto((v) => !v);
@@ -4787,8 +4789,8 @@ function ConversasPageInner() {
               <button
                 type="button"
                 className="chat-mic-btn chat-send-btn"
-                aria-label={t("Enviar mensagem")}
-                title={t("Enviar mensagem")}
+                aria-label={traduzir("Enviar mensagem")}
+                title={traduzir("Enviar mensagem")}
                 onClick={() => {
                   enviarMensagemTexto();
                   setRespondendoMensagem(null);
@@ -4800,8 +4802,8 @@ function ConversasPageInner() {
               <button
                 type="button"
                 className="chat-mic-btn"
-                aria-label={t("Gravar áudio")}
-                title={t("Gravar áudio")}
+                aria-label={traduzir("Gravar áudio")}
+                title={traduzir("Gravar áudio")}
                 disabled={audioSolicitandoPermissao}
                 onClick={iniciarGravacaoAudio}
               >
@@ -4856,12 +4858,12 @@ function ConversasPageInner() {
                     className="wa-anexo-menu wa-anexo-menu-grid"
                     style={{ left: anexoPos.x, top: anexoPos.y }}
                     role="menu"
-                    aria-label={t("Anexar")}
+                    aria-label={traduzir("Anexar")}
                   >
                     <div
                       className="wa-anexo-drag"
                       onMouseDown={iniciarArrasteAnexo}
-                      title={t("Arraste pra mover")}
+                      title={traduzir("Arraste pra mover")}
                     >
                       ⠿⠿⠿
                     </div>
@@ -4875,7 +4877,7 @@ function ConversasPageInner() {
                         <span className="wa-anexo-icone wa-anexo-icone-imagem">
                           <IconImage width={19} height={19} />
                         </span>
-                        <span className="wa-anexo-label">{t("Fotos e imagens")}</span>
+                        <span className="wa-anexo-label">{traduzir("Fotos e imagens")}</span>
                       </button>
                       <button
                         type="button"
@@ -4886,7 +4888,7 @@ function ConversasPageInner() {
                         <span className="wa-anexo-icone wa-anexo-icone-video">
                           <IconVideoCam width={19} height={19} />
                         </span>
-                        <span className="wa-anexo-label">{t("Vídeos")}</span>
+                        <span className="wa-anexo-label">{traduzir("Vídeos")}</span>
                       </button>
                       <button
                         type="button"
@@ -4897,7 +4899,7 @@ function ConversasPageInner() {
                         <span className="wa-anexo-icone wa-anexo-icone-documento">
                           <IconDoc width={19} height={19} />
                         </span>
-                        <span className="wa-anexo-label">{t("Documentos")}</span>
+                        <span className="wa-anexo-label">{traduzir("Documentos")}</span>
                       </button>
                       <button
                         type="button"
@@ -4908,7 +4910,7 @@ function ConversasPageInner() {
                         <span className="wa-anexo-icone wa-anexo-icone-contato">
                           <IconContatos width={19} height={19} />
                         </span>
-                        <span className="wa-anexo-label">{t("Contatos")}</span>
+                        <span className="wa-anexo-label">{traduzir("Contatos")}</span>
                       </button>
                       <button
                         type="button"
@@ -4919,7 +4921,7 @@ function ConversasPageInner() {
                         <span className="wa-anexo-icone wa-anexo-icone-localizacao">
                           <IconLocalizacao width={19} height={19} />
                         </span>
-                        <span className="wa-anexo-label">{t("Localização")}</span>
+                        <span className="wa-anexo-label">{traduzir("Localização")}</span>
                       </button>
                       {/* Só no WhatsApp oficial: é o único canal com a regra das 24h e com modelo
                           aprovado. No QR Code e no Direct isso não existe. */}
@@ -4936,7 +4938,7 @@ function ConversasPageInner() {
                           <span className="wa-anexo-icone wa-anexo-icone-contato">
                             <IconContatos width={19} height={19} />
                           </span>
-                          <span className="wa-anexo-label">{t("Modelo aprovado")}</span>
+                          <span className="wa-anexo-label">{traduzir("Modelo aprovado")}</span>
                         </button>
                       ) : null}
                       <button
@@ -4952,7 +4954,7 @@ function ConversasPageInner() {
                         <span className="wa-anexo-icone wa-anexo-icone-automacao">
                           <IconAutomacoes width={19} height={19} />
                         </span>
-                        <span className="wa-anexo-label">{t("Executar automação")}</span>
+                        <span className="wa-anexo-label">{traduzir("Executar automação")}</span>
                       </button>
                       <button
                         type="button"
@@ -4966,7 +4968,7 @@ function ConversasPageInner() {
                         <span className="wa-anexo-icone wa-anexo-icone-resposta">
                           <IconRespostaRapida width={19} height={19} />
                         </span>
-                        <span className="wa-anexo-label">{t("Respostas rápidas")}</span>
+                        <span className="wa-anexo-label">{traduzir("Respostas rápidas")}</span>
                       </button>
                     </div>
                     {erroAnexo ? (
@@ -4995,7 +4997,7 @@ function ConversasPageInner() {
                   <button
                     type="button"
                     className="modal-close-btn"
-                    aria-label={t("Cancelar")}
+                    aria-label={traduzir("Cancelar")}
                     onClick={fecharPreviewImagem}
                   >
                     <IconClose width={12} height={12} />
@@ -5053,7 +5055,7 @@ function ConversasPageInner() {
                       />
                     </label>
                     <label className="hint">
-                      Largura
+                      {traduzir("Largura")}
                       <input
                         type="range"
                         min={10}
@@ -5065,7 +5067,7 @@ function ConversasPageInner() {
                       />
                     </label>
                     <label className="hint">
-                      Altura
+                      {traduzir("Altura")}
                       <input
                         type="range"
                         min={10}
@@ -5077,14 +5079,14 @@ function ConversasPageInner() {
                       />
                     </label>
                     <button type="button" className="btn primary" onClick={aplicarCorteImagem}>
-                      Aplicar corte
+                      {traduzir("Aplicar corte")}
                     </button>
                     <button
                       type="button"
                       className="btn ghost"
                       onClick={() => setImagemModoCorte(false)}
                     >
-                      Cancelar corte
+                      {traduzir("Cancelar corte")}
                     </button>
                   </div>
                 ) : (
@@ -5095,7 +5097,7 @@ function ConversasPageInner() {
                       onClick={() => setImagemModoCorte(true)}
                       style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
                     >
-                      <IconCut width={13} height={13} /> Cortar
+                      <IconCut width={13} height={13} /> {traduzir("Cortar")}
                     </button>
                     <button
                       type="button"
@@ -5103,7 +5105,7 @@ function ConversasPageInner() {
                       onClick={girarImagem90}
                       style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
                     >
-                      <IconRefresh width={13} height={13} /> Girar
+                      <IconRefresh width={13} height={13} /> {traduzir("Girar")}
                     </button>
                     <button
                       type="button"
@@ -5124,7 +5126,7 @@ function ConversasPageInner() {
                       className="btn ghost"
                       onClick={restaurarImagemOriginal}
                     >
-                      Restaurar original
+                      {traduzir("Restaurar original")}
                     </button>
                   </div>
                 )}
@@ -5155,7 +5157,7 @@ function ConversasPageInner() {
                     <button
                       type="button"
                       className="wa-midia-miniatura wa-midia-miniatura-add"
-                      aria-label={t("Adicionar mais imagens")}
+                      aria-label={traduzir("Adicionar mais imagens")}
                       onClick={() => imagemInputRef.current?.click()}
                     >
                       +
@@ -5172,14 +5174,14 @@ function ConversasPageInner() {
                 <input
                   className="input"
                   style={{ width: "100%", marginTop: 10 }}
-                  placeholder={t("Adicionar legenda…")}
+                  placeholder={traduzir("Adicionar legenda…")}
                   value={legendaImagem}
                   onChange={(e) => setLegendaImagem(e.target.value)}
                 />
 
                 <div className="wa-contato-modal-rodape">
                   <button type="button" className="btn ghost" onClick={fecharPreviewImagem}>
-                    {t("Cancelar")}
+                    {traduzir("Cancelar")}
                   </button>
                   <button
                     type="button"
@@ -5200,11 +5202,11 @@ function ConversasPageInner() {
             <div className="form-preview-overlay" onClick={fecharPreviewVideo}>
               <div className="wa-midia-preview" onClick={(e) => e.stopPropagation()}>
                 <div className="open-conv-h" style={{ padding: 0, marginBottom: 10 }}>
-                  <p className="n">{t("Enviar vídeo")}</p>
+                  <p className="n">{traduzir("Enviar vídeo")}</p>
                   <button
                     type="button"
                     className="modal-close-btn"
-                    aria-label={t("Cancelar")}
+                    aria-label={traduzir("Cancelar")}
                     onClick={fecharPreviewVideo}
                   >
                     <IconClose width={12} height={12} />
@@ -5261,11 +5263,11 @@ function ConversasPageInner() {
                   >
                     {videoMudo ? (
                       <>
-                        <IconMudo width={13} height={13} /> Sem áudio
+                        <IconMudo width={13} height={13} /> {traduzir("Sem áudio")}
                       </>
                     ) : (
                       <>
-                        <IconVolume width={13} height={13} /> Com áudio
+                        <IconVolume width={13} height={13} /> {traduzir("Com áudio")}
                       </>
                     )}
                   </button>
@@ -5291,14 +5293,14 @@ function ConversasPageInner() {
                 <input
                   className="input"
                   style={{ width: "100%", marginTop: 10 }}
-                  placeholder={t("Adicionar legenda…")}
+                  placeholder={traduzir("Adicionar legenda…")}
                   value={legendaVideo}
                   onChange={(e) => setLegendaVideo(e.target.value)}
                 />
 
                 <div className="wa-contato-modal-rodape">
                   <button type="button" className="btn ghost" onClick={fecharPreviewVideo}>
-                    {t("Cancelar")}
+                    {traduzir("Cancelar")}
                   </button>
                   <button
                     type="button"
@@ -5306,7 +5308,7 @@ function ConversasPageInner() {
                     disabled={videoProcessando}
                     onClick={() => processarEEnviarVideo(true)}
                   >
-                    Enviar sem editar
+                    {traduzir("Enviar sem editar")}
                   </button>
                   <button
                     type="button"
@@ -5331,18 +5333,18 @@ function ConversasPageInner() {
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="open-conv-h" style={{ padding: 0, marginBottom: 4 }}>
-                  <p className="n">{t("Enviar documento")}</p>
+                  <p className="n">{traduzir("Enviar documento")}</p>
                   <button
                     type="button"
                     className="modal-close-btn"
-                    aria-label={t("Fechar")}
+                    aria-label={traduzir("Fechar")}
                     onClick={() => setDocumentoOrigemAberto(false)}
                   >
                     <IconClose width={12} height={12} />
                   </button>
                 </div>
                 <p className="hint" style={{ marginBottom: 14 }}>
-                  Escolha um documento já salvo no CRM ou envie um arquivo do computador.
+                  {traduzir("Escolha um documento já salvo no CRM ou envie um arquivo do computador.")}
                 </p>
                 <div className="wa-doc-origem-opcoes">
                   <button
@@ -5355,9 +5357,9 @@ function ConversasPageInner() {
                     </span>
                     <span>
                       <span className="n" style={{ display: "block" }}>
-                        Escolher documento do CRM
+                        {traduzir("Escolher documento do CRM")}
                       </span>
-                      <span className="hint">{t("Biblioteca de documentos já salvos no sistema")}</span>
+                      <span className="hint">{traduzir("Biblioteca de documentos já salvos no sistema")}</span>
                     </span>
                   </button>
                   <button
@@ -5370,9 +5372,9 @@ function ConversasPageInner() {
                     </span>
                     <span>
                       <span className="n" style={{ display: "block" }}>
-                        Escolher documento do computador
+                        {traduzir("Escolher documento do computador")}
                       </span>
-                      <span className="hint">{t("Enviar um arquivo do seu dispositivo")}</span>
+                      <span className="hint">{traduzir("Enviar um arquivo do seu dispositivo")}</span>
                     </span>
                   </button>
                 </div>
@@ -5387,11 +5389,11 @@ function ConversasPageInner() {
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="open-conv-h" style={{ padding: 0, marginBottom: 12 }}>
-                  <p className="n">{t("Documentos do CRM")}</p>
+                  <p className="n">{traduzir("Documentos do CRM")}</p>
                   <button
                     type="button"
                     className="modal-close-btn"
-                    aria-label={t("Fechar")}
+                    aria-label={traduzir("Fechar")}
                     onClick={() => setBibliotecaAberta(false)}
                   >
                     <IconClose width={12} height={12} />
@@ -5401,7 +5403,7 @@ function ConversasPageInner() {
                 <input
                   className="input"
                   style={{ width: "100%" }}
-                  placeholder={t("Pesquisar documento…")}
+                  placeholder={traduzir("Pesquisar documento…")}
                   value={buscaBiblioteca}
                   onChange={(e) => setBuscaBiblioteca(e.target.value)}
                 />
@@ -5457,7 +5459,7 @@ function ConversasPageInner() {
                             })
                           }
                         >
-                          Visualizar
+                          {traduzir("Visualizar")}
                         </button>
                       </div>
                     ))}
@@ -5468,7 +5470,7 @@ function ConversasPageInner() {
                       d.nome.toLowerCase().includes(buscaBiblioteca.trim().toLowerCase()),
                   ).length === 0 ? (
                     <p className="hint" style={{ padding: 16 }}>
-                      Nenhum documento encontrado.
+                      {traduzir("Nenhum documento encontrado.")}
                     </p>
                   ) : null}
                 </div>
@@ -5479,7 +5481,7 @@ function ConversasPageInner() {
                     className="btn ghost"
                     onClick={() => setBibliotecaAberta(false)}
                   >
-                    {t("Cancelar")}
+                    {traduzir("Cancelar")}
                   </button>
                   <button
                     type="button"
@@ -5514,12 +5516,12 @@ function ConversasPageInner() {
                       href={documentoPreviewAberto.url}
                       download={documentoPreviewAberto.nome}
                     >
-                      {t("Baixar")}
+                      {traduzir("Baixar")}
                     </a>
                     <button
                       type="button"
                       className="modal-close-btn"
-                      aria-label={t("Fechar")}
+                      aria-label={traduzir("Fechar")}
                       onClick={() => setDocumentoPreviewAberto(null)}
                     >
                       <IconClose width={12} height={12} />
@@ -5542,11 +5544,11 @@ function ConversasPageInner() {
             >
               <div className="wa-email-modal wa-contato-modal" onClick={(e) => e.stopPropagation()}>
                 <div className="open-conv-h" style={{ padding: 0, marginBottom: 14 }}>
-                  <p className="n">{t("Enviar documento")}</p>
+                  <p className="n">{traduzir("Enviar documento")}</p>
                   <button
                     type="button"
                     className="modal-close-btn"
-                    aria-label={t("Cancelar")}
+                    aria-label={traduzir("Cancelar")}
                     onClick={() => setDocumentoComputador(null)}
                   >
                     <IconClose width={12} height={12} />
@@ -5571,7 +5573,7 @@ function ConversasPageInner() {
                 <input
                   className="input"
                   style={{ width: "100%", marginTop: 10 }}
-                  placeholder={t("Adicionar uma mensagem (opcional)…")}
+                  placeholder={traduzir("Adicionar uma mensagem (opcional)…")}
                   value={legendaDocumento}
                   onChange={(e) => setLegendaDocumento(e.target.value)}
                 />
@@ -5581,14 +5583,14 @@ function ConversasPageInner() {
                     className="btn ghost"
                     onClick={() => setDocumentoComputador(null)}
                   >
-                    {t("Cancelar")}
+                    {traduzir("Cancelar")}
                   </button>
                   <button
                     type="button"
                     className="btn ghost"
                     onClick={() => documentoInputRef.current?.click()}
                   >
-                    Substituir arquivo
+                    {traduzir("Substituir arquivo")}
                   </button>
                   <button
                     type="button"
@@ -5611,7 +5613,7 @@ function ConversasPageInner() {
               <button
                 type="button"
                 className="wa-lightbox-fechar"
-                aria-label={t("Fechar")}
+                aria-label={traduzir("Fechar")}
                 onClick={() => setLightbox(null)}
               >
                 <IconClose width={12} height={12} />
@@ -5620,7 +5622,7 @@ function ConversasPageInner() {
                 <button
                   type="button"
                   className="wa-lightbox-nav wa-lightbox-nav-prev"
-                  aria-label={t("Imagem anterior")}
+                  aria-label={traduzir("Imagem anterior")}
                   onClick={(e) => {
                     e.stopPropagation();
                     setLightbox((lb) =>
@@ -5648,7 +5650,7 @@ function ConversasPageInner() {
                 <button
                   type="button"
                   className="wa-lightbox-nav wa-lightbox-nav-next"
-                  aria-label={t("Próxima imagem")}
+                  aria-label={traduzir("Próxima imagem")}
                   onClick={(e) => {
                     e.stopPropagation();
                     setLightbox((lb) =>
@@ -5683,7 +5685,7 @@ function ConversasPageInner() {
                   href={lightbox.urls[lightbox.indice]}
                   download={`imagem-${lightbox.indice + 1}`}
                 >
-                  {t("Baixar")}
+                  {traduzir("Baixar")}
                 </a>
               </div>
             </div>
@@ -5696,29 +5698,29 @@ function ConversasPageInner() {
                 onClick={(e) => e.stopPropagation()}
                 role="dialog"
                 aria-modal="true"
-                aria-label={t("Configurações das conversas")}
+                aria-label={traduzir("Configurações das conversas")}
               >
                 <div className="wa-modal-header">
                   <span className="wa-modal-header-icone" aria-hidden="true">
                     <IconConfiguracoes width={18} height={18} />
                   </span>
                   <span className="wa-modal-header-textos">
-                    <p className="wa-modal-header-titulo">{t("Configurações das conversas")}</p>
+                    <p className="wa-modal-header-titulo">{traduzir("Configurações das conversas")}</p>
                     <p className="wa-modal-header-desc">
-                      Personalize a aparência, a privacidade, os áudios e as notificações.
+                      {traduzir("Personalize a aparência, a privacidade, os áudios e as notificações.")}
                     </p>
                   </span>
                   <button
                     type="button"
                     className="modal-close-btn"
-                    aria-label={t("Fechar")}
+                    aria-label={traduzir("Fechar")}
                     onClick={pedirFecharConfig}
                   >
                     <IconClose width={12} height={12} />
                   </button>
                 </div>
 
-                <div className="wa-config-tabs" role="tablist" aria-label={t("Categorias de configuração")}>
+                <div className="wa-config-tabs" role="tablist" aria-label={traduzir("Categorias de configuração")}>
                   {(
                     [
                       { id: "aparencia", label: "Aparência" },
@@ -5744,7 +5746,7 @@ function ConversasPageInner() {
                   {configAba === "aparencia" ? (
                     <div className="wa-config-secao">
                       <p className="int-group-h" style={{ padding: 0, marginBottom: 8 }}>
-                        Fundo da conversa
+                        {traduzir("Fundo da conversa")}
                       </p>
 
                       <div
@@ -5774,19 +5776,19 @@ function ConversasPageInner() {
                           className={`fchip${fundoEscopoForm === "todas" ? " active" : ""}`}
                           onClick={() => setFundoEscopoForm("todas")}
                         >
-                          Aplicar em todas as conversas
+                          {traduzir("Aplicar em todas as conversas")}
                         </button>
                         <button
                           type="button"
                           className={`fchip${fundoEscopoForm === "atual" ? " active" : ""}`}
                           onClick={() => setFundoEscopoForm("atual")}
                         >
-                          Só nessa conversa
+                          {traduzir("Só nessa conversa")}
                         </button>
                       </div>
 
                       <p className="hint" style={{ marginBottom: 8 }}>
-                        Escolha o fundo
+                        {traduzir("Escolha o fundo")}
                       </p>
                       {(() => {
                         const fundoAtual =
@@ -5813,8 +5815,8 @@ function ConversasPageInner() {
                               }}
                             >
                               <span className="wa-fundo-amostra wa-fundo-amostra-branco" />
-                              <span className="wa-fundo-rotulo">{t("Padrão")}</span>
-                              <span className="wa-fundo-sub">{t("Fundo branco")}</span>
+                              <span className="wa-fundo-rotulo">{traduzir("Padrão")}</span>
+                              <span className="wa-fundo-sub">{traduzir("Fundo branco")}</span>
                               {fundoAtual.tipo === "padrao" ? (
                                 <span className="wa-fundo-check">
                                   <IconCheck width={12} height={12} />
@@ -5842,7 +5844,7 @@ function ConversasPageInner() {
                               >
                                 {fundoAtual.tipo === "imagem" ? null : "+"}
                               </span>
-                              <span className="wa-fundo-rotulo">{t("Imagem")}</span>
+                              <span className="wa-fundo-rotulo">{traduzir("Imagem")}</span>
                               <span className="wa-fundo-sub">
                                 {fundoAtual.tipo === "imagem" ? "Trocar imagem" : "Do computador"}
                               </span>
@@ -5860,7 +5862,7 @@ function ConversasPageInner() {
                               onClick={() => fundoCorInputRef.current?.click()}
                             >
                               <span className="wa-fundo-amostra" style={{ background: corEscolhida }} />
-                              <span className="wa-fundo-rotulo">{t("Cor sólida")}</span>
+                              <span className="wa-fundo-rotulo">{traduzir("Cor sólida")}</span>
                               <span className="wa-fundo-sub">
                                 {fundoAtual.tipo === "cor" ? corEscolhida.toUpperCase() : "Escolher cor"}
                               </span>
@@ -5932,11 +5934,11 @@ function ConversasPageInner() {
                           setConfigRascunho((prev) => ({ ...prev, fundoOpacidade: 100 }))
                         }
                       >
-                        Restaurar intensidade padrão
+                        {traduzir("Restaurar intensidade padrão")}
                       </button>
 
                       <div className="field" style={{ marginTop: 14 }}>
-                        <label>{t("Tamanho da fonte da conversa")}</label>
+                        <label>{traduzir("Tamanho da fonte da conversa")}</label>
                         <div className="filters-row">
                           {(
                             [
@@ -5959,7 +5961,7 @@ function ConversasPageInner() {
                         </div>
                       </div>
                       <div className="field">
-                        <label>{t("Densidade das mensagens")}</label>
+                        <label>{traduzir("Densidade das mensagens")}</label>
                         <div className="filters-row">
                           {(
                             [
@@ -5981,7 +5983,7 @@ function ConversasPageInner() {
                         </div>
                       </div>
                       <div className="field">
-                        <label>{t("Tema")}</label>
+                        <label>{traduzir("Tema")}</label>
                         <ThemeToggle />
                       </div>
                     </div>
@@ -5990,7 +5992,7 @@ function ConversasPageInner() {
                   {configAba === "privacidade" ? (
                     <div className="wa-config-secao">
                       <p className="int-group-h" style={{ padding: 0, marginBottom: 8 }}>
-                        Confirmações de leitura
+                        {traduzir("Confirmações de leitura")}
                       </p>
                       <div className="wa-config-radio-lista">
                         {(
@@ -6027,7 +6029,7 @@ function ConversasPageInner() {
                       </p>
 
                       <p className="int-group-h" style={{ padding: 0, marginBottom: 4 }}>
-                        O que mostrar nas mensagens
+                        {traduzir("O que mostrar nas mensagens")}
                       </p>
                       {(
                         [
@@ -6117,7 +6119,7 @@ function ConversasPageInner() {
 
                       <div className="wa-config-notif-item">
                         <span className="wa-config-notif-textos">
-                          <span className="wa-config-notif-titulo">{t("Notificação do navegador")}</span>
+                          <span className="wa-config-notif-titulo">{traduzir("Notificação do navegador")}</span>
                           <span className="wa-config-notif-desc">
                             {configPermissaoNotificacao === "granted"
                               ? "Permissão concedida: o navegador pode notificar."
@@ -6150,7 +6152,7 @@ function ConversasPageInner() {
                       </div>
 
                       <div className="field" style={{ marginTop: 10 }}>
-                        <label>{t("Som das notificações")}</label>
+                        <label>{traduzir("Som das notificações")}</label>
                         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                           <select
                             className="input"
@@ -6173,7 +6175,7 @@ function ConversasPageInner() {
                             onClick={testarSomNotificacao}
                             style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
                           >
-                            <IconVolume width={13} height={13} /> Testar som
+                            <IconVolume width={13} height={13} /> {traduzir("Testar som")}
                           </button>
                         </div>
                       </div>
@@ -6183,7 +6185,7 @@ function ConversasPageInner() {
                   {configAba === "preferencias" ? (
                     <div className="wa-config-secao">
                       <div className="field">
-                        <label>{t("Tecla Enter")}</label>
+                        <label>{traduzir("Tecla Enter")}</label>
                         <div className="wa-config-radio-lista">
                           <button
                             type="button"
@@ -6196,7 +6198,7 @@ function ConversasPageInner() {
                             <span className={`radio${configRascunho.teclaEnterEnvia ? " sel" : ""}`} />
                             <span className="body">
                               <span className="n" style={{ display: "block" }}>
-                                Enter envia · Shift + Enter quebra a linha
+                                {traduzir("Enter envia · Shift + Enter quebra a linha")}
                               </span>
                             </span>
                           </button>
@@ -6211,7 +6213,7 @@ function ConversasPageInner() {
                             <span className={`radio${!configRascunho.teclaEnterEnvia ? " sel" : ""}`} />
                             <span className="body">
                               <span className="n" style={{ display: "block" }}>
-                                Enter quebra a linha · Ctrl/Cmd + Enter envia
+                                {traduzir("Enter quebra a linha · Ctrl/Cmd + Enter envia")}
                               </span>
                             </span>
                           </button>
@@ -6219,7 +6221,7 @@ function ConversasPageInner() {
                       </div>
 
                       <div className="toggle-row">
-                        <span className="tl">{t("Download automático de mídias")}</span>
+                        <span className="tl">{traduzir("Download automático de mídias")}</span>
                         <Toggle
                           key={`download-${configRascunho.downloadAutomatico}`}
                           defaultOn={configRascunho.downloadAutomatico}
@@ -6258,7 +6260,7 @@ function ConversasPageInner() {
                       ) : null}
 
                       <div className="toggle-row">
-                        <span className="tl">{t("Prévia de links")}</span>
+                        <span className="tl">{traduzir("Prévia de links")}</span>
                         <Toggle
                           key={`links-${configRascunho.previaLinks}`}
                           defaultOn={configRascunho.previaLinks}
@@ -6267,7 +6269,7 @@ function ConversasPageInner() {
                         />
                       </div>
                       <div className="toggle-row">
-                        <span className="tl">{t("Reprodução automática de vídeos")}</span>
+                        <span className="tl">{traduzir("Reprodução automática de vídeos")}</span>
                         <Toggle
                           key={`autoplay-${configRascunho.autoplayVideos}`}
                           defaultOn={configRascunho.autoplayVideos}
@@ -6276,11 +6278,11 @@ function ConversasPageInner() {
                         />
                       </div>
                       <div className="toggle-row">
-                        <span className="tl">{t("Manter painel do contato aberto ao trocar de conversa")}</span>
+                        <span className="tl">{traduzir("Manter painel do contato aberto ao trocar de conversa")}</span>
                         <Toggle
                           key={`painel-${configRascunho.manterPainelContatoAberto}`}
                           defaultOn={configRascunho.manterPainelContatoAberto}
-                          label="Manter painel do contato aberto"
+                          label={traduzir("Manter painel do contato aberto")}
                           onToggle={(v) =>
                             setConfigRascunho((prev) => ({ ...prev, manterPainelContatoAberto: v }))
                           }
@@ -6288,7 +6290,7 @@ function ConversasPageInner() {
                       </div>
 
                       <div className="field">
-                        <label>{t("Velocidade padrão dos áudios")}</label>
+                        <label>{traduzir("Velocidade padrão dos áudios")}</label>
                         <div className="filters-row">
                           {([1, 1.5, 2] as const).map((v) => (
                             <button
@@ -6310,30 +6312,30 @@ function ConversasPageInner() {
 
                 {configConfirmarFechar ? (
                   <div className="wa-config-confirmar-fechar">
-                    <p>{t("Existem alterações não salvas. O que deseja fazer?")}</p>
+                    <p>{traduzir("Existem alterações não salvas. O que deseja fazer?")}</p>
                     <div style={{ display: "flex", gap: 8 }}>
                       <button
                         type="button"
                         className="btn ghost"
                         onClick={() => setConfigConfirmarFechar(false)}
                       >
-                        Continuar editando
+                        {traduzir("Continuar editando")}
                       </button>
                       <button type="button" className="btn ghost" onClick={descartarEFecharConfig}>
-                        Descartar alterações
+                        {traduzir("Descartar alterações")}
                       </button>
                       <button type="button" className="btn primary" onClick={salvarConfigConversas}>
-                        Salvar e fechar
+                        {traduzir("Salvar e fechar")}
                       </button>
                     </div>
                   </div>
                 ) : (
                   <div className="wa-modal-footer">
                     <button type="button" className="btn ghost" onClick={pedirFecharConfig}>
-                      {t("Cancelar")}
+                      {traduzir("Cancelar")}
                     </button>
                     <button type="button" className="btn ghost" onClick={restaurarPadraoRascunho}>
-                      Restaurar padrões
+                      {traduzir("Restaurar padrões")}
                     </button>
                     <button
                       type="button"
@@ -6345,7 +6347,7 @@ function ConversasPageInner() {
                         "Salvando…"
                       ) : configStatusSalvar === "sucesso" ? (
                         <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                          <IconCheck width={13} height={13} /> Salvo
+                          <IconCheck width={13} height={13} /> {traduzir("Salvo")}
                         </span>
                       ) : configStatusSalvar === "erro" ? (
                         "Tentar novamente"
@@ -6366,14 +6368,14 @@ function ConversasPageInner() {
                 onClick={(e) => e.stopPropagation()}
                 role="dialog"
                 aria-modal="true"
-                aria-label={t("Enviar contato")}
+                aria-label={traduzir("Enviar contato")}
               >
                 <div className="wa-modal-header">
                   <span className="wa-modal-header-icone" aria-hidden="true">
                     <IconContatos width={18} height={18} />
                   </span>
                   <span className="wa-modal-header-textos">
-                    <p className="wa-modal-header-titulo">{t("Enviar contato")}</p>
+                    <p className="wa-modal-header-titulo">{traduzir("Enviar contato")}</p>
                     <p className="wa-modal-header-desc">
                       Escolha um contato do CRM ou crie um novo para compartilhar nesta
                       conversa.
@@ -6382,7 +6384,7 @@ function ConversasPageInner() {
                   <button
                     type="button"
                     className="modal-close-btn"
-                    aria-label={t("Fechar")}
+                    aria-label={traduzir("Fechar")}
                     onClick={fecharContatoPicker}
                   >
                     <IconClose width={12} height={12} />
@@ -6391,7 +6393,7 @@ function ConversasPageInner() {
 
                 {contatoPickerEtapa === "lista" ? (
                   <>
-                    <div className="wa-config-tabs" role="tablist" aria-label={t("Origem do contato")}>
+                    <div className="wa-config-tabs" role="tablist" aria-label={traduzir("Origem do contato")}>
                       <button
                         type="button"
                         role="tab"
@@ -6399,7 +6401,7 @@ function ConversasPageInner() {
                         className={`wa-config-tab${contatoPickerAba === "crm" ? " on" : ""}`}
                         onClick={() => setContatoPickerAba("crm")}
                       >
-                        Contatos do CRM
+                        {traduzir("Contatos do CRM")}
                       </button>
                       <button
                         type="button"
@@ -6408,7 +6410,7 @@ function ConversasPageInner() {
                         className={`wa-config-tab${contatoPickerAba === "criar" ? " on" : ""}`}
                         onClick={() => setContatoPickerAba("criar")}
                       >
-                        Criar contato
+                        {traduzir("Criar contato")}
                       </button>
                     </div>
 
@@ -6419,7 +6421,7 @@ function ConversasPageInner() {
                             autoFocus
                             className="input"
                             style={{ width: "100%" }}
-                            placeholder={t("Buscar por nome, telefone, e-mail ou empresa…")}
+                            placeholder={traduzir("Buscar por nome, telefone, e-mail ou empresa…")}
                             value={buscaContatoPicker}
                             onChange={(e) => setBuscaContatoPicker(e.target.value)}
                           />
@@ -6430,7 +6432,7 @@ function ConversasPageInner() {
                               value={filtroEmpresaPicker}
                               onChange={(e) => setFiltroEmpresaPicker(e.target.value)}
                             >
-                              <option value="">{t("Empresa: todas")}</option>
+                              <option value="">{traduzir("Empresa: todas")}</option>
                               {empresasPicker.map((emp) => (
                                 <option key={emp} value={emp}>
                                   {emp}
@@ -6443,7 +6445,7 @@ function ConversasPageInner() {
                               value={filtroEtiquetaPicker}
                               onChange={(e) => setFiltroEtiquetaPicker(e.target.value)}
                             >
-                              <option value="">{t("Etiqueta: todas")}</option>
+                              <option value="">{traduzir("Etiqueta: todas")}</option>
                               {etiquetasPicker.map((et) => (
                                 <option key={et} value={et}>
                                   {et}
@@ -6456,7 +6458,7 @@ function ConversasPageInner() {
                               value={filtroResponsavelPicker}
                               onChange={(e) => setFiltroResponsavelPicker(e.target.value)}
                             >
-                              <option value="">{t("Responsável: todos")}</option>
+                              <option value="">{traduzir("Responsável: todos")}</option>
                               {responsaveisPicker.map((r) => (
                                 <option key={r} value={r}>
                                   {r}
@@ -6469,7 +6471,7 @@ function ConversasPageInner() {
                               onClick={() => setSomenteFavoritosPicker((v) => !v)}
                               style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
                             >
-                              <IconStar width={12} height={12} fill={somenteFavoritosPicker ? "currentColor" : "none"} /> Favoritos
+                              <IconStar width={12} height={12} fill={somenteFavoritosPicker ? "currentColor" : "none"} /> {traduzir("Favoritos")}
                             </button>
                           </div>
 
@@ -6482,7 +6484,7 @@ function ConversasPageInner() {
                                   className="link"
                                   onClick={() => setContatosSelecionadosPicker([])}
                                 >
-                                  Limpar seleção
+                                  {traduzir("Limpar seleção")}
                                 </button>
                               </div>
                               <div className="wa-contato-picker-tray-lista">
@@ -6506,7 +6508,7 @@ function ConversasPageInner() {
                           <div className="wa-contato-picker-lista" role="listbox" aria-multiselectable="true">
                             {contatosFiltradosPicker.length === 0 ? (
                               <p className="hint" style={{ padding: "16px 4px" }}>
-                                Nenhum contato encontrado com esses filtros.
+                                {traduzir("Nenhum contato encontrado com esses filtros.")}
                               </p>
                             ) : (
                               contatosFiltradosPicker.map((c) => {
@@ -6577,11 +6579,11 @@ function ConversasPageInner() {
                               style={{ width: "100%" }}
                               value={novoContatoNome}
                               onChange={(e) => setNovoContatoNome(e.target.value)}
-                              placeholder={t("Nome")}
+                              placeholder={traduzir("Nome")}
                             />
                           </div>
                           <div className="field">
-                            <label>{t("Sobrenome")}</label>
+                            <label>{traduzir("Sobrenome")}</label>
                             <input
                               className="input"
                               style={{ width: "100%" }}
@@ -6591,7 +6593,7 @@ function ConversasPageInner() {
                           </div>
                           <div style={{ display: "flex", gap: 8 }}>
                             <div className="field" style={{ flex: 1 }}>
-                              <label>{t("Empresa")}</label>
+                              <label>{traduzir("Empresa")}</label>
                               <input
                                 className="input"
                                 style={{ width: "100%" }}
@@ -6600,7 +6602,7 @@ function ConversasPageInner() {
                               />
                             </div>
                             <div className="field" style={{ flex: 1 }}>
-                              <label>{t("Cargo")}</label>
+                              <label>{traduzir("Cargo")}</label>
                               <input
                                 className="input"
                                 style={{ width: "100%" }}
@@ -6610,7 +6612,7 @@ function ConversasPageInner() {
                             </div>
                           </div>
                           <div className="field">
-                            <label>{t("Telefone")}</label>
+                            <label>{traduzir("Telefone")}</label>
                             <input
                               className={`input${novoContatoErros.telefone ? " wa-input-invalido" : ""}`}
                               style={{ width: "100%" }}
@@ -6623,7 +6625,7 @@ function ConversasPageInner() {
                             ) : null}
                           </div>
                           <div className="field">
-                            <label>{t("E-mail")}</label>
+                            <label>{traduzir("E-mail")}</label>
                             <input
                               className={`input${novoContatoErros.email ? " wa-input-invalido" : ""}`}
                               style={{ width: "100%" }}
@@ -6637,7 +6639,7 @@ function ConversasPageInner() {
                             ) : null}
                           </div>
                           <div className="field">
-                            <label>{t("Observação")}</label>
+                            <label>{traduzir("Observação")}</label>
                             <textarea
                               className="input"
                               style={{ width: "100%", minHeight: 60, resize: "vertical" }}
@@ -6647,7 +6649,7 @@ function ConversasPageInner() {
                           </div>
                           {novoContatoSucesso ? (
                             <p className="wa-status-inline wa-status-sucesso" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                              <IconCheck width={13} height={13} /> Contato salvo no CRM
+                              <IconCheck width={13} height={13} /> {traduzir("Contato salvo no CRM")}
                             </p>
                           ) : null}
                         </>
@@ -6656,7 +6658,7 @@ function ConversasPageInner() {
 
                     <div className="wa-modal-footer">
                       <button type="button" className="btn ghost" onClick={fecharContatoPicker}>
-                        {t("Cancelar")}
+                        {traduzir("Cancelar")}
                       </button>
                       {contatoPickerAba === "crm" ? (
                         <button
@@ -6696,7 +6698,7 @@ function ConversasPageInner() {
                   <>
                     <div className="wa-config-scroll">
                       <p className="int-group-h" style={{ padding: 0, marginBottom: 8 }}>
-                        Prévia: o que vai ser compartilhado
+                        {traduzir("Prévia: o que vai ser compartilhado")}
                       </p>
                       <div className="wa-contato-previa-lista">
                         {contatosSelecionadosPicker.map((c) => (
@@ -6729,7 +6731,7 @@ function ConversasPageInner() {
                       </div>
 
                       <p className="int-group-h" style={{ padding: 0, margin: "14px 0 8px" }}>
-                        O que compartilhar
+                        {traduzir("O que compartilhar")}
                       </p>
                       {(
                         [
@@ -6765,7 +6767,7 @@ function ConversasPageInner() {
                         onClick={() => setContatoPickerEtapa("lista")}
                         disabled={contatoPickerEnviando}
                       >
-                        Voltar
+                        {traduzir("Voltar")}
                       </button>
                       <button
                         type="button"
@@ -6824,7 +6826,7 @@ function ConversasPageInner() {
                       style={{ width: "100%", textAlign: "left" }}
                       onClick={() => copiarMensagem(msg.texto)}
                     >
-                      <span className="n"><IconCopy width={12} height={12} /> {t("Copiar")}</span>
+                      <span className="n"><IconCopy width={12} height={12} /> {traduzir("Copiar")}</span>
                     </button>
                   ) : null}
                   <button
@@ -6836,7 +6838,7 @@ function ConversasPageInner() {
                       setEncaminharAberto({ chave, rect: e.currentTarget.getBoundingClientRect(), msg });
                     }}
                   >
-                    <span className="n"><IconEncaminhar width={12} height={12} /> {t("Encaminhar")}</span>
+                    <span className="n"><IconEncaminhar width={12} height={12} /> {traduzir("Encaminhar")}</span>
                   </button>
                   <button
                     type="button"
@@ -6847,11 +6849,11 @@ function ConversasPageInner() {
                     <span className="n">
                       {mensagensFavoritas.has(chave) ? (
                         <>
-                          <IconStar width={12} height={12} fill="currentColor" /> Remover dos favoritos
+                          <IconStar width={12} height={12} fill="currentColor" /> {traduzir("Remover dos favoritos")}
                         </>
                       ) : (
                         <>
-                          <IconStar width={12} height={12} fill="none" /> Favoritar
+                          <IconStar width={12} height={12} fill="none" /> {traduzir("Favoritar")}
                         </>
                       )}
                     </span>
@@ -6871,7 +6873,7 @@ function ConversasPageInner() {
                       style={{ width: "100%", textAlign: "left" }}
                       onClick={() => baixarAnexoMensagem(msg)}
                     >
-                      <span className="n"><IconDownload width={12} height={12} /> {t("Baixar")}</span>
+                      <span className="n"><IconDownload width={12} height={12} /> {traduzir("Baixar")}</span>
                     </button>
                   ) : null}
                   <div className="dropdown-sep" />
@@ -6881,7 +6883,7 @@ function ConversasPageInner() {
                     style={{ width: "100%", textAlign: "left" }}
                     onClick={() => pedirApagar(chave, msg, "para_mim")}
                   >
-                    <span className="n"><IconLixeira width={12} height={12} /> {t("Apagar pra mim")}</span>
+                    <span className="n"><IconLixeira width={12} height={12} /> {traduzir("Apagar pra mim")}</span>
                   </button>
                   <button
                     type="button"
@@ -6889,7 +6891,7 @@ function ConversasPageInner() {
                     style={{ width: "100%", textAlign: "left" }}
                     onClick={() => pedirApagar(chave, msg, "para_todos")}
                   >
-                    <span className="n"><IconLixeira width={12} height={12} /> {t("Apagar pra todos")}</span>
+                    <span className="n"><IconLixeira width={12} height={12} /> {traduzir("Apagar pra todos")}</span>
                   </button>
                 </FloatingDropdown>
               );
@@ -6905,7 +6907,7 @@ function ConversasPageInner() {
             >
               <div className="wa-encaminhar-lista">
                 <p className="hint" style={{ padding: "6px 10px" }}>
-                  Encaminhar pra…
+                  {traduzir("Encaminhar pra…")}
                 </p>
                 {conversas
                   .filter((c) => c.nome !== aberta.nome)
@@ -6930,7 +6932,7 @@ function ConversasPageInner() {
                 {confirmarApagar.tipoExclusao === "para_mim" ? (
                   <>
                     <div className="open-conv-h" style={{ padding: 0, marginBottom: 10 }}>
-                      <p className="n">{t("Apagar mensagem")}</p>
+                      <p className="n">{traduzir("Apagar mensagem")}</p>
                     </div>
                     <p className="hint" style={{ marginBottom: 16 }}>
                       Apagar esta mensagem somente para você? As outras pessoas ainda poderão
@@ -6943,7 +6945,7 @@ function ConversasPageInner() {
                         style={{ flex: 1 }}
                         onClick={() => setConfirmarApagar(null)}
                       >
-                        {t("Cancelar")}
+                        {traduzir("Cancelar")}
                       </button>
                       <button
                         type="button"
@@ -6951,14 +6953,14 @@ function ConversasPageInner() {
                         style={{ flex: 1 }}
                         onClick={confirmarApagarParaMim}
                       >
-                        {t("Apagar pra mim")}
+                        {traduzir("Apagar pra mim")}
                       </button>
                     </div>
                   </>
                 ) : !confirmarApagar.elegivel ? (
                   <>
                     <div className="open-conv-h" style={{ padding: 0, marginBottom: 10 }}>
-                      <p className="n">{t("Não é possível apagar pra todos")}</p>
+                      <p className="n">{traduzir("Não é possível apagar pra todos")}</p>
                     </div>
                     <p className="hint" style={{ marginBottom: 16 }}>
                       {confirmarApagar.motivoIndisponivel}
@@ -6969,14 +6971,14 @@ function ConversasPageInner() {
                         className="btn primary block"
                         onClick={() => setConfirmarApagar(null)}
                       >
-                        Entendi
+                        {traduzir("Entendi")}
                       </button>
                     </div>
                   </>
                 ) : (
                   <>
                     <div className="open-conv-h" style={{ padding: 0, marginBottom: 10 }}>
-                      <p className="n">{t("Apagar pra todos")}</p>
+                      <p className="n">{traduzir("Apagar pra todos")}</p>
                     </div>
                     <p className="hint" style={{ marginBottom: 16 }}>
                       Apaga esta mensagem pra quem visualizar essa conversa no CRM. Não recolhe a
@@ -6990,7 +6992,7 @@ function ConversasPageInner() {
                         style={{ flex: 1 }}
                         onClick={() => setConfirmarApagar(null)}
                       >
-                        {t("Cancelar")}
+                        {traduzir("Cancelar")}
                       </button>
                       <button
                         type="button"
@@ -6998,7 +7000,7 @@ function ConversasPageInner() {
                         style={{ flex: 1 }}
                         onClick={confirmarApagarParaTodos}
                       >
-                        {t("Apagar pra todos")}
+                        {traduzir("Apagar pra todos")}
                       </button>
                     </div>
                   </>
@@ -7011,11 +7013,11 @@ function ConversasPageInner() {
             <div className="form-preview-overlay" onClick={() => setDetalhesMensagem(null)}>
               <div className="wa-email-modal wa-contato-modal" onClick={(e) => e.stopPropagation()}>
                 <div className="open-conv-h" style={{ padding: 0, marginBottom: 14 }}>
-                  <p className="n">{t("Detalhes da mensagem")}</p>
+                  <p className="n">{traduzir("Detalhes da mensagem")}</p>
                   <button
                     type="button"
                     className="modal-close-btn"
-                    aria-label={t("Fechar")}
+                    aria-label={traduzir("Fechar")}
                     onClick={() => setDetalhesMensagem(null)}
                   >
                     <IconClose width={12} height={12} />
@@ -7023,16 +7025,16 @@ function ConversasPageInner() {
                 </div>
                 <div className="wa-msg-detalhes-lista">
                   <div className="wa-msg-detalhes-item">
-                    <span className="rotulo">{t("Identificador")}</span>
+                    <span className="rotulo">{traduzir("Identificador")}</span>
                     <span className="valor">{detalhesMensagem.msg.id ?? detalhesMensagem.chave}</span>
                   </div>
                   <div className="wa-msg-detalhes-item">
-                    <span className="rotulo">{t("Canal")}</span>
+                    <span className="rotulo">{traduzir("Canal")}</span>
                     <span className="valor">{aberta.canal}</span>
                   </div>
                   {detalhesMensagem.msg.criadoEm ? (
                     <div className="wa-msg-detalhes-item">
-                      <span className="rotulo">{t("Criada")}</span>
+                      <span className="rotulo">{traduzir("Criada")}</span>
                       <span className="valor">
                         {new Date(detalhesMensagem.msg.criadoEm).toLocaleString(localeNumero)}
                       </span>
@@ -7040,7 +7042,7 @@ function ConversasPageInner() {
                   ) : null}
                   {detalhesMensagem.msg.tipo === "out" && detalhesMensagem.msg.status ? (
                     <div className="wa-msg-detalhes-item">
-                      <span className="rotulo">{t("Status")}</span>
+                      <span className="rotulo">{traduzir("Status")}</span>
                       <span className="valor">
                         {detalhesMensagem.msg.status === "pendente"
                           ? "Aguardando envio"
@@ -7058,23 +7060,23 @@ function ConversasPageInner() {
                   ) : null}
                   {detalhesMensagem.msg.status === "erro" && detalhesMensagem.msg.erro ? (
                     <div className="wa-msg-detalhes-item">
-                      <span className="rotulo">{t("Motivo do erro")}</span>
+                      <span className="rotulo">{traduzir("Motivo do erro")}</span>
                       <span className="valor">{detalhesMensagem.msg.erro}</span>
                     </div>
                   ) : null}
                   {detalhesMensagem.msg.apagadaParaTodos ? (
                     <div className="wa-msg-detalhes-item">
-                      <span className="rotulo">{t("Apagada")}</span>
-                      <span className="valor">{t("Pra todos")}</span>
+                      <span className="rotulo">{traduzir("Apagada")}</span>
+                      <span className="valor">{traduzir("Pra todos")}</span>
                     </div>
                   ) : null}
                   <div className="wa-msg-detalhes-item">
-                    <span className="rotulo">{t("Hora exibida")}</span>
+                    <span className="rotulo">{traduzir("Hora exibida")}</span>
                     <span className="valor">{detalhesMensagem.msg.hora || "-"}</span>
                   </div>
                 </div>
                 <p className="hint" style={{ marginTop: 12 }}>
-                  Etapas que o canal conectado não fornecer não aparecem aqui.
+                  {traduzir("Etapas que o canal conectado não fornecer não aparecem aqui.")}
                 </p>
               </div>
             </div>
@@ -7084,7 +7086,7 @@ function ConversasPageInner() {
             <div className="form-preview-overlay" onClick={() => setAudioConfirmarDescarte(false)}>
               <div className="wa-email-modal wa-contato-modal" onClick={(e) => e.stopPropagation()}>
                 <div className="open-conv-h" style={{ padding: 0, marginBottom: 10 }}>
-                  <p className="n">{t("Excluir essa gravação?")}</p>
+                  <p className="n">{traduzir("Excluir essa gravação?")}</p>
                 </div>
                 <p className="hint" style={{ marginBottom: 16 }}>
                   Essa gravação tem mais de 20 segundos. Ao excluir, o áudio não vai ser enviado
@@ -7097,7 +7099,7 @@ function ConversasPageInner() {
                     style={{ flex: 1 }}
                     onClick={() => setAudioConfirmarDescarte(false)}
                   >
-                    {t("Cancelar")}
+                    {traduzir("Cancelar")}
                   </button>
                   <button
                     type="button"
@@ -7105,7 +7107,7 @@ function ConversasPageInner() {
                     style={{ flex: 1 }}
                     onClick={descartarGravacao}
                   >
-                    {t("Excluir gravação")}
+                    {traduzir("Excluir gravação")}
                   </button>
                 </div>
               </div>
@@ -7128,12 +7130,12 @@ function ConversasPageInner() {
               >
                 <div>
                   <p className="n">{contatoDetalheAberto.nome}</p>
-                  <p className="s">{t("Contato compartilhado")}</p>
+                  <p className="s">{traduzir("Contato compartilhado")}</p>
                 </div>
                 <button
                   type="button"
                   className="modal-close-btn"
-                  aria-label={t("Fechar")}
+                  aria-label={traduzir("Fechar")}
                   onClick={() => setContatoDetalheAberto(null)}
                 >
                   <IconClose width={12} height={12} />
@@ -7154,7 +7156,7 @@ function ConversasPageInner() {
                     <IconTelefone width={11} height={11} /> {contatoDetalheAberto.whatsapp}
                   </p>
                 ) : (
-                  <p className="hint">{t("Sem número de WhatsApp cadastrado")}</p>
+                  <p className="hint">{traduzir("Sem número de WhatsApp cadastrado")}</p>
                 )}
                 {contatoDetalheAberto.telefoneFixo ? (
                   <p className="wa-contato-picker-numero" style={{ display: "flex", alignItems: "center", gap: 4 }}>
@@ -7175,7 +7177,7 @@ function ConversasPageInner() {
                   rel="noopener noreferrer"
                 >
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 6, justifyContent: "center", width: "100%" }}>
-                    <IconConversas width={13} height={13} /> Conversar no WhatsApp
+                    <IconConversas width={13} height={13} /> {traduzir("Conversar no WhatsApp")}
                   </span>
                 </a>
               ) : null}
@@ -7185,7 +7187,7 @@ function ConversasPageInner() {
                 onClick={() => salvarContatoVcf(contatoDetalheAberto)}
                 style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
               >
-                <IconSalvar width={13} height={13} /> Salvar contato
+                <IconSalvar width={13} height={13} /> {traduzir("Salvar contato")}
               </button>
             </div>
           ) : null}
@@ -7224,10 +7226,10 @@ function ConversasPageInner() {
         <div
           className="wa-resizer"
           onMouseDown={iniciarRedimensionarInfo}
-          title={t("Arraste pra redimensionar")}
+          title={traduzir("Arraste pra redimensionar")}
         />
         <aside className="wa-info" style={{ width: infoWidth }}>
-          <div className="wa-info-tabs" role="tablist" aria-label={t("Painel do contato")}>
+          <div className="wa-info-tabs" role="tablist" aria-label={traduzir("Painel do contato")}>
             {(
               [
                 { id: "resumo", label: "Resumo" },
@@ -7272,21 +7274,21 @@ function ConversasPageInner() {
                         : `sem @ · id ${aberta.nome}`
                       : whatsappContato || aberta.contato}
                   </span>
-                  <span className="wa-resumo-label">{t("E-mail")}</span>
+                  <span className="wa-resumo-label">{traduzir("E-mail")}</span>
                   <span className="wa-resumo-valor">{emailContato || "-"}</span>
-                  <span className="wa-resumo-label">{t("Responsável")}</span>
+                  <span className="wa-resumo-label">{traduzir("Responsável")}</span>
                   <span className="wa-resumo-valor">{aberta.atendenteSelecionado ?? ""}</span>
                   <span className="wa-resumo-label">Funil · Etapa</span>
                   <span className="wa-resumo-valor">
                     {funilSelecionado ? `${funilSelecionado.nome} · ${etapaSelecionada}` : ""}
                   </span>
-                  <span className="wa-resumo-label">{t("Origem")}</span>
+                  <span className="wa-resumo-label">{traduzir("Origem")}</span>
                   <span className="wa-resumo-valor">{aberta.origem}</span>
-                  <span className="wa-resumo-label">{t("Última interação")}</span>
+                  <span className="wa-resumo-label">{traduzir("Última interação")}</span>
                   <span className="wa-resumo-valor">
                     {rotuloDeConversa(new Date(aberta.ultimaMensagemEm ?? aberta.atualizadoEm))}
                   </span>
-                  <span className="wa-resumo-label">{t("Situação")}</span>
+                  <span className="wa-resumo-label">{traduzir("Situação")}</span>
                   <span className="wa-resumo-valor">{aberta.status}</span>
                 </div>
                 {(contatoDaConversa?.etiquetas ?? []).length > 0 ? (
@@ -7301,7 +7303,7 @@ function ConversasPageInner() {
               </div>
 
               <div className="panel-h divided">
-                <h4>{t("Ações rápidas")}</h4>
+                <h4>{traduzir("Ações rápidas")}</h4>
               </div>
               <div className="wa-acoes-rapidas">
                 <button
@@ -7309,7 +7311,7 @@ function ConversasPageInner() {
                   className="wa-acao-rapida"
                   onClick={() => setAbaInfo("atividades")}
                 >
-                  <IconCalendar width={13} height={13} /> Registrar atividade
+                  <IconCalendar width={13} height={13} /> {traduzir("Registrar atividade")}
                 </button>
                 <button
                   type="button"
@@ -7319,14 +7321,14 @@ function ConversasPageInner() {
                     mensagemInputRef.current?.focus();
                   }}
                 >
-                  <IconAutomacoes width={13} height={13} /> {t("Executar automação")}
+                  <IconAutomacoes width={13} height={13} /> {traduzir("Executar automação")}
                 </button>
                 <button
                   type="button"
                   className="wa-acao-rapida"
                   onClick={() => setAbaInfo("contato")}
                 >
-                  <IconEtiqueta width={13} height={13} /> Adicionar etiqueta
+                  <IconEtiqueta width={13} height={13} /> {traduzir("Adicionar etiqueta")}
                 </button>
                 <button
                   type="button"
@@ -7336,20 +7338,20 @@ function ConversasPageInner() {
                     e.currentTarget.scrollIntoView({ block: "nearest" });
                   }}
                 >
-                  <IconContatos width={13} height={13} /> Trocar responsável
+                  <IconContatos width={13} height={13} /> {traduzir("Trocar responsável")}
                 </button>
                 <button
                   type="button"
                   className="wa-acao-rapida"
                   onClick={(e) => abrirMenuResultado(e.currentTarget.getBoundingClientRect())}
                 >
-                  <IconAlvo width={13} height={13} /> Registrar resultado
+                  <IconAlvo width={13} height={13} /> {traduzir("Registrar resultado")}
                 </button>
               </div>
 
               {trocandoResponsavel ? (
                 <div className="field">
-                  <label>{t("Novo responsável")}</label>
+                  <label>{traduzir("Novo responsável")}</label>
                   <select
                     className="input"
                     style={{ width: "100%", cursor: "pointer" }}
@@ -7359,7 +7361,7 @@ function ConversasPageInner() {
                     }}
                   >
                     <option value="" disabled>
-                      Escolha um atendente
+                      {traduzir("Escolha um atendente")}
                     </option>
                     {atendentesDisponiveis.map((a) => (
                       <option key={a} value={a}>
@@ -7377,7 +7379,7 @@ function ConversasPageInner() {
                 >
                   {resultadoAtual === "venda" ? (
                     <>
-                      <IconCheck width={12} height={12} /> {t("Venda concluída")}
+                      <IconCheck width={12} height={12} /> {traduzir("Venda concluída")}
                     </>
                   ) : resultadoAtual === "perda" ? (
                     <>
@@ -7385,11 +7387,11 @@ function ConversasPageInner() {
                     </>
                   ) : resultadoAtual === "adiada" ? (
                     <>
-                      <IconRelogio width={12} height={12} /> {t("Adiada")}
+                      <IconRelogio width={12} height={12} /> {traduzir("Adiada")}
                     </>
                   ) : (
                     <>
-                      <IconProibido width={12} height={12} /> {t("Cancelada")}
+                      <IconProibido width={12} height={12} /> {traduzir("Cancelada")}
                     </>
                   )}
                 </p>
@@ -7400,38 +7402,38 @@ function ConversasPageInner() {
           {abaInfo === "contato" ? (
             <>
               <div className="panel-h">
-                <h4>{t("Dados do contato")}</h4>
+                <h4>{traduzir("Dados do contato")}</h4>
                 {!editandoContato ? (
                   <button
                     type="button"
                     className="link"
                     onClick={() => setEditandoContato(true)}
                   >
-                    Editar
+                    {traduzir("Editar")}
                   </button>
                 ) : null}
               </div>
 
               <div className="field">
-                <label>{t("Nome")}</label>
+                <label>{traduzir("Nome")}</label>
                 <div className="input">{aberta.nome}</div>
               </div>
               <div className="field">
-                <label>{t("Sobrenome")}</label>
+                <label>{traduzir("Sobrenome")}</label>
                 {editandoContato ? (
                   <input
                     className="input"
                     style={{ width: "100%" }}
                     value={sobrenomeContato}
                     onChange={(e) => setSobrenomeContato(e.target.value)}
-                    placeholder={t("Sobrenome do contato")}
+                    placeholder={traduzir("Sobrenome do contato")}
                   />
                 ) : (
                   <div className="input">{sobrenomeContato || "Não informado"}</div>
                 )}
               </div>
               <div className="field">
-                <label>{t("E-mail")}</label>
+                <label>{traduzir("E-mail")}</label>
                 {editandoContato ? (
                   <input
                     className={`input${!emailValido(emailContato) ? " wa-input-invalido" : ""}`}
@@ -7445,7 +7447,7 @@ function ConversasPageInner() {
                   <div className="input">{emailContato || "Não informado"}</div>
                 )}
                 {editandoContato && !emailValido(emailContato) ? (
-                  <span className="wa-campo-erro">{t("E-mail inválido")}</span>
+                  <span className="wa-campo-erro">{traduzir("E-mail inválido")}</span>
                 ) : null}
               </div>
               <div className="field">
@@ -7464,35 +7466,35 @@ function ConversasPageInner() {
                 )}
               </div>
               <div className="field">
-                <label>{t("Empresa")}</label>
+                <label>{traduzir("Empresa")}</label>
                 {editandoContato ? (
                   <input
                     className="input"
                     style={{ width: "100%" }}
                     value={empresaContato}
                     onChange={(e) => setEmpresaContato(e.target.value)}
-                    placeholder={t("Nome da empresa (opcional pra B2C)")}
+                    placeholder={traduzir("Nome da empresa (opcional pra B2C)")}
                   />
                 ) : (
                   <div className="input">{empresaContato || "Não informado"}</div>
                 )}
               </div>
               <div className="field">
-                <label>{t("Cargo")}</label>
+                <label>{traduzir("Cargo")}</label>
                 {editandoContato ? (
                   <input
                     className="input"
                     style={{ width: "100%" }}
                     value={cargoContato}
                     onChange={(e) => setCargoContato(e.target.value)}
-                    placeholder={t("Cargo na empresa")}
+                    placeholder={traduzir("Cargo na empresa")}
                   />
                 ) : (
                   <div className="input">{cargoContato || "Não informado"}</div>
                 )}
               </div>
               <div className="field">
-                <label>{t("Aniversário")}</label>
+                <label>{traduzir("Aniversário")}</label>
                 {editandoContato ? (
                   <input
                     className="input"
@@ -7506,21 +7508,21 @@ function ConversasPageInner() {
                 )}
               </div>
               <div className="field">
-                <label>{t("Endereço")}</label>
+                <label>{traduzir("Endereço")}</label>
                 {editandoContato ? (
                   <input
                     className="input"
                     style={{ width: "100%" }}
                     value={enderecoContato}
                     onChange={(e) => setEnderecoContato(e.target.value)}
-                    placeholder={t("Rua, número, bairro")}
+                    placeholder={traduzir("Rua, número, bairro")}
                   />
                 ) : (
                   <div className="input">{enderecoContato || "Não informado"}</div>
                 )}
               </div>
               <div className="field">
-                <label>{t("Cidade / Estado / País")}</label>
+                <label>{traduzir("Cidade / Estado / País")}</label>
                 {editandoContato ? (
                   <div style={{ display: "flex", gap: 6 }}>
                     <input
@@ -7528,7 +7530,7 @@ function ConversasPageInner() {
                       style={{ flex: 2 }}
                       value={cidadeContato}
                       onChange={(e) => setCidadeContato(e.target.value)}
-                      placeholder={t("Cidade")}
+                      placeholder={traduzir("Cidade")}
                     />
                     <input
                       className="input"
@@ -7542,7 +7544,7 @@ function ConversasPageInner() {
                       style={{ flex: 2 }}
                       value={paisContato}
                       onChange={(e) => setPaisContato(e.target.value)}
-                      placeholder={t("País")}
+                      placeholder={traduzir("País")}
                     />
                   </div>
                 ) : (
@@ -7553,7 +7555,7 @@ function ConversasPageInner() {
                 )}
               </div>
               <div className="field">
-                <label>{t("Canal preferido")}</label>
+                <label>{traduzir("Canal preferido")}</label>
                 {editandoContato ? (
                   <select
                     className="input"
@@ -7569,14 +7571,14 @@ function ConversasPageInner() {
                 )}
               </div>
               <div className="field">
-                <label>{t("Melhor horário pra contato")}</label>
+                <label>{traduzir("Melhor horário pra contato")}</label>
                 {editandoContato ? (
                   <input
                     className="input"
                     style={{ width: "100%" }}
                     value={melhorHorarioContato}
                     onChange={(e) => setMelhorHorarioContato(e.target.value)}
-                    placeholder={t("Ex.: Tardes, depois das 14h")}
+                    placeholder={traduzir("Ex.: Tardes, depois das 14h")}
                   />
                 ) : (
                   <div className="input">{melhorHorarioContato || "Não informado"}</div>
@@ -7584,10 +7586,10 @@ function ConversasPageInner() {
               </div>
 
               <div className="field">
-                <label>{t("Etiquetas")}</label>
+                <label>{traduzir("Etiquetas")}</label>
                 <div className="wa-etiquetas-lista">
                   {(contatoDaConversa?.etiquetas ?? []).length === 0 ? (
-                    <span className="hint">{t("Nenhuma etiqueta ainda.")}</span>
+                    <span className="hint">{traduzir("Nenhuma etiqueta ainda.")}</span>
                   ) : (
                     (contatoDaConversa?.etiquetas ?? []).map((et) => (
                       <span className="wa-etiqueta-chip" key={et}>
@@ -7607,7 +7609,7 @@ function ConversasPageInner() {
                   <input
                     className="input"
                     style={{ flex: 1 }}
-                    placeholder={t("Nova etiqueta…")}
+                    placeholder={traduzir("Nova etiqueta…")}
                     value={novaEtiquetaTexto}
                     onChange={(e) => setNovaEtiquetaTexto(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && adicionarEtiquetaRapida()}
@@ -7631,7 +7633,7 @@ function ConversasPageInner() {
                     style={{ flex: 1 }}
                     onClick={cancelarEdicaoContato}
                   >
-                    {t("Cancelar")}
+                    {traduzir("Cancelar")}
                   </button>
                   <button
                     type="button"
@@ -7646,11 +7648,11 @@ function ConversasPageInner() {
               ) : null}
               {statusSalvarContato === "sucesso" ? (
                 <p className="wa-status-inline wa-status-sucesso" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <IconCheck width={13} height={13} /> Dados salvos
+                  <IconCheck width={13} height={13} /> {traduzir("Dados salvos")}
                 </p>
               ) : statusSalvarContato === "erro" ? (
                 <p className="wa-status-inline wa-status-erro" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <IconClose width={13} height={13} /> Não deu pra salvar: confira o e-mail
+                  <IconClose width={13} height={13} /> {traduzir("Não deu pra salvar: confira o e-mail")}
                 </p>
               ) : null}
             </>
@@ -7659,10 +7661,10 @@ function ConversasPageInner() {
           {abaInfo === "negociacao" ? (
             <>
               <div className="panel-h">
-                <h4>{t("Funil e etapa")}</h4>
+                <h4>{traduzir("Funil e etapa")}</h4>
               </div>
               <div className="field">
-                <label>{t("Funil")}</label>
+                <label>{traduzir("Funil")}</label>
                 <select
                   className="input"
                   style={{ width: "100%", cursor: "pointer" }}
@@ -7693,12 +7695,12 @@ function ConversasPageInner() {
                   className="btn primary block"
                   onClick={salvarAtribuicao}
                 >
-                  Salvar atribuição ao funil
+                  {traduzir("Salvar atribuição ao funil")}
                 </button>
               </div>
 
               <div className="panel-h divided">
-                <h4>{t("Resultado")}</h4>
+                <h4>{traduzir("Resultado")}</h4>
               </div>
               <div style={{ padding: "0 17px 14px" }}>
                 {resultadoAtual ? (
@@ -7708,7 +7710,7 @@ function ConversasPageInner() {
                   >
                     {resultadoAtual === "venda" ? (
                       <>
-                        <IconCheck width={12} height={12} /> {t("Venda concluída")}
+                        <IconCheck width={12} height={12} /> {traduzir("Venda concluída")}
                       </>
                     ) : resultadoAtual === "perda" ? (
                       <>
@@ -7716,17 +7718,17 @@ function ConversasPageInner() {
                       </>
                     ) : resultadoAtual === "adiada" ? (
                       <>
-                        <IconRelogio width={12} height={12} /> {t("Adiada")}
+                        <IconRelogio width={12} height={12} /> {traduzir("Adiada")}
                       </>
                     ) : (
                       <>
-                        <IconProibido width={12} height={12} /> {t("Cancelada")}
+                        <IconProibido width={12} height={12} /> {traduzir("Cancelada")}
                       </>
                     )}
                   </p>
                 ) : (
                   <p className="hint" style={{ marginBottom: 10 }}>
-                    Nenhum resultado registrado ainda: em andamento.
+                    {traduzir("Nenhum resultado registrado ainda: em andamento.")}
                   </p>
                 )}
                 <button
@@ -7735,7 +7737,7 @@ function ConversasPageInner() {
                   onClick={(e) => abrirMenuResultado(e.currentTarget.getBoundingClientRect())}
                   style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
                 >
-                  <IconAlvo width={13} height={13} /> Registrar resultado
+                  <IconAlvo width={13} height={13} /> {traduzir("Registrar resultado")}
                 </button>
               </div>
             </>
@@ -7750,14 +7752,14 @@ function ConversasPageInner() {
                   style={{ flex: "1 1 140px", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
                   onClick={abrirEmailModal}
                 >
-                  <IconEmail width={13} height={13} /> Disparar e-mail
+                  <IconEmail width={13} height={13} /> {traduzir("Disparar e-mail")}
                 </button>
               </div>
 
               {emailsDaConversa.length > 0 ? (
                 <>
                   <div className="panel-h divided">
-                    <h4>{t("E-mails enviados")}</h4>
+                    <h4>{traduzir("E-mails enviados")}</h4>
                   </div>
                   {emailsDaConversa.map((email) => (
                     <div className="stat-row" key={email.id}>
@@ -7778,7 +7780,7 @@ function ConversasPageInner() {
                 <textarea
                   className="input"
                   style={{ width: "100%", minHeight: 60, resize: "vertical" }}
-                  placeholder={t("Escreva uma anotação sobre esse contato…")}
+                  placeholder={traduzir("Escreva uma anotação sobre esse contato…")}
                   value={notaTexto}
                   onChange={(e) => setNotaTexto(e.target.value)}
                 />
@@ -7815,7 +7817,7 @@ function ConversasPageInner() {
             style={{ width: "100%", textAlign: "left" }}
             onClick={() => escolherResultado("venda")}
           >
-            <span className="n"><IconCheck width={12} height={12} /> {t("Venda concluída")}</span>
+            <span className="n"><IconCheck width={12} height={12} /> {traduzir("Venda concluída")}</span>
           </button>
           <button
             type="button"
@@ -7823,7 +7825,7 @@ function ConversasPageInner() {
             style={{ width: "100%", textAlign: "left" }}
             onClick={() => escolherResultado("perda")}
           >
-            <span className="n"><IconErro width={12} height={12} /> {t("Negociação perdida")}</span>
+            <span className="n"><IconErro width={12} height={12} /> {traduzir("Negociação perdida")}</span>
           </button>
           <button
             type="button"
@@ -7831,7 +7833,7 @@ function ConversasPageInner() {
             style={{ width: "100%", textAlign: "left" }}
             onClick={() => escolherResultado("andamento")}
           >
-            <span className="n"><IconRefresh width={12} height={12} /> {t("Continua em andamento")}</span>
+            <span className="n"><IconRefresh width={12} height={12} /> {traduzir("Continua em andamento")}</span>
           </button>
           <button
             type="button"
@@ -7839,7 +7841,7 @@ function ConversasPageInner() {
             style={{ width: "100%", textAlign: "left" }}
             onClick={() => escolherResultado("adiada")}
           >
-            <span className="n"><IconRelogio width={12} height={12} /> {t("Adiada")}</span>
+            <span className="n"><IconRelogio width={12} height={12} /> {traduzir("Adiada")}</span>
           </button>
           <button
             type="button"
@@ -7847,7 +7849,7 @@ function ConversasPageInner() {
             style={{ width: "100%", textAlign: "left" }}
             onClick={() => escolherResultado("cancelada")}
           >
-            <span className="n"><IconProibido width={12} height={12} /> {t("Cancelada")}</span>
+            <span className="n"><IconProibido width={12} height={12} /> {traduzir("Cancelada")}</span>
           </button>
         </FloatingDropdown>
       ) : null}
@@ -7856,29 +7858,29 @@ function ConversasPageInner() {
         <div className="form-preview-overlay" onClick={() => setFormResultado(null)}>
           <div className="wa-email-modal wa-contato-modal" onClick={(e) => e.stopPropagation()}>
             <div className="open-conv-h" style={{ padding: 0, marginBottom: 14 }}>
-              <p className="n">{t("Venda concluída")}</p>
+              <p className="n">{traduzir("Venda concluída")}</p>
               <button
                 type="button"
                 className="modal-close-btn"
-                aria-label={t("Fechar")}
+                aria-label={traduzir("Fechar")}
                 onClick={() => setFormResultado(null)}
               >
                 <IconClose width={12} height={12} />
               </button>
             </div>
             <div className="field" style={{ padding: "0 0 10px" }}>
-              <label>{t("Produto/serviço")}</label>
+              <label>{traduzir("Produto/serviço")}</label>
               <input
                 className="input"
                 style={{ width: "100%" }}
                 value={vendaProduto}
                 onChange={(e) => setVendaProduto(e.target.value)}
-                placeholder={t("Ex.: Plano premium")}
+                placeholder={traduzir("Ex.: Plano premium")}
               />
             </div>
             <div style={{ display: "flex", gap: 8, padding: "0 0 10px" }}>
               <div className="field" style={{ flex: 1, padding: 0 }}>
-                <label>{t("Valor")}</label>
+                <label>{traduzir("Valor")}</label>
                 <input
                   className="input"
                   style={{ width: "100%" }}
@@ -7888,28 +7890,28 @@ function ConversasPageInner() {
                 />
               </div>
               <div className="field" style={{ flex: 1, padding: 0 }}>
-                <label>{t("Forma de pagamento")}</label>
+                <label>{traduzir("Forma de pagamento")}</label>
                 <select
                   className="input"
                   style={{ width: "100%", cursor: "pointer" }}
                   value={vendaFormaPagamento}
                   onChange={(e) => setVendaFormaPagamento(e.target.value)}
                 >
-                  <option value="Pix">{t("Pix")}</option>
-                  <option value="Cartão de crédito">{t("Cartão de crédito")}</option>
-                  <option value="Boleto">{t("Boleto")}</option>
-                  <option value="Dinheiro">{t("Dinheiro")}</option>
+                  <option value="Pix">{traduzir("Pix")}</option>
+                  <option value="Cartão de crédito">{traduzir("Cartão de crédito")}</option>
+                  <option value="Boleto">{traduzir("Boleto")}</option>
+                  <option value="Dinheiro">{traduzir("Dinheiro")}</option>
                 </select>
               </div>
             </div>
             <div className="field" style={{ padding: "0 0 10px" }}>
-              <label>{t("Observação")}</label>
+              <label>{traduzir("Observação")}</label>
               <textarea
                 className="input"
                 style={{ width: "100%", minHeight: 60, resize: "vertical" }}
                 value={vendaObservacao}
                 onChange={(e) => setVendaObservacao(e.target.value)}
-                placeholder={t("Detalhes opcionais sobre a venda…")}
+                placeholder={traduzir("Detalhes opcionais sobre a venda…")}
               />
             </div>
             <div className="section-foot">
@@ -7920,7 +7922,7 @@ function ConversasPageInner() {
                 onClick={() => setFormResultado(null)}
                 disabled={registrandoResultado}
               >
-                {t("Cancelar")}
+                {traduzir("Cancelar")}
               </button>
               <button
                 type="button"
@@ -7940,17 +7942,17 @@ function ConversasPageInner() {
         <div className="form-preview-overlay" onClick={() => setFormResultado(null)}>
           <div className="wa-email-modal wa-contato-modal" onClick={(e) => e.stopPropagation()}>
             <div className="open-conv-h" style={{ padding: 0, marginBottom: 14 }}>
-              <p className="n">{t("Negociação perdida")}</p>
+              <p className="n">{traduzir("Negociação perdida")}</p>
               <button
                 type="button"
                 className="modal-close-btn"
-                aria-label={t("Fechar")}
+                aria-label={traduzir("Fechar")}
                 onClick={() => setFormResultado(null)}
               >
                 <IconClose width={12} height={12} />
               </button>
             </div>
-            <p className="hint" style={{ marginBottom: 10 }}>{t("Escolha o motivo da perda:")}</p>
+            <p className="hint" style={{ marginBottom: 10 }}>{traduzir("Escolha o motivo da perda:")}</p>
             <RadioList
               key={`motivo-${aberta.id}`}
               options={motivosDisponiveis.map((m) => ({ nome: m }))}
@@ -7970,7 +7972,7 @@ function ConversasPageInner() {
                 <input
                   className="input"
                   style={{ flex: 1 }}
-                  placeholder={t("Descreva o motivo…")}
+                  placeholder={traduzir("Descreva o motivo…")}
                   value={novoMotivoTexto}
                   onChange={(e) => setNovoMotivoTexto(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && adicionarMotivoCustom()}
@@ -7993,28 +7995,28 @@ function ConversasPageInner() {
         <div className="form-preview-overlay" onClick={() => setFormResultado(null)}>
           <div className="wa-email-modal wa-contato-modal" onClick={(e) => e.stopPropagation()}>
             <div className="open-conv-h" style={{ padding: 0, marginBottom: 14 }}>
-              <p className="n">{t("Negociação adiada")}</p>
+              <p className="n">{traduzir("Negociação adiada")}</p>
               <button
                 type="button"
                 className="modal-close-btn"
-                aria-label={t("Fechar")}
+                aria-label={traduzir("Fechar")}
                 onClick={() => setFormResultado(null)}
               >
                 <IconClose width={12} height={12} />
               </button>
             </div>
             <div className="field" style={{ padding: "0 0 10px" }}>
-              <label>{t("Nova data prevista")}</label>
+              <label>{traduzir("Nova data prevista")}</label>
               <SeletorDeData valor={adiadaData} onChange={setAdiadaData} className="seletor-data-largo" />
             </div>
             <div className="field" style={{ padding: "0 0 10px" }}>
-              <label>{t("Observação")}</label>
+              <label>{traduzir("Observação")}</label>
               <textarea
                 className="input"
                 style={{ width: "100%", minHeight: 60, resize: "vertical" }}
                 value={adiadaObservacao}
                 onChange={(e) => setAdiadaObservacao(e.target.value)}
-                placeholder={t("Motivo do adiamento…")}
+                placeholder={traduzir("Motivo do adiamento…")}
               />
             </div>
             <div className="section-foot">
@@ -8024,7 +8026,7 @@ function ConversasPageInner() {
                 style={{ flex: 1 }}
                 onClick={() => setFormResultado(null)}
               >
-                {t("Cancelar")}
+                {traduzir("Cancelar")}
               </button>
               <button
                 type="button"
@@ -8032,7 +8034,7 @@ function ConversasPageInner() {
                 style={{ flex: 1 }}
                 onClick={confirmarAdiada}
               >
-                Confirmar adiamento
+                {traduzir("Confirmar adiamento")}
               </button>
             </div>
           </div>
@@ -8043,24 +8045,24 @@ function ConversasPageInner() {
         <div className="form-preview-overlay" onClick={() => setFormResultado(null)}>
           <div className="wa-email-modal wa-contato-modal" onClick={(e) => e.stopPropagation()}>
             <div className="open-conv-h" style={{ padding: 0, marginBottom: 14 }}>
-              <p className="n">{t("Negociação cancelada")}</p>
+              <p className="n">{traduzir("Negociação cancelada")}</p>
               <button
                 type="button"
                 className="modal-close-btn"
-                aria-label={t("Fechar")}
+                aria-label={traduzir("Fechar")}
                 onClick={() => setFormResultado(null)}
               >
                 <IconClose width={12} height={12} />
               </button>
             </div>
             <div className="field" style={{ padding: "0 0 10px" }}>
-              <label>{t("Motivo do cancelamento")}</label>
+              <label>{traduzir("Motivo do cancelamento")}</label>
               <textarea
                 className="input"
                 style={{ width: "100%", minHeight: 60, resize: "vertical" }}
                 value={canceladaMotivo}
                 onChange={(e) => setCanceladaMotivo(e.target.value)}
-                placeholder={t("Por que a negociação foi cancelada…")}
+                placeholder={traduzir("Por que a negociação foi cancelada…")}
               />
             </div>
             <div className="section-foot">
@@ -8070,7 +8072,7 @@ function ConversasPageInner() {
                 style={{ flex: 1 }}
                 onClick={() => setFormResultado(null)}
               >
-                {t("Cancelar")}
+                {traduzir("Cancelar")}
               </button>
               <button
                 type="button"
@@ -8078,7 +8080,7 @@ function ConversasPageInner() {
                 style={{ flex: 1 }}
                 onClick={confirmarCancelada}
               >
-                Confirmar cancelamento
+                {traduzir("Confirmar cancelamento")}
               </button>
             </div>
           </div>
@@ -8096,20 +8098,20 @@ function ConversasPageInner() {
         >
           <div className="wa-email-drag" onMouseDown={iniciarArrasteEmail}>
             <div>
-              <p className="n">{t("Novo e-mail")}</p>
+              <p className="n">{traduzir("Novo e-mail")}</p>
               <p className="s">Pra {aberta.nome}</p>
             </div>
             <button
               type="button"
               className="modal-close-btn"
-              aria-label={t("Fechar")}
+              aria-label={traduzir("Fechar")}
               onClick={fecharEmailModal}
             >
               <IconClose width={12} height={12} />
             </button>
           </div>
             <div className="field" style={{ padding: "10px 0" }}>
-              <label>{t("Para")}</label>
+              <label>{traduzir("Para")}</label>
               <input
                 className="input"
                 style={{ width: "100%" }}
@@ -8120,18 +8122,18 @@ function ConversasPageInner() {
               />
             </div>
             <div className="field" style={{ padding: "10px 0" }}>
-              <label>{t("Assunto")}</label>
+              <label>{traduzir("Assunto")}</label>
               <input
                 className="input"
                 style={{ width: "100%" }}
                 type="text"
                 value={emailAssunto}
                 onChange={(e) => setEmailAssunto(e.target.value)}
-                placeholder={t("Ex.: Sobre sua consulta")}
+                placeholder={traduzir("Ex.: Sobre sua consulta")}
               />
             </div>
             <div className="field" style={{ padding: "10px 0" }}>
-              <label>{t("Mensagem")}</label>
+              <label>{traduzir("Mensagem")}</label>
               <div className="wa-email-toolbar">
                 <button
                   type="button"
@@ -8171,9 +8173,9 @@ function ConversasPageInner() {
                     document.execCommand("fontSize", false, e.target.value);
                   }}
                 >
-                  <option value="2">{t("Pequeno")}</option>
-                  <option value="3">{t("Médio")}</option>
-                  <option value="5">{t("Grande")}</option>
+                  <option value="2">{traduzir("Pequeno")}</option>
+                  <option value="3">{traduzir("Médio")}</option>
+                  <option value="5">{traduzir("Grande")}</option>
                 </select>
               </div>
               <div
@@ -8190,14 +8192,14 @@ function ConversasPageInner() {
                 onClick={enviarEmail}
                 disabled={!emailPara.trim() || !emailAssunto.trim()}
               >
-                Disparar e-mail
+                {traduzir("Disparar e-mail")}
               </button>
             </div>
 
             {emailsDaConversa.length > 0 ? (
               <>
                 <div className="panel-h divided">
-                  <h4>{t("Rastreamento")}</h4>
+                  <h4>{traduzir("Rastreamento")}</h4>
                 </div>
                 {emailsDaConversa
                   .slice()
@@ -8216,7 +8218,7 @@ function ConversasPageInner() {
                         style={{ padding: "4px 10px", fontSize: 11, display: "inline-flex", alignItems: "center", gap: 4 }}
                         onClick={() => verificarRastreamento(email)}
                       >
-                        <IconRefresh width={11} height={11} /> Verificar
+                        <IconRefresh width={11} height={11} /> {traduzir("Verificar")}
                       </button>
                     </div>
                   ))}
@@ -8237,20 +8239,20 @@ function ConversasPageInner() {
         >
           <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setMidiasPos)}>
             <div>
-              <p className="n">{t("Mídias e arquivos")}</p>
+              <p className="n">{traduzir("Mídias e arquivos")}</p>
               <p className="s">Trocados com {aberta.nome}</p>
             </div>
             <button
               type="button"
               className="modal-close-btn"
-              aria-label={t("Fechar")}
+              aria-label={traduzir("Fechar")}
               onClick={() => setMidiasAberto(false)}
             >
               <IconClose width={12} height={12} />
             </button>
           </div>
           <p className="hint" style={{ padding: "10px 0" }}>
-            Nenhuma mídia trocada nessa conversa ainda.
+            {traduzir("Nenhuma mídia trocada nessa conversa ainda.")}
           </p>
         </div>
       ) : null}
@@ -8267,12 +8269,12 @@ function ConversasPageInner() {
         >
           <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setDadosGrupoPos)}>
             <div>
-              <p className="n">{t("Dados do grupo")}</p>
+              <p className="n">{traduzir("Dados do grupo")}</p>
             </div>
             <button
               type="button"
               className="modal-close-btn"
-              aria-label={t("Fechar")}
+              aria-label={traduzir("Fechar")}
               onClick={() => setDadosGrupoAberto(false)}
             >
               <IconClose width={12} height={12} />
@@ -8286,7 +8288,7 @@ function ConversasPageInner() {
             {aberta.descricaoGrupo ? (
               <p className="wa-dados-grupo-descricao">{aberta.descricaoGrupo}</p>
             ) : (
-              <p className="wa-dados-grupo-descricao hint">{t("Esse grupo ainda não tem descrição.")}</p>
+              <p className="wa-dados-grupo-descricao hint">{traduzir("Esse grupo ainda não tem descrição.")}</p>
             )}
             {aberta.criacaoGrupo ? (
               <p className="wa-dados-grupo-criado">
@@ -8309,7 +8311,7 @@ function ConversasPageInner() {
             >
               <span>
                 <IconEquipe width={15} height={15} />
-                {t("Participantes")}
+                {traduzir("Participantes")}
               </span>
               <span className="wa-dados-grupo-membros-count">{aberta.participantesGrupo?.length ?? 0} ›</span>
             </button>
@@ -8329,13 +8331,13 @@ function ConversasPageInner() {
         >
           <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setParticipantesPos)}>
             <div>
-              <p className="n">{t("Participantes")}</p>
+              <p className="n">{traduzir("Participantes")}</p>
               <p className="s">{aberta.participantesGrupo?.length ?? 0} pessoas em {aberta.nome}</p>
             </div>
             <button
               type="button"
               className="modal-close-btn"
-              aria-label={t("Fechar")}
+              aria-label={traduzir("Fechar")}
               onClick={() => setParticipantesAberto(false)}
             >
               <IconClose width={12} height={12} />
@@ -8371,7 +8373,7 @@ function ConversasPageInner() {
             </div>
           ) : (
             <p className="hint" style={{ padding: "10px 0" }}>
-              Lista de participantes ainda não disponível.
+              {traduzir("Lista de participantes ainda não disponível.")}
             </p>
           )}
         </div>
@@ -8386,7 +8388,7 @@ function ConversasPageInner() {
             <button
               type="button"
               className="modal-close-btn"
-              aria-label={t("Fechar")}
+              aria-label={traduzir("Fechar")}
               onClick={() => setParticipanteAberto(null)}
             >
               <IconClose width={12} height={12} />
@@ -8461,13 +8463,13 @@ function ConversasPageInner() {
         >
           <div className="wa-email-drag" onMouseDown={iniciarArrasteRespostas}>
             <div>
-              <p className="n">{t("Respostas rápidas")}</p>
+              <p className="n">{traduzir("Respostas rápidas")}</p>
               <p className="s">Só valem pro funil &quot;{funilSelecionado.nome}&quot;</p>
             </div>
             <button
               type="button"
               className="modal-close-btn"
-              aria-label={t("Fechar")}
+              aria-label={traduzir("Fechar")}
               onClick={() => setRespostasGerenciarAberto(false)}
             >
               <IconClose width={12} height={12} />
@@ -8475,14 +8477,14 @@ function ConversasPageInner() {
           </div>
 
           <div className="panel-h" style={{ padding: "0 0 8px" }}>
-            <h4>{t("Nova resposta rápida")}</h4>
+            <h4>{traduzir("Nova resposta rápida")}</h4>
           </div>
           <div className="field" style={{ padding: "0 0 8px" }}>
-            <label>{t("Título")}</label>
+            <label>{traduzir("Título")}</label>
             <input
               className="input"
               style={{ width: "100%" }}
-              placeholder={t("Ex.: Boas-vindas")}
+              placeholder={traduzir("Ex.: Boas-vindas")}
               value={novaRespostaTitulo}
               onChange={(e) => setNovaRespostaTitulo(e.target.value)}
             />
@@ -8492,7 +8494,7 @@ function ConversasPageInner() {
             <textarea
               className="input"
               style={{ width: "100%", minHeight: 60, resize: "vertical" }}
-              placeholder={t("Escreva a mensagem completa…")}
+              placeholder={traduzir("Escreva a mensagem completa…")}
               value={novaRespostaTexto}
               onChange={(e) => setNovaRespostaTexto(e.target.value)}
             />
@@ -8507,11 +8509,11 @@ function ConversasPageInner() {
           </button>
 
           <div className="panel-h" style={{ padding: "14px 0 8px" }}>
-            <h4>{t("Salvas")}</h4>
+            <h4>{traduzir("Salvas")}</h4>
           </div>
           {respostasDoFunil.length === 0 ? (
             <p className="hint" style={{ padding: "0 0 10px" }}>
-              Nenhuma resposta rápida salva pra esse funil ainda.
+              {traduzir("Nenhuma resposta rápida salva pra esse funil ainda.")}
             </p>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingBottom: 4 }}>

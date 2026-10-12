@@ -13,6 +13,7 @@ import { IconGrade, IconLista, IconMaisOpcoes, IconNovaPasta, IconSearch } from 
 import type { PastaSalva } from "@/app/api/automacoes-pastas/route";
 import type { ConexaoSocial } from "@/app/api/social/conexoes/route";
 import type { FluxoAutomacao } from "@/lib/automation-flow/types";
+import { useIdioma } from "@/lib/idioma-context";
 
 type Visao = "lista" | "grade";
 type FiltroStatus = "todos" | "ativo" | "inativo" | "rascunho";
@@ -57,6 +58,7 @@ function gatilhoDoFluxo(fluxo: FluxoAutomacao): string {
  * funil, cria tarefa e chama um atendente igual ao outro, porque é o mesmo código rodando.
  */
 export default function AutomacoesSociaisPage() {
+  const { t: traduzir } = useIdioma();
   const router = useRouter();
   const { fluxos, atualizarFluxo, alternarAtivo, excluirFluxo, duplicarFluxo } = useAutomationFlows();
 
@@ -363,7 +365,7 @@ export default function AutomacoesSociaisPage() {
                                 if (window.confirm(`Excluir "${f.nome}"? Isso não volta.`)) excluirFluxo(f.id);
                               }}
                             >
-                              Excluir
+                              {traduzir("Excluir")}
                             </button>
                           </div>
                         ) : null}

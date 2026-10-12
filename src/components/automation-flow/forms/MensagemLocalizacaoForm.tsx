@@ -2,6 +2,7 @@
 
 import type { MensagemLocalizacaoData, OrigemLocalizacao } from "@/lib/automation-flow/types";
 import { IconLocalizacao } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 // Mocado: localizações salvas do workspace, sem integração real com mapa.
 const LOCALIZACOES_SALVAS = [
@@ -15,6 +16,7 @@ const LOCALIZACAO_WORKSPACE = { nome: "Sede", endereco: "Av. Exemplo, 123", cida
 
 /** Ação "Enviar localização" (item 4). De onde vem a localização enviada ao contato. */
 export function MensagemLocalizacaoForm({ data, onChange }: { data: MensagemLocalizacaoData; onChange: (novo: MensagemLocalizacaoData) => void }) {
+  const { t: traduzir } = useIdioma();
   const salva = LOCALIZACOES_SALVAS.find((l) => l.id === data.localSalvoId);
 
   let preview: { nome: string; endereco?: string; cidadeEstado?: string } | null = null;
@@ -45,7 +47,7 @@ export function MensagemLocalizacaoForm({ data, onChange }: { data: MensagemLoca
         <div className="field">
           <label>Localização salva</label>
           <select className="input" value={data.localSalvoId ?? ""} onChange={(e) => onChange({ ...data, localSalvoId: e.target.value })}>
-            <option value="">Selecione…</option>
+            <option value="">{traduzir("Selecione…")}</option>
             {LOCALIZACOES_SALVAS.map((l) => (
               <option key={l.id} value={l.id}>{l.nome}</option>
             ))}
@@ -87,7 +89,7 @@ export function MensagemLocalizacaoForm({ data, onChange }: { data: MensagemLoca
               <input className="input" style={{ width: "100%" }} value={data.cidade ?? ""} onChange={(e) => onChange({ ...data, cidade: e.target.value })} />
             </div>
             <div style={{ flex: 1 }}>
-              <label>Estado</label>
+              <label>{traduzir("Estado")}</label>
               <input className="input" style={{ width: "100%" }} value={data.estado ?? ""} onChange={(e) => onChange({ ...data, estado: e.target.value })} />
             </div>
           </div>

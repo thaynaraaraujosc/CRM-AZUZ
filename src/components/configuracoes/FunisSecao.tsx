@@ -6,10 +6,12 @@ import { useFunis } from "@/lib/funis-context";
 import type { ColunaFunil } from "@/lib/data";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 import { IconClose } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 /** Funis e etapas (item 24). Reaproveita `useFunis()` de verdade (mesmo dado usado em /funil), com
  * renomear/duplicar/arquivar de funil e reordenar etapas por drag-and-drop. */
 export function FunisSecao() {
+  const { t: traduzir } = useIdioma();
   const { funis, setFunis, excluirFunil } = useFunis();
   const [funilAbertoId, setFunilAbertoId] = useState<string | null>(funis[0]?.id ?? null);
   const [arrastando, setArrastando] = useState<string | null>(null);
@@ -145,7 +147,7 @@ export function FunisSecao() {
                   onChange={(e) => renomearEtapa(funilAberto.id, etapa.id, e.target.value)}
                 />
                 <span className="r">{etapa.cards.length} negócios</span>
-                <button type="button" className="remove-chip" aria-label="Excluir etapa" onClick={() => excluirEtapa(funilAberto.id, etapa.id)}>
+                <button type="button" className="remove-chip" aria-label={traduzir("Excluir etapa")} onClick={() => excluirEtapa(funilAberto.id, etapa.id)}>
                   <IconClose width={13} height={13} />
                 </button>
               </div>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { IconCheck } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 export function Toolbar({
   nome,
@@ -62,6 +63,7 @@ export function Toolbar({
   onModoPassos: (ligado: boolean) => void;
   onAlternarModo: () => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const [editandoNome, setEditandoNome] = useState(false);
 
   return (
@@ -140,7 +142,7 @@ export function Toolbar({
             title="Revisar o fluxo sem risco de mexer em nada sem querer"
             onClick={() => modoConstrucao && onAlternarModo()}
           >
-            Visualizar
+            {traduzir("Visualizar")}
           </button>
         </div>
         <button type="button" className="icon-btn subtle" aria-label="Desfazer" title="Desfazer (Ctrl+Z)" disabled={!podeDesfazer || !modoConstrucao} onClick={onUndo}>

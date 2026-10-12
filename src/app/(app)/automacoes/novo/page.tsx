@@ -11,6 +11,7 @@ import { useFunis } from "@/lib/funis-context";
 import { MODELOS_COMERCIAIS } from "@/lib/automacoes/modelos-comerciais";
 import { QUANDO_ROTULO } from "@/lib/funil/gatilhos-etapa-tipos";
 import { IconAutomacoes, IconDoc, IconSparkle } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Como começar uma automação do funil.
@@ -25,6 +26,7 @@ import { IconAutomacoes, IconDoc, IconSparkle } from "@/components/icons";
  * e a rota de gatilhos recusa um fluxo que ainda não existe.
  */
 export default function NovaAutomacaoComercialPage() {
+  const { t: traduzir } = useIdioma();
   const router = useRouter();
   const { recarregarFluxos } = useAutomationFlows();
   const { funis } = useFunis();
@@ -159,7 +161,7 @@ export default function NovaAutomacaoComercialPage() {
             <div className="social-secao-topo">
               <h3>Escolha o modelo</h3>
               <button type="button" className="btn ghost" onClick={() => setCaminho("escolher")}>
-                Voltar
+                {traduzir("Voltar")}
               </button>
             </div>
             <p className="hint">
@@ -192,7 +194,7 @@ export default function NovaAutomacaoComercialPage() {
             <div className="social-secao-topo">
               <h3>{modelo.nome}</h3>
               <button type="button" className="btn ghost" onClick={() => setModeloId(null)}>
-                Voltar
+                {traduzir("Voltar")}
               </button>
             </div>
             <p className="hint">{modelo.descricao}</p>

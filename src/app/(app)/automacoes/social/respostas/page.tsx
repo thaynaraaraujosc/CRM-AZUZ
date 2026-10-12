@@ -8,6 +8,7 @@ import { Topbar } from "@/components/ui";
 import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
 import { AbasSocial } from "@/components/social/AbasSocial";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
+import { useIdioma } from "@/lib/idioma-context";
 import {
   CATEGORIA_RESPOSTA,
   OPCOES_QUANDO,
@@ -34,6 +35,7 @@ function vazia(): RespostaAutomatica {
  * pro construtor, em vez de mostrar uma versão empobrecida que apagaria o resto ao salvar.
  */
 export default function RespostasAutomaticasPage() {
+  const { t: traduzir } = useIdioma();
   const router = useRouter();
   const { data: sessao } = useSession();
   const { fluxos, criarFluxo, atualizarFluxo, publicarFluxo, alternarAtivo, excluirFluxo } = useAutomationFlows();
@@ -257,7 +259,7 @@ export default function RespostasAutomaticasPage() {
                     <td style={{ textAlign: "right" }}>
                       {resposta ? (
                         <button type="button" className="btn ghost" onClick={() => abrir(fluxo.id)}>
-                          Editar
+                          {traduzir("Editar")}
                         </button>
                       ) : (
                         <button
@@ -281,7 +283,7 @@ export default function RespostasAutomaticasPage() {
                           if (window.confirm(`Excluir "${fluxo.nome}"? Isso não volta.`)) excluirFluxo(fluxo.id);
                         }}
                       >
-                        Excluir
+                        {traduzir("Excluir")}
                       </button>
                     </td>
                   </tr>

@@ -15,7 +15,7 @@ import { useIdioma } from "@/lib/idioma-context";
  * onde quer que ele esteja.
  */
 export function ConexaoQrCode({ aoConectar }: { aoConectar?: () => void }) {
-  const { t } = useIdioma();
+  const { t: traduzir } = useIdioma();
   const naoOficial = useIntegracaoNaoOficial();
   const [aberto, setAberto] = useState(false);
 
@@ -75,7 +75,7 @@ export function ConexaoQrCode({ aoConectar }: { aoConectar?: () => void }) {
           <img src={naoOficial.estado.metadados.qrDataUrl} alt="QR Code de conexão do WhatsApp" width={200} height={200} />
         </div>
         <p className="hint" style={{ margin: 0 }}>
-          {t("Abra o WhatsApp no celular → Aparelhos conectados → Conectar um aparelho.")}
+          {traduzir("Abra o WhatsApp no celular → Aparelhos conectados → Conectar um aparelho.")}
         </p>
       </div>
     );
