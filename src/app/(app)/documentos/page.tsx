@@ -525,7 +525,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
               aria-pressed={aba === a.valor}
               onClick={() => setAba(a.valor)}
             >
-              {a.label}
+              {traduzir(a.label)}
             </button>
           ))}
           {aba === "lixeira" && visiveis.length > 0 ? (
@@ -2691,7 +2691,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       <div className="doc-toolbar doc-toolbar-rich" style={{ display: mostrarToolbar ? undefined : "none" }}>
         <select className="doc-toolbar-select" defaultValue={ESTILOS_PARAGRAFO[0].valor} aria-label={traduzir("Estilo do parágrafo")} onChange={(e) => aplicarFormatacao("formatBlock", e.target.value)}>
           {ESTILOS_PARAGRAFO.map((e) => (
-            <option key={e.valor} value={e.valor}>{e.label}</option>
+            <option key={e.valor} value={e.valor}>{traduzir(e.label)}</option>
           ))}
         </select>
         <SeletorFonte
@@ -2704,7 +2704,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         />
         <select className="doc-toolbar-select" defaultValue={TAMANHOS_FONTE_DOC[1].valor} aria-label={traduzir("Tamanho da fonte")} onChange={(e) => aplicarFormatacao("fontSize", e.target.value)}>
           {TAMANHOS_FONTE_DOC.map((t) => (
-            <option key={t.label} value={t.valor}>{t.label}</option>
+            <option key={traduzir(t.label)} value={t.valor}>{traduzir(t.label)}</option>
           ))}
         </select>
         <span className="doc-toolbar-sep" />
@@ -3075,7 +3075,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                   <label>{traduzir("Estilo do parágrafo")}</label>
                   <select className="input" defaultValue={ESTILOS_PARAGRAFO[0].valor} onChange={(e) => aplicarFormatacao("formatBlock", e.target.value)}>
                     {ESTILOS_PARAGRAFO.map((e) => (
-                      <option key={e.valor} value={e.valor}>{e.label}</option>
+                      <option key={e.valor} value={e.valor}>{traduzir(e.label)}</option>
                     ))}
                   </select>
                 </div>
@@ -3087,7 +3087,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                   <label>{traduzir("Tamanho")}</label>
                   <select className="input" defaultValue={TAMANHOS_FONTE_DOC[1].valor} onChange={(e) => aplicarFormatacao("fontSize", e.target.value)}>
                     {TAMANHOS_FONTE_DOC.map((t) => (
-                      <option key={t.label} value={t.valor}>{t.label}</option>
+                      <option key={traduzir(t.label)} value={t.valor}>{traduzir(t.label)}</option>
                     ))}
                   </select>
                 </div>

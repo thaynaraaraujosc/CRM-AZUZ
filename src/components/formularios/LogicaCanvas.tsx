@@ -80,7 +80,7 @@ function CondicaoNode({ data }: NodeProps<CondicaoRFNode>) {
         <select className="input" value={regra.operador} onChange={(e) => onMudar({ operador: e.target.value as OperadorLogica })}>
           {OPERADORES_LOGICA.map((o) => (
             <option key={o.operador} value={o.operador}>
-              {o.label}
+              {traduzir(o.label)}
             </option>
           ))}
         </select>

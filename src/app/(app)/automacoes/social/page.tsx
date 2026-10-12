@@ -183,7 +183,7 @@ export default function AutomacoesSociaisPage() {
               <option value="todos">{traduzir("Gatilho: todos")}</option>
               {GATILHOS_SOCIAIS.map((g) => (
                 <option key={g.tipo} value={g.tipo}>
-                  {g.label}
+                  {traduzir(g.label)}
                 </option>
               ))}
             </select>

@@ -47,7 +47,7 @@ export function AbasAutomacoes() {
             className={`tab${ativa ? " active" : ""}`}
             aria-current={ativa ? "page" : undefined}
           >
-            {aba.label}
+            {traduzir(aba.label)}
           </Link>
         );
       })}

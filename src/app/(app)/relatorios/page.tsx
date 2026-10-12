@@ -86,7 +86,7 @@ function RelatoriosPageInner() {
                 <p className="n" style={{ fontFamily: "var(--display)", fontWeight: 700, marginTop: 6 }}>
                   {t.nome}
                 </p>
-                <p className="hint" style={{ marginBottom: 10 }}>{t.descricao}</p>
+                <p className="hint" style={{ marginBottom: 10 }}>{traduzir(t.descricao)}</p>
                 <div className="report-type-actions">
                   <button type="button" className="btn ghost" onClick={() => abrirWizard(t.tipo)}>
                     {traduzir("Configurar")}

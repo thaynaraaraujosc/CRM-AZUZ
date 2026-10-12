@@ -885,7 +885,7 @@ function PainelPagina({
                 >
                   {OPERADORES_LOGICA.map((o) => (
                     <option key={o.operador} value={o.operador}>
-                      {o.label}
+                      {traduzir(o.label)}
                     </option>
                   ))}
                 </select>
@@ -1215,7 +1215,7 @@ function PainelCampo({
                 <option value="">{traduzir("Campo novo (não mapeado)")}</option>
                 {CAMPOS_CRM_MAPEAVEIS.map((c) => (
                   <option key={c.campo} value={c.campo}>
-                    {c.label}
+                    {traduzir(c.label)}
                   </option>
                 ))}
               </select>

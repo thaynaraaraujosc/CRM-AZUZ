@@ -35,7 +35,7 @@ export function CategoriasNav({
           : grupo.categorias;
         if (categoriasFiltradas.length === 0) return null;
         return (
-          <div className="config-nav-grupo" key={grupo.titulo}>
+          <div className="config-nav-grupo" key={traduzir(grupo.titulo)}>
             <p className="config-nav-grupo-h">{traduzir(grupo.titulo)}</p>
             {categoriasFiltradas.map((cat) => (
               <button

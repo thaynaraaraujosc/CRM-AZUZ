@@ -415,7 +415,7 @@ function ContatosPageInner() {
             <select className="input" value={ordem} onChange={(e) => setOrdem(e.target.value as OrdemContatos)}>
               {ORDENS.map((o) => (
                 <option key={o.valor} value={o.valor}>
-                  {o.label}
+                  {traduzir(o.label)}
                 </option>
               ))}
             </select>

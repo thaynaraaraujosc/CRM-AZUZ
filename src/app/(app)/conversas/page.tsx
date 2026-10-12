@@ -3973,7 +3973,7 @@ function ConversasPageInner() {
                   setFiltroAberto(false);
                 }}
               >
-                <span className="n">{f.label}</span>
+                <span className="n">{traduzir(f.label)}</span>
               </button>
             ))}
             <button
@@ -4008,7 +4008,7 @@ function ConversasPageInner() {
                   }}
                 >
                   <span className="n">
-                    {canal.label}
+                    {traduzir(canal.label)}
                     {canal.emBreve ? " · em breve" : quantidade > 0 ? ` (${quantidade})` : ""}
                   </span>
                 </button>
@@ -6164,7 +6164,7 @@ function ConversasPageInner() {
                           >
                             {SONS_DISPONIVEIS.map((s) => (
                               <option key={s.id} value={s.id}>
-                                {s.label}
+                                {traduzir(s.label)}
                               </option>
                             ))}
                           </select>
@@ -7201,13 +7201,13 @@ function ConversasPageInner() {
           >
             <div className="chat-emoji-picker">
               {EMOJI_CATEGORIAS.map((cat) => (
-                <div key={cat.titulo}>
+                <div key={traduzir(cat.titulo)}>
                   <p className="chat-emoji-categoria">{traduzir(cat.titulo)}</p>
                   <div className="chat-emoji-grid">
                     {cat.emojis.map((emoji, i) => (
                       <button
                         type="button"
-                        key={`${cat.titulo}-${i}`}
+                        key={`${traduzir(cat.titulo)}-${i}`}
                         className="chat-emoji-opcao"
                         onClick={() => inserirEmoji(emoji)}
                       >

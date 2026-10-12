@@ -219,7 +219,7 @@ export function NovaAutomacao({
                 onChange={(e) => setQuando(e.target.value as QuandoGatilho)}
               >
                 {CATEGORIAS_GATILHO.map((categoria) => (
-                  <optgroup key={categoria.titulo} label={categoria.titulo}>
+                  <optgroup key={traduzir(categoria.titulo)} label={traduzir(categoria.titulo)}>
                     {categoria.quandos.map((q) => (
                       <option key={q} value={q}>
                         {QUANDO_ROTULO[q]}

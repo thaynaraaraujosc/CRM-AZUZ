@@ -400,7 +400,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
                     setVerQuem(false);
                   }}
                 >
-                  {m.label}
+                  {traduzir(m.label)}
                 </button>
               ))}
             </div>
@@ -614,7 +614,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
                       >
                         {ORIGENS_DO_CONTATO.map((o) => (
                           <option key={o.origem} value={o.origem}>
-                            {o.label} do contato
+                            {traduzir(o.label)} do contato
                           </option>
                         ))}
                         <option value="texto">{traduzir("Texto fixo")}</option>

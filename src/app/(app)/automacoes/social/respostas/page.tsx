@@ -144,7 +144,7 @@ export default function RespostasAutomaticasPage() {
               >
                 {OPCOES_QUANDO.map((o) => (
                   <option key={o.valor} value={o.valor}>
-                    {o.label}
+                    {traduzir(o.label)}
                   </option>
                 ))}
               </select>

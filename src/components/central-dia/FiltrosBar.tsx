@@ -62,7 +62,7 @@ export function FiltrosBar() {
               className={filtros.periodo === p.valor ? "on" : ""}
               onClick={() => setFiltros({ periodo: p.valor })}
             >
-              {p.label}
+              {traduzir(p.label)}
             </button>
           ))}
         </div>
