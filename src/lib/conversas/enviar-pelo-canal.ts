@@ -29,8 +29,11 @@ export async function enviarTextoPeloCanal(params: {
    *
    * É por ele que o webhook de status acha a bolha depois pra dizer "entregue", "lido" ou
    * "FALHOU". Sem guardar, a mensagem ficava com o tique de enviada pra sempre mesmo quando a Meta
-   * avisava minutos depois que a entrega falhou. Nulo no QR Code e no Instagram, que não têm id
-   * equivalente.
+   * avisava minutos depois que a entrega falhou. Nulo no QR Code, que não tem id equivalente.
+   *
+   * No Instagram ele existe e é o MESMO id que volta no eco do webhook — é o que faz a mensagem
+   * enviada pelo CRM não entrar de novo como se fosse uma segunda. Eu tinha anotado aqui que o
+   * Instagram não tinha id; tinha, e era só não estar sendo lido.
    */
   wamid?: string | null;
 }> {
@@ -65,14 +68,23 @@ export async function enviarTextoPeloCanal(params: {
         };
       }
       try {
-        await enviarDirectInstagram(decriptar(integracao.accessTokenCriptografado), conversa.contato, texto);
+        // O id DEVOLVIDO PELO ENVIO, que antes era jogado fora.
+        //
+        // Guardá-lo é o que impede a mensagem de aparecer duas vezes: tudo que a conta envia volta
+        // como eco de webhook, com este mesmo id. Sem ele, a linha gravada aqui ficava com um id
+        // próprio, o eco não casava com nada e entrava como uma segunda mensagem.
+        const mid = await enviarDirectInstagram(
+          decriptar(integracao.accessTokenCriptografado),
+          conversa.contato,
+          texto,
+        );
+        return { enviado: true, wamid: mid ?? null };
       } catch (erro) {
         // A frase crua da Meta ("The requested user cannot be found") sugere que a pessoa sumiu do
         // Instagram, o que não tem nada a ver com o que aconteceu. Ver `erro-instagram.ts`.
         const cru = erro instanceof Error ? erro.message : "Falha ao enviar pelo Direct.";
         return { enviado: false, motivo: explicarErroDoInstagram(cru) };
       }
-      return { enviado: true };
     }
 
     // WhatsApp: a conversa pertence à conexão por onde ela veio (ver `contaCanal`). QR Code e API
