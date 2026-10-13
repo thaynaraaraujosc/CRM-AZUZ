@@ -137,19 +137,32 @@ export function estimarMinutosAtras(raw: string): number {
  * A comparação é por dia de CALENDÁRIO, não por blocos de 24 horas: às 00:30 de terça, uma
  * mensagem das 23:50 de segunda é "Ontem", mesmo com quarenta minutos de diferença.
  */
-export function rotuloDeConversa(data: Date, agora: Date = new Date()): string {
+/**
+ * `traduzir` e `locale` entram por parâmetro porque esta é uma função PURA, não um componente: ela
+ * não pode chamar o hook do idioma. Sem eles a função continua respondendo em português, que é o
+ * padrão — nenhuma tela quebra por não passar.
+ *
+ * O `locale` importa tanto quanto a tradução: "14/10" e "10/14" são a mesma data escrita ao
+ * contrário, e quem lê em inglês entende a errada.
+ */
+export function rotuloDeConversa(
+  data: Date,
+  agora: Date = new Date(),
+  traduzir: (texto: string) => string = (t) => t,
+  locale = "pt-BR",
+): string {
   if (Number.isNaN(data.getTime())) return "-";
 
   const inicioDoDia = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
   const dias = Math.round((inicioDoDia(agora) - inicioDoDia(data)) / 86_400_000);
 
   // Futuro (relógio do servidor à frente do navegador) conta como hoje, em vez de virar "-1 dias".
-  if (dias <= 0) return data.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-  if (dias === 1) return "Ontem";
+  if (dias <= 0) return data.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
+  if (dias === 1) return traduzir("Ontem");
 
   const mesmoAno = data.getFullYear() === agora.getFullYear();
   return data.toLocaleDateString(
-    "pt-BR",
+    locale,
     mesmoAno ? { day: "2-digit", month: "2-digit" } : { day: "2-digit", month: "2-digit", year: "2-digit" },
   );
 }

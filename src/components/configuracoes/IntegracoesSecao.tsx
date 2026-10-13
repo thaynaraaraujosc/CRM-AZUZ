@@ -66,7 +66,7 @@ function LinhaReal({
           <p className="int-sub">{sub}</p>
         </div>
         <span className={`int-status ${conectado ? "connected" : "off"}`}>
-          {conectado ? "Conectado" : traduzir("Não conectado")}
+          {conectado ? traduzir("Conectado") : traduzir("Não conectado")}
         </span>
         {painel ? (
           <button
@@ -74,11 +74,11 @@ function LinhaReal({
             className={`btn ${conectado || aberto ? "ghost" : "primary"}`}
             onClick={() => setAberto((v) => !v)}
           >
-            {aberto ? "Fechar" : conectado ? "Gerenciar" : "Conectar"}
+            {aberto ? traduzir("Fechar") : conectado ? traduzir("Gerenciar") : traduzir("Conectar")}
           </button>
         ) : (
           <Link href={href ?? "#"} className={`btn ${conectado ? "ghost" : "primary"}`}>
-            {conectado ? "Gerenciar" : "Conectar"}
+            {conectado ? traduzir("Gerenciar") : traduzir("Conectar")}
           </Link>
         )}
       </div>
@@ -141,9 +141,10 @@ export function IntegracoesSecao() {
 
       {numeroRepetido ? (
         <p className="int-aviso-conflito">
-          As duas conexões de WhatsApp estão no MESMO número ({numeroOficial}). Elas disputam a
-          mesma sessão e uma vai derrubar a outra. Deixe a API oficial neste número e desconecte o
-          QR Code, ou escaneie o QR Code com outro aparelho e outro número.
+          {traduzir(
+            "As duas conexões de WhatsApp estão no MESMO número ({numero}). Elas disputam a mesma sessão e uma vai derrubar a outra. Deixe a API oficial neste número e desconecte o QR Code, ou escaneie o QR Code com outro aparelho e outro número.",
+            { numero: numeroOficial ?? "" },
+          )}
         </p>
       ) : null}
 
@@ -156,9 +157,9 @@ export function IntegracoesSecao() {
             sub={
               oficialLigada
                 ? numeroOficial
-                  ? `Número conectado: ${numeroOficial}`
-                  : "Meta Business conectado"
-                : "Conecte via Meta Business Manager"
+                  ? traduzir("Número conectado: {numero}", { numero: numeroOficial })
+                  : traduzir("Meta Business conectado")
+                : traduzir("Conecte via Meta Business Manager")
             }
             conectado={oficialLigada}
             painel={<ConexaoWhatsAppOficial />}
@@ -168,8 +169,10 @@ export function IntegracoesSecao() {
             titulo={traduzir("WhatsApp via QR Code")}
             sub={
               qrCodeLigada
-                ? `Número conectado${numeroQrCode ? `: ${numeroQrCode}` : ""}`
-                : "Escaneia o QR Code, sem precisar de aprovação da Meta"
+                ? numeroQrCode
+                  ? traduzir("Número conectado: {numero}", { numero: numeroQrCode })
+                  : traduzir("Número conectado")
+                : traduzir("Escaneia o QR Code, sem precisar de aprovação da Meta")
             }
             conectado={qrCodeLigada}
             painel={
@@ -193,7 +196,7 @@ export function IntegracoesSecao() {
           <LinhaReal
             icone={<IconInstagram width={20} height={20} />}
             titulo={traduzir("Instagram Direct")}
-            sub={instagram.integracao?.status === "conectado" ? "Conta conectada" : "Conecte via Meta Business Manager"}
+            sub={instagram.integracao?.status === "conectado" ? traduzir("Conta conectada") : traduzir("Conecte via Meta Business Manager")}
             conectado={instagram.integracao?.status === "conectado"}
             painel={<ConexaoInstagram />}
           />
@@ -210,8 +213,8 @@ export function IntegracoesSecao() {
               titulo={traduzir("Google Ads")}
               sub={
                 statusGoogle.status === "conectado"
-                  ? "Lê suas campanhas e devolve as vendas fechadas pro Google"
-                  : "Conecte pra ver essa origem no Tráfego e devolver as vendas"
+                  ? traduzir("Lê suas campanhas e devolve as vendas fechadas pro Google")
+                  : traduzir("Conecte pra ver essa origem no Tráfego e devolver as vendas")
               }
               conectado={statusGoogle.status === "conectado"}
               painel={<ConexaoGoogleAds />}
@@ -245,7 +248,7 @@ export function IntegracoesSecao() {
         <div className="filters-row mb14">
           {CATEGORIAS.map((c) => (
             <button type="button" key={c} className={`fchip${categoriaFiltro === c ? " active" : ""}`} onClick={() => setCategoriaFiltro(c)}>
-              {c}
+              {traduzir(c)}
             </button>
           ))}
         </div>
@@ -253,10 +256,10 @@ export function IntegracoesSecao() {
           {appsFiltrados.map((a) => (
             <div className="config-canal-card" key={a.nome}>
               <div className="config-canal-card-h">
-                <span className="n">{a.nome}</span>
+                <span className="n">{traduzir(a.nome)}</span>
                 <span className="int-status off">{traduzir("Em breve")}</span>
               </div>
-              <p className="r">{a.descricao}</p>
+              <p className="r">{traduzir(a.descricao)}</p>
               <div className="config-canal-card-acoes">
                 <button type="button" className="btn ghost" disabled>
                   {traduzir("Em breve")}

@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { ConexaoManualWhatsApp } from "./ConexaoManualWhatsApp";
 import { EmbeddedSignupWhatsApp } from "./EmbeddedSignupWhatsApp";
 import { useIntegracaoMeta } from "./useIntegracaoMeta";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Fluxo de conexão da API oficial (Meta), isolado do resto da tela de Configurações. Mesmo motivo
@@ -26,6 +27,7 @@ import { useIntegracaoMeta } from "./useIntegracaoMeta";
  * some da tela do cliente e continua à mão pra dar suporte.
  */
 export function ConexaoWhatsAppOficial() {
+  const { t: traduzir } = useIdioma();
   const { data: sessao } = useSession();
   const { integracao, desconectando, desconectar, recarregar } = useIntegracaoMeta("meta_whatsapp");
   const conectada = integracao?.status === "conectado";
@@ -34,10 +36,11 @@ export function ConexaoWhatsAppOficial() {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
         <p className="int-sub" style={{ margin: 0 }}>
-          Conectado
           {(integracao?.metadados?.numeroExibicao as string | undefined)
-            ? `: ${integracao?.metadados?.numeroExibicao as string}`
-            : ""}
+            ? traduzir("Conectado: {numero}", {
+                numero: integracao?.metadados?.numeroExibicao as string,
+              })
+            : traduzir("Conectado")}
         </p>
         <button
           type="button"
@@ -45,7 +48,7 @@ export function ConexaoWhatsAppOficial() {
           onClick={() => void desconectar()}
           disabled={desconectando}
         >
-          {desconectando ? "Desconectando…" : "Desconectar"}
+          {desconectando ? traduzir("Desconectando…") : traduzir("Desconectar")}
         </button>
       </div>
     );

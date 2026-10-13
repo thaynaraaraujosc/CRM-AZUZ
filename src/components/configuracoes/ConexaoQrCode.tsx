@@ -33,7 +33,7 @@ export function ConexaoQrCode({ aoConectar }: { aoConectar?: () => void }) {
           onClick={() => void naoOficial.desconectar()}
           disabled={naoOficial.desconectando}
         >
-          {naoOficial.desconectando ? "Desconectando…" : "Desconectar"}
+          {naoOficial.desconectando ? traduzir("Desconectando…") : traduzir("Desconectar")}
         </button>
       </div>
     );
@@ -51,7 +51,7 @@ export function ConexaoQrCode({ aoConectar }: { aoConectar?: () => void }) {
         }}
         disabled={naoOficial.conectando}
       >
-        {naoOficial.conectando ? "Gerando QR Code…" : "Gerar QR Code"}
+        {naoOficial.conectando ? traduzir("Gerando QR Code…") : traduzir("Gerar QR Code")}
       </button>
     );
   }
@@ -83,7 +83,7 @@ export function ConexaoQrCode({ aoConectar }: { aoConectar?: () => void }) {
 
   return (
     <p className="hint" style={{ margin: 0 }}>
-      {naoOficial.conectando ? "Gerando QR Code…" : "Aguardando o QR Code…"}
+      {naoOficial.conectando ? traduzir("Gerando QR Code…") : traduzir("Aguardando o QR Code…")}
     </p>
   );
 }
