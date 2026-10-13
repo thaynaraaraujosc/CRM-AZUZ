@@ -128,7 +128,7 @@ export function EmbeddedSignupWhatsApp({
       setErro(
         telaAbandonadaRef.current
           ? `A conexão não foi concluída. Você parou na etapa "${telaAbandonadaRef.current}". Pode tentar de novo de onde parou.`
-          : "A conexão não foi concluída. Os dados da conta não chegaram. Tente de novo.",
+          : traduzir("A conexão não foi concluída. Os dados da conta não chegaram. Tente de novo."),
       );
       return;
     }
@@ -142,7 +142,7 @@ export function EmbeddedSignupWhatsApp({
         body: JSON.stringify({ code, ...info }),
       });
       const dados = (await resposta.json()) as { erro?: string; pin?: string | null };
-      if (!resposta.ok) throw new Error(dados.erro ?? "Falha ao concluir a conexão.");
+      if (!resposta.ok) throw new Error(dados.erro ?? traduzir("Falha ao concluir a conexão."));
       if (dados.pin) setPin(dados.pin);
       aoConectar?.();
     } catch (e) {
@@ -223,8 +223,10 @@ export function EmbeddedSignupWhatsApp({
           );
           setErro(
             telaAbandonadaRef.current
-              ? `Você saiu na etapa "${telaAbandonadaRef.current}". A conexão não foi concluída.`
-              : "A autorização foi cancelada.",
+              ? traduzir('Você saiu na etapa "{etapa}". A conexão não foi concluída.', {
+                  etapa: telaAbandonadaRef.current,
+                })
+              : traduzir("A autorização foi cancelada."),
           );
           return;
         }
@@ -273,7 +275,7 @@ export function EmbeddedSignupWhatsApp({
   return (
     <div style={{ marginTop: 10 }}>
       <button type="button" className="btn primary" onClick={abrirSignup} disabled={!sdkPronto || conectando}>
-        {conectando ? "Conectando…" : sdkPronto ? "Conectar com a API oficial (Meta)" : "Carregando…"}
+        {conectando ? traduzir("Conectando…") : sdkPronto ? traduzir("Conectar com a API oficial (Meta)") : traduzir("Carregando…")}
       </button>
       {erro ? (
         <p className="hint" style={{ color: "var(--danger)", marginTop: 8 }}>

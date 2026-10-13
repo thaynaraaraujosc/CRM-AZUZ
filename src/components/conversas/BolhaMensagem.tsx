@@ -7,6 +7,7 @@ import { AudioBubblePlayer } from "@/components/audio-player";
 import { IconDoc, IconImage, IconLocalizacao, IconVideoCam } from "@/components/icons";
 import { StatusMensagemIcone } from "./StatusMensagem";
 import { corDoAutor } from "@/lib/conversas/cor-do-autor";
+import { traduzirRotuloDoSistema } from "@/lib/conversas/rotulos-do-sistema";
 import { useIdioma } from "@/lib/idioma-context";
 
 /**
@@ -58,12 +59,16 @@ export function BolhaMensagem({
   const liberada = (tipo: "imagem" | "video" | "documento") =>
     midiaLiberada ? midiaLiberada(tipo, msg.id, msg.imagens?.[0]?.url ?? msg.video?.url) : true;
 
-  const texto = renderizarTexto ? renderizarTexto(msg.texto) : msg.texto;
+  // O texto pode ser o que a PESSOA escreveu (sai como veio, sempre) ou uma frase que o próprio
+  // CRM gravou no lugar de um anexo ("[Imagem]", "Você foi marcado em um story"). Só a segunda
+  // passa pelo dicionário. Ver `rotulos-do-sistema.ts`.
+  const textoCru = traduzirRotuloDoSistema(msg.texto, traduzir);
+  const texto = renderizarTexto ? renderizarTexto(textoCru) : textoCru;
 
   if (msg.tipo === "system") {
     return (
       <div className="bubble sistema" data-msg-chave={chaveDom}>
-        {msg.texto}
+        {textoCru}
       </div>
     );
   }
@@ -122,7 +127,7 @@ export function BolhaMensagem({
       <span className="wa-citacao-corpo">
         <span className="wa-citacao-autor">{msg.respondendoA.autor}</span>
         <span className="wa-citacao-texto">
-          {msg.respondendoA.texto || msg.respondendoA.tipoConteudo || "Mídia"}
+          {msg.respondendoA.texto || traduzir(msg.respondendoA.tipoConteudo ?? "Mídia")}
         </span>
       </span>
     </span>
@@ -132,7 +137,7 @@ export function BolhaMensagem({
   const topoDoShare =
     msg.tipoConteudo || msg.compartilhadoPor ? (
       <span className="bubble-share-topo">
-        {msg.tipoConteudo ? <em className="bubble-tipo-conteudo">{msg.tipoConteudo}</em> : null}
+        {msg.tipoConteudo ? <em className="bubble-tipo-conteudo">{traduzir(msg.tipoConteudo)}</em> : null}
         {msg.compartilhadoPor ?? null}
       </span>
     ) : null;

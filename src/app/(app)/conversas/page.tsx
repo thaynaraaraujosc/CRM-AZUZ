@@ -30,6 +30,7 @@ import {
 import { iniciaisExibidas, nomeExibido } from "@/lib/conversas/exibicao";
 import { BotoesConectarWhatsApp } from "@/components/configuracoes/BotoesConectarWhatsApp";
 import { BolhaMensagem } from "@/components/conversas/BolhaMensagem";
+import { traduzirRotuloDoSistema } from "@/lib/conversas/rotulos-do-sistema";
 import { LimiteDeErro } from "@/components/limite-de-erro";
 import { StatusMensagemIcone } from "@/components/conversas/StatusMensagem";
 import { EnviarTemplateWhatsApp } from "@/components/conversas/EnviarTemplateWhatsApp";
@@ -286,7 +287,11 @@ function renderizarTextoComLinks(texto: string, traduzir: (s: string) => string)
  * Mensagem sem `criadoEm` (as de exemplo antigas) devolve `null`: melhor nenhum separador do que
  * um separador com a data errada.
  */
-function rotuloDoDia(criadoEm: number | undefined): string | null {
+function rotuloDoDia(
+  criadoEm: number | undefined,
+  traduzir: (texto: string) => string,
+  locale: string,
+): string | null {
   if (!criadoEm) return null;
   const data = new Date(criadoEm);
   const hoje = new Date();
@@ -296,8 +301,8 @@ function rotuloDoDia(criadoEm: number | undefined): string | null {
   const mesmoDia = (a: Date, b: Date) =>
     a.getDate() === b.getDate() && a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear();
 
-  if (mesmoDia(data, hoje)) return "Hoje";
-  if (mesmoDia(data, ontem)) return "Ontem";
+  if (mesmoDia(data, hoje)) return traduzir("Hoje");
+  if (mesmoDia(data, ontem)) return traduzir("Ontem");
   return data.toLocaleDateString("pt-BR", {
     day: "2-digit",
     month: "long",
@@ -727,11 +732,13 @@ function ConversasPageInner() {
   const filtroAtivo = mostrarArquivadas || filtroConversa !== "tudo" || canalAba !== "todos";
   const resumoDoFiltro = [
     mostrarArquivadas
-      ? "Arquivadas"
+      ? traduzir("Arquivadas")
       : filtroConversa !== "tudo"
-        ? FILTROS_CONVERSA.find((f) => f.valor === filtroConversa)?.label
+        ? traduzir(FILTROS_CONVERSA.find((f) => f.valor === filtroConversa)?.label ?? "")
         : null,
-    canalAba !== "todos" ? CANAIS_CONVERSA.find((c) => c.valor === canalAba)?.label : null,
+    canalAba !== "todos"
+      ? traduzir(CANAIS_CONVERSA.find((c) => c.valor === canalAba)?.label ?? "")
+      : null,
   ]
     .filter(Boolean)
     .join(" · ");
@@ -3820,7 +3827,7 @@ function ConversasPageInner() {
                 setAtendenteTopAberto((v) => !v);
               }}
             >
-              Atendente: {atendenteTopFiltro} ▾
+              {traduzir("Atendente: {quem}", { quem: traduzir(atendenteTopFiltro) })} ▾
             </button>
             <FloatingDropdown
               anchorRect={atendenteTopAberto ? atendenteTopRect : null}
@@ -3862,7 +3869,7 @@ function ConversasPageInner() {
                 setCanalTopAberto((v) => !v);
               }}
             >
-              Canal: {canalTopFiltro} ▾
+              {traduzir("Canal: {canal}", { canal: traduzir(canalTopFiltro) })} ▾
             </button>
             <FloatingDropdown
               anchorRect={canalTopAberto ? canalTopRect : null}
@@ -4077,9 +4084,12 @@ function ConversasPageInner() {
               ) : ultimaExtra?.contatoCompartilhado ? (
                 <IconContatos width={12} height={12} />
               ) : null;
-              const previaTexto =
-                ultimaExtra?.texto ||
-                (ultimaExtra?.legenda ?? (iconeTipo ? "Anexo" : "Sem mensagens ainda"));
+              // Mesma regra da bolha: o que a pessoa escreveu sai como veio; só a frase que o
+              // próprio CRM gravou no lugar de um anexo passa pelo dicionário.
+              const previaTexto = ultimaExtra?.texto
+                ? traduzirRotuloDoSistema(ultimaExtra.texto, traduzir)
+                : (ultimaExtra?.legenda ??
+                  (iconeTipo ? traduzir("Anexo") : traduzir("Sem mensagens ainda")));
               return (
                 // Mesma barreira da bolha, agora por conversa: uma linha com dado estranho não pode
                 // apagar a lista inteira e deixar a tela sem por onde começar.
@@ -4141,14 +4151,14 @@ function ConversasPageInner() {
                         por isso que conversa de hoje aparecia com hora de ontem. Sem mensagem
                         gravada ainda, a data do registro é o melhor que existe. */}
                     <span className="ctime">
-                      {rotuloDeConversa(new Date(c.ultimaMensagemEm ?? c.atualizadoEm))}
+                      {rotuloDeConversa(new Date(c.ultimaMensagemEm ?? c.atualizadoEm), new Date(), traduzir, localeNumero)}
                     </span>
                   </span>
                   <span className="cmsg">
                     <span className="cmsg-texto">
                       {ultimaExtra?.tipo === "out" ? (
                         <>
-                          Você:{" "}
+                          {traduzir("Você:")}{" "}
                           <StatusMensagemIcone status={ultimaExtra.status} />{" "}
                         </>
                       ) : (
@@ -4164,7 +4174,7 @@ function ConversasPageInner() {
                   </span>
                   <span className="cr3">
                     <span className="tag">
-                      {encerradas.has(c.id) ? "Finalizado" : c.status}
+                      {encerradas.has(c.id) ? traduzir("Finalizado") : traduzir(c.status)}
                     </span>
                     {/* Por qual conexão esta conversa fala. Só aparece quando as DUAS estão em uso
                         na lista: com uma só, a etiqueta repetiria a mesma coisa em toda linha. */}
@@ -4177,11 +4187,11 @@ function ConversasPageInner() {
                       </span>
                     ) : null}
                     <span className={`tag ${classeOrigem(c.origem as Parameters<typeof classeOrigem>[0])}`}>
-                      {c.origem}
+                      {traduzir(c.origem)}
                     </span>
                     {!c.ehGrupo && etapaAtualDoContato(c.nome) ? (
                       <span className="tag wa-etapa-funil-tag" title={traduzir("Etapa atual no funil")}>
-                        {etapaAtualDoContato(c.nome)}
+                        {traduzir(etapaAtualDoContato(c.nome)!)}
                       </span>
                     ) : null}
                   </span>
@@ -4211,7 +4221,7 @@ function ConversasPageInner() {
                         onClick={() => alternarFixada(c.id)}
                       >
                         <span className="n">
-                          {fixadas.has(c.id) ? "Desafixar conversa" : "Fixar conversa"}
+                          {fixadas.has(c.id) ? traduzir("Desafixar conversa") : traduzir("Fixar conversa")}
                         </span>
                       </button>
                       <button
@@ -4484,8 +4494,8 @@ function ConversasPageInner() {
               // Separador de dia entre as bolhas. Sem ele a conversa é um rolo contínuo e não dá
               // pra saber onde termina um dia e começa o outro, que é justamente o que se procura
               // ao reler um atendimento.
-              const diaDesta = rotuloDoDia(msg.criadoEm);
-              const diaDaAnterior = iRelativo > 0 ? rotuloDoDia(arr[iRelativo - 1].criadoEm) : null;
+              const diaDesta = rotuloDoDia(msg.criadoEm, traduzir, localeNumero);
+              const diaDaAnterior = iRelativo > 0 ? rotuloDoDia(arr[iRelativo - 1].criadoEm, traduzir, localeNumero) : null;
               const mudouDeDia = Boolean(diaDesta) && diaDesta !== diaDaAnterior;
 
               return (
@@ -5720,9 +5730,9 @@ function ConversasPageInner() {
                 <div className="wa-config-tabs" role="tablist" aria-label={traduzir("Categorias de configuração")}>
                   {(
                     [
-                      { id: "aparencia", label: "Aparência" },
-                      { id: "privacidade", label: "Privacidade" },
-                      { id: "notificacoes", label: "Notificações" },
+                      { id: "aparencia", label: traduzir("Aparência") },
+                      { id: "privacidade", label: traduzir("Privacidade") },
+                      { id: "notificacoes", label: traduzir("Notificações") },
                       { id: "preferencias", label: traduzir("Preferências")},
                     ] as const
                   ).map((t) => (
@@ -5843,7 +5853,7 @@ function ConversasPageInner() {
                               </span>
                               <span className="wa-fundo-rotulo">{traduzir("Imagem")}</span>
                               <span className="wa-fundo-sub">
-                                {fundoAtual.tipo === "imagem" ? "Trocar imagem" : "Do computador"}
+                                {fundoAtual.tipo === "imagem" ? traduzir("Trocar imagem") : traduzir("Do computador")}
                               </span>
                               {fundoAtual.tipo === "imagem" ? (
                                 <span className="wa-fundo-check">
@@ -5861,7 +5871,7 @@ function ConversasPageInner() {
                               <span className="wa-fundo-amostra" style={{ background: corEscolhida }} />
                               <span className="wa-fundo-rotulo">{traduzir("Cor sólida")}</span>
                               <span className="wa-fundo-sub">
-                                {fundoAtual.tipo === "cor" ? corEscolhida.toUpperCase() : "Escolher cor"}
+                                {fundoAtual.tipo === "cor" ? corEscolhida.toUpperCase() : traduzir("Escolher cor")}
                               </span>
                               {fundoAtual.tipo === "cor" ? (
                                 <span className="wa-fundo-check">
@@ -5909,7 +5919,7 @@ function ConversasPageInner() {
                       {erroFundoImagem ? <p className="wa-campo-erro">{erroFundoImagem}</p> : null}
 
                       <label className="hint" style={{ display: "block", marginTop: 10 }}>
-                        Intensidade do fundo · {configRascunho.fundoOpacidade}%
+                        {traduzir("Intensidade do fundo · {n}%", { n: configRascunho.fundoOpacidade })}
                         <input
                           type="range"
                           min={20}
@@ -5952,7 +5962,7 @@ function ConversasPageInner() {
                                 setConfigRascunho((prev) => ({ ...prev, tamanhoFonte: op.valor }))
                               }
                             >
-                              {op.label}
+                              {traduzir(op.label)}
                             </button>
                           ))}
                         </div>
@@ -5974,7 +5984,7 @@ function ConversasPageInner() {
                                 setConfigRascunho((prev) => ({ ...prev, densidadeMensagens: op.valor }))
                               }
                             >
-                              {op.label}
+                              {traduzir(op.label)}
                             </button>
                           ))}
                         </div>
@@ -6013,7 +6023,7 @@ function ConversasPageInner() {
                             />
                             <span className="body">
                               <span className="n" style={{ display: "block" }}>
-                                {op.label}
+                                {traduzir(op.label)}
                               </span>
                             </span>
                           </button>
@@ -6048,11 +6058,11 @@ function ConversasPageInner() {
                         ] as const
                       ).map((item) => (
                         <div className="toggle-row" key={item.chave}>
-                          <span className="tl">{item.label}</span>
+                          <span className="tl">{traduzir(item.label)}</span>
                           <Toggle
                             key={`${item.chave}-${configRascunho[item.chave]}`}
                             defaultOn={configRascunho[item.chave]}
-                            label={item.label}
+                            label={traduzir(item.label)}
                             onToggle={(v) =>
                               setConfigRascunho((prev) => ({ ...prev, [item.chave]: v }))
                             }
@@ -6100,8 +6110,8 @@ function ConversasPageInner() {
                       ).map((item) => (
                         <div className="wa-config-notif-item" key={item.chave}>
                           <span className="wa-config-notif-textos">
-                            <span className="wa-config-notif-titulo">{item.label}</span>
-                            <span className="wa-config-notif-desc">{item.desc}</span>
+                            <span className="wa-config-notif-titulo">{traduzir(item.label)}</span>
+                            <span className="wa-config-notif-desc">{traduzir(item.desc)}</span>
                           </span>
                           <Toggle
                             key={`${item.chave}-${configRascunho[item.chave]}`}
@@ -6349,7 +6359,7 @@ function ConversasPageInner() {
                       ) : configStatusSalvar === "erro" ? (
                         "Tentar novamente"
                       ) : (
-                        "Salvar alterações"
+                        traduzir("Salvar alterações")
                       )}
                     </button>
                   </div>
@@ -6737,11 +6747,11 @@ function ConversasPageInner() {
                         ] as const
                       ).map((campo) => (
                         <div className="toggle-row" key={campo.chave}>
-                          <span className="tl">{campo.label}</span>
+                          <span className="tl">{traduzir(campo.label)}</span>
                           <Toggle
                             key={`${campo.chave}-${previaCampos[campo.chave]}`}
                             defaultOn={previaCampos[campo.chave]}
-                            label={campo.label}
+                            label={traduzir(campo.label)}
                             onToggle={(v) =>
                               setPreviaCampos((prev) => ({ ...prev, [campo.chave]: v }))
                             }
@@ -7270,7 +7280,7 @@ function ConversasPageInner() {
                   <span className="wa-resumo-valor">{aberta.origem}</span>
                   <span className="wa-resumo-label">{traduzir("Última interação")}</span>
                   <span className="wa-resumo-valor">
-                    {rotuloDeConversa(new Date(aberta.ultimaMensagemEm ?? aberta.atualizadoEm))}
+                    {rotuloDeConversa(new Date(aberta.ultimaMensagemEm ?? aberta.atualizadoEm), new Date(), traduzir, localeNumero)}
                   </span>
                   <span className="wa-resumo-label">{traduzir("Situação")}</span>
                   <span className="wa-resumo-valor">{aberta.status}</span>

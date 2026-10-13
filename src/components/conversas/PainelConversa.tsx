@@ -47,7 +47,7 @@ export function PainelConversa({
   etapaAtual?: string;
   aoFechar: () => void;
 }) {
-  const { t: traduzir } = useIdioma();
+  const { t: traduzir, localeNumero } = useIdioma();
   const { mensagensExtraPorContato, setMensagensExtraPorContato } = useMensagensExtra();
   const { contatos, salvarDadosContato } = useContatos();
 
@@ -332,8 +332,8 @@ export function PainelConversa({
               mensagens.map((msg, i) => {
                 // Mesmo separador de dia da tela de Conversas. Sem ele o histórico é um rolo
                 // contínuo e não dá pra saber onde termina um dia e começa o outro.
-                const dia = rotuloDoDia(msg.criadoEm);
-                const diaAnterior = i > 0 ? rotuloDoDia(mensagens[i - 1].criadoEm) : null;
+                const dia = rotuloDoDia(msg.criadoEm, traduzir, localeNumero);
+                const diaAnterior = i > 0 ? rotuloDoDia(mensagens[i - 1].criadoEm, traduzir, localeNumero) : null;
                 return (
                   <Fragment key={msg.id ?? i}>
                     {dia && dia !== diaAnterior ? <span className="wa-separador-dia">{dia}</span> : null}
@@ -695,7 +695,11 @@ function adicionarBolhaOtimista(
 
 /** "Hoje", "Ontem" ou a data por extenso. O separador de dia da conversa. Mora aqui e na tela de
  * Conversas; quando o painel substituir aquela tela, sobra só esta cópia. */
-function rotuloDoDia(criadoEm: number | undefined): string | null {
+function rotuloDoDia(
+  criadoEm: number | undefined,
+  traduzir: (texto: string) => string,
+  locale: string,
+): string | null {
   if (!criadoEm) return null;
   const data = new Date(criadoEm);
   const hoje = new Date();
@@ -703,9 +707,9 @@ function rotuloDoDia(criadoEm: number | undefined): string | null {
   ontem.setDate(hoje.getDate() - 1);
   const mesmoDia = (a: Date, b: Date) =>
     a.getDate() === b.getDate() && a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear();
-  if (mesmoDia(data, hoje)) return "Hoje";
-  if (mesmoDia(data, ontem)) return "Ontem";
-  return data.toLocaleDateString("pt-BR", {
+  if (mesmoDia(data, hoje)) return traduzir("Hoje");
+  if (mesmoDia(data, ontem)) return traduzir("Ontem");
+  return data.toLocaleDateString(locale, {
     day: "2-digit",
     month: "long",
     year: data.getFullYear() === hoje.getFullYear() ? undefined : "numeric",

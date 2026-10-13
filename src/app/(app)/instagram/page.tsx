@@ -55,7 +55,7 @@ function Avatar({ nome, fotoUrl, tamanho = 38 }: { nome: string; fotoUrl: string
  * entre saber que a mensagem não vai sair antes de escrevê-la e descobrir depois.
  */
 export default function InstagramConversasPage() {
-  const { t: traduzir } = useIdioma();
+  const { t: traduzir, localeNumero } = useIdioma();
   const [conversas, setConversas] = useState<ConversaInstagram[] | null>(null);
   const [aberta, setAberta] = useState<string | null>(null);
   // A resposta viaja com o nome da conversa: assim "carregando" é derivado (o que tenho não é da
@@ -244,7 +244,7 @@ export default function InstagramConversasPage() {
         body: JSON.stringify({ conversa: aberta, texto }),
       });
       const dados = (await r.json()) as { erro?: string };
-      if (!r.ok) throw new Error(dados.erro ?? "Não deu pra enviar.");
+      if (!r.ok) throw new Error(dados.erro ?? traduzir("Não deu pra enviar."));
       setTexto("");
       // Pelo mesmo caminho do polling: uma busca crua aqui deixaria o ETag guardado velho, e a
       // batida seguinte pediria a conversa inteira de novo sem precisar.
@@ -336,7 +336,9 @@ export default function InstagramConversasPage() {
                   <p className="hint ig-janela-fechada">{traduzir("A janela de 24 horas fechou. O Instagram só deixa responder quem escreveu nas últimas 24 horas, e não existe modelo aprovado como no WhatsApp oficial.")}</p>
                 ) : (
                   <p className="hint">
-                    Dá pra responder até {new Date(atual.janelaFechaEm ?? "").toLocaleString("pt-BR")}.
+                    {traduzir("Dá pra responder até {quando}.", {
+                      quando: new Date(atual.janelaFechaEm ?? "").toLocaleString(localeNumero),
+                    })}
                   </p>
                 )}
                 <div className="ig-escrever-linha">
