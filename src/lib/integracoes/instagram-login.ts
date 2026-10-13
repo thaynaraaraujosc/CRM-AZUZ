@@ -31,13 +31,28 @@ export const ESCOPOS_INSTAGRAM_LOGIN = [
   "instagram_business_basic",
   "instagram_business_manage_messages",
   "instagram_business_manage_comments",
-  // Métricas do painel Social (alcance, contas que interagiram, interações, visitas ao perfil, ver
-  // `instagram-metricas.ts`). Esta lista é o que o Instagram desenha na tela de autorização: uma
-  // permissão que não está aqui NUNCA aparece pra pessoa aceitar, e portanto nunca entra no token.
-  // O painel pedia métricas com um token que não tinha direito a elas, e o bloco do Instagram só
-  // podia vir vazio. Também é o que a análise da Meta exige ver sendo concedido em tela.
-  "instagram_business_manage_insights",
 ];
+
+/*
+ * `instagram_business_manage_insights` SAIU DAQUI, e sair foi a escolha certa pelo motivo oposto ao
+ * que me fez acrescentá-la.
+ *
+ * Esta lista é exatamente o que o Instagram desenha na tela de autorização, e foi por isso que ela
+ * entrou: uma permissão que não é pedida aqui nunca aparece pra ninguém aceitar, e a análise da
+ * Meta precisa VER a permissão sendo concedida em tela. O raciocínio continua certo.
+ *
+ * O que mudou é o outro lado: a permissão de métricas não está no pedido de análise. Pedir no
+ * diálogo algo que não está sendo analisado mostra ao analista uma permissão fora do escopo da
+ * revisão, e a Meta descarta o escopo não aprovado — ou recusa a autorização inteira — justamente
+ * no meio do teste que ela mesma pediu pra gravar. O risco cai sobre as TRÊS permissões que
+ * importam agora.
+ *
+ * Consequência aceita: o painel de métricas do Social fica sem número. Ele não quebra — as métricas
+ * que o token não cobre caem em `recusadas`, com o motivo na tela (ver `instagram-metricas.ts`).
+ *
+ * Pra voltar: acrescente a permissão a esta lista NO MESMO commit em que ela entrar no pedido de
+ * análise. As duas coisas andam juntas; separá-las foi o que criou este problema.
+ */
 
 export function urlAutorizacao(redirectUri: string, state: string): string {
   const dialogo = new URL("https://www.instagram.com/oauth/authorize");
