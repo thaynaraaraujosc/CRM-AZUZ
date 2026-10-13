@@ -51,7 +51,26 @@ function diaDe(data: Date): string {
  *
  * `senhaHash` chega pronta: gerar hash é lento e não pertence a uma transação de banco aberta.
  */
-export async function semearDemo(cliente: PrismaClient, senhaHash: string, agora = new Date()): Promise<void> {
+export async function semearDemo(
+  cliente: PrismaClient,
+  senhaHash: string,
+  agora = new Date(),
+  /**
+   * O CENÁRIO FICTÍCIO NÃO ENTRA MAIS POR PADRÃO.
+   *
+   * A demonstração nascia com 18 contatos, as conversas deles, os cards de funil e as tarefas. A
+   * intenção era boa — produto vazio não demonstra nada — e o custo apareceu depois: esta conta
+   * virou a conta de ANÁLISE da Meta, e dado inventado mostrado como se fosse real é exatamente o
+   * que eles recusam. Fora isso, apagar tudo à mão antes de cada gravação é trabalho que ninguém
+   * lembra de fazer, e esquecer não dá erro nenhum: dá um vídeo reprovado.
+   *
+   * O padrão passa a ser conta ZERADA, igual à de qualquer cliente novo: o workspace, o acesso, o
+   * funil com as etapas e as conexões, sem nenhum contato ou conversa. Quem quiser o cenário cheio
+   * pra uma apresentação comercial pede explicitamente.
+   */
+  opcoes: { comExemplos?: boolean } = {},
+): Promise<void> {
+  const comExemplos = opcoes.comExemplos === true;
   await cliente.$transaction(
     async (tx) => {
       // Limpeza. Cada `deleteMany` é amarrado ao workspace da demonstração; nenhum roda solto.
@@ -154,133 +173,136 @@ export async function semearDemo(cliente: PrismaClient, senhaHash: string, agora
         await tx.funilEtapa.create({ data: { id, funilId, workspaceId: WORKSPACE_DEMO, titulo, ordem } });
       }
 
-      // Contatos, conversas, mensagens e cards de funil.
-      for (const [indice, contato] of CONTATOS_DEMO.entries()) {
-        const contatoId = `demo-contato-${indice}`;
-        const whatsapp = telefoneDemo(indice);
+      // Contatos, conversas, mensagens, cards e tarefas: só entram com `comExemplos`.
+      if (comExemplos) {
+        // Contatos, conversas, mensagens e cards de funil.
+        for (const [indice, contato] of CONTATOS_DEMO.entries()) {
+          const contatoId = `demo-contato-${indice}`;
+          const whatsapp = telefoneDemo(indice);
 
-        await tx.contato.create({
-          data: {
-            id: contatoId,
-            workspaceId: WORKSPACE_DEMO,
-            initials: iniciais(contato.nome),
-            nome: contato.nome,
-            origem: contato.origem,
-            etapa: contato.etapa,
-            responsavel: contato.responsavel,
-            ultima: contato.ultima,
-            valor: contato.valor,
-            email: contato.email,
-            whatsapp,
-            cidade: contato.cidade,
-            estado: "SP",
-            pais: "Brasil",
-            canalPreferido: contato.canal,
-          },
-        });
-
-        await tx.conversa.create({
-          data: {
-            id: `demo-conversa-${indice}`,
-            workspaceId: WORKSPACE_DEMO,
-            contatoId,
-            nome: contato.nome,
-            initials: iniciais(contato.nome),
-            canal: contato.canal,
-            contato: contato.canal === "WhatsApp" ? whatsapp : `@${contato.nome.split(" ")[0].toLowerCase()}`,
-            origem: contato.origem,
-            status: "Respondido",
-            // Sem a marca da conexão dona, o filtro da caixa de entrada não reivindica a conversa
-            // e ela fica gravada e invisível.
-            contaCanal: contaDoCanal(contato.canal),
-          },
-        });
-
-        const mensagens = CONVERSAS_DEMO[contato.nome] ?? [];
-        for (const [i, mensagem] of mensagens.entries()) {
-          const quando = new Date(agora.getTime() - mensagem.minutosAtras * 60_000);
-          await tx.mensagemExtra.create({
+          await tx.contato.create({
             data: {
-              id: `demo-msg-${indice}-${i}`,
+              id: contatoId,
               workspaceId: WORKSPACE_DEMO,
-              contato: contato.nome,
-              tipo: mensagem.de === "cliente" ? "in" : "out",
-              texto: mensagem.texto,
-              hora: horaDe(quando),
-              criadoEm: quando,
-              canal: contato.canal,
-              contaCanal: contaDoCanal(contato.canal),
-              status: mensagem.de === "empresa" ? "lida" : null,
+              initials: iniciais(contato.nome),
+              nome: contato.nome,
+              origem: contato.origem,
+              etapa: contato.etapa,
+              responsavel: contato.responsavel,
+              ultima: contato.ultima,
+              valor: contato.valor,
+              email: contato.email,
+              whatsapp,
+              cidade: contato.cidade,
+              estado: "SP",
+              pais: "Brasil",
+              canalPreferido: contato.canal,
             },
           });
+
+          await tx.conversa.create({
+            data: {
+              id: `demo-conversa-${indice}`,
+              workspaceId: WORKSPACE_DEMO,
+              contatoId,
+              nome: contato.nome,
+              initials: iniciais(contato.nome),
+              canal: contato.canal,
+              contato: contato.canal === "WhatsApp" ? whatsapp : `@${contato.nome.split(" ")[0].toLowerCase()}`,
+              origem: contato.origem,
+              status: "Respondido",
+              // Sem a marca da conexão dona, o filtro da caixa de entrada não reivindica a conversa
+              // e ela fica gravada e invisível.
+              contaCanal: contaDoCanal(contato.canal),
+            },
+          });
+
+          const mensagens = CONVERSAS_DEMO[contato.nome] ?? [];
+          for (const [i, mensagem] of mensagens.entries()) {
+            const quando = new Date(agora.getTime() - mensagem.minutosAtras * 60_000);
+            await tx.mensagemExtra.create({
+              data: {
+                id: `demo-msg-${indice}-${i}`,
+                workspaceId: WORKSPACE_DEMO,
+                contato: contato.nome,
+                tipo: mensagem.de === "cliente" ? "in" : "out",
+                texto: mensagem.texto,
+                hora: horaDe(quando),
+                criadoEm: quando,
+                canal: contato.canal,
+                contaCanal: contaDoCanal(contato.canal),
+                status: mensagem.de === "empresa" ? "lida" : null,
+              },
+            });
+          }
+
+          const etapaId = etapaIdPorTitulo.get(contato.etapa);
+          if (etapaId) {
+            await tx.negocioCard.create({
+              data: {
+                id: `demo-card-${indice}`,
+                etapaId,
+                ordem: indice,
+                workspaceId: WORKSPACE_DEMO,
+                nome: contato.nome,
+                valor: contato.valor,
+                origem: contato.origem,
+                dias: String((indice % 9) + 1),
+                data: diaDe(new Date(agora.getTime() - ((indice % 9) + 1) * 86_400_000)),
+                responsavel: contato.responsavel,
+              },
+            });
+          }
         }
 
-        const etapaId = etapaIdPorTitulo.get(contato.etapa);
-        if (etapaId) {
+        // Negócios já encerrados, que alimentam Motivos de perda e Performance. Ficam na última
+        // etapa porque já saíram do fluxo; o que importa deles é `statusFechamento`.
+        const etapaFinal = etapaIdPorTitulo.get(ETAPAS_DEMO[ETAPAS_DEMO.length - 1])!;
+        for (const [i, fechado] of FECHADOS_DEMO.entries()) {
           await tx.negocioCard.create({
             data: {
-              id: `demo-card-${indice}`,
-              etapaId,
-              ordem: indice,
+              id: `demo-fechado-${i}`,
+              etapaId: etapaFinal,
+              ordem: 100 + i,
               workspaceId: WORKSPACE_DEMO,
-              nome: contato.nome,
-              valor: contato.valor,
-              origem: contato.origem,
-              dias: String((indice % 9) + 1),
-              data: diaDe(new Date(agora.getTime() - ((indice % 9) + 1) * 86_400_000)),
-              responsavel: contato.responsavel,
+              nome: fechado.nome,
+              valor: fechado.valor,
+              origem: "Instagram",
+              dias: "0",
+              data: diaDe(new Date(agora.getTime() - (i + 2) * 86_400_000)),
+              responsavel: "Paula Mendes",
+              statusFechamento: fechado.status,
+              motivoPerda: fechado.motivo,
+              dataFechamento: new Date(agora.getTime() - (i + 2) * 86_400_000),
             },
           });
         }
-      }
 
-      // Negócios já encerrados, que alimentam Motivos de perda e Performance. Ficam na última
-      // etapa porque já saíram do fluxo; o que importa deles é `statusFechamento`.
-      const etapaFinal = etapaIdPorTitulo.get(ETAPAS_DEMO[ETAPAS_DEMO.length - 1])!;
-      for (const [i, fechado] of FECHADOS_DEMO.entries()) {
-        await tx.negocioCard.create({
-          data: {
-            id: `demo-fechado-${i}`,
-            etapaId: etapaFinal,
-            ordem: 100 + i,
-            workspaceId: WORKSPACE_DEMO,
-            nome: fechado.nome,
-            valor: fechado.valor,
-            origem: "Instagram",
-            dias: "0",
-            data: diaDe(new Date(agora.getTime() - (i + 2) * 86_400_000)),
-            responsavel: "Paula Mendes",
-            statusFechamento: fechado.status,
-            motivoPerda: fechado.motivo,
-            dataFechamento: new Date(agora.getTime() - (i + 2) * 86_400_000),
-          },
+        // Tarefas.
+        const etapaTarefaId = `demo-tarefa-etapa`;
+        await tx.tarefaEtapa.create({
+          data: { id: etapaTarefaId, workspaceId: WORKSPACE_DEMO, titulo: "A fazer", ordem: 0 },
         });
-      }
-
-      // Tarefas.
-      const etapaTarefaId = `demo-tarefa-etapa`;
-      await tx.tarefaEtapa.create({
-        data: { id: etapaTarefaId, workspaceId: WORKSPACE_DEMO, titulo: "A fazer", ordem: 0 },
-      });
-      for (const [i, tarefa] of TAREFAS_DEMO.entries()) {
-        const vencimento = new Date(agora.getTime() + tarefa.diasAteOVencimento * 86_400_000);
-        await tx.tarefaCard.create({
-          data: {
-            id: `demo-tarefa-${i}`,
-            etapaId: etapaTarefaId,
-            ordem: i,
-            workspaceId: WORKSPACE_DEMO,
-            titulo: tarefa.titulo,
-            contato: tarefa.contato,
-            data: diaDe(vencimento),
-            atrasada: tarefa.diasAteOVencimento < 0 && !tarefa.concluida,
-            responsavelNome: tarefa.responsavel,
-            responsavelInitials: iniciais(tarefa.responsavel),
-            concluida: tarefa.concluida,
-            urgencia: tarefa.urgencia,
-            descricao: tarefa.descricao,
-          },
-        });
+        for (const [i, tarefa] of TAREFAS_DEMO.entries()) {
+          const vencimento = new Date(agora.getTime() + tarefa.diasAteOVencimento * 86_400_000);
+          await tx.tarefaCard.create({
+            data: {
+              id: `demo-tarefa-${i}`,
+              etapaId: etapaTarefaId,
+              ordem: i,
+              workspaceId: WORKSPACE_DEMO,
+              titulo: tarefa.titulo,
+              contato: tarefa.contato,
+              data: diaDe(vencimento),
+              atrasada: tarefa.diasAteOVencimento < 0 && !tarefa.concluida,
+              responsavelNome: tarefa.responsavel,
+              responsavelInitials: iniciais(tarefa.responsavel),
+              concluida: tarefa.concluida,
+              urgencia: tarefa.urgencia,
+              descricao: tarefa.descricao,
+            },
+          });
+        }
       }
     },
     // Semear é muito `create` em sequência. O padrão do Prisma (5s) estoura e a transação volta

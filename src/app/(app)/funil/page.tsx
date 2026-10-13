@@ -541,10 +541,17 @@ function FunilPageInner() {
                 um comando que se aperta toda hora. Numa barra onde moram "Novo funil" e "Criar
                 etapa", eles disputavam espaço com o que a pessoa realmente veio fazer. */}
             {/* A limpeza do cenário fictício, NO FUNIL e não só em Configurações.
-                É aqui que se vê o problema — dezoito cards de gente que não existe — e era em
+                É aqui que se vê o problema — cards de gente que não existe — e era em
                 Configurações → WhatsApp que estava o conserto. O componente se esconde sozinho
-                fora da conta de demonstração, então nenhum cliente real vê este botão. */}
-            <LimparDemonstracao compacto aoLimpar={() => void recarregarFunis()} />
+                fora da conta de demonstração, então nenhum cliente real vê este botão.
+
+                RECARREGA A PÁGINA INTEIRA em vez de só reler os funis, e isso não é exagero: a
+                gravação do funil é debouncada em 500ms (ver `funis-context`). Uma alteração feita
+                pouco antes do clique deixa um `setTimeout` pendente com o estado ANTIGO, que
+                dispara depois da limpeza e manda de volta o funil com os cards que acabaram de ser
+                apagados. O PUT reconcilia, então eles voltam — com os mesmos ids. Recarregar mata
+                o timer junto com a página. */}
+            <LimparDemonstracao compacto aoLimpar={() => window.location.reload()} />
             {/* Só existe enquanto houver o que juntar, e some sozinho depois. Botão de manutenção
                 permanente dentro do produto é conta que o cliente paga. */}
             {cardsDuplicados > 0 ? (
