@@ -122,6 +122,9 @@ export async function POST(request: Request) {
     workspaceId,
     contatoNome: conversa,
     texto: texto.trim(),
+    // O id da Meta vira o id da linha: é por ele que o eco do webhook reconhece que esta mensagem
+    // já está gravada, em vez de inserir uma cópia.
+    wamid: enviado.wamid,
     origem: "manual",
   });
 

@@ -32,6 +32,7 @@ import {
   buscarPerfilDeQuemMandou,
   buscarPerfilNasConversas,
 } from "@/lib/integracoes/instagram-login";
+import { criteriosDeEcoDoCrm } from "@/lib/social/eco-do-direct";
 
 /**
  * GET: handshake de verificação que a Meta faz uma vez, ao cadastrar a URL do webhook no painel
@@ -514,6 +515,44 @@ export async function POST(request: Request) {
 
       const jaExiste = await prisma.mensagemExtra.findUnique({ where: { id: mensagem.mid } });
       if (jaExiste) continue;
+
+      /*
+       * MENSAGEM DUPLICADA: a que o CRM mandou voltava como se fosse uma segunda.
+       *
+       * Tudo que a conta conectada envia volta pra cá como ECO, inclusive o que saiu DAQUI. O eco
+       * traz o `mid` da Meta; a linha que o CRM gravou no envio tem id próprio. Ids diferentes, a
+       * conferência acima não casa, e a mesma frase entrava duas vezes. Mandar "ola" mostrava
+       * "ola" duas vezes — foi assim que o defeito apareceu.
+       *
+       * O eco NÃO pode ser simplesmente ignorado: é por ele que chega o que foi respondido pelo
+       * aplicativo do Instagram, fora do CRM. Sem isso o histórico ficaria pela metade.
+       *
+       * Então a trava é estreita: só casa com uma saída que o PRÓPRIO CRM acabou de gravar (mesma
+       * conversa, mesmo texto, minutos atrás) e que ainda não foi reconhecida por nenhum eco. Ao
+       * casar, o `mid` é gravado naquela linha — o que faz dela "já reconhecida" e garante que dois
+       * envios iguais seguidos consumam um eco cada, em vez de os dois caírem na mesma linha.
+       */
+      const criterios = criteriosDeEcoDoCrm({
+        ehEco,
+        texto: mensagem.text,
+        workspaceId: integracaoDaConta.workspaceId,
+        contato: chaveContato,
+      });
+      if (criterios) {
+        const nossa = await prisma.mensagemExtra.findFirst({
+          where: criterios,
+          orderBy: { criadoEm: "asc" },
+          select: { id: true },
+        });
+        if (nossa) {
+          // Marcar com o `mid` é o que torna esta linha "já reconhecida": o próximo eco de um texto
+          // igual procura outra, em vez de casar com esta de novo.
+          await prisma.mensagemExtra
+            .update({ where: { id: nossa.id }, data: { wamid: mensagem.mid } })
+            .catch(() => {});
+          continue;
+        }
+      }
 
       // O Direct CRIA CONTATO e NÃO cria card no funil.
       //
