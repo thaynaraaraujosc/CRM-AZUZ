@@ -2375,4 +2375,16 @@ export const TRADUCOES_EN: Record<string, string> = {
   "Alinhar {n} com Conversas": "Align {n} with Conversations",
   "Fechar filtro": "Close filter",
   "Reordenando…": "Reordering…",
+
+  // ---- Períodos e subtítulos com contagem ----
+  "Este mês": "This month",
+  "Mês passado": "Last month",
+  "{filtradas} de {total} negociações": "{filtradas} of {total} deals",
+  "{n} negócio encontrado": "{n} deal found",
+  "{n} negócio no funil": "{n} deal in the pipeline",
+  "{n} negócios encontrados": "{n} deals found",
+  "{n} negócios no funil": "{n} deals in the pipeline",
+  "{n} pessoas · controle de acesso por papel": "{n} people · role-based access control",
+  "Últimos 15 dias": "Last 15 days",
+  "Últimos 7 dias": "Last 7 days",
 };

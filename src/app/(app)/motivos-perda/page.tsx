@@ -130,7 +130,7 @@ export default function MotivosPerdaPage() {
           <KpiCard
             label={traduzir("Valor perdido")}
             value={valorPerdido.label}
-            sub={`${perdasFiltradas.length} de ${totalPerdas} negociações`}
+            sub={traduzir("{filtradas} de {total} negociações", { filtradas: perdasFiltradas.length, total: totalPerdas })}
             formula={valorPerdido.formula}
           />
           <KpiCard label={traduzir("Quantidade perdida")} value={String(perdasFiltradas.length)} />
