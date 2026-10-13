@@ -443,7 +443,9 @@ type HistoricoItem = {
 function historicoInicialDoContato(
   listaFunis: Funil[],
   contato: { id: string; nome: string },
-  primeiraMensagemHora?: string,
+  primeiraMensagemHora: string | undefined,
+  // Função pura, fora do componente: não pode chamar o hook do idioma.
+  traduzir: (texto: string, valores?: Record<string, string | number>) => string,
 ): HistoricoItem[] {
   const localizacao = localizarNoFunil(listaFunis, contato.nome);
   const itens: HistoricoItem[] = [];
@@ -452,7 +454,9 @@ function historicoInicialDoContato(
   itens.push({
     id: `hist-inicio-${contato.id}`,
     tipo: "sistema",
-    texto: `Primeira conversa registrada${primeiraHora ? ` · ${primeiraHora}` : ""}`,
+    texto: primeiraHora
+      ? traduzir("Primeira conversa registrada · {quando}", { quando: primeiraHora })
+      : traduzir("Primeira conversa registrada"),
     quando: primeiraHora ?? "",
   });
 
@@ -464,9 +468,18 @@ function historicoInicialDoContato(
     itens.push({
       id: `hist-etapa-${contato.id}`,
       tipo: "sistema",
-      texto: `Entrou na etapa "${localizacao.etapa}" do funil ${funil?.nome ?? ""}${
-        card ? ` · há ${card.dias}` : ""
-      }`,
+      // Nome da etapa e nome do funil são do CLIENTE: entram como estão, sem passar pelo
+      // dicionário. O que traduz é a frase em volta.
+      texto: card
+        ? traduzir('Entrou na etapa "{etapa}" do funil {funil} · há {dias}', {
+            etapa: localizacao.etapa,
+            funil: funil?.nome ?? "",
+            dias: card.dias,
+          })
+        : traduzir('Entrou na etapa "{etapa}" do funil {funil}', {
+            etapa: localizacao.etapa,
+            funil: funil?.nome ?? "",
+          }),
       quando: card?.data ?? "",
     });
 
@@ -474,7 +487,9 @@ function historicoInicialDoContato(
       itens.push({
         id: `hist-fechou-${contato.id}`,
         tipo: "sistema",
-        texto: `Fechou negócio${card ? ` · valor ${card.valor}` : ""}`,
+        texto: card
+          ? traduzir("Fechou negócio · valor {valor}", { valor: card.valor })
+          : traduzir("Fechou negócio"),
         quando: card?.data ?? "",
       });
     }
@@ -482,7 +497,7 @@ function historicoInicialDoContato(
     itens.push({
       id: `hist-sem-funil-${contato.id}`,
       tipo: "sistema",
-      texto: "Ainda não entrou em nenhum funil",
+      texto: traduzir("Ainda não entrou em nenhum funil"),
       quando: "",
     });
   }
@@ -1824,7 +1839,7 @@ function ConversasPageInner() {
       } else if (!viaBaileys) {
         adicionarMensagem({
           tipo: "system",
-          texto: "⚠️ Envio de áudio pela API oficial (Meta) ainda não é suportado. Só pelo WhatsApp via QR Code.",
+          texto: `⚠️ ${traduzir("Envio de áudio pela API oficial (Meta) ainda não é suportado. Só pelo WhatsApp via QR Code.")}`,
           hora: horaAgora(),
         });
       }
@@ -1886,6 +1901,7 @@ function ConversasPageInner() {
         funis,
         aberta,
         mensagensExtraPorContato[aberta.nome]?.[0]?.hora,
+        traduzir,
       ),
     }));
   }
@@ -1947,7 +1963,12 @@ function ConversasPageInner() {
       ...prev,
       [aberta.nome]: [
         ...(prev[aberta.nome] ??
-          historicoInicialDoContato(funis, aberta, mensagensExtraPorContato[aberta.nome]?.[0]?.hora)),
+          historicoInicialDoContato(
+            funis,
+            aberta,
+            mensagensExtraPorContato[aberta.nome]?.[0]?.hora,
+            traduzir,
+          )),
         { id: `hist-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, tipo, texto, quando: "agora" },
       ],
     }));
@@ -2244,7 +2265,7 @@ function ConversasPageInner() {
       // parecia "sumir": ficava só no estado local, sem nenhum aviso de que não tinha pra onde ir.
       adicionarMensagem({
         tipo: "system",
-        texto: "⚠️ Não enviado: essa conversa não tem um canal de envio associado.",
+        texto: `⚠️ ${traduzir("Não enviado: essa conversa não tem um canal de envio associado.")}`,
         hora: horaAgora(),
       });
     }
@@ -2945,7 +2966,7 @@ function ConversasPageInner() {
         if (!destinatario) {
           adicionarMensagem({
             tipo: "system",
-            texto: "⚠️ Não enviado: essa conversa não tem um número de WhatsApp associado.",
+            texto: `⚠️ ${traduzir("Não enviado: essa conversa não tem um número de WhatsApp associado.")}`,
             hora: horaAgora(),
           });
           continue;
@@ -3058,7 +3079,7 @@ function ConversasPageInner() {
   function enviarLocalizacao(lat: number, lng: number, endereco?: string) {
     adicionarMensagem({
       tipo: "out",
-      texto: "📍 Localização enviada",
+      texto: `📍 ${traduzir("Localização enviada")}`,
       hora: horaAgora(),
       localizacao: { lat, lng, endereco },
     });
@@ -3856,7 +3877,7 @@ function ConversasPageInner() {
                     setAtendenteTopAberto(false);
                   }}
                 >
-                  <span className="n">{nome}</span>
+                  <span className="n">{traduzir(nome)}</span>
                 </button>
               ))}
             </FloatingDropdown>
@@ -3898,7 +3919,7 @@ function ConversasPageInner() {
                     setCanalTopAberto(false);
                   }}
                 >
-                  <span className="n">{origem}</span>
+                  <span className="n">{traduzir(origem)}</span>
                 </button>
               ))}
             </FloatingDropdown>

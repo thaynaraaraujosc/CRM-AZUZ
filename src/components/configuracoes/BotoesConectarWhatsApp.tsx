@@ -37,11 +37,13 @@ export function BotoesConectarWhatsApp() {
             <div className="modal-cabecalho">
               <div>
                 <p className="int-title" style={{ margin: 0 }}>
-                  {aberto === "qrcode" ? "Conectar por QR Code" : "Conectar pela API oficial (Meta)"}
+                  {aberto === "qrcode" ? traduzir("Conectar por QR Code") : traduzir("Conectar pela API oficial (Meta)")}
                 </p>
                 <p className="hint" style={{ margin: "6px 0 0" }}>
                   {aberto === "qrcode"
-                    ? "Escaneia como o WhatsApp Web. Não passa pela verificação de negócio da Meta, e o número corre risco de ser banido por violar os termos de uso do WhatsApp."
+                    ? traduzir(
+                        "Escaneia como o WhatsApp Web. Não passa pela verificação de negócio da Meta, e o número corre risco de ser banido por violar os termos de uso do WhatsApp.",
+                      )
                     : traduzir("Canal oficial da Meta. Mantém o número em conformidade e não corre risco de banimento.")}
                 </p>
               </div>

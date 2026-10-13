@@ -1107,8 +1107,44 @@ table {
   color: var(--text);
 }
 
+/* `--brand` NÃO EXISTE nesta folha, e nunca existiu: a regra apontava pro vazio, então a letra do
+   idioma ativo ficava branca sobre o fundo claro do seletor — invisível. Quem abria o CRM não tinha
+   como saber em que idioma estava. Agora ela usa o marinho da marca, que é o token de verdade. */
 .seletor-idioma button.ativo {
-  background: var(--brand);
+  background: var(--navy-marca);
+  color: #fff;
+}
+
+/* No tema escuro o marinho É a superfície: a pastilha ativa sumiria dentro do próprio seletor.
+   Lá o acento é o dourado, e o texto por cima dele é o marinho (2,3:1 de branco sobre dourado
+   reprovaria). */
+:root[data-theme="dark"] .seletor-idioma button.ativo {
+  background: var(--acao);
+  color: #002037;
+}
+
+/* A landing tem paleta própria (`--lp-*`) e é sempre escura, então ela não herda nem o tema claro
+   nem o escuro do sistema: sem regra aqui, o seletor aparecia como uma caixa branca cravada na
+   barra escura do topo. */
+.lp-root .seletor-idioma {
+  border-color: var(--lp-line-forte);
+  background: var(--lp-superficie);
+}
+
+.lp-root .seletor-idioma button {
+  color: var(--lp-muted);
+}
+
+.lp-root .seletor-idioma button + button {
+  border-left-color: var(--lp-line-forte);
+}
+
+.lp-root .seletor-idioma button:hover {
+  color: var(--lp-ink);
+}
+
+.lp-root .seletor-idioma button.ativo {
+  background: var(--lp-oceano);
   color: #fff;
 }
 
@@ -1640,18 +1676,12 @@ table {
   color: var(--ink);
 }
 
-/* Chave PT/EN das telas de FORA do app (entrar, criar conta, recuperar senha, convite).
-   O cabeçalho que tem o seletor só existe depois de entrar, e quem chega sem conhecer o CRM vê
-   justamente estas telas primeiro: cliente novo, pessoa convidada, analista de loja de aplicativos.
-   Sem a chave aqui, a primeira tela do produto abria em português sem nenhum jeito visível de
-   trocar, e só depois de digitar a senha é que aparecia a opção. Fica no canto, fora do cartão,
-   porque é controle da página, não um campo do formulário. */
-.auth-idioma {
-  position: absolute;
-  z-index: 2;
-  top: var(--space-5);
-  right: var(--space-5);
-}
+/* A chave PT/EN entra nas telas de fora do app (entrar, criar conta, recuperar senha, convite) como
+   primeiro filho de `.auth-page`, que é uma coluna centralizada: ela aparece acima da marca, no
+   meio. Foi uma decisão: no canto superior direito ela segue a convenção do app, mas quem chega
+   sem conhecer o produto — cliente novo, pessoa convidada, analista de loja de aplicativos — olha
+   primeiro pro centro. Numa tela que existe por causa de uma rejeição por idioma, achar a chave
+   vale mais que seguir a convenção. */
 
 .auth-brand {
   position: relative;

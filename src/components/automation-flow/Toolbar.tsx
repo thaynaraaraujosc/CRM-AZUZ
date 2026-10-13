@@ -89,7 +89,7 @@ export function Toolbar({
           </button>
         )}
 
-        <span className={`pill${status === "publicado" ? " on" : ""}`}>{status === "publicado" ? "Publicado" : "Rascunho"}</span>
+        <span className={`pill${status === "publicado" ? " on" : ""}`}>{status === "publicado" ? traduzir("Publicado") : traduzir("Rascunho")}</span>
         {/*
           O editor não grava mais sozinho. Antes ele gravava a cada meia tecla, e com o robô ligado
           isso significava duas coisas ruins ao mesmo tempo: a tela piscando enquanto se digitava um

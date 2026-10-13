@@ -20,7 +20,17 @@ type Resumo = { mensagens: number; conversas: number; cards: number; tarefas: nu
  * aconteceu —, remontar levaria junto a conversa de gente de verdade E traria os 18 contatos
  * fictícios de volta. Pra gravar vídeo é o contrário que se quer.
  */
-export function LimparDemonstracao({ aoLimpar }: { aoLimpar?: () => void }) {
+export function LimparDemonstracao({
+  aoLimpar,
+  compacto = false,
+}: {
+  aoLimpar?: () => void;
+  /** Só o botão, sem o cartão em volta: é o que cabe numa barra de ações. O cartão explica o que
+   * a limpeza faz, e isso faz sentido numa tela de Configurações; numa barra ele seria um bloco
+   * de texto no meio dos botões. A explicação não se perde, migra pro `title` e pra confirmação,
+   * que é onde ela realmente precisa estar antes de apagar. */
+  compacto?: boolean;
+}) {
   const { t: traduzir } = useIdioma();
   const { data: sessao } = useSession();
   const [limpando, setLimpando] = useState(false);
@@ -50,6 +60,20 @@ export function LimparDemonstracao({ aoLimpar }: { aoLimpar?: () => void }) {
     } finally {
       setLimpando(false);
     }
+  }
+
+  if (compacto) {
+    return (
+      <button
+        type="button"
+        className="btn terciario"
+        onClick={() => void limpar()}
+        disabled={limpando}
+        title={traduzir("Apaga os contatos, conversas, cards e tarefas de exemplo. O que chegou de verdade fica.")}
+      >
+        {limpando ? traduzir("Limpando…") : traduzir("Limpar exemplos")}
+      </button>
+    );
   }
 
   return (

@@ -27,6 +27,7 @@ import { IconCheck, IconClose, IconErro } from "@/components/icons";
 import { TransferirNegocio } from "@/components/funil/TransferirNegocio";
 import { SeletorDeData } from "@/components/seletor-de-data";
 import { useIdioma } from "@/lib/idioma-context";
+import { LimparDemonstracao } from "@/components/configuracoes/LimparDemonstracao";
 
 const ORIGENS_NEGOCIO: NegocioCard["origem"][] = [
   "Instagram",
@@ -118,78 +119,12 @@ function FunilPageInner() {
    * src/lib/mensagens-extra-context.tsx): Funil e WhatsApp falam com o mesmo contato, então uma
    * mensagem mandada de um lugar aparece no outro. */
 
-  const [importando, setImportando] = useState(false);
-  const [reordenando, setReordenando] = useState(false);
 
-  /**
-   * Traz pro funil as conversas que ainda não viraram negócio.
-   *
-   * Só quem escreve pela primeira vez entra no funil sozinho. O que é certo pro dia a dia (mandar
-   * mensagem de novo não pode mexer na etapa em que o vendedor deixou a pessoa), mas deixa de fora
-   * quem já era contato antes. Este botão é a porta de entrada em massa: quem começa com a caixa
-   * cheia puxa tudo de uma vez, e quem perdeu cards recupera sem abrir conversa por conversa.
-   */
-  async function importarConversas() {
-    setImportando(true);
-    try {
-      const resposta = await fetch("/api/funis/importar-conversas", { method: "POST" });
-      const dados = (await resposta.json()) as {
-        criados?: number;
-        conversasCriadas?: number;
-        semComoLigar?: string[];
-        erro?: string;
-      };
-      if (!resposta.ok) throw new Error(dados.erro ?? "Não foi possível alinhar funil e conversas.");
-      // Conta os DOIS sentidos: negócio que faltava no funil e conversa que faltava na caixa de
-      // entrada. Quem clica quer saber se ficou tudo igual dos dois lados.
-      const partes = [
-        dados.criados ? `${dados.criados} ${dados.criados === 1 ? "negócio criado" : "negócios criados"} no funil` : null,
-        dados.conversasCriadas
-          ? `${dados.conversasCriadas} ${dados.conversasCriadas === 1 ? "conversa criada" : "conversas criadas"} no WhatsApp`
-          : null,
-      ].filter(Boolean);
-      const semTelefone = dados.semComoLigar?.length ?? 0;
-      avisarAutomacao(
-        partes.length
-          ? `${partes.join(" e ")}.${semTelefone ? ` ${semTelefone} sem telefone ou Instagram, esses não dá pra abrir conversa.` : ""}`
-          : "Funil e conversas já estão iguais.",
-      );
-      // Recarrega do servidor: os cards novos foram criados lá, não aqui; sem isso a tela só
-      // mostraria a mudança no próximo F5. Por `recarregar` (e não `setFunis`) pra tela não
-      // devolver num PUT o funil inteiro que o servidor acabou de escrever.
-      setDesalinhados(0);
-      await recarregarFunis();
-    } catch (erro) {
-      avisarAutomacao(erro instanceof Error ? erro.message : traduzir("Não foi possível alinhar funil e conversas."));
-    } finally {
-      setImportando(false);
-    }
-  }
-
-  /**
-   * Correção de uma vez pro acúmulo antigo: até a mudança que passou a colocar lead novo no topo,
-   * todo card entrava pelo FIM da coluna. Então quem chegou primeiro ficava em cima e o lead
-   * recente ficava enterrado. Daqui pra frente o funil já nasce certo; este botão arruma o que
-   * ficou pra trás, sem mudar card de etapa.
-   */
-  async function reordenarPorAtividade() {
-    setReordenando(true);
-    try {
-      const resposta = await fetch("/api/funis/reordenar-por-atividade", { method: "POST" });
-      const dados = (await resposta.json()) as { reordenados?: number; erro?: string };
-      if (!resposta.ok) throw new Error(dados.erro ?? "Não foi possível reordenar.");
-      avisarAutomacao(
-        dados.reordenados
-          ? `${dados.reordenados} ${dados.reordenados === 1 ? "card reordenado" : "cards reordenados"}: quem falou por último ficou no topo.`
-          : "As colunas já estavam na ordem das mensagens mais recentes.",
-      );
-      await recarregarFunis();
-    } catch (erro) {
-      avisarAutomacao(erro instanceof Error ? erro.message : traduzir("Não foi possível reordenar."));
-    } finally {
-      setReordenando(false);
-    }
-  }
+  /* `importarConversas` e `reordenarPorAtividade` saíram junto com os botões que as chamavam.
+     As rotas (`/api/funis/importar-conversas` e `/api/funis/reordenar-por-atividade`) continuam
+     de pé: o que deixou de existir é o atalho na barra, não a capacidade. Lead novo continua
+     entrando no funil sozinho pelo webhook; o que se perde é o preenchimento em massa de quem
+     já era contato antes, que era manutenção de uma vez só. */
 
 
 
@@ -257,27 +192,9 @@ function FunilPageInner() {
 
   const cardsDuplicados = duplicados.reduce((soma, g) => soma + g.saem.length, 0);
 
-  /*
-   * Quantos registros estão fora de compasso entre funil e Conversas.
-   *
-   * O botão de alinhar só existe enquanto houver o que alinhar. Botão de manutenção parado na tela
-   * pra sempre sugere que tem alguma coisa pra fazer quando não tem, e quem comprou o CRM não
-   * deveria precisar pensar nisso: o alinhamento roda sozinho pelo relógio, isto aqui é só o atalho
-   * pra quem não quer esperar.
-   */
-  const [desalinhados, setDesalinhados] = useState(0);
-  useEffect(() => {
-    let vivo = true;
-    fetch("/api/funis/importar-conversas")
-      .then((r) => (r.ok ? r.json() : { total: 0 }))
-      .then((d: { total?: number }) => {
-        if (vivo) setDesalinhados(d.total ?? 0);
-      })
-      .catch(() => {});
-    return () => {
-      vivo = false;
-    };
-  }, [funis]);
+  /* A contagem de "fora de compasso" saiu junto com o botão de alinhar: ela existia só pra decidir
+     se aquele botão aparecia. Com ela sai também uma chamada de rede que disparava a cada mudança
+     no funil, sem nada na tela dependendo da resposta. */
 
   async function juntarDuplicados() {
     const lista = duplicados
@@ -618,28 +535,16 @@ function FunilPageInner() {
         }`}
         actions={
           <>
-            {/* Só aparece quando há o que alinhar, e some sozinho depois. O alinhamento roda pelo
-                relógio de qualquer jeito; este botão é o atalho pra quem não quer esperar. */}
-            {desalinhados > 0 ? (
-              <button
-                type="button"
-                className="btn terciario"
-                disabled={importando}
-                title={traduzir("Deixa funil e conversas iguais: cria o negócio que falta no funil e a conversa que falta no WhatsApp")}
-                onClick={() => void importarConversas()}
-              >
-                {importando ? traduzir("Alinhando…") : traduzir("Alinhar {n} com Conversas", { n: desalinhados })}
-              </button>
-            ) : null}
-            <button
-              type="button"
-              className="btn terciario"
-              disabled={reordenando}
-              title={traduzir("Coloca quem mandou mensagem mais recentemente no topo de cada coluna, sem mudar ninguém de etapa")}
-              onClick={() => void reordenarPorAtividade()}
-            >
-              {reordenando ? traduzir("Reordenando…") : traduzir("↑ Mensagens recentes no topo")}
-            </button>
+            {/* "Alinhar com Conversas" e "Mensagens recentes no topo" saíram da barra.
+                Os dois eram manutenção, não trabalho de quem vende: o alinhamento já roda pelo
+                relógio sozinho, e a reordenação por atividade é preferência de visualização, não
+                um comando que se aperta toda hora. Numa barra onde moram "Novo funil" e "Criar
+                etapa", eles disputavam espaço com o que a pessoa realmente veio fazer. */}
+            {/* A limpeza do cenário fictício, NO FUNIL e não só em Configurações.
+                É aqui que se vê o problema — dezoito cards de gente que não existe — e era em
+                Configurações → WhatsApp que estava o conserto. O componente se esconde sozinho
+                fora da conta de demonstração, então nenhum cliente real vê este botão. */}
+            <LimparDemonstracao compacto aoLimpar={() => void recarregarFunis()} />
             {/* Só existe enquanto houver o que juntar, e some sozinho depois. Botão de manutenção
                 permanente dentro do produto é conta que o cliente paga. */}
             {cardsDuplicados > 0 ? (
