@@ -52,7 +52,11 @@ afterAll(async () => {
 
 conditional("semearDemo num banco de verdade", () => {
   beforeAll(async () => {
-    await semearDemo(prisma, "$2a$10$hashfalsoparaoteste000000000000000000000000000000000000");
+    // `comExemplos` explícito: o padrão passou a ser conta zerada, e as asserções abaixo são
+    // justamente sobre o cenário cheio. Sem a opção, todas passariam a testar o nada.
+    await semearDemo(prisma, "$2a$10$hashfalsoparaoteste000000000000000000000000000000000000", new Date(), {
+      comExemplos: true,
+    });
   });
 
   it("cria o workspace da demonstração", async () => {
@@ -217,5 +221,34 @@ conditional("semearDemo num banco de verdade", () => {
 
     const sobreviveu = await prisma.contato.findUnique({ where: { id: "contato-intocavel" } });
     expect(sobreviveu?.ultima).toBe("não pode sumir");
+  });
+});
+
+/**
+ * O PADRÃO: demonstração nasce vazia.
+ *
+ * Fica por último de propósito — ele semeia por cima e deixa o banco limpo, que é o estado em que
+ * a conta de verdade deve ficar. Se alguém trocar o padrão de volta, é aqui que vai quebrar.
+ */
+conditional("semearDemo sem exemplos (o padrão)", () => {
+  beforeAll(async () => {
+    await semearDemo(prisma, "$2a$10$hashfalsoparaoteste000000000000000000000000000000000000");
+  });
+
+  it("não cria contato, conversa, mensagem, card nem tarefa", async () => {
+    const onde = { where: { workspaceId: WORKSPACE_DEMO } };
+    expect(await prisma.contato.count(onde)).toBe(0);
+    expect(await prisma.conversa.count(onde)).toBe(0);
+    expect(await prisma.mensagemExtra.count(onde)).toBe(0);
+    expect(await prisma.negocioCard.count(onde)).toBe(0);
+    expect(await prisma.tarefaCard.count(onde)).toBe(0);
+  });
+
+  it("mantém o que NÃO é fictício: o acesso e o funil com as etapas", async () => {
+    const membro = await prisma.membro.findUnique({ where: { email: EMAIL_DEMO } });
+    expect(membro?.workspaceId).toBe(WORKSPACE_DEMO);
+
+    const etapas = await prisma.funilEtapa.count({ where: { workspaceId: WORKSPACE_DEMO } });
+    expect(etapas).toBe(ETAPAS_DEMO.length);
   });
 });
