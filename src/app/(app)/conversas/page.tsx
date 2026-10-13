@@ -3810,7 +3810,6 @@ function ConversasPageInner() {
       ) : null}
       <Topbar
         title="WhatsApp"
-        sub={traduzir("A caixa de entrada do WhatsApp, oficial e por QR Code")}
         actions={
           <>
             <button

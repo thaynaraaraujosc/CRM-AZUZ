@@ -6,6 +6,7 @@ import type { ConvMensagem } from "@/lib/data";
 import { AudioBubblePlayer } from "@/components/audio-player";
 import { IconDoc, IconImage, IconLocalizacao, IconVideoCam } from "@/components/icons";
 import { StatusMensagemIcone } from "./StatusMensagem";
+import { corDoAutor } from "@/lib/conversas/cor-do-autor";
 import { useIdioma } from "@/lib/idioma-context";
 
 /**
@@ -396,7 +397,11 @@ export function BolhaMensagem({
     <div {...abrir("")}>
       {chrome}
       {mostrarRemetenteGrupo && msg.tipo === "in" && msg.remetenteNome ? (
-        <span className="wa-remetente-grupo">{msg.remetenteNome}</span>
+        // `data-autor` escolhe a cor; quem pinta é o CSS, que tem a paleta de cada tema. Ver
+        // `corDoAutor`: a mesma pessoa cai sempre na mesma cor.
+        <span className="wa-remetente-grupo" data-autor={corDoAutor(msg.remetenteNome)}>
+          {msg.remetenteNome}
+        </span>
       ) : null}
       {citacao}
       {texto}
