@@ -193,7 +193,7 @@ export function PlanoSecao() {
   }
 
   async function cancelarPlano() {
-    if (!window.confirm("Cancelar o plano? Você deixa de ser cobrado, mas perde acesso a partir do fim do período já pago.")) return;
+    if (!window.confirm(traduzir("Cancelar o plano? Você deixa de ser cobrado, mas perde acesso a partir do fim do período já pago."))) return;
     const resposta = await fetch("/api/assinatura/cancelar", { method: "POST" });
     if (resposta.ok) await recarregarAposAcao();
   }

@@ -185,8 +185,13 @@ export default function EquipePage() {
                 style={{ marginLeft: "auto", marginRight: 10 }}
                 onClick={() => {
                   const mensagem = membro.convitePendente
-                    ? `Excluir o convite de ${membro.nome}? Ele deixa de existir: dá pra convidar outro e-mail depois.`
-                    : `Excluir ${membro.nome} da equipe? Ele perde o acesso ao CRM na hora.`;
+                    ? traduzir(
+                        "Excluir o convite de {nome}? Ele deixa de existir: dá pra convidar outro e-mail depois.",
+                        { nome: membro.nome },
+                      )
+                    : traduzir("Excluir {nome} da equipe? Ele perde o acesso ao CRM na hora.", {
+                        nome: membro.nome,
+                      });
                   if (!window.confirm(mensagem)) return;
                   removerMembro(membro.id);
                   setSelecionado(null);

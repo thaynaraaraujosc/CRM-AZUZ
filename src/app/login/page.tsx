@@ -8,6 +8,7 @@ import Link from "next/link";
 import { IconEntrar } from "@/components/icons";
 import { ROTA_INICIAL } from "@/lib/rota-inicial";
 import { useIdioma } from "@/lib/idioma-context";
+import { SeletorIdioma } from "@/components/seletor-idioma";
 
 /**
  * Só deixa voltar pra um endereço DENTRO do CRM.
@@ -67,8 +68,10 @@ function LoginForm() {
         .catch(() => false);
       setErro(
         bancoOk
-          ? "E-mail ou senha incorretos."
-          : "O servidor não está conseguindo acessar o banco de dados agora. Não é a sua senha. Tente de novo em alguns minutos.",
+          ? traduzir("E-mail ou senha incorretos.")
+          : traduzir(
+              "O servidor não está conseguindo acessar o banco de dados agora. Não é a sua senha. Tente de novo em alguns minutos.",
+            ),
       );
       return;
     }
@@ -88,6 +91,7 @@ function LoginForm() {
 
   return (
     <div className="auth-page">
+      <SeletorIdioma />
       <Link href="/" className="auth-brand">
         <span className="auth-mark">a</span>
         <span className="auth-brand-name">azuz crm</span>

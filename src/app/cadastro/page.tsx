@@ -7,6 +7,7 @@ import Link from "next/link";
 
 import { IconNovaConta } from "@/components/icons";
 import { useIdioma } from "@/lib/idioma-context";
+import { SeletorIdioma } from "@/components/seletor-idioma";
 
 export default function CadastroPage() {
   const { t: traduzir } = useIdioma();
@@ -31,7 +32,7 @@ export default function CadastroPage() {
 
     if (!resposta.ok) {
       const corpo = (await resposta.json().catch(() => null)) as { erro?: string } | null;
-      setErro(corpo?.erro ?? "Não foi possível criar a conta.");
+      setErro(corpo?.erro ?? traduzir("Não foi possível criar a conta."));
       setCarregando(false);
       return;
     }
@@ -57,6 +58,7 @@ export default function CadastroPage() {
 
   return (
     <div className="auth-page">
+      <SeletorIdioma />
       <Link href="/" className="auth-brand">
         <span className="auth-mark">a</span>
         <span className="auth-brand-name">azuz crm</span>

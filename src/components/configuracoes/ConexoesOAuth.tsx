@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 
-import { Toggle } from "@/components/ui";
 import { useIntegracaoMeta } from "./useIntegracaoMeta";
 import { IconAlerta } from "@/components/icons";
 import { useStatusGoogleAds } from "@/components/trafego/useGoogleAds";
@@ -57,65 +56,6 @@ function PainelOAuth({
   );
 }
 
-/**
- * Uma preferência booleana guardada em `Integracao.metadados`. O PATCH faz merge, então cada
- * toggle grava só a sua chave sem apagar o resto (token, ids da conta, @ do perfil...).
- *
- * Salva no ato do clique, sem botão "Salvar": é uma chave só, e o estado visual do toggle já é a
- * confirmação. Se a gravação falhar, volta pro valor anterior: deixar o botão ligado com o banco
- * dizendo o contrário seria pior do que não ter o controle.
- */
-function ToggleDaIntegracao({
-  provedor,
-  chave,
-  valorAtual,
-  titulo,
-  descricao,
-  aoSalvar,
-}: {
-  provedor: string;
-  chave: string;
-  valorAtual: boolean;
-  titulo: string;
-  descricao: string;
-  aoSalvar: () => void;
-}) {
-  const { t: traduzir } = useIdioma();
-  const [erro, setErro] = useState(false);
-
-  async function alternar(ligado: boolean) {
-    setErro(false);
-    try {
-      const resposta = await fetch("/api/integracoes/meta", {
-        method: "PATCH",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ provedor, metadados: { [chave]: ligado } }),
-      });
-      if (!resposta.ok) throw new Error(String(resposta.status));
-      aoSalvar();
-    } catch (e) {
-      console.error(`Falha ao salvar ${chave} de ${provedor}:`, e);
-      setErro(true);
-      aoSalvar();
-    }
-  }
-
-  return (
-    <div style={{ padding: "10px 0", borderTop: "1px solid var(--border)" }}>
-      <div className="toggle-row">
-        <span className="tl">{titulo}</span>
-        <Toggle defaultOn={valorAtual} label={titulo} onToggle={(on) => void alternar(on)} />
-      </div>
-      <p className="hint" style={{ margin: "4px 0 0" }}>{descricao}</p>
-      {erro ? (
-        <p className="hint" style={{ color: "var(--danger)", margin: "4px 0 0" }}>
-          <IconAlerta width={12} height={12} aria-hidden="true" /> {traduzir("Não foi possível salvar essa preferência. Tente de novo.")}
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
 export function ConexaoInstagram() {
   const { t: traduzir, localeNumero } = useIdioma();
   const { data: sessao } = useSession();
@@ -125,10 +65,6 @@ export function ConexaoInstagram() {
   // Conta autorizada mas sem assinatura de webhook = "Conectado" que não recebe nada. Melhor dizer
   // isso do que deixar a pessoa esperando mensagem que nunca vem.
   const erroAssinatura = integracao?.metadados?.assinaturaWebhookErro as string | null | undefined;
-
-  // Padrão ligado nos dois: quem já tinha a conta conectada antes destes controles existirem não
-  // pode perder mensagem nem lead só porque a chave ainda não estava gravada.
-  const receberMensagens = (integracao?.metadados?.receberMensagens as boolean | undefined) ?? true;
 
   const ultimoEventoEm = integracao?.metadados?.ultimoEventoEm as string | undefined;
 
@@ -266,22 +202,6 @@ export function ConexaoInstagram() {
         </div>
       ) : null}
 
-      {conectado ? (
-        <div style={{ marginTop: 12 }}>
-          <ToggleDaIntegracao
-            provedor="meta_instagram"
-            chave="receberMensagens"
-            valorAtual={receberMensagens}
-            aoSalvar={recarregar}
-            titulo={traduzir("Mostrar mensagens do Instagram nas Conversas")}
-            descricao={
-              receberMensagens
-                ? "As mensagens do Direct chegam na caixa de entrada, marcadas como Instagram."
-                : "A conta segue conectada, mas nenhuma mensagem nova do Direct entra no CRM. O que já chegou continua salvo."
-            }
-          />
-        </div>
-      ) : null}
     </>
   );
 }

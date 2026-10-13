@@ -8,6 +8,8 @@ import Link from "next/link";
 import { PLANOS } from "@/lib/assinatura/planos";
 import { motivoDoBloqueio } from "@/lib/assinatura/acesso";
 import { ROTA_INICIAL } from "@/lib/rota-inicial";
+import { SeletorIdioma } from "@/components/seletor-idioma";
+import { useIdioma } from "@/lib/idioma-context";
 
 type FormaPagamento = "CREDIT_CARD" | "PIX" | "BOLETO";
 
@@ -23,6 +25,7 @@ type FormaPagamento = "CREDIT_CARD" | "PIX" | "BOLETO";
  * agora responde 402 pra quem não pagou: montá-la aqui encheria a tela de erro sem necessidade.
  */
 export default function AssinaturaPage() {
+  const { t: traduzir } = useIdioma();
   const router = useRouter();
   const plano = PLANOS.completo;
 
@@ -82,7 +85,7 @@ export default function AssinaturaPage() {
       });
       const dados = await resposta.json().catch(() => null);
       if (!resposta.ok) {
-        setErro(dados?.erro ?? "Não foi possível processar o pagamento.");
+        setErro(dados?.erro ?? traduzir("Não foi possível processar o pagamento."));
         return;
       }
       // Cartão confirma na hora; PIX e boleto ficam pendentes até a Asaas avisar por webhook. Nos
@@ -91,7 +94,7 @@ export default function AssinaturaPage() {
       setStatus(novo);
       if (novo === "ativa") router.replace(ROTA_INICIAL);
     } catch {
-      setErro("Falha de conexão. Tente de novo em instantes.");
+      setErro(traduzir("Falha de conexão. Tente de novo em instantes."));
     } finally {
       setEnviando(false);
     }
@@ -101,27 +104,30 @@ export default function AssinaturaPage() {
 
   return (
     <div className="auth-page">
+      <SeletorIdioma />
       <Link href="/" className="auth-brand">
         <span className="auth-mark">a</span>
         <span className="auth-brand-name">azuz crm</span>
       </Link>
 
       <div className="auth-card card" style={{ maxWidth: 520 }}>
-        <h1 className="auth-title">Ative seu CRM</h1>
-        <p className="auth-descricao">{carregando ? "Conferindo sua assinatura…" : motivoDoBloqueio(status)}</p>
+        <h1 className="auth-title">{traduzir("Ative seu CRM")}</h1>
+        <p className="auth-descricao">
+          {carregando ? traduzir("Conferindo sua assinatura…") : traduzir(motivoDoBloqueio(status))}
+        </p>
 
         <div className="config-bloco" style={{ margin: "0 0 16px" }}>
-          <p className="config-bloco-titulo">Plano {plano.nome}</p>
+          <p className="config-bloco-titulo">{traduzir("Plano {nome}", { nome: traduzir(plano.nome) })}</p>
           <p style={{ fontSize: 26, fontWeight: 600, lineHeight: 1.1 }}>
             R$ {plano.valor}
-            <span style={{ fontSize: 13, fontWeight: 400, color: "var(--text-muted)" }}> /mês</span>
+            <span style={{ fontSize: 13, fontWeight: 400, color: "var(--text-muted)" }}> {traduzir("/mês")}</span>
           </p>
-          <p className="hint">{plano.recursos.join(" · ")}</p>
+          <p className="hint">{plano.recursos.map((recurso) => traduzir(recurso)).join(" · ")}</p>
         </div>
 
         <form onSubmit={pagar}>
           <div className="field">
-            <label htmlFor="forma">Forma de pagamento</label>
+            <label htmlFor="forma">{traduzir("Forma de pagamento")}</label>
             <select
               id="forma"
               className="input"
@@ -129,14 +135,14 @@ export default function AssinaturaPage() {
               value={formaPagamento}
               onChange={(e) => setFormaPagamento(e.target.value as FormaPagamento)}
             >
-              <option value="CREDIT_CARD">Cartão de crédito</option>
+              <option value="CREDIT_CARD">{traduzir("Cartão de crédito")}</option>
               <option value="PIX">PIX</option>
-              <option value="BOLETO">Boleto</option>
+              <option value="BOLETO">{traduzir("Boleto")}</option>
             </select>
           </div>
 
           <div className="field">
-            <label htmlFor="cpf">CPF ou CNPJ</label>
+            <label htmlFor="cpf">{traduzir("CPF ou CNPJ")}</label>
             <input
               id="cpf"
               className="input"
@@ -151,7 +157,7 @@ export default function AssinaturaPage() {
           {formaPagamento === "CREDIT_CARD" ? (
             <>
               <div className="field">
-                <label htmlFor="cartao">Número do cartão</label>
+                <label htmlFor="cartao">{traduzir("Número do cartão")}</label>
                 <input
                   id="cartao"
                   className="input"
@@ -164,7 +170,7 @@ export default function AssinaturaPage() {
                 />
               </div>
               <div className="field">
-                <label htmlFor="nome-cartao">Nome impresso no cartão</label>
+                <label htmlFor="nome-cartao">{traduzir("Nome impresso no cartão")}</label>
                 <input
                   id="nome-cartao"
                   className="input"
@@ -177,11 +183,11 @@ export default function AssinaturaPage() {
               </div>
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                 <div className="field" style={{ flex: "1 1 90px", minWidth: 0 }}>
-                  <label htmlFor="mes">Mês</label>
+                  <label htmlFor="mes">{traduzir("Mês")}</label>
                   <input id="mes" className="input" style={{ width: "100%" }} placeholder="MM" value={validadeMes} onChange={(e) => setValidadeMes(e.target.value)} required />
                 </div>
                 <div className="field" style={{ flex: "1 1 90px", minWidth: 0 }}>
-                  <label htmlFor="ano">Ano</label>
+                  <label htmlFor="ano">{traduzir("Ano")}</label>
                   <input id="ano" className="input" style={{ width: "100%" }} placeholder="AAAA" value={validadeAno} onChange={(e) => setValidadeAno(e.target.value)} required />
                 </div>
                 <div className="field" style={{ flex: "1 1 90px", minWidth: 0 }}>
@@ -191,15 +197,15 @@ export default function AssinaturaPage() {
               </div>
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                 <div className="field" style={{ flex: "1 1 120px", minWidth: 0 }}>
-                  <label htmlFor="cep">CEP</label>
+                  <label htmlFor="cep">{traduzir("CEP")}</label>
                   <input id="cep" className="input" style={{ width: "100%" }} placeholder="00000-000" value={cep} onChange={(e) => setCep(e.target.value)} required />
                 </div>
                 <div className="field" style={{ flex: "1 1 90px", minWidth: 0 }}>
-                  <label htmlFor="numero-end">Número</label>
+                  <label htmlFor="numero-end">{traduzir("Número")}</label>
                   <input id="numero-end" className="input" style={{ width: "100%" }} value={numeroEndereco} onChange={(e) => setNumeroEndereco(e.target.value)} required />
                 </div>
                 <div className="field" style={{ flex: "1 1 130px", minWidth: 0 }}>
-                  <label htmlFor="tel">Telefone</label>
+                  <label htmlFor="tel">{traduzir("Telefone")}</label>
                   <input id="tel" className="input" style={{ width: "100%" }} value={telefone} onChange={(e) => setTelefone(e.target.value)} required />
                 </div>
               </div>
@@ -207,8 +213,8 @@ export default function AssinaturaPage() {
           ) : (
             <p className="hint">
               {formaPagamento === "PIX"
-                ? "O QR Code do PIX é gerado depois de confirmar."
-                : "O boleto é gerado depois de confirmar."}
+                ? traduzir("O QR Code do PIX é gerado depois de confirmar.")
+                : traduzir("O boleto é gerado depois de confirmar.")}
             </p>
           )}
 
@@ -216,13 +222,14 @@ export default function AssinaturaPage() {
 
           {aguardandoCompensacao && (
             <p className="hint">
-              Pagamento registrado. O acesso libera sozinho assim que a compensação for confirmada,
-              sem você precisar fazer mais nada.
+              {traduzir(
+                "Pagamento registrado. O acesso libera sozinho assim que a compensação for confirmada, sem você precisar fazer mais nada.",
+              )}
             </p>
           )}
 
           <button type="submit" className={`btn primary block${enviando ? " loading" : ""}`} disabled={enviando}>
-            {enviando ? "Processando…" : `Pagar R$ ${plano.valor} e liberar`}
+            {enviando ? traduzir("Processando…") : traduzir("Pagar R$ {valor} e liberar", { valor: plano.valor })}
           </button>
         </form>
 
@@ -233,7 +240,7 @@ export default function AssinaturaPage() {
             style={{ marginTop: 12 }}
             onClick={() => signOut({ callbackUrl: "/login" })}
           >
-            Sair
+            {traduzir("Sair")}
           </button>
         </p>
       </div>

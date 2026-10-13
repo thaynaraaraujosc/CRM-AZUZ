@@ -7,13 +7,11 @@ import { useEffect, useState } from "react";
 
 import { IconInstagram, IconWhatsApp, IconCalendar } from "@/components/icons";
 import { ConexaoQrCode } from "./ConexaoQrCode";
-import { SaudeQrCode } from "@/components/configuracoes/SaudeQrCode";
 import { ImportarConversas } from "@/components/configuracoes/ImportarConversas";
 import { ConexaoWhatsAppOficial } from "./ConexaoWhatsAppOficial";
 import { ConexaoInstagram, ConexaoMetaAds, ConexaoGoogleAds } from "./ConexoesOAuth";
 import { useStatusGoogleAds } from "@/components/trafego/useGoogleAds";
 import { DadosWebhook } from "./DadosWebhook";
-import { LimparDadosWhatsApp } from "./LimparDadosWhatsApp";
 import { useIntegracaoMeta } from "./useIntegracaoMeta";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 import { mesmoNumero } from "@/lib/integracoes/numero-whatsapp";
@@ -139,7 +137,7 @@ export function IntegracoesSecao() {
 
   return (
     <div className="config-secao">
-      <CabecalhoCategoria titulo={traduzir("Integrações e aplicativos")} descricao={traduzir("Conexões que já funcionam de verdade e uma prévia do que vem por aí.")} />
+      <CabecalhoCategoria titulo={traduzir("Integrações e aplicativos")} />
 
       {numeroRepetido ? (
         <p className="int-aviso-conflito">
@@ -177,9 +175,6 @@ export function IntegracoesSecao() {
             painel={
               <>
                 <ConexaoQrCode />
-                {/* Por que a mensagem não chegou, e o conserto quando dá pra consertar sozinho.
-                    Só aparece quando há algo errado. Ver `saude-qrcode.ts`. */}
-                <SaudeQrCode />
                 {/* Pelo mesmo motivo da limpeza logo abaixo: o progresso da importação e o botão
                     "Buscar conversas que faltam" só existiam na categoria WhatsApp, fora do menu.
                     Quem não estava recebendo as conversas do celular não tinha como pedir pra
@@ -192,9 +187,6 @@ export function IntegracoesSecao() {
                     )
                   }
                 />
-                {/* A limpeza morava só na categoria WhatsApp, que não está no menu. Ficava
-                    inalcançável. Aqui ela está no canal de onde os dados vieram. */}
-                <LimparDadosWhatsApp aoLimpar={() => window.location.reload()} />
               </>
             }
           />

@@ -1611,6 +1611,19 @@ table {
   color: var(--ink);
 }
 
+/* Chave PT/EN das telas de FORA do app (entrar, criar conta, recuperar senha, convite).
+   O cabeçalho que tem o seletor só existe depois de entrar, e quem chega sem conhecer o CRM vê
+   justamente estas telas primeiro: cliente novo, pessoa convidada, analista de loja de aplicativos.
+   Sem a chave aqui, a primeira tela do produto abria em português sem nenhum jeito visível de
+   trocar, e só depois de digitar a senha é que aparecia a opção. Fica no canto, fora do cartão,
+   porque é controle da página, não um campo do formulário. */
+.auth-idioma {
+  position: absolute;
+  z-index: 2;
+  top: var(--space-5);
+  right: var(--space-5);
+}
+
 .auth-brand {
   position: relative;
   z-index: 1;

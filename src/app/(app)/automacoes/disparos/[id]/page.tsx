@@ -68,7 +68,7 @@ export default function DetalheDisparoPage() {
   }, [recarregar]);
 
   async function controlar(acao: "pausar" | "retomar" | "cancelar") {
-    if (acao === "cancelar" && !window.confirm("Cancelar este disparo? Quem já recebeu continua registrado; o resto não será enviado.")) return;
+    if (acao === "cancelar" && !window.confirm(traduzir("Cancelar este disparo? Quem já recebeu continua registrado; o resto não será enviado."))) return;
     setOcupado(true);
     try {
       const r = await fetch(`/api/campanhas/${id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ acao }) });
