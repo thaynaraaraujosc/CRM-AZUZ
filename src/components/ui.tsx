@@ -250,7 +250,7 @@ export function PeriodoPicker({
           setAberto((v) => !v);
         }}
       >
-        {label}: {periodoLabel(value)} ▾
+        {label}: {traduzir(periodoLabel(value))} ▾
       </button>
       <FloatingDropdown
         anchorRect={aberto ? rect : null}
@@ -268,7 +268,7 @@ export function PeriodoPicker({
               setAberto(false);
             }}
           >
-            <span className="n">{p}</span>
+            <span className="n">{traduzir(p)}</span>
           </button>
         ))}
         <div style={{ padding: "8px 12px 12px", borderTop: "1px solid var(--line)" }}>
@@ -739,7 +739,7 @@ export function FilterBar({
       {filtrosAtivos.length > 0 || periodoAtivo ? (
         <div className="filterbar-chips">
           {periodoAtivo ? (
-            <span className="filterbar-chip">{periodoLabel(periodo)}</span>
+            <span className="filterbar-chip">{traduzir(periodoLabel(periodo))}</span>
           ) : null}
           {filtrosAtivos.map((f) => (
             <span className="filterbar-chip" key={f.chave}>

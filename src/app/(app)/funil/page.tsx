@@ -608,7 +608,11 @@ function FunilPageInner() {
       ) : null}
       <Topbar
         title={traduzir("Funil comercial")}
-        sub={`${funilAtivo?.nome ?? ""} · ${totalVisivel} ${totalVisivel === 1 ? "negócio" : "negócios"} ${filtroAtivo ? (totalVisivel === 1 ? "encontrado" : "encontrados") : "no funil"}`}
+        sub={`${funilAtivo?.nome ?? ""} · ${
+          filtroAtivo
+            ? traduzir(totalVisivel === 1 ? "{n} negócio encontrado" : "{n} negócios encontrados", { n: totalVisivel })
+            : traduzir(totalVisivel === 1 ? "{n} negócio no funil" : "{n} negócios no funil", { n: totalVisivel })
+        }`}
         actions={
           <>
             {/* Só aparece quando há o que alinhar, e some sozinho depois. O alinhamento roda pelo
