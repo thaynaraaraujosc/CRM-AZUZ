@@ -31,12 +31,9 @@ export function LimparDemonstracao({ aoLimpar }: { aoLimpar?: () => void }) {
 
   async function limpar() {
     const confirmado = window.confirm(
-      "Apagar o cenário fictício da demonstração?\n\n" +
-        "Saem os 18 contatos de exemplo (Clínica Aurora), as conversas e mensagens deles, os cards " +
-        "de funil e as tarefas montadas.\n\n" +
-        "FICA tudo que chegou de verdade: conversa de número real, contato criado à mão, o funil e " +
-        "suas etapas, e o acesso à conta.\n\n" +
-        "Isso não tem como desfazer.",
+      traduzir(
+        "Apagar o cenário fictício da demonstração?\n\nSaem os 18 contatos de exemplo (Clínica Aurora), as conversas e mensagens deles, os cards de funil e as tarefas montadas.\n\nFICA tudo que chegou de verdade: conversa de número real, contato criado à mão, o funil e suas etapas, e o acesso à conta.\n\nIsso não tem como desfazer.",
+      ),
     );
     if (!confirmado) return;
 
@@ -45,7 +42,7 @@ export function LimparDemonstracao({ aoLimpar }: { aoLimpar?: () => void }) {
     try {
       const resposta = await fetch("/api/admin/demo/limpar", { method: "POST" });
       const dados = (await resposta.json()) as { erro?: string; resumo?: Resumo };
-      if (!resposta.ok) throw new Error(dados.erro ?? "Falha ao limpar.");
+      if (!resposta.ok) throw new Error(dados.erro ?? traduzir("Falha ao limpar."));
       setResumo(dados.resumo ?? null);
       aoLimpar?.();
     } catch (e) {

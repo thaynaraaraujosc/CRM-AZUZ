@@ -118,7 +118,7 @@ export default function AutomacoesSociaisPage() {
   }
 
   async function apagarPasta(id: string, nome: string) {
-    if (!window.confirm(`Apagar a pasta "${nome}"? Os robôs dentro dela voltam pra lista principal.`)) return;
+    if (!window.confirm(traduzir('Apagar a pasta "{nome}"? Os robôs dentro dela voltam pra lista principal.', { nome }))) return;
     await fetch(`/api/automacoes-pastas/${id}`, { method: "DELETE" });
     if (pastaAberta === id) setPastaAberta(null);
     await carregarPastas();
@@ -360,7 +360,7 @@ export default function AutomacoesSociaisPage() {
                               className="perigo"
                               onClick={() => {
                                 setMenuAberto(null);
-                                if (window.confirm(`Excluir "${f.nome}"? Isso não volta.`)) excluirFluxo(f.id);
+                                if (window.confirm(traduzir('Excluir "{nome}"? Isso não volta.', { nome: f.nome }))) excluirFluxo(f.id);
                               }}
                             >
                               {traduzir("Excluir")}

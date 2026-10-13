@@ -478,7 +478,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
                         style={{ marginTop: 4, color: "var(--danger)" }}
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (window.confirm(`Excluir o modelo "${m.nome}"?`)) excluirModeloPersonalizado(m.id);
+                          if (window.confirm(traduzir('Excluir o modelo "{nome}"?', { nome: m.nome }))) excluirModeloPersonalizado(m.id);
                         }}
                       >
                         {traduzir("Excluir modelo")}
@@ -534,7 +534,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
               className="btn ghost"
               style={{ marginLeft: "auto", color: "var(--danger)" }}
               onClick={() => {
-                if (window.confirm("Esvaziar a lixeira? Isso apaga os documentos definitivamente."))
+                if (window.confirm(traduzir("Esvaziar a lixeira? Isso apaga os documentos definitivamente.")))
                   esvaziarLixeira();
               }}
             >
@@ -630,7 +630,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
                         className="dropdown-item"
                         style={{ width: "100%", textAlign: "left", color: "var(--danger)" }}
                         onClick={() => {
-                          if (window.confirm(`Excluir "${d.titulo}" definitivamente?`)) {
+                          if (window.confirm(traduzir('Excluir "{titulo}" definitivamente?', { titulo: d.titulo }))) {
                             excluirPermanente(d.id);
                           }
                           setAcaoAbertaId(null);
@@ -1385,7 +1385,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
 
   function excluirPaginaAtiva() {
     if (paginasLocais.length <= 1) return;
-    if (!window.confirm("Excluir essa página?")) return;
+    if (!window.confirm(traduzir("Excluir essa página?"))) return;
     setPaginasLocais((prev) => {
       const restante = prev.filter((p) => p.id !== paginaAtivaId);
       setPaginaAtivaId(restante[0].id);
@@ -1471,7 +1471,9 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     } else {
       const analisado = analisarSelecaoPaginas(paginasEspecificasTexto, total);
       if (!analisado) {
-        window.alert(`Seleção de páginas inválida. Use algo como "1, 3, 5" ou "2-7" (o documento tem ${total} página(s)).`);
+        window.alert(
+        traduzir('Seleção de páginas inválida. Use algo como "1, 3, 5" ou "2-7" (o documento tem {total} página(s)).', { total }),
+      );
         return;
       }
       indices = analisado;
@@ -1535,7 +1537,9 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       aplicarFormatacao("insertText", texto);
     } catch {
       window.alert(
-        "Não consegui ler a área de transferência. O navegador pode estar bloqueando o acesso. Use Ctrl+V diretamente sobre o documento, que funciona pelo comportamento nativo do navegador.",
+        traduzir(
+          "Não consegui ler a área de transferência. O navegador pode estar bloqueando o acesso. Use Ctrl+V diretamente sobre o documento, que funciona pelo comportamento nativo do navegador.",
+        ),
       );
     }
   }
@@ -1854,7 +1858,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     if (!buscaTexto.trim()) return;
     const ocorrencias = coletarOcorrencias();
     if (ocorrencias.length === 0) {
-      window.alert(`Nenhuma ocorrência de "${buscaTexto}" encontrada.`);
+      window.alert(traduzir('Nenhuma ocorrência de "{texto}" encontrada.', { texto: buscaTexto }));
       return;
     }
     irParaOcorrencia(buscaIndiceAtual + 1, ocorrencias);
@@ -1864,7 +1868,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     if (!buscaTexto.trim()) return;
     const ocorrencias = coletarOcorrencias();
     if (ocorrencias.length === 0) {
-      window.alert(`Nenhuma ocorrência de "${buscaTexto}" encontrada.`);
+      window.alert(traduzir('Nenhuma ocorrência de "{texto}" encontrada.', { texto: buscaTexto }));
       return;
     }
     irParaOcorrencia(buscaIndiceAtual - 1, ocorrencias);
@@ -1874,7 +1878,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     if (!buscaTexto.trim()) return;
     const ocorrencias = coletarOcorrencias();
     if (ocorrencias.length === 0) {
-      window.alert(`Nenhuma ocorrência de "${buscaTexto}" encontrada.`);
+      window.alert(traduzir('Nenhuma ocorrência de "{texto}" encontrada.', { texto: buscaTexto }));
       return;
     }
     const indice = ((buscaIndiceAtual % ocorrencias.length) + ocorrencias.length) % ocorrencias.length;
@@ -1889,7 +1893,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     if (!buscaTexto.trim()) return;
     const ocorrencias = coletarOcorrencias();
     if (ocorrencias.length === 0) {
-      window.alert(`Nenhuma ocorrência de "${buscaTexto}" encontrada.`);
+      window.alert(traduzir('Nenhuma ocorrência de "{texto}" encontrada.', { texto: buscaTexto }));
       return;
     }
     const porNo = new Map<Text, typeof ocorrencias>();
@@ -1910,7 +1914,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     }
     paginasAfetadas.forEach((paginaId) => salvarConteudoPagina(paginaId));
     setBuscaIndiceAtual(0);
-    window.alert(`${ocorrencias.length} ocorrência(s) substituída(s).`);
+    window.alert(traduzir("{n} ocorrência(s) substituída(s).", { n: ocorrencias.length }));
   }
 
   function copiarFormatacao() {
@@ -1934,7 +1938,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       (window as unknown as { webkitSpeechRecognition?: new () => ReconhecimentoDeVoz }).webkitSpeechRecognition ??
       (window as unknown as { SpeechRecognition?: new () => ReconhecimentoDeVoz }).SpeechRecognition;
     if (!SpeechRecognitionCtor) {
-      window.alert("Digitação por voz não é suportada nesse navegador.");
+      window.alert(traduzir("Digitação por voz não é suportada nesse navegador."));
       return;
     }
     if (gravandoVoz) {
@@ -2374,7 +2378,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       div.querySelectorAll("h1, h2, h3, h4").forEach((h) => titulos.push(h.textContent ?? ""));
     }
     if (titulos.length === 0) {
-      window.alert("Nenhum título encontrado: use os estilos de título no texto primeiro.");
+      window.alert(traduzir("Nenhum título encontrado: use os estilos de título no texto primeiro."));
       return;
     }
     inserirNaPagina(`<p><b>{traduzir("Sumário")}</b></p><ul>${titulos.map((t) => `<li>${t}</li>`).join("")}</ul>`);
@@ -2397,7 +2401,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     const selecao = window.getSelection();
     const trecho = selecao?.toString().trim();
     if (!trecho) {
-      window.alert("Selecione um trecho do texto pra comentar.");
+      window.alert(traduzir("Selecione um trecho do texto pra comentar."));
       return;
     }
     const texto = window.prompt(`Comentário sobre: "${trecho.slice(0, 40)}…"`);
@@ -2605,8 +2609,8 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     { label: "Localizar e substituir", onClick: () => setLocalizarAberto(true) },
     { label: gravandoVoz ? traduzir("Parar digitação por voz") : "Digitação por voz", onClick: alternarDigitacaoPorVoz },
     "sep",
-    { label: "Dicionário", onClick: () => window.alert("Dicionário exige um serviço externo. Não incluído nesse protótipo.") },
-    { label: "Tradução do documento", onClick: () => window.alert("Tradução exige um serviço externo. Não incluído nesse protótipo.") },
+    { label: "Dicionário", onClick: () => window.alert(traduzir("Dicionário exige um serviço externo. Não incluído nesse protótipo.")) },
+    { label: "Tradução do documento", onClick: () => window.alert(traduzir("Tradução exige um serviço externo. Não incluído nesse protótipo.")) },
     { label: "Comparar versões", onClick: () => setHistoricoAberto(true) },
     "sep",
     { label: "Preferências", onClick: () => setConfigPaginaAberto(true) },
@@ -3667,7 +3671,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                   type="button"
                   className="link"
                   onClick={() => {
-                    if (window.confirm("Restaurar essa versão? O conteúdo atual será substituído.")) {
+                    if (window.confirm(traduzir("Restaurar essa versão? O conteúdo atual será substituído."))) {
                       restaurarVersao(id, v.id);
                       setHistoricoAberto(false);
                     }
@@ -4029,7 +4033,7 @@ function PainelImagem({
     const sw = nl - sx - (cortarDireita / 100) * nl;
     const sh = na - sy - (cortarBaixo / 100) * na;
     if (sw <= 0 || sh <= 0) {
-      window.alert("Corte inválido: a área restante ficaria vazia.");
+      window.alert(traduzir("Corte inválido: a área restante ficaria vazia."));
       return;
     }
     canvas.width = sw;
@@ -4045,7 +4049,7 @@ function PainelImagem({
       setCortarBaixo(0);
       setCortarEsquerda(0);
     } catch {
-      window.alert("Não foi possível cortar essa imagem (pode ser uma imagem de outra origem, bloqueada por CORS).");
+      window.alert(traduzir("Não foi possível cortar essa imagem (pode ser uma imagem de outra origem, bloqueada por CORS)."));
     }
   }
 

@@ -3,8 +3,11 @@
 import { use, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { SeletorIdioma } from "@/components/seletor-idioma";
+import { useIdioma } from "@/lib/idioma-context";
 
 export default function RedefinirSenhaPage({ params }: { params: Promise<{ token: string }> }) {
+  const { t: traduzir } = useIdioma();
   const { token } = use(params);
   const router = useRouter();
   const [senha, setSenha] = useState("");
@@ -18,11 +21,11 @@ export default function RedefinirSenhaPage({ params }: { params: Promise<{ token
     setErro(null);
 
     if (senha.length < 8) {
-      setErro("A senha precisa ter pelo menos 8 caracteres.");
+      setErro(traduzir("A senha precisa ter pelo menos 8 caracteres."));
       return;
     }
     if (senha !== confirmarSenha) {
-      setErro("As senhas não coincidem.");
+      setErro(traduzir("As senhas não coincidem."));
       return;
     }
 
@@ -35,13 +38,13 @@ export default function RedefinirSenhaPage({ params }: { params: Promise<{ token
       });
       const dados = await resposta.json().catch(() => null);
       if (!resposta.ok) {
-        setErro(dados?.erro ?? "Não foi possível redefinir a senha.");
+        setErro(dados?.erro ?? traduzir("Não foi possível redefinir a senha."));
         return;
       }
       setSucesso(true);
       setTimeout(() => router.push("/login"), 2500);
     } catch {
-      setErro("Não foi possível redefinir a senha agora. Tente de novo em instantes.");
+      setErro(traduzir("Não foi possível redefinir a senha agora. Tente de novo em instantes."));
     } finally {
       setCarregando(false);
     }
@@ -49,19 +52,20 @@ export default function RedefinirSenhaPage({ params }: { params: Promise<{ token
 
   return (
     <div className="auth-page">
+      <SeletorIdioma />
       <Link href="/" className="auth-brand">
         <span className="auth-mark">a</span>
         <span className="auth-brand-name">azuz crm</span>
       </Link>
       <div className="auth-card card">
-        <h1 className="auth-title">Criar nova senha</h1>
+        <h1 className="auth-title">{traduzir("Criar nova senha")}</h1>
 
         {sucesso ? (
-          <p className="auth-sucesso">Senha redefinida! Levando você pro login…</p>
+          <p className="auth-sucesso">{traduzir("Senha redefinida! Levando você pro login…")}</p>
         ) : (
           <form onSubmit={handleSubmit}>
             <div className="field">
-              <label htmlFor="senha">Nova senha</label>
+              <label htmlFor="senha">{traduzir("Nova senha")}</label>
               <input
                 id="senha"
                 type="password"
@@ -76,7 +80,7 @@ export default function RedefinirSenhaPage({ params }: { params: Promise<{ token
             </div>
 
             <div className="field">
-              <label htmlFor="confirmarSenha">Confirmar nova senha</label>
+              <label htmlFor="confirmarSenha">{traduzir("Confirmar nova senha")}</label>
               <input
                 id="confirmarSenha"
                 type="password"
@@ -92,11 +96,11 @@ export default function RedefinirSenhaPage({ params }: { params: Promise<{ token
             {erro && <p className="auth-erro">{erro}</p>}
 
             <button type="submit" className={`btn primary block${carregando ? " loading" : ""}`} disabled={carregando}>
-              Redefinir senha
+              {traduzir("Redefinir senha")}
             </button>
 
             <p className="auth-rodape">
-              <Link href="/login">Voltar pro login</Link>
+              <Link href="/login">{traduzir("Voltar pro login")}</Link>
             </p>
           </form>
         )}

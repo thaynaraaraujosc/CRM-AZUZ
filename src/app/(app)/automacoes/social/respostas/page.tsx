@@ -273,7 +273,7 @@ export default function RespostasAutomaticasPage() {
                         type="button"
                         className="btn ghost"
                         onClick={() => {
-                          if (window.confirm(`Excluir "${fluxo.nome}"? Isso não volta.`)) excluirFluxo(fluxo.id);
+                          if (window.confirm(traduzir('Excluir "{nome}"? Isso não volta.', { nome: fluxo.nome }))) excluirFluxo(fluxo.id);
                         }}
                       >
                         {traduzir("Excluir")}

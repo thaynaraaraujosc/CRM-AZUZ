@@ -4266,7 +4266,7 @@ function ConversasPageInner() {
                         className="dropdown-item"
                         style={{ width: "100%", textAlign: "left", color: "var(--danger)" }}
                         onClick={() => {
-                          if (window.confirm(`Excluir a conversa com ${c.nome}? Isso apaga as mensagens dela também. Não dá pra desfazer.`)) {
+                          if (window.confirm(traduzir("Excluir a conversa com {nome}? Isso apaga as mensagens dela também. Não dá pra desfazer.", { nome: c.nome }))) {
                             excluirConversa(c.id);
                           }
                           setRowMenuAberto(null);

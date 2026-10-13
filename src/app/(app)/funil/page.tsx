@@ -286,8 +286,10 @@ function FunilPageInner() {
       .join("\n");
     const resto = duplicados.length > 8 ? `\n…e mais ${duplicados.length - 8}.` : "";
     const confirmado = window.confirm(
-      `Juntar ${cardsDuplicados} negócio(s) repetido(s)?\n\n` +
-        `De cada pessoa fica o negócio que está mais à frente no funil; os outros são apagados.\n\n${lista}${resto}`,
+      traduzir(
+        "Juntar {n} negócio(s) repetido(s)?\n\nDe cada pessoa fica o negócio que está mais à frente no funil; os outros são apagados.\n\n{lista}",
+        { n: cardsDuplicados, lista: `${lista}${resto}` },
+      ),
     );
     if (!confirmado) return;
     setJuntando(true);
@@ -365,9 +367,10 @@ function FunilPageInner() {
    */
   function excluirLeadInteiro(coluna: number, card: number, nome: string) {
     const confirmado = window.confirm(
-      `Apagar "${nome}" do CRM?\n\n` +
-        "Saem o card do funil, o contato e a conversa com todas as mensagens.\n\n" +
-        "Isso não tem como desfazer.",
+      traduzir(
+        'Apagar "{nome}" do CRM?\n\nSaem o card do funil, o contato e a conversa com todas as mensagens.\n\nIsso não tem como desfazer.',
+        { nome },
+      ),
     );
     if (!confirmado) return;
 
@@ -730,7 +733,9 @@ function FunilPageInner() {
                           if (funis.length <= 1) return;
                           if (
                             window.confirm(
-                              `Excluir o funil "${funilAtivo.nome}"? Os negócios e as automações dele somem junto.`,
+                              traduzir('Excluir o funil "{nome}"? Os negócios e as automações dele somem junto.', {
+                                nome: funilAtivo.nome,
+                              }),
                             )
                           ) {
                             // Etapas e gatilhos caem por cascade no banco (Funil → FunilEtapa →

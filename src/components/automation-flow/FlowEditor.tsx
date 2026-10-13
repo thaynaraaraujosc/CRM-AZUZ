@@ -259,7 +259,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
       const destino = link.getAttribute("href") ?? "";
       if (!destino.startsWith("/") || link.target === "_blank") return;
       if (destino === window.location.pathname) return;
-      if (!window.confirm("Você tem alterações não salvas neste robô. Sair mesmo assim?")) {
+      if (!window.confirm(traduzir("Você tem alterações não salvas neste robô. Sair mesmo assim?"))) {
         e.preventDefault();
         e.stopPropagation();
       }

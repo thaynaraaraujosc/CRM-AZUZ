@@ -112,10 +112,9 @@ export function WhatsAppSecao() {
                   // conectado depois. Apagar é irreversível, então é escolha explícita: e "Cancelar"
                   // mantém o comportamento antigo em vez de abortar a desconexão.
                   const limpar = window.confirm(
-                    "Desconectar e apagar tudo que veio deste WhatsApp?\n\n" +
-                      "Serão removidos as conversas e mensagens, os contatos criados automaticamente " +
-                      "e os cards de funil desses leads. Contatos e cards que você criou à mão ficam.\n\n" +
-                      "OK = desconectar e apagar · Cancelar = só desconectar, mantendo os dados.",
+                    traduzir(
+                      "Desconectar e apagar tudo que veio deste WhatsApp?\n\nSerão removidos as conversas e mensagens, os contatos criados automaticamente e os cards de funil desses leads. Contatos e cards que você criou à mão ficam.\n\nOK = desconectar e apagar · Cancelar = só desconectar, mantendo os dados.",
+                    ),
                   );
                   void (metaConectada ? desconectar(limpar) : naoOficial.desconectar(limpar));
                 }}

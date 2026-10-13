@@ -28,10 +28,9 @@ export function LimparDadosWhatsApp({ aoLimpar }: { aoLimpar?: () => void }) {
 
   async function limpar() {
     const confirmado = window.confirm(
-      "Apagar tudo que veio do WhatsApp que estava conectado antes?\n\n" +
-        "Serão removidos as conversas e mensagens, os contatos criados automaticamente e os cards " +
-        "de funil desses leads. Contatos e cards que você criou à mão ficam.\n\n" +
-        "Isso não tem como desfazer.",
+      traduzir(
+        "Apagar tudo que veio do WhatsApp que estava conectado antes?\n\nSerão removidos as conversas e mensagens, os contatos criados automaticamente e os cards de funil desses leads. Contatos e cards que você criou à mão ficam.\n\nIsso não tem como desfazer.",
+      ),
     );
     if (!confirmado) return;
 

@@ -60,7 +60,7 @@ function ConfiguracoesConteudo() {
 
   function selecionarCategoria(id: CategoriaId) {
     if (id === categoriaAtiva) return;
-    if (categoriaSuja && !window.confirm("Você tem alterações não salvas nesta categoria. Deseja descartar e continuar?")) {
+    if (categoriaSuja && !window.confirm(traduzir("Você tem alterações não salvas nesta categoria. Deseja descartar e continuar?"))) {
       return;
     }
     setCategoriaAtiva(id);
@@ -68,7 +68,7 @@ function ConfiguracoesConteudo() {
 
   return (
     <>
-      <Topbar title={traduzir("Configurações")} sub={traduzir("Painel administrativo do workspace: escolha uma categoria ao lado")} />
+      <Topbar title={traduzir("Configurações")} />
 
       <div className="content">
         <div className="config-layout">

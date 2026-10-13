@@ -1,9 +1,9 @@
-import Link from "next/link";
 import type { Metadata } from "next";
 
 import { prisma } from "@/lib/prisma";
 import { AceitarConviteForm } from "@/components/equipe/AceitarConviteForm";
 import { conviteValido } from "@/lib/equipe/convite";
+import { ConviteBoasVindas, ConviteNaoEncontrado } from "@/components/equipe/TelaConvite";
 
 export const metadata: Metadata = { title: "Seu convite · CRM AZUZ" };
 
@@ -29,42 +29,14 @@ export default async function ConvitePage({
   });
 
   if (!conviteValido(membro, t)) {
-    return (
-      <div className="auth-page">
-        <Link href="/" className="auth-brand">
-          <span className="auth-mark">a</span>
-          <span className="auth-brand-name">azuz crm</span>
-        </Link>
-        <div className="auth-card card">
-          <h1 className="auth-title">Convite não encontrado</h1>
-          <p className="auth-descricao">
-            Esse link de convite não existe mais, expirou ou já foi usado. Peça pra quem te
-            convidou mandar um novo.
-          </p>
-          <p className="auth-rodape">
-            <Link href="/login">Ir pro login</Link>
-          </p>
-        </div>
-      </div>
-    );
+    return <ConviteNaoEncontrado />;
   }
 
   const primeiroNome = membro!.nome.split(" ")[0];
 
   return (
-    <div className="auth-page">
-      <Link href="/" className="auth-brand">
-        <span className="auth-mark">a</span>
-        <span className="auth-brand-name">azuz crm</span>
-      </Link>
-      <div className="auth-card card">
-        <h1 className="auth-title">Bem-vindo, {primeiroNome}</h1>
-        <p className="auth-descricao">
-          Você foi convidado(a) pro CRM da <strong>{membro!.workspace.nome}</strong> como{" "}
-          {membro!.papel}. Crie sua senha pra começar a usar.
-        </p>
-        <AceitarConviteForm id={membro!.id} email={membro!.email} token={t ?? ""} />
-      </div>
-    </div>
+    <ConviteBoasVindas primeiroNome={primeiroNome} empresa={membro!.workspace.nome} papel={membro!.papel}>
+      <AceitarConviteForm id={membro!.id} email={membro!.email} token={t ?? ""} />
+    </ConviteBoasVindas>
   );
 }

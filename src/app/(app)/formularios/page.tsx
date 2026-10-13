@@ -166,7 +166,7 @@ export default function FormulariosPage() {
   }
 
   function pedirExclusao(id: string, nome: string) {
-    if (window.confirm(`Excluir o formulário "${nome}"? Isso também apaga as respostas dele.`)) {
+    if (window.confirm(traduzir('Excluir o formulário "{nome}"? Isso também apaga as respostas dele.', { nome }))) {
       excluirFormulario(id);
       if (formularioAbertoId === id) voltarParaLista();
       avisar("Formulário excluído.");
@@ -542,7 +542,7 @@ export default function FormulariosPage() {
                           disabled={formularioAberto.paginas.length <= 1}
                           onClick={() => {
                             if (formularioAberto.paginas.length <= 1) return;
-                            if (window.confirm(`Excluir "${pagina.titulo}"?`)) {
+                            if (window.confirm(traduzir('Excluir "{titulo}"?', { titulo: pagina.titulo }))) {
                               excluirPagina(formularioAberto.id, pagina.id);
                               if (paginaAtiva?.id === pagina.id) setPaginaAtivaId(null);
                             }
