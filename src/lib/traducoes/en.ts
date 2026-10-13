@@ -2387,4 +2387,19 @@ export const TRADUCOES_EN: Record<string, string> = {
   "{n} pessoas · controle de acesso por papel": "{n} people · role-based access control",
   "Últimos 15 dias": "Last 15 days",
   "Últimos 7 dias": "Last 7 days",
+
+  // ---- Estado das conexões ----
+  "A conta conectou, mas o CRM não conseguiu assinar o recebimento de mensagens. As mensagens do Direct não vão chegar até isso ser resolvido.": "The account connected, but the CRM could not subscribe to receive messages. Direct messages will not arrive until this is resolved.",
+  "Autoriza o CRM a acessar sua conta profissional do Instagram e receber as mensagens do Direct. Sem copiar token nenhum.": "Authorises the CRM to access your Instagram professional account and receive Direct messages. Without copying any token.",
+  "Conta conectada": "Account connected",
+  "Desconectado": "Disconnected",
+  "Desconectar Instagram": "Disconnect Instagram",
+  "Detalhe:": "Detail:",
+  "Escaneia o QR Code, sem precisar de aprovação da Meta": "Scan the QR code, with no Meta approval needed",
+  "Número conectado:": "Connected number:",
+  "Reativando…": "Reactivating…",
+  "Testando…": "Testing…",
+  "Use se as mensagens pararem de chegar no CRM mesmo com a conta conectada. Refaz só a assinatura dos eventos na Meta. Não desconecta nada nem apaga conversa.": "Use this if messages stop arriving in the CRM even with the account connected. It only redoes the event subscription at Meta. It disconnects nothing and deletes no conversation.",
+  "nenhum ainda": "none yet",
+  "Último evento recebido da Meta:": "Last event received from Meta:",
 };

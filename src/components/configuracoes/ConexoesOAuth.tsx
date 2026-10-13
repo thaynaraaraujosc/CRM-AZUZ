@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 
 import { Toggle } from "@/components/ui";
 import { useIntegracaoMeta } from "./useIntegracaoMeta";
@@ -116,7 +117,8 @@ function ToggleDaIntegracao({
 }
 
 export function ConexaoInstagram() {
-  const { t: traduzir } = useIdioma();
+  const { t: traduzir, localeNumero } = useIdioma();
+  const { data: sessao } = useSession();
   const { integracao, recarregar } = useIntegracaoMeta("meta_instagram");
   const usuario = integracao?.metadados?.instagramUsername as string | undefined;
   const conectado = integracao?.status === "conectado";
@@ -210,20 +212,28 @@ export function ConexaoInstagram() {
       <PainelOAuth
         provedor="meta_instagram"
         href="/api/integracoes/instagram/conectar"
-        descricao="Autoriza o CRM a acessar sua conta profissional do Instagram e receber as mensagens do Direct. Sem copiar token nenhum."
-        rotuloConectado={usuario ? `Conectado • @${usuario}` : "Conta conectada"}
-        rotuloDesconectar="Desconectar Instagram"
+        descricao={traduzir("Autoriza o CRM a acessar sua conta profissional do Instagram e receber as mensagens do Direct. Sem copiar token nenhum.")}
+        rotuloConectado={usuario ? `${traduzir("Conectado")} • @${usuario}` : traduzir("Conta conectada")}
+        rotuloDesconectar={traduzir("Desconectar Instagram")}
       />
-      {conectado ? (
+      {/* O AVISO DE FALHA fica pra todo mundo: "Conectado" que não recebe mensagem é problema do
+          cliente, não detalhe de manutenção. */}
+      {conectado && erroAssinatura ? (
+        <p className="hint" style={{ color: "var(--danger)", margin: "8px 0 0" }}>
+          <IconAlerta width={12} height={12} aria-hidden="true" />{" "}
+          {traduzir("A conta conectou, mas o CRM não conseguiu assinar o recebimento de mensagens. As mensagens do Direct não vão chegar até isso ser resolvido.")}{" "}
+          {traduzir("Detalhe:")} {erroAssinatura}
+        </p>
+      ) : null}
+
+      {/* O RESTO é ferramenta de manutenção: reassinar o webhook, ver o carimbo do último evento
+          da Meta, perguntar o perfil à Meta pra entender por que a foto não veio. Nada disso é
+          decisão de quem usa o CRM — é diagnóstico de integração, e na tela do cliente só vira
+          ruído e medo de clicar. Mesma regra já aplicada na conexão do WhatsApp. */}
+      {conectado && sessao?.user?.superAdmin ? (
         <div style={{ marginTop: 8 }}>
-          {erroAssinatura ? (
-            <p className="hint" style={{ color: "var(--danger)", margin: "0 0 6px" }}>
-              <IconAlerta width={12} height={12} aria-hidden="true" /> A conta conectou, mas o CRM não conseguiu assinar o recebimento de mensagens. As mensagens do Direct não vão chegar até isso ser resolvido.{" "}
-              Detalhe: {erroAssinatura}
-            </p>
-          ) : null}
           <button type="button" className="btn ghost" disabled={reassinando} onClick={() => void reassinar()}>
-            {reassinando ? "Reativando…" : traduzir("Reativar recebimento de mensagens")}
+            {reassinando ? traduzir("Reativando…") : traduzir("Reativar recebimento de mensagens")}
           </button>
           <p className="hint" style={{ margin: "4px 0 0" }}>
             {resultadoAssinatura ??
@@ -233,8 +243,8 @@ export function ConexaoInstagram() {
               a Meta está mesmo chamando o CRM? Se este carimbo não avança quando chega mensagem no
               Instagram, o problema está na assinatura/webhook. Não no que o CRM faz depois. */}
           <p className="hint" style={{ margin: "6px 0 0" }}>
-            Último evento recebido da Meta:{" "}
-            <b>{ultimoEventoEm ? new Date(ultimoEventoEm).toLocaleString("pt-BR") : "nenhum ainda"}</b>
+            {traduzir("Último evento recebido da Meta:")}{" "}
+            <b>{ultimoEventoEm ? new Date(ultimoEventoEm).toLocaleString(localeNumero) : traduzir("nenhum ainda")}</b>
           </p>
 
           {/* Pergunta à Meta o perfil de alguém que já escreveu e mostra o que ela respondeu.
@@ -248,7 +258,7 @@ export function ConexaoInstagram() {
             disabled={diagnosticando}
             onClick={() => void rodarDiagnostico()}
           >
-            {diagnosticando ? "Testando…" : traduzir("Testar foto e @ do perfil")}
+            {diagnosticando ? traduzir("Testando…") : traduzir("Testar foto e @ do perfil")}
           </button>
           {diagnostico ? (
             <pre className="hint" style={{ margin: "6px 0 0", whiteSpace: "pre-wrap" }}>{diagnostico}</pre>
