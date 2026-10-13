@@ -277,7 +277,7 @@ export default function AutomacoesSociaisPage() {
                     <strong>{f.nome}</strong>
                     <span>{gatilhoDoFluxo(f)}</span>
                     <em>
-                      {f.status === "rascunho" ? "Rascunho" : f.ativa ? "Ligada" : "Pausada"} ·{" "}
+                      {f.status === "rascunho" ? traduzir("Rascunho") : f.ativa ? traduzir("Ligada") : traduzir("Pausada")} ·{" "}
                       {f.execucoes} execuções
                     </em>
                   </button>

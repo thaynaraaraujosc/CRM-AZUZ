@@ -557,7 +557,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
                     onClick={() => escolherTemplate(templateId === t.id ? null : t)}
                   >
                     <strong>
-                      {t.nome} <span className={`badge ${disponivel ? "badge-success" : t.status === "em_analise" ? "badge-warning" : "badge-neutral"}`}>{disponivel ? "Aprovado" : t.status === "em_analise" ? traduzir("Em análise") : t.status === "rejeitado" ? "Rejeitado" : "Rascunho"}</span>
+                      {t.nome} <span className={`badge ${disponivel ? "badge-success" : t.status === "em_analise" ? "badge-warning" : "badge-neutral"}`}>{disponivel ? traduzir("Aprovado") : t.status === "em_analise" ? traduzir("Em análise") : t.status === "rejeitado" ? traduzir("Rejeitado") : traduzir("Rascunho")}</span>
                     </strong>
                     <span>{t.corpo.slice(0, 140)}</span>
                   </button>

@@ -272,12 +272,22 @@ export default function FormulariosPage() {
                         <p className="int-title">
                           {f.nome}
                           <span className={`pill${f.status === "publicado" ? " on" : ""}`} style={{ marginLeft: 8 }}>
-                            {f.status === "publicado" ? "Publicado" : "Rascunho"}
+                            {f.status === "publicado" ? traduzir("Publicado") : traduzir("Rascunho")}
                           </span>
                         </p>
                         <p className="int-sub">
-                          {f.paginas.length} {f.paginas.length === 1 ? "página" : "páginas"} · {totalPerguntas}{" "}
-                          {totalPerguntas === 1 ? "pergunta" : "perguntas"} · {respostasDoFormulario(f.id).length} respostas
+                          {[
+                            traduzir(f.paginas.length === 1 ? "{n} página" : "{n} páginas", {
+                              n: f.paginas.length,
+                            }),
+                            traduzir(totalPerguntas === 1 ? "{n} pergunta" : "{n} perguntas", {
+                              n: totalPerguntas,
+                            }),
+                            traduzir(
+                              respostasDoFormulario(f.id).length === 1 ? "{n} resposta" : "{n} respostas",
+                              { n: respostasDoFormulario(f.id).length },
+                            ),
+                          ].join(" · ")}
                         </p>
                       </div>
                       <span
@@ -318,7 +328,7 @@ export default function FormulariosPage() {
               placeholder={traduzir("Nome do formulário")}
             />
             <span className={`pill${formularioAberto.status === "publicado" ? " on" : ""}`}>
-              {formularioAberto.status === "publicado" ? "Publicado" : "Rascunho"}
+              {formularioAberto.status === "publicado" ? traduzir("Publicado") : traduzir("Rascunho")}
             </span>
 
             <span className="topbar-tabs" style={{ marginLeft: 8 }}>

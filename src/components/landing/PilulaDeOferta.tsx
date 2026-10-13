@@ -43,7 +43,7 @@ export function PilulaDeOferta({ preco }: { preco: string }) {
 
   return (
     <div className={`lp-oferta${visivel ? " lp-oferta-visivel" : ""}`} aria-hidden={!visivel}>
-      <span className="lp-oferta-selo">{preco}/mês</span>
+      <span className="lp-oferta-selo">{preco}{traduzir("/mês")}</span>
       <Link href="/cadastro" className="lp-oferta-link" tabIndex={visivel ? 0 : -1}>
         {traduzir("Criar conta agora")}
       </Link>
