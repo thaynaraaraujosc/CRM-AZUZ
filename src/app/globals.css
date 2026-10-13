@@ -109,6 +109,26 @@
      de "ligado"/confirmação (ex.: toggle ativo). */
   --blue-strong: #001726;
 
+  /* -------------------------------------------------------------------------
+     A CAIXA DE ENTRADA TEM PALETA PRÓPRIA.
+
+     A tela de Conversas era marinho em cima do marinho: cabeçalho marinho, cartão aberto marinho e
+     balão enviado marinho, os três com texto branco. Vista de longe, era um bloco escuro só, e o
+     olho não achava onde começava a mensagem. Numa tela onde se passa o dia inteiro, isso cansa.
+
+     A correção é de PROFUNDIDADE, não de cor nova: um cinza de fundo atrás, branco no balão de quem
+     escreveu e um azul claro no nosso. Quem falou o quê se lê pela claridade, não pelo tom — que é
+     como o WhatsApp faz e é o que qualquer pessoa já sabe ler sem aprender.
+
+     O marinho continua sendo a identidade e continua onde ele manda: menu, botão, cartão
+     selecionado. Aqui ele é a TINTA sobre o azul claro (#002037 sobre #cfe4f3 dá 13,4:1), não a
+     superfície. ------------------------------------------------------------------------- */
+  --conversa-fundo: #eef1f5;
+  --conversa-topo: #dcebf6;
+  --bolha-enviada: #cfe4f3;
+  --bolha-enviada-texto: #002037;
+  --bolha-recebida: #ffffff;
+
   /* AZUL MARINHO: a cor da ação principal: botão "Salvar", chip de filtro ligado, passo atual do
      assistente, aviso. Antes esses elementos eram quase-pretos (`--ink`), e o resultado é que a
      identidade azul do CRM sumia justamente onde a pessoa mais olha.
@@ -410,6 +430,15 @@
   --cyan: #D2A366;
   --cyan-soft: rgba(210, 163, 102, 0.14);
   --glow-accent: none;
+
+  /* A caixa de entrada no escuro. A MESMA ideia do claro, invertida: o fundo da conversa é o mais
+     fundo da escada, o balão de quem escreveu sobe um degrau, e o nosso sobe dois. Continua se
+     lendo pela claridade, sem precisar de cor. */
+  --conversa-fundo: #000D17;
+  --conversa-topo: #001A2C;
+  --bolha-enviada: #00395F;
+  --bolha-enviada-texto: #fafafa;
+  --bolha-recebida: #002037;
 
   --grid-line: rgba(255, 255, 255, 0.03);
 
@@ -3088,9 +3117,10 @@ table.tbl tbody tr:hover td {
   margin-top: 4px;
   padding-top: 4px;
   border-top: 1px solid color-mix(in srgb, currentColor 25%, transparent);
-  /* Cor cheia mesmo dentro da bolha azul, onde o vermelho de sistema some. Sobre azul, branco
-     legível; a borda e o ícone de erro já dizem que é falha. */
-  color: #ffe3e3;
+  /* O balão enviado é claro agora, então o vermelho de verdade volta a ser legível aqui dentro — e
+     vermelho é o que a pessoa precisa ver num aviso de "não entregou". O rosa claro que estava aqui
+     existia só porque o fundo era marinho. */
+  color: var(--danger);
   font-size: var(--texto-xs);
   font-weight: var(--fw-semibold);
   line-height: 1.35;
@@ -3100,7 +3130,6 @@ table.tbl tbody tr:hover td {
 
 /* Fora da bolha azul (mensagem recebida, prévia), o vermelho normal vale. */
 .bubble:not(.out) .msg-erro-motivo {
-  color: var(--danger);
   border-top-color: var(--line);
 }
 
@@ -3350,6 +3379,9 @@ table.tbl tbody tr:hover td {
 
 .bubble {
   max-width: 78%;
+  /* Contexto de formatação próprio: é o que faz o balão crescer pra caber a hora flutuada. Ver
+     `.bubble .tm`. */
+  display: flow-root;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-lg);
   font-size: 12px;
@@ -3382,15 +3414,17 @@ table.tbl tbody tr:hover td {
 
 /* Link dentro da bolha azul: quase branco, sublinhado. Um azul mais claro sobre azul não se lê
    como link: a diferença de cor some, e o que sobra é o sublinhado. */
+/* O balão enviado é claro agora: o link volta a ser a tinta da marca, sublinhado. Branco ali
+   sumiria. */
 .bubble.out .wa-link-mensagem {
-  color: #ffffff;
+  color: var(--bolha-enviada-texto);
   text-decoration: underline;
 }
 
-/* Horário e tiquinhos dentro da bolha azul: 0,6 de opacidade sobre o azul vivo cai abaixo do
-   legível. Sobre a bolha cinza da outra pessoa, 0,6 continua valendo. */
+/* Os dois balões são claros agora, então a hora segue a mesma opacidade dos dois lados. A regra
+   que subia pra 0,85 existia porque o balão enviado era escuro. */
 .bubble.out .tm {
-  opacity: 0.85;
+  opacity: 0.72;
 }
 
 /* Botão "Carregar áudio": mídia recebida sem conteúdo embutido no webhook, buscada sob demanda. */
@@ -3417,8 +3451,10 @@ table.tbl tbody tr:hover td {
    retângulos vazados. */
 /* RECEBIDA: cinza claro com borda. Ela usava `--navy-raised`, que virou branco quando o piso do
    sistema mudou — balao branco sobre area de conversa branca, visivel so pela sombra. */
+/* BRANCO. Era o mesmo cinza do fundo da lista, então sobre o corpo da conversa ela quase não
+   existia como balão. Branco sobre o cinza do fundo é a separação mais barata que existe. */
 .bubble.in {
-  background: var(--navy-raised-2);
+  background: var(--bolha-recebida);
   border: 1px solid var(--line);
   color: var(--ink);
   align-self: flex-start;
@@ -3522,9 +3558,13 @@ table.tbl tbody tr:hover td {
    ("dourado: acento, so em detalhe").
    Entao o balao passa a apontar pro navy diretamente. A diferenca entre quem falou continua sendo
    de CONTRASTE — claro contra escuro — que se le de longe sem comparar. */
+/* AZUL CLARO, com a tinta da marca por cima (#002037 sobre #cfe4f3 = 13,4:1).
+   Era marinho cheio com texto branco. Funcionava de contraste, mas fazia da nossa fala o elemento
+   mais pesado da tela: numa conversa de trinta mensagens, metade dela era bloco escuro. Claro
+   contra branco continua dizendo quem falou, e a tela para de pesar. */
 .bubble.out {
-  background: var(--navy-marca);
-  color: #fff;
+  background: var(--bolha-enviada);
+  color: var(--bolha-enviada-texto);
   align-self: flex-end;
   border-bottom-right-radius: 5px;
   /* Igual ao `.bubble.in`: o coração da curtida e o botão "⋮" são posicionados em relação ao
@@ -3588,8 +3628,8 @@ table.tbl tbody tr:hover td {
    TikTok e e-mail, a bolha verde aparecia em canal que não é WhatsApp. E, mesmo no WhatsApp, é a
    cor de outra marca dentro do produto. Sem regra própria, ela usa a bolha padrão do CRM. */
 
-/* No tema WhatsApp o cartão aberto também é marinho cheio. A barra azul da lateral era a marca
-   antiga de seleção e agora seria um segundo sinal dizendo a mesma coisa. */
+/* O filete da ação na borda esquerda do cartão aberto. Virou o sinal principal de seleção quando o
+   cartão deixou de ser marinho cheio. */
 .wa-whatsapp .wa-row.active {
   border-left-color: var(--acao);
 }
@@ -3609,11 +3649,26 @@ table.tbl tbody tr:hover td {
   max-width: 90%;
 }
 
+/*
+ * A HORA FICA NO FIM DA ÚLTIMA LINHA, não numa linha própria embaixo.
+ *
+ * Em `display: block` toda mensagem gastava uma linha inteira só pra mostrar quatro dígitos: um
+ * "ok" de duas letras virava um balão de duas linhas. Numa conversa longa isso é metade da altura
+ * da tela em espaço vazio.
+ *
+ * `float: right` é o que o WhatsApp faz, e ele se comporta certo nos dois casos sem precisar medir
+ * nada: cabendo na última linha, a hora senta ao lado do texto; não cabendo, ela desce sozinha. O
+ * `flow-root` no balão existe por causa disso — sem ele o elemento flutuado não conta na altura e
+ * a hora escapa por baixo da borda do balão.
+ */
 .bubble .tm {
-  display: block;
+  float: right;
   font-size: 10px;
   opacity: 0.6;
-  margin-top: 4px;
+  margin: 4px 0 0 var(--space-3);
+  /* A hora não é parte da frase: se o texto vier com quebras (`pre-wrap` no balão), ela não deve
+     herdar isso e abrir espaço do nada. */
+  white-space: nowrap;
 }
 
 .chat-input {
@@ -3776,11 +3831,13 @@ table.tbl tbody tr:hover td {
   display: flex;
   flex-direction: column;
   margin: var(--space-3) var(--space-3) var(--space-3) var(--space-3);
-  /* Painel branco sobre o fundo cinza, SEM borda: com o fundo um degrau mais escuro, o branco já
-     se destaca sozinho e o traçado só poluía. */
+  /* O painel vira o CINZA e os cartões viram brancos — a troca é proposital. Com painel branco e
+     cartão cinza-claro, os dois tons ficavam a um passo um do outro e a lista lia como uma mancha
+     só. Invertido, cada conversa é um objeto branco sobre um fundo, igual ao balão sobre o corpo da
+     conversa ao lado. */
   border: none;
   border-radius: var(--radius-xl);
-  background: var(--surface-elevated);
+  background: var(--conversa-fundo);
 }
 
 .wa-list-rows {
@@ -3962,13 +4019,15 @@ table.tbl tbody tr:hover td {
   position: relative;
   width: 100%;
   text-align: left;
-  padding: var(--space-3) var(--space-4);
-  margin-bottom: 8px;
-  /* Cartão cinza DENTRO do painel branco, sem traçado. A hierarquia passa a ser de superfície
-     (fundo cinza → painel branco → cartão cinza claro) em vez de linha: é o que tira o aspecto de
-     formulário e deixa a lista respirar. `--navy-raised-2` porque ele é cinza no claro e marinho
-     levantado no escuro: a mesma intenção, sem precisar de uma regra por tema. */
-  background: var(--navy-raised-2);
+  /* Cartão MAIS BAIXO. Com 12/16 de folga, cabiam cinco conversas na tela e a lista parecia uma
+     sequência de blocos em vez de uma caixa de entrada. A informação é a mesma; o que sai é o ar
+     em volta dela. */
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: 4px;
+  /* Cartão BRANCO dentro do painel cinza (antes era o contrário: cartão cinza no painel branco, e
+     os dois tons ficavam tão perto que o cartão não existia como objeto). Branco sobre cinza é a
+     mesma separação que a conversa usa entre balão e fundo: uma leitura só pra tela inteira. */
+  background: var(--bolha-recebida);
   border: none;
   border-left: 2px solid transparent;
   border-radius: var(--radius-md);
@@ -4035,63 +4094,53 @@ table.tbl tbody tr:hover td {
  * ícone e etiqueta seguem cada um a sua regra normal e ficam legíveis sem nenhum deles precisar
  * saber que está sobre marinho.
  */
+/*
+ * CONVERSA ABERTA: o MESMO azul claro do topo da conversa, não marinho cheio.
+ *
+ * Marinho cheio marcava bem, mas junto com o cabeçalho e o balão enviado — também marinhos — fazia
+ * três manchas escuras numa tela só, e era essa a reclamação. Agora o cartão aberto e a barra da
+ * conversa ao lado são a mesma cor: além de clarear a tela, isso diz literalmente "este cartão é
+ * aquela conversa", que é a ligação que o marinho tentava fazer.
+ *
+ * A marcação não enfraquece: o cartão aberto é o único colorido numa lista de cartões brancos, e
+ * ainda ganha o filete da ação na borda esquerda.
+ */
 .wa-row.active {
-  background: var(--navy-marca);
-  border-color: var(--navy-marca);
-  border-left-color: var(--navy-marca);
+  background: var(--conversa-topo);
+  border-color: var(--conversa-topo);
+  border-left-color: var(--acao);
   box-shadow: var(--shadow-sm);
-
-  --ink: #ffffff;
-  --ink-nome: #ffffff;
-  --text-muted: rgba(255, 255, 255, 0.78);
-  --text-faint: rgba(255, 255, 255, 0.62);
-  --line: rgba(255, 255, 255, 0.16);
-  --line-strong: rgba(255, 255, 255, 0.28);
-  --navy-raised-2: rgba(255, 255, 255, 0.14);
-  --gray-100: rgba(255, 255, 255, 0.12);
-  --gray-200: rgba(255, 255, 255, 0.16);
-  --blue: #9db8ff;
-  --blue-soft: rgba(157, 184, 255, 0.22);
-  /* Mesmo motivo da barra lateral: sem declarar `color`, o texto sem cor própria herda o marinho
-     já resolvido no `body` e some sobre o cartão marinho. */
   color: var(--ink);
 }
 
-/* Hover não altera o cartão aberto: ele já está no estado mais forte que existe, e clarear no
-   passar do mouse faria parecer que o clique desfez a seleção. */
+/* Hover não altera o cartão aberto: ele já está no estado mais forte que existe, e mudar no passar
+   do mouse faria parecer que o clique desfez a seleção. */
 .wa-row.active:hover {
-  border-color: var(--acao);
+  border-color: var(--conversa-topo);
+  border-left-color: var(--acao);
   box-shadow: var(--shadow-sm);
 }
 
-/* Sobre o marinho, o contador de não lidas precisa do contraste invertido: o azul da marca sobre
-   marinho quase some. */
+/* Sobre o azul claro, o contador volta ao contraste normal: marinho cheio com texto branco. */
 .wa-row.active .wa-unread-badge {
-  background: #ffffff;
-  color: var(--navy-marca);
-}
-
-/* Etiquetas de estado (NOVO, QUALIFICADO, FECHADO…) dentro do cartão aberto: fundo claro
-   translúcido e texto branco, em vez das cores próprias de cada uma. Sobre marinho elas ficariam
-   ilegíveis, e o que importa ali é ler a palavra, não a cor dela. */
-.wa-row.active .pill,
-.wa-row.active .tag,
-.wa-row.active .chip {
-  background: rgba(255, 255, 255, 0.16);
-  border-color: rgba(255, 255, 255, 0.24);
+  background: var(--navy-marca);
   color: #ffffff;
 }
 
-/* Foco pelo teclado sobre o cartão marinho. O azul do contorno padrão sumiria. */
+/* As etiquetas voltam a usar as cores próprias delas dentro do cartão aberto: o fundo é claro
+   agora, e a regra que as apagava em branco translúcido existia só por causa do marinho. */
+
+/* O cartão aberto é claro agora, então o contorno de foco volta ao padrão do CRM: o branco que
+   estava aqui existia só porque o fundo era marinho. */
 .wa-row.active:focus-visible {
-  outline-color: #ffffff;
+  outline-color: var(--blue);
 }
 
 .wa-row .cr1 {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 /* Ordem de leitura da linha: 1) nome, 2) estado, 3) mensagem, 4) horário. Cada degrau muda peso,
@@ -4122,12 +4171,12 @@ table.tbl tbody tr:hover td {
 }
 
 .wa-row .avatar {
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
 }
 
 .wa-row .cmsg {
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 /* Prévia da última mensagem no menu lateral. Sempre uma linha só, tamanho proporcional às
@@ -4295,7 +4344,82 @@ table.tbl tbody tr:hover td {
 .wa-main .chat-body {
   flex: 1;
   max-height: none;
-  background-color: var(--navy);
+  /* Cinza, não branco. O balão de quem escreveu é branco agora: sobre fundo branco ele desaparecia
+     e a conversa virava texto solto no vazio. O cinza é o que faz os dois balões existirem. */
+  background-color: var(--conversa-fundo);
+}
+
+/*
+ * O TOPO DA CONVERSA É AZUL CLARO, não marinho.
+ *
+ * `.open-conv-h` continua marinho onde ela é uma faixa dentro de modal (ela aparece em mais de
+ * quinze lugares), mas a barra da conversa aberta de verdade — a que fica no alto da tela o dia
+ * todo — passa a ser clara. Em marinho ela empilhava com o cartão selecionado e com o balão
+ * enviado, e a tela virava três blocos escuros sem nada entre eles.
+ *
+ * Como o fundo clareia, todos os tokens que `.open-conv-h` tinha invertido pra branco voltam ao
+ * normal: nome, telefone, avatar e botões leem a tinta da marca de novo. Sem desfazer um a um, o
+ * nome ficaria branco sobre azul claro, que foi exatamente o bug que o comentário mais abaixo nesta
+ * folha descreve ter acontecido da outra vez.
+ */
+.wa-main > .open-conv-h {
+  background: var(--conversa-topo);
+  border-bottom: 1px solid var(--line);
+
+  --ink: #002037;
+  --ink-nome: #002037;
+  --text-muted: rgba(0, 32, 55, 0.72);
+  --text-faint: rgba(0, 32, 55, 0.58);
+  --line: rgba(0, 32, 55, 0.12);
+  --line-strong: rgba(0, 32, 55, 0.22);
+  --surface-active: rgba(0, 32, 55, 0.08);
+  --navy: rgba(0, 32, 55, 0.08);
+  --navy-raised: rgba(0, 32, 55, 0.06);
+  --surface-elevated: rgba(255, 255, 255, 0.7);
+  --navy-raised-2: rgba(0, 32, 55, 0.08);
+  --gray-100: rgba(0, 32, 55, 0.06);
+  --blue: #002037;
+  --blue-soft: rgba(0, 32, 55, 0.1);
+  --blue-soft-2: rgba(0, 32, 55, 0.06);
+  color: #002037;
+}
+
+/* O avatar volta a ter fundo próprio: sobre o azul claro, o translúcido branco sumia. */
+.wa-main > .open-conv-h .avatar {
+  background: rgba(0, 32, 55, 0.1);
+  color: #002037;
+}
+
+/* A engrenagem segue a tinta, não o branco que a barra marinho exigia. */
+.wa-main > .open-conv-h .wa-main-gear {
+  color: rgba(0, 32, 55, 0.72);
+}
+
+.wa-main > .open-conv-h .wa-main-gear:hover {
+  background: rgba(0, 32, 55, 0.1);
+  color: #002037;
+}
+
+:root[data-theme="dark"] .wa-main > .open-conv-h {
+  --ink: #fafafa;
+  --ink-nome: #e6e6ea;
+  --text-muted: rgba(250, 250, 250, 0.7);
+  --text-faint: rgba(250, 250, 250, 0.56);
+  --line: rgba(255, 255, 255, 0.1);
+  --line-strong: rgba(255, 255, 255, 0.18);
+  --blue: #D2A366;
+  --blue-soft: rgba(210, 163, 102, 0.18);
+  color: #fafafa;
+}
+
+:root[data-theme="dark"] .wa-main > .open-conv-h .avatar,
+:root[data-theme="dark"] .wa-main > .open-conv-h .wa-main-gear:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fafafa;
+}
+
+:root[data-theme="dark"] .wa-main > .open-conv-h .wa-main-gear {
+  color: rgba(250, 250, 250, 0.7);
 }
 
 .wa-main-gear {
@@ -12510,6 +12634,37 @@ button.camp-row:hover {
   color: var(--blue);
 }
 
+/*
+ * UMA COR POR PESSOA NO GRUPO.
+ *
+ * Todas as falas recebidas vêm no mesmo balão branco e o nome era sempre da mesma cor: num grupo de
+ * seis pessoas, descobrir quem disse o quê exigia ler nome por nome. A cor resolve isso antes da
+ * leitura, que é por que o WhatsApp faz igual.
+ *
+ * Oito tons, todos escolhidos para passar de 4,5:1 sobre o balão branco, e com matizes separados o
+ * bastante pra não virarem "três azuis diferentes". O índice vem de `corDoAutor(nome)`, no
+ * componente, e é estável: a mesma pessoa não muda de cor entre carregamentos.
+ */
+.wa-remetente-grupo[data-autor="0"] { color: #a3316c; }
+.wa-remetente-grupo[data-autor="1"] { color: #116b52; }
+.wa-remetente-grupo[data-autor="2"] { color: #8a4b12; }
+.wa-remetente-grupo[data-autor="3"] { color: #5b3fa8; }
+.wa-remetente-grupo[data-autor="4"] { color: #06618f; }
+.wa-remetente-grupo[data-autor="5"] { color: #a33a28; }
+.wa-remetente-grupo[data-autor="6"] { color: #42691a; }
+.wa-remetente-grupo[data-autor="7"] { color: #7a3b8f; }
+
+/* No escuro o balão recebido é marinho, e esses mesmos tons somem nele. A paleta sobe de
+   luminosidade mantendo o matiz: quem reconhece alguém pelo "roxo" continua reconhecendo. */
+:root[data-theme="dark"] .wa-remetente-grupo[data-autor="0"] { color: #ff9ec7; }
+:root[data-theme="dark"] .wa-remetente-grupo[data-autor="1"] { color: #6fd9b4; }
+:root[data-theme="dark"] .wa-remetente-grupo[data-autor="2"] { color: #e9b171; }
+:root[data-theme="dark"] .wa-remetente-grupo[data-autor="3"] { color: #b5a4ff; }
+:root[data-theme="dark"] .wa-remetente-grupo[data-autor="4"] { color: #7cc6f2; }
+:root[data-theme="dark"] .wa-remetente-grupo[data-autor="5"] { color: #ff9f8d; }
+:root[data-theme="dark"] .wa-remetente-grupo[data-autor="6"] { color: #abd06a; }
+:root[data-theme="dark"] .wa-remetente-grupo[data-autor="7"] { color: #dba4ef; }
+
 /* Foto de perfil real (WhatsApp) dentro do círculo `.avatar`. Substitui as iniciais quando existe. */
 .wa-avatar-foto {
   width: 100%;
@@ -12853,8 +13008,8 @@ button.camp-row:hover {
 }
 
 .wa-whatsapp .bubble.out.bubble-audio {
-  background: var(--blue);
-  color: #fff;
+  background: var(--bolha-enviada);
+  color: var(--bolha-enviada-texto);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -15462,12 +15617,13 @@ button.camp-row:hover {
 
 /* Enviado: fora azul, dentro um azul mais fundo. A leitura de "fui eu que mandei" acontece antes
    de a pessoa reparar em qual lado a bolha está. */
+/* Segue a tinta do balão: escurece no tema claro, clareia no escuro. Preto fixo sumia no escuro. */
 .bubble.out.bubble-audio .audio-player {
-  background: rgba(0, 0, 0, 0.16);
+  background: color-mix(in srgb, var(--bolha-enviada-texto) 14%, transparent);
 }
 
 .bubble.out.bubble-audio .audio-player:hover {
-  background: rgba(0, 0, 0, 0.22);
+  background: color-mix(in srgb, var(--bolha-enviada-texto) 20%, transparent);
 }
 
 /* A hora e os tiquinhos ficam FORA do player, colados no canto do container. Dentro, competiam
@@ -16031,17 +16187,19 @@ table.tbl .name-cell .r {
 
 /* A citação dentro da bolha ENVIADA precisa do contraste invertido: a faixa cinza clara e a tinta
    escura desaparecem sobre o fundo preto da bolha. */
+/* A citação dentro do balão enviado: o branco translúcido sumia agora que o balão é claro. Ela
+   escurece, em vez de clarear. */
 .bubble.out .wa-citacao {
-  background: rgba(255, 255, 255, 0.12);
-  border-left-color: rgba(255, 255, 255, 0.5);
+  background: color-mix(in srgb, var(--bolha-enviada-texto) 8%, transparent);
+  border-left-color: color-mix(in srgb, var(--bolha-enviada-texto) 40%, transparent);
 }
 
 .bubble.out .wa-citacao-autor {
-  color: rgba(255, 255, 255, 0.92);
+  color: color-mix(in srgb, var(--bolha-enviada-texto) 92%, transparent);
 }
 
 .bubble.out .wa-citacao-texto {
-  color: rgba(255, 255, 255, 0.7);
+  color: color-mix(in srgb, var(--bolha-enviada-texto) 70%, transparent);
 }
 
 /* Área de mensagens com superfície própria: separa a conversa do cabeçalho e do campo de escrever,
@@ -17169,9 +17327,15 @@ table.tbl .name-cell .r {
    do ambiente, e é o que separa "azul chapado" de "objeto com volume". Custa um `inset` e nenhum
    pixel de desenho. */
 .open-conv-h,
-.wa-row.active,
 .agenda-cell.hoje {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), var(--shadow-sm);
+}
+
+/* A barra da conversa e o cartão aberto saíram do marinho: um fio branco sobre azul claro não lê
+   como quina, lê como borda mal apagada. Os dois ficam com a sombra limpa. */
+.wa-main > .open-conv-h,
+.wa-row.active {
+  box-shadow: var(--shadow-sm);
 }
 
 .sidebar {
