@@ -45,6 +45,22 @@ model Contato {
   canalPreferido String?
   melhorHorario  String?
 
+  /// CONSENTIMENTO DE WHATSAPP, declarado pela pessoa num formulário.
+  ///
+  /// Nulo é "não se sabe", e é por isso que as três colunas são opcionais: todo contato que já
+  /// existe no CRM nasceu antes desta coluna, e tratar a ausência como recusa cortaria o
+  /// atendimento de clientes que vêm conversando há meses. Só o `false` explícito — a pessoa viu a
+  /// caixa e não marcou — bloqueia o envio de modelo (ver `acoes.ts`).
+  ///
+  /// Guardamos também o TEXTO que ela leu e QUANDO, porque consentimento sem a frase que foi
+  /// aceita não prova nada: numa contestação, o que vale é o que estava escrito na tela.
+  consentimentoWhatsApp       Boolean?
+  consentimentoWhatsAppEm     DateTime?
+  consentimentoWhatsAppTexto  String?   @db.Text
+  /// De onde veio o consentimento ("azuz-flow:<nome do formulário>"). Serve pra auditoria saber
+  /// qual formulário colheu, quando houver mais de uma origem.
+  consentimentoWhatsAppOrigem String?
+
   // @ do Instagram (sem arroba). Preenchido sozinho quando a pessoa chega pelo Direct e o CRM
   // resolve o username na primeira mensagem. É o equivalente do `whatsapp` pro outro canal: sem
   // ele, um lead vindo do Direct virava contato sem nenhuma forma de reencontrar a pessoa.
@@ -500,6 +516,8 @@ model Workspace {
   eventoDoLeads         EventoDoLead[]
   campanhas             Campanha[]
   templates             Template[]
+  chavesDeIntegracao    ChaveDeIntegracao[]
+  leadsRecebidos        LeadRecebido[]
 }
 
 // Núcleo comercial (2ª leva): espelha o tipo `Membro` de src/lib/data.ts. Segue o mesmo padrão de
@@ -1610,4 +1628,74 @@ model RegistroDeAuditoria {
   @@index([workspaceId, criadoEm])
   @@index([acao, criadoEm])
   @@index([email, criadoEm])
+}
+
+/// A chave que um produto nosso usa pra falar com o CRM de uma agência. Hoje só o AZUZ Flow.
+///
+/// GUARDAMOS SÓ O HASH. A chave em claro aparece uma única vez, na tela de quem a gerou, e nunca
+/// mais: um vazamento do banco não entrega acesso ao CRM de ninguém, e nós mesmos não temos como
+/// ler a chave de um cliente. O `prefixo` existe só pra tela poder dizer QUAL chave está ativa sem
+/// revelar nada útil.
+///
+/// O `workspaceId` daqui é a única fonte da empresa nas rotas do Flow. Ele nunca vem do corpo da
+/// requisição: se viesse, qualquer chave válida escreveria na empresa que quisesse.
+model ChaveDeIntegracao {
+  id String @id @default(uuid())
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  /// "azuz_flow". Coluna e não enum porque o próximo produto entra sem migração de tipo.
+  provedor String
+
+  /// Os primeiros caracteres, pra exibir ("azflow_AbC12…").
+  prefixo String
+  /// SHA-256 em hex da chave inteira. `@unique` porque é por ele que a rota acha a chave, e
+  /// duas linhas com o mesmo hash tornariam a busca ambígua.
+  hashDaChave String @unique
+
+  criadaEm  DateTime @default(now())
+  /// Nome de quem gerou. Pra tela poder dizer "criada por Thaynara" sem outra consulta.
+  criadaPor String
+
+  /// Atualizado no máximo uma vez por minuto: a cada lead seria uma escrita por requisição, numa
+  /// coluna que ninguém olha com precisão de segundo.
+  ultimoUsoEm DateTime?
+  /// Revogada continua na tabela: apagar perderia o registro de que ela existiu, que é o que
+  /// responde "quem tinha acesso em março?".
+  revogadaEm DateTime?
+
+  @@index([workspaceId, provedor])
+}
+
+/// Um lead que chegou de fora, guardado pra que a mesma entrega não entre duas vezes.
+///
+/// O Flow repete o envio quando a rede falha ou quando o CRM devolve 5xx — é o comportamento
+/// correto dele. Sem esta tabela, cada repetição criaria contato, card e automação de novo, e quem
+/// preencheu o formulário receberia a mesma mensagem várias vezes.
+///
+/// `resultado` guarda a RESPOSTA da primeira vez, inteira, pra repetição devolver exatamente o
+/// mesmo corpo. Recalcular daria uma resposta diferente (ids novos, contagens outras) para a mesma
+/// entrega, e quem chamou não teria como saber qual das duas vale.
+model LeadRecebido {
+  id String @id @default(uuid())
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  /// "azuz_flow".
+  origem String
+  /// O identificador da entrega no produto de origem (o `respostaId` do Flow).
+  chaveExterna String
+
+  contatoId  String?
+  conversaId String?
+
+  /// A resposta devolvida na primeira vez. Ver o comentário do modelo.
+  resultado Json
+
+  criadoEm DateTime @default(now())
+
+  @@unique([workspaceId, origem, chaveExterna])
+  @@index([workspaceId, criadoEm])
 }

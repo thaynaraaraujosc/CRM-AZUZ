@@ -53,6 +53,20 @@ const PREFIXOS_PUBLICOS = [
   // HMAC do id (`?a=`) conferida antes de tocar no banco, e validade de 15 minutos.
   "/api/anexos/publico",
 
+  /*
+   * As rotas que o AZUZ Flow chama pra entregar lead e pra testar a conexão.
+   *
+   * Quem chama é o servidor do Flow, que não tem navegador nem sessão. Sem esta liberação o proxy
+   * devolveria 307 pro /login, o Flow receberia um 2xx de página de login e registraria "entregue"
+   * — o lead nunca teria chegado, e ninguém veria erro nenhum. É o mesmo sintoma que o comentário
+   * no topo deste arquivo descreve ter acontecido três vezes.
+   *
+   * A defesa mora dentro das rotas: chave de 32 bytes conferida contra o hash guardado, limite de
+   * uso por chave e por IP, e teto de 64 KB no corpo. A empresa vem SEMPRE da chave.
+   */
+  "/api/integracoes/azuz-flow/leads",
+  "/api/integracoes/azuz-flow/ping",
+
   // O link rastreado que fica no botão de WhatsApp do site do cliente. Quem clica nele é um
   // visitante do site de outra empresa: não tem conta no CRM, nunca vai ter, e exigir sessão
   // transformaria o botão de WhatsApp numa tela de login. É público por definição.

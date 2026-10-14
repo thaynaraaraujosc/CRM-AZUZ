@@ -8,6 +8,10 @@ import { dentroDaJanelaDirect } from "@/lib/social/janela-direct";
 import { RITMO, intervaloEntreEnvios, type CanalCampanha } from "./ritmo";
 import { componentesParaMeta, preencherVariaveis, type MapeamentoVariavel } from "./variaveis";
 import { registrarEnvioNaConversa } from "./registrar-envio";
+import {
+  MOTIVO_SEM_CONSENTIMENTO,
+  bloqueadoPorFaltaDeConsentimento,
+} from "@/lib/integracoes/consentimento-whatsapp";
 
 /**
  * O motor das campanhas.
@@ -128,9 +132,29 @@ async function enviarUm(
     return undefined;
   }
 
-  // WhatsApp oficial. Campanha fala com quem não escreveu primeiro, então a janela de 24h está
-  // fechada na maioria dos casos e o único caminho permitido é o modelo aprovado. Texto livre só
-  // vai quando a campanha não tem template. Aí é responsabilidade de quem montou.
+  /*
+   * WhatsApp oficial COM MODELO: o mesmo envio que o bloco de automação faz, e por isso a mesma
+   * trava de consentimento.
+   *
+   * O comentário logo abaixo já dizia o essencial: campanha fala com quem não escreveu primeiro.
+   * É justamente aí que a caixa marcada no formulário importa — quem recusou receber WhatsApp não
+   * pode entrar num disparo em massa por estar na lista.
+   *
+   * Só quando há `template`. Campanha sem modelo manda texto livre, o que só funciona com a janela
+   * de 24h aberta, ou seja, pra quem escreveu primeiro; e quem escreveu primeiro não é barrado por
+   * esta regra em lugar nenhum do CRM.
+   */
+  if (template) {
+    const contato = await prisma.contato.findUnique({
+      where: { workspaceId_nome: { workspaceId, nome: contatoNome } },
+      select: { consentimentoWhatsApp: true },
+    });
+    if (bloqueadoPorFaltaDeConsentimento(contato?.consentimentoWhatsApp)) {
+      throw new Error(MOTIVO_SEM_CONSENTIMENTO);
+    }
+  }
+
+  // Texto livre só vai quando a campanha não tem template. Aí é responsabilidade de quem montou.
   // `contaConectada` já devolve o token descriptografado e confere status/phoneNumberId. O mesmo
   // caminho que a tela de Conversas usa, pra campanha e atendimento nunca divergirem.
   const conta = await contaConectada(workspaceId);

@@ -17,6 +17,10 @@ import { enviarEmailOuFalhar } from "@/lib/email";
 import { encerrarExecucao, execucoesVivasDoContato } from "./execucoes";
 import { categoriaEscolhida, conversaEmTexto, provedorDeIA } from "./ia";
 import { anotarNaLinhaDoTempo } from "@/lib/integracoes/instagram-eventos";
+import {
+  MOTIVO_SEM_CONSENTIMENTO,
+  bloqueadoPorFaltaDeConsentimento,
+} from "@/lib/integracoes/consentimento-whatsapp";
 
 /**
  * O que uma automação consegue FAZER no mundo. Separado de QUANDO fazer (o motor).
@@ -296,6 +300,14 @@ export function acoesReais(params: {
         if (!conversa?.contato) return falha("Conversa sem destinatário.");
 
         const contato = await prisma.contato.findUnique({ where: { workspaceId_nome: { workspaceId, nome: contatoNome } } });
+
+        // Modelo é a mensagem que ABRE conversa com quem não escreveu primeiro: é exatamente o
+        // envio que depende de a pessoa ter concordado em receber. Conferido aqui, e não em quem
+        // monta o fluxo, porque o bloco é reusado por todo fluxo que alguém venha a desenhar.
+        if (bloqueadoPorFaltaDeConsentimento(contato?.consentimentoWhatsApp)) {
+          return falha(MOTIVO_SEM_CONSENTIMENTO);
+        }
+
         const mapeamento = ((modelo.variaveis ?? []) as MapeamentoVariavel[]).map((v) => ({
           ...v,
           // Valor fixo escolhido no bloco tem prioridade sobre o padrão do modelo.

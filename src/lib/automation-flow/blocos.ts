@@ -310,7 +310,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     categoria: "gatilho",
     grupo: "gatilhos",
     label: "Formulário preenchido",
-    descricao: "Dispara quando o lead preenche um formulário do CRM.",
+    descricao: "Dispara quando o lead preenche um formulário do CRM ou do AZUZ Flow.",
     icone: "FileText",
     corClasse: corDaCategoria("gatilho"),
     dataPadrao: () => ({}),

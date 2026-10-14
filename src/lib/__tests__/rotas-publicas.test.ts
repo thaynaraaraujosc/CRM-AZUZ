@@ -69,6 +69,21 @@ describe("rotas que dispensam sessão", () => {
     }
   });
 
+  it("abre as duas rotas que o AZUZ Flow chama, e só elas", () => {
+    // Quem chama é o servidor do Flow, sem navegador nem sessão. Sem isto o proxy devolve 307 pro
+    // /login, o Flow recebe a página de login com status de sucesso e dá a entrega por feita: o
+    // lead some sem erro em lugar nenhum.
+    expect(ehRotaPublica("/api/integracoes/azuz-flow/leads")).toBe(true);
+    expect(ehRotaPublica("/api/integracoes/azuz-flow/ping")).toBe(true);
+
+    // A gestão da chave é da TELA, com sessão de administrador. Abrir junto deixaria qualquer um
+    // gerar uma chave de integração da empresa dos outros.
+    expect(ehRotaPublica("/api/integracoes/azuz-flow/chave")).toBe(false);
+    // E a liberação não pode vazar pro resto das integrações.
+    expect(ehRotaPublica("/api/integracoes/meta/whatsapp/conectar")).toBe(false);
+    expect(ehRotaPublica("/api/integracoes/azuz-flow")).toBe(false);
+  });
+
   it("abre a tela pública do formulário, que é aberta por um lead sem login", () => {
     // O link compartilhado leva pra cá. Se esta rota exigisse sessão, o proxy devolveria 307 pro
     // /login e o formulário nunca seria respondido: foi assim que a tela pública ficou inacessível
