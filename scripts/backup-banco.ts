@@ -25,7 +25,22 @@ if (!process.env.DATABASE_URL) {
   process.exit(1);
 }
 
-const prisma = new PrismaClient({ adapter: new PrismaMariaDb(process.env.DATABASE_URL) });
+/**
+ * Tempo de conexão maior que o padrão de 1 SEGUNDO do conector mariadb.
+ *
+ * Um segundo serve pra banco na mesma rede. Visto de uma internet doméstica, o backup morria com
+ * "failed to create socket after 1001ms" antes mesmo de autenticar — e um backup que não roda é a
+ * pior hora pra descobrir um padrão mal escolhido. O `socketTimeout` é folgado porque backup de
+ * banco grande demora, e cortar no meio produziria um arquivo incompleto.
+ */
+function comTempoDeSobra(databaseUrl: string): string {
+  const url = databaseUrl.replace(/^mysql:\/\//, "mariadb://");
+  return `${url}${url.includes("?") ? "&" : "?"}connectTimeout=15000&socketTimeout=600000`;
+}
+
+const prisma = new PrismaClient({
+  adapter: new PrismaMariaDb(comTempoDeSobra(process.env.DATABASE_URL)),
+});
 
 /**
  * Todas as tabelas, na ordem em que aparecem no schema. A lista é explícita de propósito: descobrir

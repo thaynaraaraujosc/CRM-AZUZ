@@ -55,6 +55,13 @@ function rodar(comando: string, args: string[]) {
   return spawnSync(comando, args, { encoding: "utf-8", shell: false });
 }
 
+/*
+ * O `prisma migrate diff` e o `db push` usam o conector do Prisma, que tem tempo de conexão próprio
+ * e mais folgado que o 1 segundo do driver cru. Se mesmo assim der tempo esgotado aqui, o problema
+ * é de rede e não de tempo: rode antes `npx tsx scripts/conferir-schema.mjs`, que diagnostica a
+ * conexão e diz o que conferir.
+ */
+
 // 1. O SQL que o `db push` executaria. `migrate diff` não toca no banco: só compara.
 const diff = rodar("npx", [
   "prisma",
