@@ -34,6 +34,37 @@ if (!process.env.DATABASE_URL) {
 }
 
 /**
+ * DIZ EM QUE SERVIDOR VAI MEXER, antes de qualquer outra coisa.
+ *
+ * Em 14/10/2026 este script quase aplicou o schema no banco errado: o `.env` da máquina ainda
+ * apontava pro banco ANTIGO (um Railway desativado) enquanto a produção já tinha mudado de
+ * servidor. O script faria a coisa certa no lugar errado, e a produção continuaria quebrada — sem
+ * nenhum erro pra denunciar, porque do ponto de vista dele teria dado tudo certo.
+ *
+ * Um script que escreve em banco de cliente tem que dizer em QUAL, em voz alta, antes de escrever.
+ * Sem usuário e sem senha: o endereço basta pra reconhecer o servidor, e nada além dele deve
+ * aparecer na tela nem no histórico do terminal.
+ */
+function enderecoVisivel(databaseUrl: string): string {
+  try {
+    const u = new URL(databaseUrl.replace(/^mysql:\/\//, "http://"));
+    return `${u.hostname}:${u.port || "3306"}${u.pathname}`;
+  } catch {
+    return "(não deu pra ler o endereço da DATABASE_URL)";
+  }
+}
+
+const ENDERECO = enderecoVisivel(process.env.DATABASE_URL);
+console.log("========================================================================");
+console.log(`BANCO ALVO: ${ENDERECO}`);
+console.log("");
+console.log("  Confira que é o servidor da PRODUÇÃO antes de seguir. A DATABASE_URL do seu");
+console.log("  .env pode ter ficado apontando pro banco antigo depois de uma troca de");
+console.log("  servidor, e aí o schema seria aplicado no lugar errado — sem erro nenhum.");
+console.log("========================================================================");
+console.log("");
+
+/**
  * Comandos que mexem em dado que já existe.
  *
  * `MODIFY`/`CHANGE` entram na lista junto com os óbvios porque mudar o tipo de uma coluna que tem
@@ -141,7 +172,7 @@ console.log("(Se esse backup for antigo, pare e tire um novo antes de seguir.)\n
 
 // 5. Aplica. SEM `--accept-data-loss`: se o Prisma achar que vai perder dado, o comando falha, e
 //    falhar é o resultado certo — a conferência acima diz que não deveria haver nada a perder.
-console.log("Aplicando com `prisma db push`...\n");
+console.log(`Aplicando com \`prisma db push\` em ${ENDERECO} …\n`);
 const push = rodar("npx", ["prisma", "db", "push"]);
 process.stdout.write(`${push.stdout ?? ""}${push.stderr ?? ""}`);
 
