@@ -30,6 +30,26 @@ export function montarUrlDoBanco(databaseUrl: string, poolParams?: string): stri
   let url = databaseUrl.replace(/^mysql:\/\//, "mariadb://");
   url += url.includes("?") ? "&connectionLimit=3" : "?connectionLimit=3";
   url += "&compress=true";
+  /*
+   * `allowPublicKeyRetrieval`: o CRM parou em produção sem isto, em 14/10/2026.
+   *
+   * O MySQL 8.4 autentica com `caching_sha2_password`. O nome é literal: o servidor guarda em
+   * memória o resultado da primeira autenticação de cada usuário, e as conexões seguintes usam um
+   * caminho rápido. Mas quando esse cache está FRIO — servidor reiniciado, ou um `FLUSH PRIVILEGES`
+   * qualquer — a negociação completa exige a chave pública RSA do servidor. Sem TLS, o cliente
+   * precisa pedi-la, e o driver recusa pedir a menos que esta opção esteja ligada (padrão `false`,
+   * ver `caching-sha2-password-auth.js` no pacote `mariadb`).
+   *
+   * O efeito é cruel de diagnosticar: o CRM funciona por semanas e cai do nada, sem ninguém ter
+   * mexido em nada, com "não está conseguindo acessar o banco". Foi preciso esvaziar o cache sem
+   * querer pra descobrir que a conexão dependia dele.
+   *
+   * O que isto custa: a chave pública trafega em claro, então alguém no meio do caminho poderia
+   * substituí-la. A resposta certa pra isso é TLS na conexão com o banco — que é uma mudança
+   * maior, e vale fazer. Enquanto não, ficar de pé com esta opção é melhor do que cair sozinho
+   * quando o cache esfriar.
+   */
+  url += "&allowPublicKeyRetrieval=true";
   url += poolParams ?? "";
   return url;
 }
