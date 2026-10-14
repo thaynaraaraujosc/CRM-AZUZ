@@ -10,25 +10,6 @@ export default defineConfig({
     seed: "npx tsx prisma/seed.ts",
   },
   datasource: {
-    /*
-     * A URL que as FERRAMENTAS do Prisma usam (`db push`, `migrate diff`, `generate`).
-     *
-     * `DATABASE_URL_MIGRACAO` tem prioridade, e existe por uma razão concreta: em 14/10/2026
-     * descobrimos que o build da Vercel nunca conseguiu aplicar o schema — `P1000, authentication
-     * failed` a cada publicação, por meses, enquanto o site rodava normalmente com a MESMA variável.
-     *
-     * São dois clientes diferentes falando com o mesmo banco: o site usa o driver mariadb do Node
-     * (via `@prisma/adapter-mariadb`), as ferramentas usam o conector próprio do Prisma. Eles
-     * divergem no que aceitam numa URL — caractere especial na senha, parâmetros de TLS, negociação
-     * do `caching_sha2_password` do MySQL 8.4. Espremer os dois na mesma string obriga uma das
-     * pontas a ceder.
-     *
-     * Com duas variáveis, cada uma fala o seu dialeto. E a de migração pode ter um usuário próprio,
-     * com direito de alterar estrutura — que é um direito que a aplicação não precisa ter.
-     *
-     * Ausente, cai na `DATABASE_URL` de sempre: quem não configurar nada continua exatamente como
-     * antes, inclusive no desenvolvimento local.
-     */
-    url: process.env["DATABASE_URL_MIGRACAO"] ?? process.env["DATABASE_URL"],
+    url: process.env["DATABASE_URL"],
   },
 });
