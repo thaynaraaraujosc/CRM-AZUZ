@@ -3,35 +3,6 @@
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
 
-/**
- * Só aceita a URL de migração se ela PARECER uma URL.
- *
- * Isto existe por um defeito meu, de 14/10/2026: ao fazer o Prisma preferir
- * `DATABASE_URL_MIGRACAO`, eu criei um jeito de um erro de digitação numa variável de ambiente
- * derrubar TODA publicação. O `prisma generate` roda no `postinstall`, valida a URL do datasource e
- * falha se ela não for uma; com isso o `npm install` falha, o build falha, e nenhuma correção
- * consegue mais chegar ao ar — inclusive a correção disso.
- *
- * Uma variável opcional nunca pode ter esse poder. Se o valor não serve, ela é ignorada e tudo
- * continua como antes: é o pior que uma opção deveria conseguir fazer.
- */
-function urlDeMigracaoValida(): string | undefined {
-  const bruta = process.env["DATABASE_URL_MIGRACAO"]?.trim();
-  if (!bruta) return undefined;
-  if (!/^mysql:\/\//.test(bruta)) return undefined;
-  try {
-    const url = new URL(bruta.replace(/^mysql:\/\//, "http://"));
-    if (!url.hostname) return undefined;
-    // Sublinhado não é válido em nome de host — e é justamente o que sobra quando o endereço de
-    // exemplo (`IP_DA_VPS`) fica no lugar do real. Regra precisa, não adivinhação: IP e domínio
-    // passam, o texto de exemplo não.
-    if (url.hostname.includes("_")) return undefined;
-    return bruta;
-  } catch {
-    return undefined;
-  }
-}
-
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
@@ -39,25 +10,6 @@ export default defineConfig({
     seed: "npx tsx prisma/seed.ts",
   },
   datasource: {
-    /*
-     * A URL que as FERRAMENTAS do Prisma usam (`db push`, `migrate diff`, `generate`).
-     *
-     * `DATABASE_URL_MIGRACAO` tem prioridade, e existe por uma razão concreta: em 14/10/2026
-     * descobrimos que o build da Vercel nunca conseguiu aplicar o schema — `P1000, authentication
-     * failed` a cada publicação, por meses, enquanto o site rodava normalmente com a MESMA variável.
-     *
-     * São dois clientes diferentes falando com o mesmo banco: o site usa o driver mariadb do Node
-     * (via `@prisma/adapter-mariadb`), as ferramentas usam o conector próprio do Prisma. Eles
-     * divergem no que aceitam numa URL — caractere especial na senha, parâmetros de TLS, negociação
-     * do `caching_sha2_password` do MySQL 8.4. Espremer os dois na mesma string obriga uma das
-     * pontas a ceder.
-     *
-     * Com duas variáveis, cada uma fala o seu dialeto. E a de migração pode ter um usuário próprio,
-     * com direito de alterar estrutura — que é um direito que a aplicação não precisa ter.
-     *
-     * Ausente, cai na `DATABASE_URL` de sempre: quem não configurar nada continua exatamente como
-     * antes, inclusive no desenvolvimento local.
-     */
-    url: urlDeMigracaoValida() ?? process.env["DATABASE_URL"],
+    url: process.env["DATABASE_URL"],
   },
 });
