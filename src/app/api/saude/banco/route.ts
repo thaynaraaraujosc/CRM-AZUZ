@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
-import { conferirEstruturaDoBanco, resumoDoEstado } from "@/lib/saude/estrutura-do-banco";
+import { conferirEstruturaDoBanco, resumoDoEstado, temCredencialDeMigracao } from "@/lib/saude/estrutura-do-banco";
 
 /**
  * Diz se o banco deste ambiente tem a estrutura que o código no ar espera.
@@ -24,7 +24,7 @@ export async function GET() {
 
   const estado = await conferirEstruturaDoBanco();
   return NextResponse.json(
-    { ...estado, resumo: resumoDoEstado(estado) },
+    { ...estado, resumo: resumoDoEstado(estado), credencialDeMigracao: temCredencialDeMigracao() },
     { status: estado.ok ? 200 : 503, headers: { "cache-control": "no-store" } },
   );
 }
