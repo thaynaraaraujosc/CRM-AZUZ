@@ -1,5 +1,8 @@
 "use client";
 
+/** O que `/api/saude/banco` devolve quando o banco não responde. */
+type Saude = { causa?: string; codigo?: string };
+
 import { Suspense, useState, type FormEvent } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -63,15 +66,30 @@ function LoginForm() {
       // conseguiu nem consultar o banco. Sem essa checagem, uma queda do banco aparecia aqui como
       // "senha incorreta": a pessoa tentava de novo, trocava a senha, e nada funcionava, porque
       // a senha nunca foi o problema.
-      const bancoOk = await fetch("/api/saude/banco")
-        .then((r) => r.ok)
-        .catch(() => false);
+      const saude = await fetch("/api/saude/banco")
+        .then(async (r) => ({ ok: r.ok, corpo: (await r.json().catch(() => null)) as Saude | null }))
+        .catch(() => ({ ok: false, corpo: null }));
+
+      if (saude.ok) {
+        setErro(traduzir("E-mail ou senha incorretos."));
+        return;
+      }
+
+      /*
+       * A CAUSA vai junto, em letra pequena.
+       *
+       * Em 14/10/2026 o CRM ficou fora do ar e a única informação disponível era esta frase —
+       * idêntica para variável de ambiente apagada, senha recusada, rede bloqueada e banco parado.
+       * Quatro consertos diferentes, um sintoma só. Quem está na tela não precisa entender o
+       * código; quem vai consertar precisa, e é a única coisa que ele tem à mão.
+       */
+      const detalhe = saude.corpo?.causa
+        ? ` (${saude.corpo.causa}${saude.corpo.codigo ? `: ${saude.corpo.codigo}` : ""})`
+        : "";
       setErro(
-        bancoOk
-          ? traduzir("E-mail ou senha incorretos.")
-          : traduzir(
-              "O servidor não está conseguindo acessar o banco de dados agora. Não é a sua senha. Tente de novo em alguns minutos.",
-            ),
+        traduzir(
+          "O servidor não está conseguindo acessar o banco de dados agora. Não é a sua senha. Tente de novo em alguns minutos.",
+        ) + detalhe,
       );
       return;
     }
