@@ -21,7 +21,7 @@ const URL_REAL = "mysql://usuario:senha@host.proxy.rlwy.net:12345/railway";
 describe("montarUrlDoBanco", () => {
   it("sem a variável, sai exatamente o que já rodava antes dela existir", () => {
     expect(montarUrlDoBanco(URL_REAL)).toBe(
-      "mariadb://usuario:senha@host.proxy.rlwy.net:12345/railway?connectionLimit=3&compress=true",
+      "mariadb://usuario:senha@host.proxy.rlwy.net:12345/railway?connectionLimit=3&compress=true&allowPublicKeyRetrieval=true",
     );
   });
 
@@ -33,14 +33,14 @@ describe("montarUrlDoBanco", () => {
   it("com a variável, os parâmetros entram no fim", () => {
     expect(montarUrlDoBanco(URL_REAL, "&minimumIdle=0&idleTimeout=30")).toBe(
       "mariadb://usuario:senha@host.proxy.rlwy.net:12345/railway" +
-        "?connectionLimit=3&compress=true&minimumIdle=0&idleTimeout=30",
+        "?connectionLimit=3&compress=true&allowPublicKeyRetrieval=true&minimumIdle=0&idleTimeout=30",
     );
   });
 
   it("URL que já tem query continua válida", () => {
     expect(montarUrlDoBanco(`${URL_REAL}?ssl-mode=REQUIRED`)).toBe(
       "mariadb://usuario:senha@host.proxy.rlwy.net:12345/railway" +
-        "?ssl-mode=REQUIRED&connectionLimit=3&compress=true",
+        "?ssl-mode=REQUIRED&connectionLimit=3&compress=true&allowPublicKeyRetrieval=true",
     );
   });
 
@@ -53,5 +53,31 @@ describe("montarUrlDoBanco", () => {
   it("não fatia a URL, então senha com ? e @ passa intacta", () => {
     const url = montarUrlDoBanco("mysql://root:p@ss?w0rd@host:3306/railway");
     expect(url.startsWith("mariadb://root:p@ss?w0rd@host:3306/railway")).toBe(true);
+  });
+});
+
+/**
+ * A opção que derrubou a produção por estar ausente.
+ *
+ * O MySQL 8.4 autentica com `caching_sha2_password`: funciona pelo caminho rápido enquanto o cache
+ * do servidor está quente, e exige a chave pública RSA quando ele esfria. O driver se recusa a
+ * pedir essa chave a menos que a opção esteja ligada — então, sem ela, o CRM fica de pé por semanas
+ * e cai do nada, sem ninguém ter mexido em nada.
+ */
+describe("autenticação com cache frio", () => {
+  it("sempre pede a chave pública, em qualquer formato de URL", () => {
+    expect(montarUrlDoBanco("mysql://u:s@host:3306/banco")).toContain("allowPublicKeyRetrieval=true");
+    expect(montarUrlDoBanco("mysql://u:s@host:3306/banco?ssl-mode=REQUIRED")).toContain(
+      "allowPublicKeyRetrieval=true",
+    );
+  });
+
+  it("os parâmetros extras continuam vindo depois, e podem sobrescrever", () => {
+    // `DATABASE_POOL_PARAMS` existe pra ajustar sem deploy; ela precisa continuar tendo a última
+    // palavra, inclusive pra desligar esta opção se um dia a conexão passar a usar TLS.
+    const url = montarUrlDoBanco("mysql://u:s@host:3306/banco", "&allowPublicKeyRetrieval=false");
+    expect(url.indexOf("allowPublicKeyRetrieval=false")).toBeGreaterThan(
+      url.indexOf("allowPublicKeyRetrieval=true"),
+    );
   });
 });
