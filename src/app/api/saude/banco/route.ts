@@ -44,6 +44,30 @@ function foraDoAr(causa: Causa, codigo?: string) {
 }
 
 export async function GET() {
+  /*
+   * O HANDLER INTEIRO dentro de um try.
+   *
+   * Em 14/10/2026 esta rota passou a responder 500 — não 503 —, e com isso a tela de login ficou
+   * sem causa nenhuma pra mostrar: um 500 do Next não tem corpo JSON. A rota que existe pra
+   * explicar a falha passou a falhar sem explicação, bem no meio de uma queda.
+   *
+   * Qualquer coisa que estoure aqui dentro vira JSON com o NOME do erro. Nome e código, nunca a
+   * mensagem: mensagem de erro de banco costuma carregar endereço e usuário dentro.
+   */
+  try {
+    return await responder();
+  } catch (erro) {
+    const nome = erro instanceof Error ? erro.name : typeof erro;
+    const codigo = codigoDoErro(erro);
+    console.error("[saude/banco] a própria rota de saúde estourou:", erro);
+    return NextResponse.json(
+      { ok: false, causa: "excecao", erro: nome, codigo },
+      { status: 503, headers: { "cache-control": "no-store" } },
+    );
+  }
+}
+
+async function responder() {
   // Pública por necessidade (a tela de login consulta antes de ter sessão) e, por isso mesmo, com
   // limite: cada chamada bate no banco, e sem teto isso vira um jeito barato de pressionar o banco
   // de fora.

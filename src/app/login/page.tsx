@@ -1,7 +1,7 @@
 "use client";
 
 /** O que `/api/saude/banco` devolve quando o banco não responde. */
-type Saude = { causa?: string; codigo?: string };
+type Saude = { causa?: string; codigo?: string; erro?: string };
 
 import { Suspense, useState, type FormEvent } from "react";
 import { signIn } from "next-auth/react";
@@ -83,9 +83,8 @@ function LoginForm() {
        * Quatro consertos diferentes, um sintoma só. Quem está na tela não precisa entender o
        * código; quem vai consertar precisa, e é a única coisa que ele tem à mão.
        */
-      const detalhe = saude.corpo?.causa
-        ? ` (${saude.corpo.causa}${saude.corpo.codigo ? `: ${saude.corpo.codigo}` : ""})`
-        : "";
+      const partes = [saude.corpo?.causa, saude.corpo?.erro, saude.corpo?.codigo].filter(Boolean);
+      const detalhe = partes.length ? ` (${partes.join(" · ")})` : "";
       setErro(
         traduzir(
           "O servidor não está conseguindo acessar o banco de dados agora. Não é a sua senha. Tente de novo em alguns minutos.",
