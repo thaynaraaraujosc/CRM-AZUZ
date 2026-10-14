@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 
 import { IconAlerta } from "@/components/icons";
 import { useIdioma } from "@/lib/idioma-context";
+import { lerJson } from "@/lib/ler-resposta";
 
 type Estado = {
   chave: { prefixo: string; criadaEm: string; criadaPor: string; ultimoUsoEm: string | null } | null;
@@ -37,10 +38,22 @@ export function AzuzFlow() {
 
   useEffect(() => {
     if (!ehAdmin) return;
-    fetch("/api/integracoes/azuz-flow/chave")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((dados: Estado | null) => setEstado(dados))
-      .catch(() => setEstado(null));
+    // O erro do servidor aparece no cartão desde o primeiro carregamento. Antes um 500 aqui virava
+    // `setEstado(null)`, que na tela é indistinguível de "ainda não tem chave": a pessoa clicava em
+    // "Gerar chave" sem saber que o estado nunca tinha sido lido.
+    void (async () => {
+      const r = await fetch("/api/integracoes/azuz-flow/chave").catch(() => null);
+      if (!r) {
+        setErro(traduzir("Não deu pra ler o estado da integração. Confira a conexão e recarregue."));
+        return;
+      }
+      const lido = await lerJson<Estado>(r, traduzir("Não deu pra ler o estado da integração."));
+      if (lido.ok) setEstado(lido.dados);
+      else setErro(lido.erro);
+    })();
+    // `traduzir` muda com o idioma; reler o estado por troca de idioma não faria mal, mas também
+    // não faz falta — o que importa é rodar quando a pessoa é admin.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ehAdmin]);
 
   // Chave de integração é do mesmo peso que conectar um canal: quem não administra a conta não vê
@@ -48,8 +61,10 @@ export function AzuzFlow() {
   if (!ehAdmin) return null;
 
   async function recarregar() {
-    const dados = (await fetch("/api/integracoes/azuz-flow/chave").then((r) => r.json())) as Estado;
-    setEstado(dados);
+    const r = await fetch("/api/integracoes/azuz-flow/chave");
+    const lido = await lerJson<Estado>(r, traduzir("Não deu pra ler o estado da integração."));
+    if (!lido.ok) throw new Error(lido.erro);
+    setEstado(lido.dados);
   }
 
   async function gerar() {
@@ -65,9 +80,10 @@ export function AzuzFlow() {
     setErro(null);
     try {
       const r = await fetch("/api/integracoes/azuz-flow/chave", { method: "POST" });
-      const dados = (await r.json()) as { chave?: string; erro?: string };
-      if (!r.ok || !dados.chave) throw new Error(dados.erro ?? traduzir("Não deu pra gerar a chave."));
-      setChaveNova(dados.chave);
+      const lido = await lerJson<{ chave?: string }>(r, traduzir("Não deu pra gerar a chave."));
+      if (!lido.ok) throw new Error(lido.erro);
+      if (!lido.dados.chave) throw new Error(traduzir("Não deu pra gerar a chave."));
+      setChaveNova(lido.dados.chave);
       setCopiada(false);
       await recarregar();
     } catch (e) {
@@ -89,7 +105,8 @@ export function AzuzFlow() {
     setErro(null);
     try {
       const r = await fetch("/api/integracoes/azuz-flow/chave", { method: "DELETE" });
-      if (!r.ok) throw new Error(traduzir("Não deu pra revogar a chave."));
+      const lido = await lerJson<{ ok: boolean }>(r, traduzir("Não deu pra revogar a chave."));
+      if (!lido.ok) throw new Error(lido.erro);
       setChaveNova(null);
       await recarregar();
     } catch (e) {

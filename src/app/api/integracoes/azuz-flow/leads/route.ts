@@ -9,6 +9,7 @@ import {
   ipDeQuemChamou,
   respostaDeCorpoGrande,
 } from "@/lib/seguranca/limite-de-uso";
+import { comRespostaEmJson } from "@/lib/integracoes/resposta-em-json";
 
 /**
  * A porta de entrada dos leads do AZUZ Flow. Rota fina de propósito: ela cuida de HTTP (autenticar,
@@ -30,6 +31,17 @@ function recusar(status: number, erro: string, cabecalhos?: Record<string, strin
 }
 
 export async function POST(request: Request) {
+  /*
+   * O envelope existe porque a parte de CIMA desta rota também pode lançar, e lançava.
+   *
+   * O `try` de baixo cobria só `receberLeadDoFlow`. `autenticarChaveDoFlow` fica antes dele e faz
+   * uma consulta ao banco — com a tabela de chaves ausente, ela estourava e o Flow recebia 500 com
+   * corpo vazio, que é justamente o que esta rota existe pra nunca fazer.
+   */
+  return comRespostaEmJson("azuz-flow/leads", () => receber(request));
+}
+
+async function receber(request: Request) {
   const ip = await ipDeQuemChamou();
   const porIp = contarChamada(`flow-leads:ip:${ip}`, POR_IP);
   if (!porIp.permitido) {
