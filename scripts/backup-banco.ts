@@ -44,7 +44,12 @@ if (!URL_DO_BANCO) {
  */
 function comTempoDeSobra(databaseUrl: string): string {
   const url = databaseUrl.replace(/^mysql:\/\//, "mariadb://");
-  return `${url}${url.includes("?") ? "&" : "?"}connectTimeout=15000&socketTimeout=600000`;
+  // `allowPublicKeyRetrieval`: o MySQL 8.4 autentica com `caching_sha2_password`, e quando o cache
+  // do servidor está frio a negociação exige a chave pública RSA. O driver se recusa a buscá-la sem
+  // esta opção. O CRM já a usa (ver `montarUrlDoBanco`); os scripts NÃO usavam, e essa diferença
+  // custou horas em 14/10/2026: eles falhavam com uma mensagem e o CRM com outra, para a mesma
+  // causa. Ferramenta de diagnóstico tem que conectar igual ao que ela diagnostica.
+  return `${url}${url.includes("?") ? "&" : "?"}allowPublicKeyRetrieval=true&connectTimeout=15000&socketTimeout=600000`;
 }
 
 const prisma = new PrismaClient({
