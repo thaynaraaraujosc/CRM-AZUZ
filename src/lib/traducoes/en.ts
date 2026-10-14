@@ -2657,6 +2657,11 @@ export const TRADUCOES_EN: Record<string, string> = {
   "Funil, automações e Azuz IA inclusos": "Pipeline, automations and Azuz AI included",
   "Usuários e permissões ilimitados": "Unlimited users and permissions",
   "Primeiro nome": "First name",
+  "Gerar uma chave nova?": "Generate a new key?",
+  "A chave atual para de funcionar na hora. O AZUZ Flow vai precisar da chave nova pra continuar entregando leads.":
+    "The current key stops working immediately. AZUZ Flow will need the new key to keep delivering leads.",
+  "Revogar a chave?": "Revoke the key?",
+  "O AZUZ Flow para de entregar leads neste CRM imediatamente.": "AZUZ Flow stops delivering leads to this CRM immediately.",
   "Lendo o estado da integração…": "Reading the integration status…",
   "Estado desconhecido.": "Status unknown.",
   "Não deu pra ler o estado da integração.": "Couldn't read the integration status.",

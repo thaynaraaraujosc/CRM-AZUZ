@@ -44,7 +44,66 @@ const ESPERADAS = [
   },
 ];
 
-const conexao = await createConnection(process.env.DATABASE_URL.replace(/^mysql:\/\//, "mariadb://"));
+/**
+ * TEMPO DE CONEXÃO MAIOR QUE O PADRÃO.
+ *
+ * O conector mariadb espera 1 SEGUNDO por padrão pra abrir o socket. Isso serve pra um banco na
+ * mesma rede e é curto demais pra um banco remoto visto de uma internet doméstica: o primeiro uso
+ * deste script, em 14/10/2026, morreu com "failed to create socket after 1001ms" sem sequer chegar
+ * a tentar autenticar. Quinze segundos distingue "está longe" de "não dá pra chegar".
+ */
+function comTempoDeSobra(databaseUrl) {
+  const url = databaseUrl.replace(/^mysql:\/\//, "mariadb://");
+  return `${url}${url.includes("?") ? "&" : "?"}connectTimeout=15000&socketTimeout=60000`;
+}
+
+/** O endereço, sem usuário nem senha: serve pra conferir se é o servidor certo, e nada além. */
+function enderecoVisivel(databaseUrl) {
+  try {
+    const u = new URL(databaseUrl.replace(/^mysql:\/\//, "http://"));
+    return `${u.hostname}:${u.port || "3306"}${u.pathname}`;
+  } catch {
+    return "(não deu pra ler o endereço da DATABASE_URL)";
+  }
+}
+
+const endereco = enderecoVisivel(process.env.DATABASE_URL);
+console.log(`Conectando em ${endereco} …\n`);
+
+let conexao;
+try {
+  conexao = await createConnection(comTempoDeSobra(process.env.DATABASE_URL));
+} catch (erro) {
+  const codigo = erro?.code ?? "";
+  console.error(`Não foi possível conectar em ${endereco}.`);
+  console.error(`Motivo do driver: ${erro?.message ?? erro}\n`);
+
+  if (codigo === "ER_CONNECTION_TIMEOUT" || codigo === "ETIMEDOUT") {
+    console.error(
+      [
+        "O servidor não respondeu. Isso é diferente de 'recusou': os pacotes estão sumindo,",
+        "o que normalmente quer dizer bloqueio de rede, e não banco fora do ar.",
+        "",
+        "Confira, nesta ordem:",
+        "  1. o seu IP de agora está liberado no firewall do banco?",
+        "     (IP de internet doméstica muda; o de ontem pode não valer mais)",
+        "  2. a porta do banco foi fechada pra fora recentemente?",
+        "  3. você está numa rede que bloqueia a porta 3306 (algumas empresas e cafés bloqueiam)?",
+        "     Testar pelo celular, com roteamento de dados, costuma responder isso em um minuto.",
+      ].join("\n"),
+    );
+  } else if (codigo === "ECONNREFUSED") {
+    console.error("O servidor RECUSOU a conexão: ou o banco não está no ar, ou a porta está errada.");
+  } else if (codigo === "ER_ACCESS_DENIED_ERROR") {
+    console.error("Chegou no servidor, mas o usuário ou a senha da DATABASE_URL não foram aceitos.");
+  } else if (codigo === "ENOTFOUND") {
+    console.error("O endereço do servidor não existe (DNS não resolveu). Confira o host da DATABASE_URL.");
+  }
+
+  console.error("\nO CRM em produção continua funcionando: ele acessa o banco por outro caminho.");
+  console.error("Este script roda do SEU computador, e é esse caminho que está bloqueado.");
+  process.exit(1);
+}
 
 try {
   const [{ banco }] = await conexao.query("SELECT DATABASE() AS banco");

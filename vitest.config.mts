@@ -16,6 +16,8 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["src/**/__tests__/**/*.test.ts"],
+    // `scripts/` entra porque alguns deles rodam contra o banco de PRODUÇÃO, e a trava que impede
+    // um comando destrutivo é justamente o tipo de regra pura que precisa de teste.
+    include: ["src/**/__tests__/**/*.test.ts", "scripts/**/__tests__/**/*.test.ts"],
   },
 });

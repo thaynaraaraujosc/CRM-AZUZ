@@ -34,6 +34,37 @@ if (!process.env.DATABASE_URL) {
 }
 
 /**
+ * DIZ EM QUE SERVIDOR VAI MEXER, antes de qualquer outra coisa.
+ *
+ * Em 14/10/2026 este script quase aplicou o schema no banco errado: o `.env` da máquina ainda
+ * apontava pro banco ANTIGO (um Railway desativado) enquanto a produção já tinha mudado de
+ * servidor. O script faria a coisa certa no lugar errado, e a produção continuaria quebrada — sem
+ * nenhum erro pra denunciar, porque do ponto de vista dele teria dado tudo certo.
+ *
+ * Um script que escreve em banco de cliente tem que dizer em QUAL, em voz alta, antes de escrever.
+ * Sem usuário e sem senha: o endereço basta pra reconhecer o servidor, e nada além dele deve
+ * aparecer na tela nem no histórico do terminal.
+ */
+function enderecoVisivel(databaseUrl: string): string {
+  try {
+    const u = new URL(databaseUrl.replace(/^mysql:\/\//, "http://"));
+    return `${u.hostname}:${u.port || "3306"}${u.pathname}`;
+  } catch {
+    return "(não deu pra ler o endereço da DATABASE_URL)";
+  }
+}
+
+const ENDERECO = enderecoVisivel(process.env.DATABASE_URL);
+console.log("========================================================================");
+console.log(`BANCO ALVO: ${ENDERECO}`);
+console.log("");
+console.log("  Confira que é o servidor da PRODUÇÃO antes de seguir. A DATABASE_URL do seu");
+console.log("  .env pode ter ficado apontando pro banco antigo depois de uma troca de");
+console.log("  servidor, e aí o schema seria aplicado no lugar errado — sem erro nenhum.");
+console.log("========================================================================");
+console.log("");
+
+/**
  * Comandos que mexem em dado que já existe.
  *
  * `MODIFY`/`CHANGE` entram na lista junto com os óbvios porque mudar o tipo de uma coluna que tem
@@ -55,14 +86,30 @@ function rodar(comando: string, args: string[]) {
   return spawnSync(comando, args, { encoding: "utf-8", shell: false });
 }
 
+/*
+ * O `prisma migrate diff` e o `db push` usam o conector do Prisma, que tem tempo de conexão próprio
+ * e mais folgado que o 1 segundo do driver cru. Se mesmo assim der tempo esgotado aqui, o problema
+ * é de rede e não de tempo: rode antes `npx tsx scripts/conferir-schema.mjs`, que diagnostica a
+ * conexão e diz o que conferir.
+ */
+
 // 1. O SQL que o `db push` executaria. `migrate diff` não toca no banco: só compara.
+/*
+ * SINTAXE DO PRISMA 7, conferida contra a versão instalada e não pela memória.
+ *
+ * O `--from-url` e o `--to-schema-datamodel` do Prisma 6 FORAM REMOVIDOS: a primeira versão deste
+ * script usava os dois e morreu com um despejo de ajuda em inglês na mão de quem só queria aplicar
+ * o schema. Hoje a origem vem de `--from-config-datasource` (que lê o `datasource.url` do
+ * `prisma.config.ts`, e esse lê a `DATABASE_URL`) e o destino de `--to-schema`.
+ *
+ * `migrate diff` é só leitura: ele compara e imprime, nunca escreve no banco.
+ */
 const diff = rodar("npx", [
   "prisma",
   "migrate",
   "diff",
-  "--from-url",
-  process.env.DATABASE_URL,
-  "--to-schema-datamodel",
+  "--from-config-datasource",
+  "--to-schema",
   "prisma/schema.prisma",
   "--script",
 ]);
@@ -125,7 +172,7 @@ console.log("(Se esse backup for antigo, pare e tire um novo antes de seguir.)\n
 
 // 5. Aplica. SEM `--accept-data-loss`: se o Prisma achar que vai perder dado, o comando falha, e
 //    falhar é o resultado certo — a conferência acima diz que não deveria haver nada a perder.
-console.log("Aplicando com `prisma db push`...\n");
+console.log(`Aplicando com \`prisma db push\` em ${ENDERECO} …\n`);
 const push = rodar("npx", ["prisma", "db", "push"]);
 process.stdout.write(`${push.stdout ?? ""}${push.stderr ?? ""}`);
 
