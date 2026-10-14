@@ -1,30 +1,34 @@
 import { NextResponse } from "next/server";
 
-import { auth } from "@/lib/auth";
-import { conferirEstruturaDoBanco, resumoDoEstado, temCredencialDeMigracao } from "@/lib/saude/estrutura-do-banco";
+import { prisma } from "@/lib/prisma";
+import { POLITICAS, contarChamada, ipDeQuemChamou, respostaDeLimiteExcedido } from "@/lib/seguranca/limite-de-uso";
 
 /**
- * Diz se o banco deste ambiente tem a estrutura que o código no ar espera.
+ * O banco está respondendo?
  *
- * Só administrador: a resposta lista nome de tabela e de coluna, que é informação de dentro. Quem
- * administra já vê o schema inteiro na tela de integrações; para os outros não serve de nada.
+ * Existe por causa de um sintoma enganoso no login: quando o banco está fora do ar, `authorize`
+ * não consegue conferir a senha e o NextAuth devolve o MESMO erro de credencial inválida. A tela
+ * dizia "E-mail ou senha incorretos" para uma pessoa cuja senha estava perfeitamente certa. Quem
+ * está do outro lado tenta de novo, troca a senha, e nada resolve, porque o problema não é a senha.
  *
- * Login NÃO depende das tabelas conferidas aqui (ele lê `Membro` e `Usuario`), então esta rota
- * continua alcançável justamente no estado em que ela é útil: schema atrasado e telas quebrando.
- *
- * Responde 503 quando falta estrutura, não 200: assim um monitor externo acusa sozinho, sem
- * ninguém precisar ler o corpo.
+ * A tela de login chama isto DEPOIS de uma falha, só pra saber qual das duas frases mostrar.
+ * Não expõe host, credencial nem detalhe do erro: só "dá pra falar com o banco ou não".
  */
-export async function GET() {
-  const sessao = await auth();
-  if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
-  if (sessao.user.papelTipo !== "admin" && !sessao.user.superAdmin) {
-    return NextResponse.json({ erro: "Só administradores podem ver a saúde do banco." }, { status: 403 });
-  }
+export const dynamic = "force-dynamic";
 
-  const estado = await conferirEstruturaDoBanco();
-  return NextResponse.json(
-    { ...estado, resumo: resumoDoEstado(estado), credencialDeMigracao: temCredencialDeMigracao() },
-    { status: estado.ok ? 200 : 503, headers: { "cache-control": "no-store" } },
-  );
+export async function GET() {
+  // Pública por necessidade (a tela de login consulta antes de ter sessão) e, por isso mesmo, com
+  // limite: cada chamada bate no banco, e sem teto isso vira um jeito barato de pressionar o banco
+  // de fora.
+  const ip = await ipDeQuemChamou();
+  const limite = contarChamada(`saude-banco:${ip}`, POLITICAS.recuperacaoDeSenha);
+  if (!limite.permitido) return respostaDeLimiteExcedido(limite.esperarSegundos);
+
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    return NextResponse.json({ ok: true });
+  } catch (erro) {
+    console.error("[saude/banco] banco inacessível:", erro instanceof Error ? erro.message : erro);
+    return NextResponse.json({ ok: false }, { status: 503 });
+  }
 }

@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -126,5 +127,31 @@ describe("o script e o módulo não divergem", () => {
     // E o contrário: nada de sobrar no script uma tabela que o módulo não cobre mais.
     const tabelasNoScript = [...bloco.matchAll(/tabela:\s*"([^"]+)"/g)].map((m) => m[1]);
     expect(tabelasNoScript.sort()).toEqual(ESTRUTURAS_ESPERADAS.map((e) => e.tabela).sort());
+  });
+});
+
+/**
+ * As duas rotas de saúde respondem perguntas diferentes, e misturá-las derrubou o diagnóstico.
+ *
+ * `/api/saude/banco` é PÚBLICA: a tela de login a consulta antes de existir sessão, só pra escolher
+ * entre "senha incorreta" e "o banco está fora". `/api/saude/estrutura` é de administrador, porque
+ * lista nome de tabela e de coluna.
+ *
+ * Em 14/10/2026 a segunda foi escrita por cima da primeira. Deslogada, a rota passou a devolver 401,
+ * e o login passou a dizer "não estou conseguindo acessar o banco" em QUALQUER falha de entrada —
+ * com o banco de pé. O instrumento de diagnóstico virou fonte de diagnóstico errado.
+ */
+describe("as duas rotas de saúde", () => {
+  it("a pública não exige sessão e a de estrutura exige", async () => {
+    const publica = await readFile("src/app/api/saude/banco/route.ts", "utf-8");
+    const estrutura = await readFile("src/app/api/saude/estrutura/route.ts", "utf-8");
+
+    expect(publica, "a rota pública não pode chamar auth()").not.toContain("auth()");
+    expect(estrutura, "a rota de estrutura precisa exigir sessão").toContain("auth()");
+  });
+
+  it("a tela de login continua apontando pra rota pública", async () => {
+    const login = await readFile("src/app/login/page.tsx", "utf-8");
+    expect(login).toContain("/api/saude/banco");
   });
 });
