@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
+import { idDeCardSemChave, idDoCard } from "@/lib/funis/id-do-card";
 import {
   POLITICAS,
   TAMANHO_MAXIMO,
@@ -59,7 +60,10 @@ export async function POST(request: Request, ctx: RouteContext<"/api/formularios
 
     await tx.negocioCard.create({
       data: {
-        id: `negocio-${Date.now()}`,
+        // Id deduzido do nome: esta rota é PÚBLICA, então duas submissões simultâneas do mesmo
+        // formulário chegam juntas de verdade. Com `Date.now()` as duas criavam card. Ver
+        // `idDoCard`. O apagar e o criar estão na mesma transação, então reusar o id é seguro.
+        id: idDoCard(workspaceId, card.nome) ?? idDeCardSemChave(workspaceId),
         workspaceId,
         etapaId: etapaDestino.id,
         ordem: (ultimoCard?.ordem ?? -1) + 1,

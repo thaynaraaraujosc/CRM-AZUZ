@@ -3,6 +3,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { receberLeadDoFlow, type DependenciasDoFlow, type ResultadoDoLead } from "../azuz-flow-lead";
 import { validarPayloadDoFlow, type LeadDoFlow } from "../azuz-flow-payload";
 import { dataIsoEmBrasilia, horaEmBrasilia } from "@/lib/agenda/fuso";
+import { chaveDeContato } from "@/lib/contatos/chave-nome";
+import { idDeCardSemChave, idDoCard } from "@/lib/funis/id-do-card";
+import { ehChaveDuplicada } from "@/lib/prisma-erros";
 
 /**
  * As duas corridas que o teste de ponta a ponta encontrou.
@@ -25,6 +28,10 @@ function bancoDeMentira() {
   const criados: string[] = [];
   // A agenda, com a MESMA chave primária do banco: o id do compromisso sai da entrega.
   const compromissos = new Map<string, { contato: string; dataIso: string; hora: string }>();
+  // O funil, idem: o id do card sai do nome. A função de verdade é exercitada em
+  // `src/lib/funis/__tests__/corrida-do-card.test.ts`, com o Prisma dublado; aqui o que se mede é
+  // se a orquestração chama uma vez por pessoa e se a chave repetida não sobe como 5xx.
+  const cards = new Map<string, { nome: string }>();
 
   function deps(): DependenciasDoFlow {
     return {
@@ -75,15 +82,25 @@ function bancoDeMentira() {
       },
       contaOficial: async () => ({ phoneNumberId: "111" }),
       garantirConversa: async () => ({ id: "conv" }),
-      temCardNoFunil: async () => false,
-      entrarNoFunil: async () => ({ funil: "Comercial", etapa: "Novo" }),
+      temCardNoFunil: async (contatoNome) =>
+        [...cards.values()].some((c) => chaveDeContato(c.nome) === chaveDeContato(contatoNome)),
+      entrarNoFunil: async ({ contatoNome }) => {
+        const id = idDoCard("w1", contatoNome) ?? idDeCardSemChave("w1");
+        try {
+          if (cards.has(id)) throw duplicada();
+          cards.set(id, { nome: contatoNome });
+        } catch (erro) {
+          if (!ehChaveDuplicada(erro)) throw erro;
+        }
+        return { funil: "Comercial", etapa: "Novo" };
+      },
       subirCard: async () => {},
       avisarContatoCriado: () => {},
       dispararAutomacoes: async () => {},
     };
   }
 
-  return { deps, contatosPorNome, entregas, criados, compromissos };
+  return { deps, contatosPorNome, entregas, criados, compromissos, cards };
 }
 
 function lead(respostaId: string, dadosDoLead: Record<string, unknown>, extra: Record<string, unknown> = {}): LeadDoFlow {
@@ -199,7 +216,9 @@ describe("erro que não é corrida", () => {
     await expect(
       receberLeadDoFlow({ workspaceId: "w1", lead: lead("r-1", { nome: "Ana" }), deps }),
     ).rejects.toMatchObject({ code: "P2002" });
-    expect(tentativas).toBe(2);
+    // Três passadas, e para. O limite é o que separa "refazer a decisão" de um laço que esconderia
+    // um defeito de verdade (banco com o id errado, por exemplo) repetindo pra sempre.
+    expect(tentativas).toBe(3);
   });
 });
 
@@ -223,5 +242,149 @@ describe("a mesma entrega com reunião, duas vezes ao mesmo tempo", () => {
     expect(banco.compromissos.size).toBe(1);
     // E com o dia de BRASÍLIA: 02h30 de 21/10 em UTC é 23h30 de 20/10 aqui.
     expect([...banco.compromissos.values()][0]).toMatchObject({ dataIso: "2026-10-20", hora: "23:30" });
+  });
+});
+
+/**
+ * A matriz que o teste com banco de verdade mediu em 14/10/2026, agora como regressão.
+ *
+ * Os números de antes, com N chamadas simultâneas e 25 rodadas por célula:
+ *
+ *   pessoas diferentes, mesmo nome ...... N=2: 25/25 limpas  ·  N=3: 0/25 (500 na chave primária)
+ *   mesma pessoa, entregas diferentes ... N=2: 22/25         ·  N=3: 9/25  (card duplicado)
+ *   mesma entrega (mesma chave) ......... N=2: 24/25         ·  N=3: 5/25  (card duplicado)
+ *
+ * O esperado agora, pra qualquer N: nenhuma exceção, um contato por pessoa, um card por pessoa e
+ * um registro de entrega por chave de idempotência.
+ */
+describe("a matriz de corrida, com 2, 3 e 8 chamadas", () => {
+  const RODADAS = 20;
+  const PARALELAS = [2, 3, 8];
+
+  for (const n of PARALELAS) {
+    it(`${n} pessoas DIFERENTES com o mesmo nome: ${n} contatos, ${n} cards, nenhum erro`, async () => {
+      for (let rodada = 0; rodada < RODADAS; rodada++) {
+        const banco = bancoDeMentira();
+        const chamadas = Array.from({ length: n }, (_, i) =>
+          receberLeadDoFlow({
+            workspaceId: "w1",
+            // Telefones diferentes: são pessoas diferentes, e fundi-las é irreversível.
+            lead: lead(`r${rodada}-${i}`, { nome: "Marina", sobrenome: "Alves", whatsapp: `556299634000${i}` }),
+            deps: banco.deps(),
+          }),
+        );
+        const r = await Promise.all(chamadas);
+        expect(r.every((x) => x.ok), `rodada ${rodada}`).toBe(true);
+        expect(banco.criados, `rodada ${rodada}`).toHaveLength(n);
+        expect(banco.cards.size, `rodada ${rodada}`).toBe(n);
+        expect(banco.entregas.size, `rodada ${rodada}`).toBe(n);
+      }
+    });
+
+    it(`${n} entregas DIFERENTES da mesma pessoa: 1 contato, 1 card, nenhum erro`, async () => {
+      for (let rodada = 0; rodada < RODADAS; rodada++) {
+        const banco = bancoDeMentira();
+        const mesma = { nome: "Ana", sobrenome: "Souza", whatsapp: "5562996340438" };
+        const r = await Promise.all(
+          Array.from({ length: n }, (_, i) =>
+            receberLeadDoFlow({ workspaceId: "w1", lead: lead(`r${rodada}-${i}`, mesma), deps: banco.deps() }),
+          ),
+        );
+        expect(r.every((x) => x.ok), `rodada ${rodada}`).toBe(true);
+        expect(banco.criados, `rodada ${rodada}`).toEqual(["Ana Souza"]);
+        // O que NÃO se curava sozinho: a resposta era 200, então o Flow não repetia e os dois cards
+        // ficavam. Agora é um.
+        expect(banco.cards.size, `rodada ${rodada}`).toBe(1);
+        expect(banco.entregas.size, `rodada ${rodada}`).toBe(n);
+        expect(new Set(r.map((x) => x.contatoId)).size, `rodada ${rodada}`).toBe(1);
+      }
+    });
+
+    it(`${n} chamadas da MESMA entrega: 1 contato, 1 card, 1 registro`, async () => {
+      for (let rodada = 0; rodada < RODADAS; rodada++) {
+        const banco = bancoDeMentira();
+        const mesma = lead(`r${rodada}`, { nome: "Ana", sobrenome: "Souza", whatsapp: "5562996340438" });
+        const r = await Promise.all(
+          Array.from({ length: n }, () => receberLeadDoFlow({ workspaceId: "w1", lead: mesma, deps: banco.deps() })),
+        );
+        expect(r.every((x) => x.ok), `rodada ${rodada}`).toBe(true);
+        expect(banco.criados, `rodada ${rodada}`).toEqual(["Ana Souza"]);
+        expect(banco.cards.size, `rodada ${rodada}`).toBe(1);
+        expect(banco.entregas.size, `rodada ${rodada}`).toBe(1);
+        // Uma vence e grava a entrega; as outras devolvem o resultado dela.
+        expect(r.filter((x) => x.duplicado).length, `rodada ${rodada}`).toBe(n - 1);
+      }
+    });
+  }
+});
+
+/**
+ * As três passadas, exercitadas onde elas são o que salva.
+ *
+ * A matriz acima passa até com duas passadas, porque a regra "na última passada usa o id da
+ * entrega" já cobre o caso em que a leitura seguinte vê o nome ocupado. O que exige a terceira é a
+ * leitura DESATUALIZADA: conexões vêm de um pool, e uma delas pode responder "esse nome está
+ * livre" para um nome que outra chamada acabou de gravar. Aí a passada 1 volta a disputar o mesmo
+ * nome e colide de novo — e sem a passada 2 isso é um 500.
+ *
+ * É o cenário que o teste com banco de verdade mediu como 0 de 25 rodadas limpas com N=3.
+ */
+describe("leitura desatualizada do nome ocupado", () => {
+  function depsComLeituraAtrasada(banco: ReturnType<typeof bancoDeMentira>, mentirasSeguidas: number) {
+    const deps = banco.deps();
+    const nomeOcupadoDeVerdade = deps.nomeOcupado;
+    let restantes = mentirasSeguidas;
+    deps.nomeOcupado = async (nome) => {
+      // Finge que está livre nas primeiras vezes: é o que uma réplica atrasada responderia.
+      if (restantes > 0) {
+        restantes--;
+        return false;
+      }
+      return nomeOcupadoDeVerdade(nome);
+    };
+    return deps;
+  }
+
+  it("colidir duas vezes no mesmo nome ainda não vira 500", async () => {
+    const banco = bancoDeMentira();
+    // O concorrente já gravou o nome base e o nome com o formulário.
+    await receberLeadDoFlow({
+      workspaceId: "w1",
+      lead: lead("r-dono", { nome: "Marina", sobrenome: "Alves", whatsapp: "5562990000001" }),
+      deps: banco.deps(),
+    });
+    await receberLeadDoFlow({
+      workspaceId: "w1",
+      lead: lead("r-dono-2", { nome: "Marina", sobrenome: "Alves", whatsapp: "5562990000002" }),
+      deps: banco.deps(),
+    });
+
+    const r = await receberLeadDoFlow({
+      workspaceId: "w1",
+      lead: lead("r-ultimo", { nome: "Marina", sobrenome: "Alves", whatsapp: "5562990000003" }),
+      // Mente nas duas primeiras conferências: as passadas 0 e 1 colidem de verdade.
+      deps: depsComLeituraAtrasada(banco, 2),
+    });
+
+    expect(r.ok).toBe(true);
+    expect(r.criado).toBe(true);
+    // Entrou com o nome desempatado pelo id da entrega, que é único por definição.
+    expect(banco.criados).toHaveLength(3);
+    expect(banco.criados[2]).toContain("ultimo");
+    expect(banco.cards.size).toBe(3);
+  });
+
+  it("colidir três vezes continua subindo o erro, em vez de virar laço", async () => {
+    const banco = bancoDeMentira();
+    const deps = banco.deps();
+    deps.nomeOcupado = async () => false;
+    const criarDeVerdade = deps.criarContato;
+    deps.criarContato = async (dados) => {
+      await criarDeVerdade({ ...dados, nome: `ocupa-${Math.random()}` });
+      throw duplicada();
+    };
+    await expect(
+      receberLeadDoFlow({ workspaceId: "w1", lead: lead("r-1", { nome: "Ana" }), deps }),
+    ).rejects.toMatchObject({ code: "P2002" });
   });
 });
