@@ -20,8 +20,17 @@ import { PrismaClient } from "../src/generated/prisma/client";
 
 setDefaultResultOrder("ipv4first");
 
-if (!process.env.DATABASE_URL) {
-  console.error("DATABASE_URL não encontrada: confira se o arquivo .env existe na raiz do projeto.");
+/**
+ * Prefere a credencial de MIGRAÇÃO, com a do site como reserva.
+ *
+ * Mesma regra do `prisma.config.ts`: as ferramentas falam com o banco por um cliente diferente do
+ * que o site usa, e a credencial própria existe justamente pra cada lado poder ter a sua. Uma regra
+ * só, em todos os scripts, pra não haver dúvida sobre qual banco cada comando está olhando.
+ */
+const URL_DO_BANCO: string = process.env.DATABASE_URL_MIGRACAO ?? process.env.DATABASE_URL ?? "";
+
+if (!URL_DO_BANCO) {
+  console.error("Nenhuma DATABASE_URL_MIGRACAO nem DATABASE_URL: confira o .env na raiz do projeto.");
   process.exit(1);
 }
 
@@ -39,7 +48,7 @@ function comTempoDeSobra(databaseUrl: string): string {
 }
 
 const prisma = new PrismaClient({
-  adapter: new PrismaMariaDb(comTempoDeSobra(process.env.DATABASE_URL)),
+  adapter: new PrismaMariaDb(comTempoDeSobra(URL_DO_BANCO)),
 });
 
 /**
