@@ -28,8 +28,17 @@ import path from "node:path";
 
 const CONFIRMADO = process.argv.includes("--confirmo");
 
-if (!process.env.DATABASE_URL) {
-  console.error("DATABASE_URL não encontrada: confira se o .env existe na raiz do projeto.");
+/**
+ * Prefere a credencial de MIGRAÇÃO, com a do site como reserva.
+ *
+ * Mesma regra do `prisma.config.ts`: as ferramentas falam com o banco por um cliente diferente do
+ * que o site usa, e a credencial própria existe justamente pra cada lado poder ter a sua. Uma regra
+ * só, em todos os scripts, pra não haver dúvida sobre qual banco cada comando está olhando.
+ */
+const URL_DO_BANCO: string = process.env.DATABASE_URL_MIGRACAO ?? process.env.DATABASE_URL ?? "";
+
+if (!URL_DO_BANCO) {
+  console.error("Nenhuma DATABASE_URL_MIGRACAO nem DATABASE_URL: confira o .env na raiz do projeto.");
   process.exit(1);
 }
 
@@ -54,7 +63,7 @@ function enderecoVisivel(databaseUrl: string): string {
   }
 }
 
-const ENDERECO = enderecoVisivel(process.env.DATABASE_URL);
+const ENDERECO = enderecoVisivel(URL_DO_BANCO);
 console.log("========================================================================");
 console.log(`BANCO ALVO: ${ENDERECO}`);
 console.log("");

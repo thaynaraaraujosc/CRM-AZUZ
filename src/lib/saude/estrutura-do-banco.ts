@@ -105,6 +105,17 @@ export async function conferirEstruturaDoBanco(): Promise<EstadoDoBanco> {
   }
 }
 
+/**
+ * O build tem credencial PRÓPRIA pra aplicar o schema?
+ *
+ * Sem ela, o `db push` do build usa a mesma URL do site — e foi exatamente assim que o schema ficou
+ * meses atrasado em produção, com o site funcionando e o build falhando em silêncio. Saber disso
+ * pela tela é melhor do que descobrir quando algo quebra.
+ */
+export function temCredencialDeMigracao(): boolean {
+  return Boolean(process.env.DATABASE_URL_MIGRACAO);
+}
+
 /** A frase que resume o estado, pra tela e pra log. */
 export function resumoDoEstado(estado: EstadoDoBanco): string {
   if (!estado.conferido) return "Não foi possível conferir a estrutura do banco.";

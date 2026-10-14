@@ -58,7 +58,12 @@ import { spawnSync } from "node:child_process";
  * Quem quiser fechar a porta de vez põe `EXIGIR_SCHEMA_NO_BUILD=1` no ambiente: aí a ausência passa
  * a derrubar o build. É a escolha certa DEPOIS de confirmar que a variável chega ao build.
  */
-if (!process.env.DATABASE_URL) {
+/*
+ * Duas variáveis possíveis, e a de migração ganha. Ver o porquê em `prisma.config.ts` — em resumo:
+ * o build e o site falam com o banco por clientes diferentes, que não aceitam exatamente a mesma
+ * URL, e foi isso que manteve o schema desatualizado em produção sem ninguém perceber.
+ */
+if (!process.env.DATABASE_URL_MIGRACAO && !process.env.DATABASE_URL) {
   const naVercel = Boolean(process.env.VERCEL);
   const ambiente = process.env.VERCEL_ENV ?? "(desconhecido)";
   const exigir = process.env.EXIGIR_SCHEMA_NO_BUILD === "1";
@@ -66,7 +71,7 @@ if (!process.env.DATABASE_URL) {
   const linhas = [
     "",
     "========================================================================",
-    "[schema] ATENÇÃO: DATABASE_URL não está definida NESTE BUILD.",
+    "[schema] ATENÇÃO: não há DATABASE_URL_MIGRACAO nem DATABASE_URL NESTE BUILD.",
     "",
     "  O schema do banco NÃO foi sincronizado. Se este código traz tabela ou",
     "  coluna nova, ela não existe no banco, e as telas que dependem dela vão",
