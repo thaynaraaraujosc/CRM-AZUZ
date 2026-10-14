@@ -82,6 +82,12 @@ const TABELAS = [
   "eventoDoLead",
   "campanha",
   "campanhaDestinatario",
+  // Entraram com a entrega do AZUZ Flow. Ficaram de fora da lista na hora, que é exatamente o
+  // esquecimento que o comentário acima descreve — e só apareceu quando foi preciso usar o backup.
+  // Enquanto o schema não for aplicado neste banco elas saem como AUSENTE, e isso é a resposta
+  // certa: a falta precisa ser gritada, não ignorada.
+  "chaveDeIntegracao",
+  "leadRecebido",
 ] as const;
 
 async function main() {
