@@ -5,7 +5,14 @@ import { useEffect, useMemo, useState } from "react";
 import { Modal } from "@/components/ui";
 import { SeletorDeData } from "@/components/seletor-de-data";
 import { useContatos } from "@/lib/contatos-context";
-import { ORIGENS_DO_CONTATO, mapearVariaveis, type MapeamentoVariavel, type OrigemVariavel } from "@/lib/campanhas/variaveis";
+import {
+  ORIGENS_DA_REUNIAO,
+  ORIGENS_DO_CONTATO,
+  chaveSugeridaDe,
+  mapearVariaveis,
+  type MapeamentoVariavel,
+  type OrigemVariavel,
+} from "@/lib/campanhas/variaveis";
 import type { Audiencia, ModoAudiencia } from "@/lib/campanhas/audiencia-tipos";
 import type { CanalCampanha } from "@/lib/campanhas/ritmo";
 import { LIMITES } from "@/lib/templates/regras";
@@ -584,9 +591,9 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
                   />
                   <div className="tpl-inserir">
                     <span className="hint">{traduzir("Inserir:")}</span>
-                    {ORIGENS_DO_CONTATO.slice(0, 4).map((o) => (
-                      <button key={o.origem} type="button" className="pill" onClick={() => mudarCorpoLivre(`${corpoLivre}{{${o.origem.slice("contato.".length)}}}`)}>
-                        {o.label}
+                    {[...ORIGENS_DO_CONTATO.slice(0, 4), ...ORIGENS_DA_REUNIAO].map((o) => (
+                      <button key={o.origem} type="button" className="pill" onClick={() => mudarCorpoLivre(`${corpoLivre}{{${chaveSugeridaDe(o.origem)}}}`)}>
+                        {traduzir(o.label)}
                       </button>
                     ))}
                   </div>
@@ -606,11 +613,20 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
                         value={v.origem}
                         onChange={(e) => setVariaveis((atual) => atual.map((x) => (x.chave === v.chave ? { ...x, origem: e.target.value as OrigemVariavel } : x)))}
                       >
-                        {ORIGENS_DO_CONTATO.map((o) => (
-                          <option key={o.origem} value={o.origem}>
-                            {traduzir(o.label)} do contato
-                          </option>
-                        ))}
+                        <optgroup label={traduzir("Do contato")}>
+                          {ORIGENS_DO_CONTATO.map((o) => (
+                            <option key={o.origem} value={o.origem}>
+                              {traduzir(o.label)}
+                            </option>
+                          ))}
+                        </optgroup>
+                        <optgroup label={traduzir("Da próxima reunião")}>
+                          {ORIGENS_DA_REUNIAO.map((o) => (
+                            <option key={o.origem} value={o.origem}>
+                              {traduzir(o.label)}
+                            </option>
+                          ))}
+                        </optgroup>
                         <option value="texto">{traduzir("Texto fixo")}</option>
                       </select>
                       {v.origem === "texto" ? (

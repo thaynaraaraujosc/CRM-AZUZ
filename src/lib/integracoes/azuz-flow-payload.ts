@@ -20,9 +20,18 @@ export const LIMITES = {
   pergunta: 200,
   resposta: 2000,
   consentimentoTexto: 2000,
+  link: 500,
 } as const;
 
 export type RespostaDoFormulario = { pergunta: string; resposta: string };
+
+/** A reunião que a pessoa escolheu no campo "Agendar reunião" do formulário. */
+export type ReuniaoDoFlow = {
+  /** Instante em UTC. A conversão pro fuso de Brasília é feita na hora de gravar. */
+  inicio: Date;
+  fim: Date | null;
+  link: string | null;
+};
 
 export type LeadDoFlow = {
   formularioId: string;
@@ -44,6 +53,8 @@ export type LeadDoFlow = {
   consentimentoWhatsApp: boolean;
   consentimentoTexto: string | null;
   consentimentoEm: Date | null;
+  /** `null` quando o formulário não tem agendamento, ou quando o que veio era inválido. */
+  reuniao: ReuniaoDoFlow | null;
   /** O nome-chave sugerido pro contato, pelas regras do contrato. */
   nomeDoContato: string;
   avisos: string[];
@@ -73,6 +84,61 @@ function dataValida(valor: unknown): Date | null {
   if (typeof valor !== "string") return null;
   const data = new Date(valor);
   return Number.isNaN(data.getTime()) ? null : data;
+}
+
+/**
+ * Link de reunião só vale se for http(s).
+ *
+ * O `local` do compromisso aparece na tela e pode virar parâmetro de modelo oficial. Aceitar
+ * `javascript:` ou `data:` aqui seria plantar, pelo que um formulário de fora manda, um link que o
+ * navegador executa. `new URL` também recusa texto que não é endereço nenhum.
+ */
+function linkValido(valor: unknown): string | null {
+  const texto = limpar(valor, LIMITES.link);
+  if (!texto) return null;
+  try {
+    const url = new URL(texto);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    return texto;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Lê o campo `reuniao`, que é opcional.
+ *
+ * Nunca devolve erro: um horário ilegível não pode custar o lead inteiro, porque o lead chega uma
+ * vez só e o nome e o WhatsApp continuam bons. O que não dá pra entender vira aviso.
+ */
+function lerReuniao(bruto: unknown, avisos: string[]): ReuniaoDoFlow | null {
+  if (bruto === undefined || bruto === null) return null;
+  if (typeof bruto !== "object" || Array.isArray(bruto)) {
+    avisos.push("O campo `reuniao` não era um objeto; o lead entrou sem reunião agendada.");
+    return null;
+  }
+  const campo = bruto as Record<string, unknown>;
+
+  const inicio = dataValida(campo.inicio);
+  if (!inicio) {
+    avisos.push("A data de início da reunião não pôde ser lida; o lead entrou sem reunião agendada.");
+    return null;
+  }
+
+  // Fim antes do início é dado incoerente: guardar inverteria a duração na agenda. Como `fim` é
+  // opcional no contrato, descartar só ele preserva a reunião, que é o que importa.
+  let fim = dataValida(campo.fim);
+  if (fim && fim.getTime() <= inicio.getTime()) {
+    avisos.push("O fim da reunião não era depois do início; a reunião entrou sem horário de término.");
+    fim = null;
+  }
+
+  const link = linkValido(campo.link);
+  if (!link && campo.link !== undefined && campo.link !== null) {
+    avisos.push("O link da reunião não era um endereço http(s) válido; a reunião entrou sem link.");
+  }
+
+  return { inicio, fim, link };
 }
 
 /** Os 4 últimos dígitos, pro nome de quem só mandou telefone. */
@@ -151,6 +217,8 @@ export function validarPayloadDoFlow(bruto: unknown): ResultadoDaValidacao {
    * mensagem e card se amarram a ele. Então o nome não é enfeite: é a chave. A ordem abaixo é a do
    * contrato, e cada degrau existe porque o anterior pode faltar.
    */
+  const reuniao = lerReuniao(corpo.reuniao, avisos);
+
   const nomeCompleto = [nome, sobrenome].filter(Boolean).join(" ").trim();
   const nomeDoContato =
     nomeCompleto ||
@@ -182,6 +250,7 @@ export function validarPayloadDoFlow(bruto: unknown): ResultadoDaValidacao {
       consentimentoWhatsApp: consentimentoWa.aceitou,
       consentimentoTexto: limpar(consentimentoWa.texto, LIMITES.consentimentoTexto),
       consentimentoEm: dataValida(consentimentoWa.em),
+      reuniao,
       nomeDoContato: nomeDoContato.slice(0, LIMITES.nome),
       avisos,
     },

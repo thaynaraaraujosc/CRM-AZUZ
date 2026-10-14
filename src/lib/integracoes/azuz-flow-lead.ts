@@ -9,7 +9,8 @@ import { contaConectada } from "@/lib/integracoes/whatsapp-oficial";
 import { anotarNaLinhaDoTempo } from "@/lib/integracoes/instagram-eventos";
 import { slugId } from "@/lib/ids";
 import { normalizarTelefoneParaComparacao } from "@/lib/telefone";
-import type { LeadDoFlow } from "./azuz-flow-payload";
+import { dataIsoEmBrasilia, horaEmBrasilia } from "@/lib/agenda/fuso";
+import type { LeadDoFlow, ReuniaoDoFlow } from "./azuz-flow-payload";
 
 export const ORIGEM_FLOW = "azuz_flow";
 
@@ -49,6 +50,15 @@ export type DependenciasDoFlow = {
   atualizarContato: (nome: string, dados: Record<string, unknown>) => Promise<void>;
 
   anotarNaLinhaDoTempo: (params: { contatoNome: string; descricao: string }) => Promise<void>;
+
+  /** Idempotente por definição: repetir a mesma entrega não cria um segundo compromisso. */
+  garantirCompromisso: (params: {
+    chaveDaEntrega: string;
+    contatoId: string;
+    contatoNome: string;
+    formularioNome: string;
+    reuniao: ReuniaoDoFlow;
+  }) => Promise<void>;
 
   contaOficial: () => Promise<{ phoneNumberId: string } | null>;
   garantirConversa: (params: {
@@ -223,7 +233,36 @@ export async function receberLeadDoFlow(params: {
     })
     .catch(() => {});
 
-  // 5. Conversa. Ela nasce VAZIA e com zero não lidas: existe pra a automação ter por onde falar,
+  /*
+   * 5. A REUNIÃO, como dado na Agenda.
+   *
+   * Antes disso ela só existia como frase na linha do tempo, que ninguém consegue consultar: não
+   * aparece na Agenda, não vira lembrete e não dá pra pôr num modelo. Como `Compromisso` ela é um
+   * registro com dia e hora.
+   *
+   * Vem ANTES das automações de propósito, porque as variáveis `reuniao.*` são lidas do banco na
+   * hora do envio. Gravar depois mandaria "sua reunião é dia " — a automação já teria rodado.
+   *
+   * Falhar aqui NÃO derruba o lead: o nome e o WhatsApp da pessoa valem mais do que o compromisso,
+   * e devolver erro faria o Flow repetir uma entrega que, no essencial, deu certo. Fica o aviso na
+   * resposta e o registro no log (só ids, nunca o conteúdo do lead).
+   */
+  if (lead.reuniao) {
+    try {
+      await deps.garantirCompromisso({
+        chaveDaEntrega: lead.respostaId,
+        contatoId,
+        contatoNome: nomeDoContato,
+        formularioNome: lead.formularioNome,
+        reuniao: lead.reuniao,
+      });
+    } catch (erro) {
+      avisos.push("A reunião não pôde ser gravada na Agenda; o lead entrou sem compromisso.");
+      console.error("[azuz-flow] compromisso não gravado:", { contatoId, erro });
+    }
+  }
+
+  // 6. Conversa. Ela nasce VAZIA e com zero não lidas: existe pra a automação ter por onde falar,
   //    não porque alguém escreveu. Contar como não lida poria um badge vermelho numa conversa em
   //    que ninguém disse nada.
   const conta = await deps.contaOficial();
@@ -243,7 +282,7 @@ export async function receberLeadDoFlow(params: {
     avisos.push("O WhatsApp oficial não está conectado, então o lead entrou sem conversa.");
   }
 
-  // 6. Funil. Quem já está no funil NÃO muda de etapa: o vendedor pôs a pessoa onde ela está, e um
+  // 7. Funil. Quem já está no funil NÃO muda de etapa: o vendedor pôs a pessoa onde ela está, e um
   //    formulário novo não é motivo pra jogá-la de volta pro começo. Só sobe pro topo.
   let etapa: { funil: string; etapa: string } | null = null;
   if (await deps.temCardNoFunil(nomeDoContato)) {
@@ -264,7 +303,7 @@ export async function receberLeadDoFlow(params: {
   };
 
   /*
-   * 7. Marca a entrega como feita ANTES de disparar automação: se o processo morrer entre uma coisa
+   * 8. Marca a entrega como feita ANTES de disparar automação: se o processo morrer entre uma coisa
    *    e outra, a repetição do Flow não cria tudo de novo. Automação perdida é um lead sem
    *    mensagem; entrega não registrada é um lead duplicado, com duas mensagens.
    *
@@ -283,7 +322,7 @@ export async function receberLeadDoFlow(params: {
     return { ...guardado, duplicado: true };
   }
 
-  // 8. Por último, com tudo gravado. Falha aqui não derruba a resposta: o lead já está no CRM, e
+  // 9. Por último, com tudo gravado. Falha aqui não derruba a resposta: o lead já está no CRM, e
   //    devolver erro faria o Flow repetir uma entrega que deu certo.
   if (criado) deps.avisarContatoCriado({ contatoNome: nomeDoContato, contatoId });
   await deps
@@ -421,6 +460,45 @@ export function dependenciasReais(workspaceId: string): DependenciasDoFlow {
         tipo: "formulario_respondido",
         descricao,
       });
+    },
+
+    /*
+     * O ID DO COMPROMISSO É DERIVADO DA ENTREGA, e é isso que dá a idempotência.
+     *
+     * `Compromisso.id` é chave primária. Com um id que sai do `respostaId`, a repetição do Flow e
+     * duas chamadas simultâneas com a mesma entrega colidem no banco: o segundo `create` recebe
+     * `P2002` e a gente trata isso como "já está gravado", porque é o que é. Não precisou de índice
+     * novo nem de transação — e a regra do projeto é mudança de banco só aditiva.
+     *
+     * O `slugId` entra porque o `respostaId` vem de fora e pode ter caractere que não se quer numa
+     * chave primária. O corte em 180 respeita o varchar(191) que o Prisma usa pra `String @id`.
+     */
+    async garantirCompromisso({ chaveDaEntrega, contatoId, contatoNome, formularioNome, reuniao }) {
+      const id = `flow-reuniao-${workspaceId}-${slugId(chaveDaEntrega)}`.slice(0, 180);
+      try {
+        await prisma.compromisso.create({
+          data: {
+            id,
+            workspaceId,
+            contato: contatoNome,
+            contatoId,
+            responsavel: "-",
+            // Dia e hora no fuso de Brasília: `Compromisso.dataIso`/`hora` são hora LOCAL (é o que
+            // o usuário digita na Agenda), e o Flow manda o instante em UTC.
+            dataIso: dataIsoEmBrasilia(reuniao.inicio),
+            hora: horaEmBrasilia(reuniao.inicio),
+            horaFim: reuniao.fim ? horaEmBrasilia(reuniao.fim) : null,
+            tipo: "Reunião",
+            descricao: `Agendada no formulário ${formularioNome}`,
+            local: reuniao.link,
+            status: "agendado",
+            origem: "azuz-flow",
+          },
+        });
+      } catch (erro) {
+        // Já gravado por uma entrega repetida ou pela chamada concorrente: é o resultado esperado.
+        if (!ehChaveDuplicada(erro)) throw erro;
+      }
     },
 
     async contaOficial() {

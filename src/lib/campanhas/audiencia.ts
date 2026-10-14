@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import type { ContatoParaVariaveis } from "./variaveis";
+import { usaReuniao, type ContatoParaVariaveis, type MapeamentoVariavel } from "./variaveis";
+import { proximasReunioesPorContato } from "@/lib/agenda/proxima-reuniao";
 import type { CanalCampanha } from "./ritmo";
 import type { Audiencia } from "./audiencia-tipos";
 import { pessoasNaJanela } from "@/lib/social/janela-direct";
@@ -138,4 +139,24 @@ export async function opcoesDeAudiencia(workspaceId: string) {
   }
   const ordenar = (m: Map<string, number>) => Array.from(m.entries()).sort((a, b) => b[1] - a[1]).map(([valor, total]) => ({ valor, total }));
   return { totalContatos: contatos.length, origens: ordenar(origens), etiquetas: ordenar(etiquetas), funis };
+}
+
+/**
+ * Anexa a próxima reunião de cada contato, pra quem usa `{{data}}`, `{{hora}}` ou `{{link}}`.
+ *
+ * Uma consulta só pro público inteiro: num disparo de mil pessoas, uma consulta por contato seriam
+ * mil idas ao banco. E só acontece quando o disparo tem variável da Agenda — o caso comum não paga
+ * nada por isto.
+ */
+export async function anexarProximaReuniao<T extends { nome: string }>(
+  workspaceId: string,
+  contatos: T[],
+  variaveis: MapeamentoVariavel[],
+): Promise<T[]> {
+  if (!usaReuniao(variaveis) || !contatos.length) return contatos;
+  const porContato = await proximasReunioesPorContato(
+    workspaceId,
+    contatos.map((c) => c.nome),
+  );
+  return contatos.map((c) => ({ ...c, reuniao: porContato.get(c.nome) ?? null }));
 }

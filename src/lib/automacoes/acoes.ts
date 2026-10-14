@@ -11,7 +11,9 @@ import {
 } from "@/lib/conversas/enviar-pergunta";
 import { enviarMidiaPeloCanal, type TipoMidia } from "@/lib/conversas/enviar-midia";
 import { reagirAUltimaMensagem } from "@/lib/conversas/enviar-reacao";
-import { prepararEnvioDeModelo, type MapeamentoVariavel } from "@/lib/campanhas/variaveis";
+import { prepararEnvioDeModelo, usaReuniao, type MapeamentoVariavel } from "@/lib/campanhas/variaveis";
+import { proximaReuniaoDoContato } from "@/lib/agenda/proxima-reuniao";
+import type { ReuniaoParaVariaveis } from "@/lib/agenda/reuniao-tipos";
 import { contaConectada, enviarPelaCloudApi } from "@/lib/integracoes/whatsapp-oficial";
 import { enviarEmailOuFalhar } from "@/lib/email";
 import { encerrarExecucao, execucoesVivasDoContato } from "./execucoes";
@@ -105,6 +107,14 @@ export type AcoesDoMotor = {
   responderComentario: (texto: string) => Promise<ResultadoAcao>;
   /** Anota no histórico do lead. */
   anotar: (params: { contatoNome: string; canal: string; tipo: string; descricao: string; dados?: Record<string, unknown> }) => Promise<void>;
+  /**
+   * A próxima reunião do contato, pras variáveis `{reuniao.hora}` do texto livre.
+   *
+   * Leitura, não ação: por isso devolve o dado em vez de `ResultadoAcao`. Passa pelas ações, e não
+   * por um import direto do Prisma no motor, porque o motor é testado com as ações injetadas — é o
+   * que permite exercitar o fluxo inteiro sem banco.
+   */
+  proximaReuniao: (params: { contatoNome: string }) => Promise<ReuniaoParaVariaveis | null>;
 };
 
 /** As ações de verdade: gravam no banco e falam com os canais. */
@@ -313,9 +323,12 @@ export function acoesReais(params: {
           // Valor fixo escolhido no bloco tem prioridade sobre o padrão do modelo.
           ...(variaveis?.[v.chave] ? { origem: "texto" as const, valor: variaveis[v.chave] } : {}),
         }));
+        // A reunião é buscada SÓ quando o modelo usa `reuniao.*`: senão todo envio de modelo
+        // pagaria uma consulta na agenda por causa de uma variável que a maioria não tem.
+        const reuniao = usaReuniao(mapeamento) ? await proximaReuniaoDoContato(workspaceId, contatoNome) : null;
         // Variável vazia faz a Meta recusar o envio INTEIRO. Conferir antes é o que transforma
         // um "falhou" técnico em inglês numa frase que diz qual campo preencher.
-        const preparo = prepararEnvioDeModelo(mapeamento, contato ? { ...contato, nome: contatoNome } : null);
+        const preparo = prepararEnvioDeModelo(mapeamento, contato ? { ...contato, nome: contatoNome, reuniao } : null);
         if (!preparo.ok) return falha(preparo.motivo);
 
         await enviarPelaCloudApi(conta, conversa.contato, {
@@ -480,6 +493,10 @@ export function acoesReais(params: {
       } catch (erro) {
         return falha("Falha ao marcar a consulta.", mensagemDoErro(erro));
       }
+    },
+
+    async proximaReuniao({ contatoNome }) {
+      return proximaReuniaoDoContato(workspaceId, contatoNome);
     },
 
     async cancelarAgendamento({ contatoNome, motivo }) {
@@ -746,6 +763,12 @@ export function acoesSecas(): AcoesDoMotor & { intencoes: string[] } {
   };
   return {
     intencoes,
+    // A simulação não tem workspace pra consultar, e inventar um horário mostraria à pessoa uma
+    // mensagem que não é a que vai sair. Sem reunião, a variável fica vazia — que é exatamente o
+    // que acontece com um contato sem reunião marcada.
+    async proximaReuniao() {
+      return null;
+    },
     async enviarTexto({ contatoNome, texto }) {
       return registrar(`Enviaria para ${contatoNome}: "${resumir(texto)}"`);
     },

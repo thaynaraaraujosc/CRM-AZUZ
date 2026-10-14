@@ -10,6 +10,9 @@
  * e é o que o construtor de automações vai reaproveitar depois sem arrastar o Prisma junto.
  */
 
+import { dataCurta, dataPorExtenso } from "@/lib/agenda/fuso";
+import type { ReuniaoParaVariaveis } from "@/lib/agenda/reuniao-tipos";
+
 /** De onde sai o valor de uma variável. `texto` = valor fixo digitado na hora do disparo. */
 export type OrigemVariavel =
   | "contato.nome"
@@ -31,6 +34,21 @@ export type OrigemVariavel =
   | "contato.email"
   | "contato.whatsapp"
   | "contato.responsavel"
+  /**
+   * A PRÓXIMA reunião do contato que ainda não aconteceu e não foi cancelada.
+   *
+   * Lida do banco na hora do envio, não congelada no momento em que o lead entrou: reunião é a
+   * coisa que mais muda de horário, e confirmar com o cliente um horário remarcado é pior do que
+   * não confirmar nada.
+   *
+   * Quatro origens em vez de uma porque cada uma vai num lugar diferente da frase — "sua reunião
+   * de {{data}} às {{hora}}" não é a mesma coisa que "entre por {{link}}" — e a Meta cobra um
+   * parâmetro por posição.
+   */
+  | "reuniao.data"
+  | "reuniao.dataCurta"
+  | "reuniao.hora"
+  | "reuniao.link"
   | "texto";
 
 export type MapeamentoVariavel = {
@@ -66,6 +84,31 @@ export const ORIGENS_DO_CONTATO: { origem: OrigemVariavel; label: string }[] = [
   { origem: "contato.responsavel", label: "Responsável" },
 ];
 
+/** As origens que saem da Agenda, com o rótulo pra tela. */
+export const ORIGENS_DA_REUNIAO: { origem: OrigemVariavel; label: string }[] = [
+  { origem: "reuniao.data", label: "Data da reunião" },
+  { origem: "reuniao.dataCurta", label: "Data da reunião (curta)" },
+  { origem: "reuniao.hora", label: "Hora da reunião" },
+  { origem: "reuniao.link", label: "Link da reunião" },
+];
+
+/**
+ * O nome que a tela escreve na mensagem pra uma origem: `contato.empresa` → `empresa`.
+ *
+ * É o outro lado da adivinhação de `mapearVariaveis`: o botão escreve `{{empresa}}` e a
+ * adivinhação devolve `contato.empresa`. Tirar o prefixo num lugar só evita que um dos dois lados
+ * mude e as duas coisas deixem de se encontrar.
+ */
+export function chaveSugeridaDe(origem: OrigemVariavel): string {
+  return origem.slice(origem.indexOf(".") + 1);
+}
+
+/** Tudo que uma variável pode ler de um contato. É esta lista que a adivinhação pelo nome usa. */
+export const ORIGENS_DISPONIVEIS: { origem: OrigemVariavel; label: string }[] = [
+  ...ORIGENS_DO_CONTATO,
+  ...ORIGENS_DA_REUNIAO,
+];
+
 /** O pedaço do contato que as variáveis enxergam. É o `select` que quem busca no banco deve usar. */
 export type ContatoParaVariaveis = {
   nome: string;
@@ -76,6 +119,8 @@ export type ContatoParaVariaveis = {
   email?: string | null;
   whatsapp?: string | null;
   responsavel?: string | null;
+  /** `null` quando o contato não tem reunião futura. Quem monta isto é `proximaReuniaoDoContato`. */
+  reuniao?: ReuniaoParaVariaveis | null;
 };
 
 const PADRAO_NOMEADA = /\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\}\}/g;
@@ -118,8 +163,11 @@ export function mapearVariaveis(texto: string, anterior: MapeamentoVariavel[] = 
     // A comparação é sem caixa: quem escreve `{{primeiroNome}}` e quem escreve `{{primeironome}}`
     // querem a mesma coisa, e errar aqui deixa a variável como "texto" — a pessoa preenche na mão e
     // nunca entende por que aquela não puxou sozinha.
-    const alvo = `contato.${chave}`.toLowerCase();
-    const origemAdivinhada = ORIGENS_DO_CONTATO.find((o) => o.origem.toLowerCase() === alvo)?.origem;
+    //
+    // E tenta os dois prefixos: `{{empresa}}` é do contato, `{{hora}}` é da reunião. Quem escreve
+    // não digita o prefixo, então quem procura tem que olhar nos dois lugares.
+    const alvos = [`contato.${chave}`.toLowerCase(), `reuniao.${chave}`.toLowerCase()];
+    const origemAdivinhada = ORIGENS_DISPONIVEIS.find((o) => alvos.includes(o.origem.toLowerCase()))?.origem;
     return { chave, indice: proximoIndiceLivre(), origem: origemAdivinhada ?? "texto" };
   });
 }
@@ -148,6 +196,37 @@ export function primeiroNomeDe(nome: string): string {
   return (semSufixo || nome).split(/\s+/)[0] ?? "";
 }
 
+/**
+ * O valor cru de uma origem, antes da reserva.
+ *
+ * A formatação da data mora aqui e não em quem lê do banco: `Compromisso` guarda "2026-10-20" e
+ * "14:00" (hora local de Brasília), e é esta função que decide que `reuniao.data` vira
+ * "terça-feira, 20 de outubro". Assim os três lugares que mandam modelo escrevem a data igual.
+ */
+function valorDaOrigem(origem: OrigemVariavel, contato: ContatoParaVariaveis | null): string {
+  if (origem === "contato.primeiroNome") return primeiroNomeDe(contato?.nome ?? "");
+
+  if (origem.startsWith("reuniao.")) {
+    // Contato sem reunião futura: devolve vazio, e aí vale a reserva — ou o envio não acontece e
+    // a execução diz qual variável faltou. Mandar "" faria a Meta recusar a mensagem inteira.
+    const reuniao = contato?.reuniao;
+    if (!reuniao) return "";
+    if (origem === "reuniao.data") return dataPorExtenso(reuniao.dataIso);
+    if (origem === "reuniao.dataCurta") return dataCurta(reuniao.dataIso);
+    if (origem === "reuniao.hora") return reuniao.hora;
+    return reuniao.link ?? "";
+  }
+
+  const campo = origem.slice("contato.".length) as keyof ContatoParaVariaveis;
+  const valor = contato?.[campo];
+  return typeof valor === "string" ? valor : "";
+}
+
+/** O modelo usa alguma variável da Agenda? Quem envia só busca a reunião quando precisa dela. */
+export function usaReuniao(variaveis: MapeamentoVariavel[]): boolean {
+  return variaveis.some((v) => v.origem.startsWith("reuniao."));
+}
+
 export function resolverParametros(
   variaveis: MapeamentoVariavel[],
   contato: ContatoParaVariaveis | null,
@@ -158,10 +237,7 @@ export function resolverParametros(
       valores[v.chave] = v.valor ?? "";
       continue;
     }
-    const bruto =
-      v.origem === "contato.primeiroNome"
-        ? primeiroNomeDe(contato?.nome ?? "")
-        : (contato?.[v.origem.slice("contato.".length) as keyof ContatoParaVariaveis] ?? "").toString();
+    const bruto = valorDaOrigem(v.origem, contato);
 
     // A reserva entra DEPOIS de resolver, não no lugar de resolver: ela é o que fazer quando o
     // campo está vazio, e campo vazio é o caso comum (o lead não preencheu "empresa").

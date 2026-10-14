@@ -60,6 +60,26 @@ describe("formato da Meta", () => {
     expect(componentes[1]).toEqual({ type: "BUTTONS", buttons: [{ type: "QUICK_REPLY", text: "Sim" }] });
   });
 
+  /**
+   * O exemplo é o que o analista da Meta LÊ no lugar da variável.
+   *
+   * Com "exemplo" no lugar de uma data, a frase que ele avalia é "sua reunião de exemplo às
+   * exemplo" — e o modelo volta reprovado, com dias de fila. O formato de cada exemplo é o mesmo
+   * que o envio produz de verdade.
+   */
+  it("manda exemplo plausível para o primeiro nome e para a reunião", () => {
+    const corpo = "Olá {{primeiroNome}}, sua reunião é {{data}} ({{dataCurta}}) às {{hora}}: {{link}}";
+    const variaveis = mapearVariaveis(corpo);
+    const componentes = montarComponentesMeta({ nome: "x", canal: "whatsapp_oficial", corpo, variaveis });
+    expect((componentes[0] as { example: { body_text: string[][] } }).example.body_text[0]).toEqual([
+      "Maria",
+      "terça-feira, 20 de outubro",
+      "20/10/2026",
+      "14:00",
+      "https://meet.google.com/abc-defg-hij",
+    ]);
+  });
+
   it("nome vira o formato da Meta e status volta no vocabulário do CRM", () => {
     expect(normalizarNomeMeta("Retomar Atendimento: Março!")).toBe("retomar_atendimento_marco");
     expect(statusDaMeta("APPROVED")).toBe("aprovado");

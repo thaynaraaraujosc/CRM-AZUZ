@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { receberLeadDoFlow, type DependenciasDoFlow, type ResultadoDoLead } from "../azuz-flow-lead";
 import { validarPayloadDoFlow, type LeadDoFlow } from "../azuz-flow-payload";
+import { dataIsoEmBrasilia, horaEmBrasilia } from "@/lib/agenda/fuso";
 
 /**
  * As duas corridas que o teste de ponta a ponta encontrou.
@@ -22,6 +23,8 @@ function bancoDeMentira() {
   const contatosPorNome = new Map<string, { id: string; nome: string; whatsapp?: string | null; email?: string | null }>();
   const entregas = new Map<string, ResultadoDoLead>();
   const criados: string[] = [];
+  // A agenda, com a MESMA chave primária do banco: o id do compromisso sai da entrega.
+  const compromissos = new Map<string, { contato: string; dataIso: string; hora: string }>();
 
   function deps(): DependenciasDoFlow {
     return {
@@ -56,6 +59,20 @@ function bancoDeMentira() {
       },
       atualizarContato: async () => {},
       anotarNaLinhaDoTempo: async () => {},
+      garantirCompromisso: async ({ chaveDaEntrega, contatoNome, reuniao }) => {
+        const id = `flow-reuniao-w1-${chaveDaEntrega}`;
+        try {
+          if (compromissos.has(id)) throw duplicada();
+          compromissos.set(id, {
+            contato: contatoNome,
+            dataIso: dataIsoEmBrasilia(reuniao.inicio),
+            hora: horaEmBrasilia(reuniao.inicio),
+          });
+        } catch (erro) {
+          // Igual ao dependenciasReais: chave repetida é "já está gravado", não erro.
+          if ((erro as { code?: string }).code !== "P2002") throw erro;
+        }
+      },
       contaOficial: async () => ({ phoneNumberId: "111" }),
       garantirConversa: async () => ({ id: "conv" }),
       temCardNoFunil: async () => false,
@@ -66,15 +83,16 @@ function bancoDeMentira() {
     };
   }
 
-  return { deps, contatosPorNome, entregas, criados };
+  return { deps, contatosPorNome, entregas, criados, compromissos };
 }
 
-function lead(respostaId: string, dadosDoLead: Record<string, unknown>): LeadDoFlow {
+function lead(respostaId: string, dadosDoLead: Record<string, unknown>, extra: Record<string, unknown> = {}): LeadDoFlow {
   const r = validarPayloadDoFlow({
     origem: { formularioId: "f1", formularioNome: "Consultoria grátis", respostaId },
     lead: dadosDoLead,
     respostas: [],
     consentimento: { whatsapp: { aceitou: true, texto: null, em: null } },
+    ...extra,
   });
   if (!r.ok) throw new Error(r.erro);
   return r.lead;
@@ -182,5 +200,28 @@ describe("erro que não é corrida", () => {
       receberLeadDoFlow({ workspaceId: "w1", lead: lead("r-1", { nome: "Ana" }), deps }),
     ).rejects.toMatchObject({ code: "P2002" });
     expect(tentativas).toBe(2);
+  });
+});
+
+describe("a mesma entrega com reunião, duas vezes ao mesmo tempo", () => {
+  it("marca UM compromisso só", async () => {
+    // A corrida de verdade: as duas chamadas passam pela conferência de idempotência antes de
+    // qualquer uma gravar. Quem resolve é a chave primária do compromisso, derivada da entrega.
+    const banco = bancoDeMentira();
+    const mesmo = lead(
+      "r-reuniao",
+      { nome: "Ana", sobrenome: "Souza", whatsapp: "5562996340438" },
+      { reuniao: { inicio: "2026-10-21T02:30:00.000Z", fim: null, link: null } },
+    );
+
+    const [a, b] = await Promise.all([
+      receberLeadDoFlow({ workspaceId: "w1", lead: mesmo, deps: banco.deps() }),
+      receberLeadDoFlow({ workspaceId: "w1", lead: mesmo, deps: banco.deps() }),
+    ]);
+
+    expect(a.ok && b.ok).toBe(true);
+    expect(banco.compromissos.size).toBe(1);
+    // E com o dia de BRASÍLIA: 02h30 de 21/10 em UTC é 23h30 de 20/10 aqui.
+    expect([...banco.compromissos.values()][0]).toMatchObject({ dataIso: "2026-10-20", hora: "23:30" });
   });
 });

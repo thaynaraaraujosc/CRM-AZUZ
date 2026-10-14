@@ -2,6 +2,8 @@ import { avaliarGrupoCondicoes } from "@/lib/automation-flow/avaliacao";
 import { rotuloCurto } from "@/lib/conversas/enviar-pergunta";
 import { somarMinutosUteis, type Expediente } from "@/lib/expediente";
 import { casaComRegex } from "./regex-seguro";
+import { dataCurta, dataPorExtenso } from "@/lib/agenda/fuso";
+import type { ReuniaoParaVariaveis } from "@/lib/agenda/reuniao-tipos";
 import type {
   AdicionarEtiquetaData,
   AguardarData,
@@ -326,8 +328,25 @@ async function executarNo(params: {
   agora: Date;
 }): Promise<ResultadoDoNo> {
   const { no, contexto, acoes, agora, fluxoId, edges } = params;
-  const contato = contatoDoContexto(contexto);
+  // A reunião fica FORA do contato do contexto, que é gravado no banco a cada passo: ela é lida de
+  // novo em cada envio, e guardá-la junto do contexto seria congelar justamente o que não pode.
+  const contato: ReturnType<typeof contatoDoContexto> & { reuniao?: ReuniaoParaVariaveis | null } =
+    contatoDoContexto(contexto);
   const nome = contato.nome;
+
+  /*
+   * A reunião é buscada SÓ quando este bloco escreve `{reuniao.…}` em algum campo.
+   *
+   * Na hora do envio, não no começo do fluxo: um fluxo que espera dois dias antes de confirmar tem
+   * que mandar o horário de hoje, não o que estava marcado quando o lead entrou. Como o contato do
+   * contexto é uma foto do começo, a reunião entra aqui, por fora dela.
+   *
+   * E só quando o bloco usa: senão toda mensagem de texto de todo fluxo pagaria uma consulta na
+   * agenda por causa de uma variável que a maioria não escreve.
+   */
+  if (JSON.stringify(no.data ?? {}).includes("reuniao.")) {
+    contato.reuniao = await acoes.proximaReuniao({ contatoNome: nome });
+  }
 
   switch (no.type) {
     case "condicao_grupo": {
@@ -882,6 +901,23 @@ function valorDoContato(contato: Record<string, unknown>, chave: string, agora: 
   // disparada em março precisa dizer março.
   if (chave === "data") return agora.toLocaleDateString("pt-BR");
   if (chave === "horario") return agora.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+
+  /*
+   * A próxima reunião do contato, sempre com o prefixo `reuniao.`.
+   *
+   * O prefixo não é enfeite: `{data}` já quer dizer "a data de hoje" nos blocos de texto, há
+   * fluxos publicados contando com isso, e trocar o significado mandaria a data errada pra cliente
+   * de quem nunca pediu mudança nenhuma. `{reuniao.data}` é novo e não colide com nada.
+   */
+  if (chave.startsWith("reuniao.")) {
+    const reuniao = contato.reuniao as ReuniaoParaVariaveis | null | undefined;
+    if (!reuniao) return null;
+    if (chave === "reuniao.data") return dataPorExtenso(reuniao.dataIso);
+    if (chave === "reuniao.data_curta") return dataCurta(reuniao.dataIso);
+    if (chave === "reuniao.hora") return reuniao.hora;
+    if (chave === "reuniao.link") return reuniao.link;
+    return null;
+  }
 
   for (const campo of APELIDOS[chave] ?? []) {
     const valor = contato[campo];

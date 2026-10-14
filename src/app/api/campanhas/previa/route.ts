@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
-import { destinoDoContato, opcoesDeAudiencia, resolverAudiencia, type Audiencia } from "@/lib/campanhas/audiencia";
+import { anexarProximaReuniao, destinoDoContato, opcoesDeAudiencia, resolverAudiencia, type Audiencia } from "@/lib/campanhas/audiencia";
 import { RITMO, preverDuracao, type CanalCampanha } from "@/lib/campanhas/ritmo";
 import { resolverParametros, variaveisSemValor, type MapeamentoVariavel } from "@/lib/campanhas/variaveis";
 import { contaConectada, limiteDiarioDaConta } from "@/lib/integracoes/whatsapp-oficial";
@@ -27,8 +27,10 @@ export async function POST(request: Request) {
   if (!corpo.canal || !RITMO[corpo.canal]) return NextResponse.json({ erro: "Canal inválido." }, { status: 400 });
   if (!corpo.audiencia?.modo) return NextResponse.json({ erro: "Escolha o público." }, { status: 400 });
 
-  const contatos = await resolverAudiencia(workspaceId, corpo.audiencia);
   const variaveis = Array.isArray(corpo.variaveis) ? corpo.variaveis : [];
+  // A prévia precisa olhar pro MESMO dado do disparo: sem a reunião aqui, ela diria "todos ok" e
+  // o disparo recusaria depois quem não tem reunião marcada.
+  const contatos = await anexarProximaReuniao(workspaceId, await resolverAudiencia(workspaceId, corpo.audiencia), variaveis);
 
   const comDestino: { nome: string; destino: string }[] = [];
   const semDestino: string[] = [];

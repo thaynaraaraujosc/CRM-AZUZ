@@ -2658,4 +2658,10 @@ export const TRADUCOES_EN: Record<string, string> = {
   "Usuários e permissões ilimitados": "Unlimited users and permissions",
   "Primeiro nome": "First name",
   "Se estiver vazio, usar:": "If empty, use:",
+  "Data da reunião": "Meeting date",
+  "Data da reunião (curta)": "Meeting date (short)",
+  "Hora da reunião": "Meeting time",
+  "Link da reunião": "Meeting link",
+  "Do contato": "From the contact",
+  "Da próxima reunião": "From the next meeting",
 };

@@ -233,6 +233,40 @@ describe("variáveis no texto", () => {
   it("texto sem variável passa intacto", () => {
     expect(preencher("Bom dia!", contato)).toBe("Bom dia!");
   });
+
+  /**
+   * As variáveis da reunião no texto livre, com prefixo.
+   *
+   * O prefixo não é enfeite: `{data}` já quer dizer "a data de hoje" nos blocos de texto, há fluxos
+   * publicados contando com isso, e trocar o significado mandaria a data errada pra cliente de quem
+   * nunca pediu mudança nenhuma.
+   */
+  describe("variáveis da reunião", () => {
+    const comReuniao = {
+      nome: "Ana Souza",
+      reuniao: { dataIso: "2026-10-20", hora: "14:00", link: "https://meet.google.com/abc-defg-hij" },
+    };
+
+    it("escreve a data, a data curta, a hora e o link", () => {
+      expect(preencher("{reuniao.data} às {reuniao.hora}", comReuniao)).toBe("terça-feira, 20 de outubro às 14:00");
+      expect(preencher("{reuniao.data_curta}", comReuniao)).toBe("20/10/2026");
+      expect(preencher("{reuniao.link}", comReuniao)).toBe("https://meet.google.com/abc-defg-hij");
+    });
+
+    it("NÃO muda o que `{data}` sempre quis dizer", () => {
+      const quando = new Date(2026, 2, 15, 9, 5);
+      expect(preencher("{data}", comReuniao, quando)).toBe("15/03/2026");
+    });
+
+    it("contato sem reunião deixa a variável vazia", () => {
+      expect(preencher("Até {reuniao.data}!", { nome: "Bruno" })).toBe("Até !");
+    });
+
+    it("reunião sem link deixa só o link vazio", () => {
+      const semLink = { nome: "Ana", reuniao: { dataIso: "2026-10-20", hora: "14:00", link: null } };
+      expect(preencher("{reuniao.hora} · {reuniao.link}", semLink)).toBe("14:00 · ");
+    });
+  });
 });
 
 describe("categoria escolhida pela IA", () => {

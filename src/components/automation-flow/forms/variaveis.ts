@@ -10,6 +10,10 @@
  * `src/lib/automacoes/motor-estado.ts`). Campo personalizado do contato também funciona: é só
  * escrever o nome dele entre chaves, mesmo não estando nesta lista.
  *
+ * As de `reuniao.` entraram depois, quando passou a existir compromisso de verdade na Agenda vindo
+ * do formulário do AZUZ Flow: elas saem do compromisso, não do contato. Contato sem reunião futura
+ * deixa a variável vazia, igual a qualquer campo em branco.
+ *
  * O formato é de chave SIMPLES. O motor aceita simples e dupla, mas o menu escreve uma só, pra
  * ninguém precisar decidir qual usar.
  */
@@ -28,6 +32,12 @@ export const VARIAVEIS_MENSAGEM: { token: string; label: string }[] = [
   { token: "{origem}", label: "Origem do lead" },
   { token: "{data}", label: "Data de hoje" },
   { token: "{horario}", label: "Horário do envio" },
+  // A "data da consulta" que foi retirada daqui por não existir agora existe: o compromisso da
+  // Agenda. O prefixo `reuniao.` separa do `{data}` acima, que é a data de hoje.
+  { token: "{reuniao.data}", label: "Data da reunião" },
+  { token: "{reuniao.data_curta}", label: "Data da reunião (curta)" },
+  { token: "{reuniao.hora}", label: "Hora da reunião" },
+  { token: "{reuniao.link}", label: "Link da reunião" },
 ];
 
 /** Insere o token na posição do cursor (ou no fim, se não houver seleção) e devolve o texto novo. */

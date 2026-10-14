@@ -182,11 +182,19 @@ export function validarTemplate(t: TemplateEditavel): string[] {
   return problemas;
 }
 
-/** Exemplo que a Meta exige pra cada variável na análise. Sem isso ela recusa o modelo. */
+/**
+ * Exemplo que a Meta exige pra cada variável na análise. Sem isso ela recusa o modelo.
+ *
+ * O exemplo tem que PARECER o valor de verdade, não ser só um texto qualquer: o analista da Meta lê
+ * "sua reunião de {{1}} às {{2}}" com os exemplos no lugar, e se `{{1}}` vier como "exemplo" a
+ * frase não faz sentido nenhum — o modelo volta reprovado e a fila é de dias. O formato de cada um
+ * aqui é o MESMO que `resolverParametros` produz no envio.
+ */
 function exemploDe(v: MapeamentoVariavel): string {
   if (v.origem === "texto" && v.valor?.trim()) return v.valor.trim();
   const porOrigem: Record<string, string> = {
     "contato.nome": "Maria",
+    "contato.primeiroNome": "Maria",
     "contato.sobrenome": "Silva",
     "contato.empresa": "Empresa Exemplo",
     "contato.cargo": "Gerente",
@@ -194,6 +202,10 @@ function exemploDe(v: MapeamentoVariavel): string {
     "contato.email": "maria@exemplo.com",
     "contato.whatsapp": "5562999999999",
     "contato.responsavel": "Ana",
+    "reuniao.data": "terça-feira, 20 de outubro",
+    "reuniao.dataCurta": "20/10/2026",
+    "reuniao.hora": "14:00",
+    "reuniao.link": "https://meet.google.com/abc-defg-hij",
   };
   return porOrigem[v.origem] ?? "exemplo";
 }
