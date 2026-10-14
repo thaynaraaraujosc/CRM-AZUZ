@@ -63,13 +63,22 @@ function rodar(comando: string, args: string[]) {
  */
 
 // 1. O SQL que o `db push` executaria. `migrate diff` não toca no banco: só compara.
+/*
+ * SINTAXE DO PRISMA 7, conferida contra a versão instalada e não pela memória.
+ *
+ * O `--from-url` e o `--to-schema-datamodel` do Prisma 6 FORAM REMOVIDOS: a primeira versão deste
+ * script usava os dois e morreu com um despejo de ajuda em inglês na mão de quem só queria aplicar
+ * o schema. Hoje a origem vem de `--from-config-datasource` (que lê o `datasource.url` do
+ * `prisma.config.ts`, e esse lê a `DATABASE_URL`) e o destino de `--to-schema`.
+ *
+ * `migrate diff` é só leitura: ele compara e imprime, nunca escreve no banco.
+ */
 const diff = rodar("npx", [
   "prisma",
   "migrate",
   "diff",
-  "--from-url",
-  process.env.DATABASE_URL,
-  "--to-schema-datamodel",
+  "--from-config-datasource",
+  "--to-schema",
   "prisma/schema.prisma",
   "--script",
 ]);
