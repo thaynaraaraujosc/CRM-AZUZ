@@ -11,6 +11,7 @@ import {
 import { destinoDoLead, } from "@/lib/integracoes/azuz-flow-destino";
 import { ORIGEM_FLOW } from "@/lib/integracoes/azuz-flow-lead";
 import { contaConectada } from "@/lib/integracoes/whatsapp-oficial";
+import { comRespostaEmJson } from "@/lib/integracoes/resposta-em-json";
 
 /**
  * Gestão da chave do AZUZ Flow, da tela de Configurações.
@@ -31,6 +32,10 @@ async function exigirAdmin() {
 }
 
 export async function GET() {
+  return comRespostaEmJson("azuz-flow/chave GET", lerEstado);
+}
+
+async function lerEstado() {
   const guarda = await exigirAdmin();
   if (!guarda.ok) return guarda.resposta;
   const workspaceId = guarda.sessao.user.workspaceId;
@@ -55,6 +60,10 @@ export async function GET() {
 }
 
 export async function POST() {
+  return comRespostaEmJson("azuz-flow/chave POST", gerar);
+}
+
+async function gerar() {
   const guarda = await exigirAdmin();
   if (!guarda.ok) return guarda.resposta;
   const { sessao } = guarda;
@@ -81,6 +90,10 @@ export async function POST() {
 }
 
 export async function DELETE() {
+  return comRespostaEmJson("azuz-flow/chave DELETE", revogar);
+}
+
+async function revogar() {
   const guarda = await exigirAdmin();
   if (!guarda.ok) return guarda.resposta;
   const { sessao } = guarda;

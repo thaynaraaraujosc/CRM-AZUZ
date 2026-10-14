@@ -39,8 +39,71 @@
  */
 import { spawnSync } from "node:child_process";
 
+/*
+ * DATABASE_URL AUSENTE: o caminho silencioso que custou um dia de produção em 14/10/2026.
+ *
+ * Isto era uma linha de `console.warn` e um `exit(0)`. O build seguia, o código novo subia, o
+ * schema ficava atrás, e o único registro disso era uma linha perdida num log que ninguém relê. O
+ * sintoma chegou à pessoa como um erro de JavaScript no navegador, três camadas longe da causa.
+ *
+ * A ausência da variável NÃO é o mesmo problema que o banco fora do ar, e por isso tem texto
+ * próprio: banco fora do ar se resolve sozinho quando ele volta; variável ausente nunca se resolve
+ * sozinha. É configuração da implantação, e vai se repetir em todo deploy até alguém mexer.
+ *
+ * Por que ainda assim NÃO falha o build por padrão: na Vercel, uma variável marcada como
+ * "Sensitive" existe em tempo de execução e NÃO em tempo de build. Nesse estado a aplicação
+ * funciona e só o `db push` fica de fora — falhar o build travaria toda publicação, inclusive a que
+ * consertaria a situação, que é o mesmo erro que já se cometeu aqui uma vez.
+ *
+ * Quem quiser fechar a porta de vez põe `EXIGIR_SCHEMA_NO_BUILD=1` no ambiente: aí a ausência passa
+ * a derrubar o build. É a escolha certa DEPOIS de confirmar que a variável chega ao build.
+ */
 if (!process.env.DATABASE_URL) {
-  console.warn("[schema] DATABASE_URL não definida: pulando a sincronização do banco.");
+  const naVercel = Boolean(process.env.VERCEL);
+  const ambiente = process.env.VERCEL_ENV ?? "(desconhecido)";
+  const exigir = process.env.EXIGIR_SCHEMA_NO_BUILD === "1";
+
+  const linhas = [
+    "",
+    "========================================================================",
+    "[schema] ATENÇÃO: DATABASE_URL não está definida NESTE BUILD.",
+    "",
+    "  O schema do banco NÃO foi sincronizado. Se este código traz tabela ou",
+    "  coluna nova, ela não existe no banco, e as telas que dependem dela vão",
+    "  falhar em produção.",
+    "",
+  ];
+
+  if (naVercel) {
+    linhas.push(
+      `  Isto é um build da Vercel (VERCEL_ENV=${ambiente}). Confira, nesta ordem:`,
+      "    1. a variável existe no ambiente desta implantação?",
+      "    2. ela está marcada como 'Sensitive'? Variável sensível na Vercel NÃO",
+      "       é exposta em tempo de build, só em execução — e é exatamente assim",
+      "       que a aplicação funciona e o schema fica atrás.",
+      "    3. enquanto não resolver, aplique à mão:",
+      "       npx tsx scripts/conferir-schema.mjs",
+      "       npx tsx scripts/aplicar-schema-em-producao.ts",
+      "",
+    );
+  } else {
+    linhas.push("  Build sem banco configurado (ambiente de CI ou serviço sem variáveis).", "");
+  }
+
+  linhas.push(
+    "  Depois de publicar, confira o estado real em /api/saude/banco (como",
+    "  administrador): ele lista tabela e coluna que faltam.",
+    "========================================================================",
+    "",
+  );
+
+  const escrever = exigir ? console.error : console.warn;
+  for (const linha of linhas) escrever(linha);
+
+  if (exigir) {
+    console.error("[schema] EXIGIR_SCHEMA_NO_BUILD=1: o build para aqui de propósito.");
+    process.exit(1);
+  }
   process.exit(0);
 }
 
