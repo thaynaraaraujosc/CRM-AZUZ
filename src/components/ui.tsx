@@ -132,6 +132,58 @@ export function Modal({
 }
 
 /**
+ * Confirmação de uma ação, no meio da tela.
+ *
+ * Existe pra substituir o `window.confirm`, que o navegador desenha colado no TOPO da janela, com a
+ * tipografia dele e o nome do site em cima — fora da identidade do produto e longe de onde a pessoa
+ * acabou de clicar. Num CRM que já tem modal próprio, usar o do navegador faz a tela parecer
+ * montada por duas equipes diferentes.
+ *
+ * `perigoso` pinta o botão de confirmar de vermelho: é o que diferencia "revogar a chave" de
+ * "salvar". A diferença precisa estar na cor, não só no texto, porque ninguém lê o texto inteiro
+ * antes de clicar.
+ */
+export function ModalConfirmacao({
+  aberto,
+  titulo,
+  mensagem,
+  rotuloConfirmar,
+  perigoso = false,
+  onConfirmar,
+  onCancelar,
+}: {
+  aberto: boolean;
+  titulo: ReactNode;
+  mensagem: ReactNode;
+  rotuloConfirmar: string;
+  perigoso?: boolean;
+  onConfirmar: () => void;
+  onCancelar: () => void;
+}) {
+  const { t: traduzir } = useIdioma();
+  return (
+    <Modal
+      aberto={aberto}
+      onFechar={onCancelar}
+      titulo={titulo}
+      tamanho="sm"
+      rodape={
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+          <button type="button" className="btn" onClick={onCancelar}>
+            {traduzir("Cancelar")}
+          </button>
+          <button type="button" className={perigoso ? "btn danger" : "btn primary"} onClick={onConfirmar}>
+            {rotuloConfirmar}
+          </button>
+        </div>
+      }
+    >
+      <p className="hint" style={{ margin: 0 }}>{mensagem}</p>
+    </Modal>
+  );
+}
+
+/**
  * Popover flutuante montado via portal em document.body, posicionado com
  * `position: fixed` a partir do retângulo do botão que o abriu. Assim ele
  * nunca fica cortado pelo `overflow: auto` de `.content`, e vira de baixo

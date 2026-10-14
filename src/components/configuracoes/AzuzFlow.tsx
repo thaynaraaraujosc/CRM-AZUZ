@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 
 import { IconAlerta } from "@/components/icons";
+import { ModalConfirmacao } from "@/components/ui";
 import { useIdioma } from "@/lib/idioma-context";
 import { lerJson } from "@/lib/ler-resposta";
 import { precisaConfirmarAntesDeGerar } from "@/lib/integracoes/estado-do-cartao";
@@ -50,6 +51,8 @@ export function AzuzFlow() {
   const [copiada, setCopiada] = useState(false);
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  /** Qual confirmação está aberta. `null` = nenhuma. Substitui o `window.confirm` do navegador. */
+  const [confirmando, setConfirmando] = useState<"gerar" | "revogar" | null>(null);
 
   const ehAdmin = sessao?.user?.papelTipo === "admin" || sessao?.user?.superAdmin;
 
@@ -94,19 +97,18 @@ export function AzuzFlow() {
     setLeitura({ situacao: "lido", dados: lido.dados });
   }
 
-  async function gerar() {
+  /** Pede confirmação quando há chave em uso — ou quando não se sabe se há. */
+  function pedirParaGerar() {
     const confirmar = precisaConfirmarAntesDeGerar(
       leitura.situacao,
       leitura.situacao === "lido" && Boolean(leitura.dados.chave),
     );
-    if (
-      confirmar &&
-      !window.confirm(
-        traduzir("Gerar uma chave nova faz a atual parar de funcionar na hora. O AZUZ Flow vai precisar da chave nova pra continuar entregando leads. Continuar?"),
-      )
-    ) {
-      return;
-    }
+    if (confirmar) setConfirmando("gerar");
+    else void gerar();
+  }
+
+  async function gerar() {
+    setConfirmando(null);
     setOcupado(true);
     setErro(null);
     try {
@@ -125,13 +127,7 @@ export function AzuzFlow() {
   }
 
   async function revogar() {
-    if (
-      !window.confirm(
-        traduzir("Revogar a chave faz o AZUZ Flow parar de entregar leads neste CRM imediatamente. Continuar?"),
-      )
-    ) {
-      return;
-    }
+    setConfirmando(null);
     setOcupado(true);
     setErro(null);
     try {
@@ -153,11 +149,6 @@ export function AzuzFlow() {
   return (
     <div className="config-bloco">
       <p className="config-bloco-titulo">{traduzir("AZUZ Flow")}</p>
-      <p className="hint" style={{ margin: "0 0 12px" }}>
-        {traduzir(
-          "Recebe no CRM os leads dos formulários do AZUZ Flow: o contato entra, a conversa de WhatsApp é criada e as automações disparam.",
-        )}
-      </p>
 
       <div className="field">
         <label>{traduzir("Endereço do CRM (cole no AZUZ Flow)")}</label>
@@ -195,12 +186,13 @@ export function AzuzFlow() {
               quem: estado.chave.criadaPor,
             })}
           </p>
-          <p className="hint" style={{ margin: "2px 0 0" }}>
-            {traduzir("Último uso: {quando}", { quando: data(estado.chave.ultimoUsoEm) })}
-          </p>
-          <p className="hint" style={{ margin: "2px 0 0" }}>
-            {traduzir("Último lead recebido: {quando}", { quando: data(estado?.ultimoLeadEm) })}
-          </p>
+          {/* "nunca" não é informação: é ruído com cara de dado. Estas duas linhas só aparecem
+              depois que existe o que contar. */}
+          {estado.ultimoLeadEm ? (
+            <p className="hint" style={{ margin: "2px 0 0" }}>
+              {traduzir("Último lead recebido: {quando}", { quando: data(estado.ultimoLeadEm) })}
+            </p>
+          ) : null}
         </div>
       ) : leitura.situacao === "lido" ? (
         <p className="hint" style={{ margin: "0 0 12px" }}>{traduzir("Nenhuma chave ativa.")}</p>
@@ -210,36 +202,64 @@ export function AzuzFlow() {
         </p>
       )}
 
-      {/* Só descreve o destino do lead quando ele foi LIDO. Dizer "esta empresa não tem funil" a
-          partir de uma leitura que falhou é inventar um fato sobre a conta de um cliente. */}
-      {leitura.situacao === "lido" ? (
+      {/*
+        AVISO SÓ QUANDO FALTA ALGO.
+
+        Antes esta caixa aparecia sempre, e na maior parte do tempo ela dizia que estava tudo certo —
+        que é a informação menos útil que existe numa tela. Confirmar o esperado é ruído; o que
+        merece espaço é a exceção, porque ela muda o que vai acontecer com o lead.
+
+        Continua só aparecendo com a leitura FEITA: dizer "esta empresa não tem funil" a partir de
+        uma leitura que falhou seria inventar um fato sobre a conta de um cliente.
+      */}
+      {leitura.situacao === "lido" && (!leitura.dados.destino || !leitura.dados.whatsappOficialConectado) ? (
         <div className="card" style={{ padding: 12, marginBottom: 12 }}>
-          <p className="hint" style={{ margin: 0 }}>
-            {leitura.dados.destino
-              ? traduzir("O lead entra em {funil} › {etapa}.", {
-                  funil: leitura.dados.destino.funil,
-                  etapa: leitura.dados.destino.etapa,
-                })
-              : traduzir("Esta empresa ainda não tem funil: o lead entra como contato, sem card.")}
-          </p>
-          <p className="hint" style={{ margin: "4px 0 0" }}>
-            {leitura.dados.whatsappOficialConectado
-              ? traduzir("WhatsApp oficial conectado: a conversa é criada junto com o lead.")
-              : traduzir("WhatsApp oficial não conectado: o lead entra, mas sem conversa pra automação responder.")}
-          </p>
+          {!leitura.dados.destino ? (
+            <p className="hint" style={{ margin: 0 }}>
+              <IconAlerta width={12} height={12} aria-hidden="true" />{" "}
+              {traduzir("Esta empresa ainda não tem funil: o lead entra como contato, sem card.")}
+            </p>
+          ) : null}
+          {!leitura.dados.whatsappOficialConectado ? (
+            <p className="hint" style={{ margin: leitura.dados.destino ? 0 : "4px 0 0" }}>
+              <IconAlerta width={12} height={12} aria-hidden="true" />{" "}
+              {traduzir("WhatsApp oficial não conectado: o lead entra, mas sem conversa pra automação responder.")}
+            </p>
+          ) : null}
         </div>
       ) : null}
 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <button type="button" className="btn primary" disabled={ocupado} onClick={() => void gerar()}>
+        <button type="button" className="btn primary" disabled={ocupado} onClick={pedirParaGerar}>
           {estado?.chave ? traduzir("Gerar nova chave") : traduzir("Gerar chave")}
         </button>
         {estado?.chave ? (
-          <button type="button" className="btn danger" disabled={ocupado} onClick={() => void revogar()}>
+          <button type="button" className="btn danger" disabled={ocupado} onClick={() => setConfirmando("revogar")}>
             {traduzir("Revogar")}
           </button>
         ) : null}
       </div>
+
+      <ModalConfirmacao
+        aberto={confirmando === "gerar"}
+        titulo={traduzir("Gerar uma chave nova?")}
+        mensagem={traduzir(
+          "A chave atual para de funcionar na hora. O AZUZ Flow vai precisar da chave nova pra continuar entregando leads.",
+        )}
+        rotuloConfirmar={traduzir("Gerar nova chave")}
+        onConfirmar={() => void gerar()}
+        onCancelar={() => setConfirmando(null)}
+      />
+
+      <ModalConfirmacao
+        aberto={confirmando === "revogar"}
+        titulo={traduzir("Revogar a chave?")}
+        mensagem={traduzir("O AZUZ Flow para de entregar leads neste CRM imediatamente.")}
+        rotuloConfirmar={traduzir("Revogar")}
+        perigoso
+        onConfirmar={() => void revogar()}
+        onCancelar={() => setConfirmando(null)}
+      />
 
       {mensagemDeErro ? (
         <p className="hint" style={{ color: "var(--danger)", marginTop: 8 }}>
