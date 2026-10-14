@@ -37,7 +37,11 @@ export type AcaoAuditada =
   | "demo.remontada"
   // Limpeza do conteudo semeado da demonstracao, preservando o que chegou de verdade. Tambem
   // apaga, tambem e registrada.
-  | "demo.conteudo_limpo";
+  | "demo.conteudo_limpo"
+  // A chave que o AZUZ Flow usa pra entregar lead nesta empresa. Quem a tem cria contato e dispara
+  // automação aqui dentro: gerar e revogar são do mesmo peso que conectar e desconectar um canal.
+  | "integracao.chave_gerada"
+  | "integracao.chave_revogada";
 
 type Entrada = {
   acao: AcaoAuditada;

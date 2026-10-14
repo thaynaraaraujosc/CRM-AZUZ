@@ -1773,7 +1773,7 @@ export const TRADUCOES_EN: Record<string, string> = {
   "Dispara quando o lead entra numa etapa do funil.": "Fires when the lead enters a pipeline stage.",
   "Dispara quando o lead falta a uma consulta agendada.": "Fires when the lead misses a booked appointment.",
   "Dispara quando o lead passa um tempo na etapa sem trocar mensagem.": "Fires when the lead sits in the stage for a while with no messages exchanged.",
-  "Dispara quando o lead preenche um formulário do CRM.": "Fires when the lead fills in a CRM form.",
+  "Dispara quando o lead preenche um formulário do CRM ou do AZUZ Flow.": "Fires when the lead fills in a form from the CRM or from AZUZ Flow.",
   "Dispara quando o lead responde uma mensagem.": "Fires when the lead replies to a message.",
   "Dispara quando o lead sai de uma etapa do funil.": "Fires when the lead leaves a pipeline stage.",
   "Dispara quando um campo do contato muda de valor.": "Fires when a contact field changes value.",

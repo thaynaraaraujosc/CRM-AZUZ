@@ -17,6 +17,7 @@ import { CabecalhoCategoria } from "./CabecalhoCategoria";
 import { mesmoNumero } from "@/lib/integracoes/numero-whatsapp";
 import type { StatusIntegracaoNaoOficial } from "./useIntegracaoNaoOficial";
 import { useIdioma } from "@/lib/idioma-context";
+import { AzuzFlow } from "./AzuzFlow";
 
 /** O que aparece em "Em breve". Zapier, Make, Stripe e Mercado Pago saíram: não estão no plano. */
 type AppFuturo = { nome: string; descricao: string; categoria: string };
@@ -235,6 +236,10 @@ export function IntegracoesSecao() {
           ) : null}
         </div>
       </div>
+
+      {/* O AZUZ Flow entrega lead NESTE CRM: é integração de entrada, não de canal, então ela não
+          entra na lista de "Prontas pra usar" (que é por onde a empresa fala com o cliente). */}
+      <AzuzFlow />
 
       {/* Só pra quem administra a plataforma.
           Cadastrar o webhook na Meta é feito UMA vez, no app da Meta, por quem é dono dele. Não
