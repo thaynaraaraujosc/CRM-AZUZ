@@ -1,4 +1,6 @@
 import { prisma } from "@/lib/prisma";
+import { idDeCardSemChave, idDoCard } from "@/lib/funis/id-do-card";
+import { ehChaveDuplicada } from "@/lib/prisma-erros";
 import { avaliarGatilho, type EventoAutomacao } from "@/lib/automation-flow/avaliacao";
 import { anotarNaLinhaDoTempo, marcarExecucaoDeAutomacao } from "@/lib/integracoes/instagram-eventos";
 import type { FluxoAutomacao } from "@/lib/automation-flow/types";
@@ -332,19 +334,26 @@ async function moverCardDeEtapa(
     return;
   }
 
-  await prisma.negocioCard.create({
-    data: {
-      id: `${workspaceId}-${contatoNome}-${Date.now()}`,
-      etapaId: etapa.id,
-      ordem: 0,
-      workspaceId,
-      nome: contatoNome,
-      valor: "-",
-      origem: "Automação",
-      dias: "Hoje",
-      data: new Date().toISOString().slice(0, 10),
-    },
-  });
+  const id = idDoCard(workspaceId, contatoNome);
+  try {
+    await prisma.negocioCard.create({
+      data: {
+        id: id ?? idDeCardSemChave(workspaceId),
+        etapaId: etapa.id,
+        ordem: 0,
+        workspaceId,
+        nome: contatoNome,
+        valor: "-",
+        origem: "Automação",
+        dias: "Hoje",
+        data: new Date().toISOString().slice(0, 10),
+      },
+    });
+  } catch (erro) {
+    // Chamada concorrente criou primeiro: move o card dela em vez de criar um segundo.
+    if (!ehChaveDuplicada(erro) || !id) throw erro;
+    await prisma.negocioCard.update({ where: { id }, data: { etapaId: etapa.id } });
+  }
 }
 
 /**

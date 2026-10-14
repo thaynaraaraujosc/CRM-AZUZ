@@ -13,6 +13,8 @@ import { enviarMidiaPeloCanal, type TipoMidia } from "@/lib/conversas/enviar-mid
 import { reagirAUltimaMensagem } from "@/lib/conversas/enviar-reacao";
 import { prepararEnvioDeModelo, usaReuniao, type MapeamentoVariavel } from "@/lib/campanhas/variaveis";
 import { proximaReuniaoDoContato } from "@/lib/agenda/proxima-reuniao";
+import { idDeCardSemChave, idDoCard } from "@/lib/funis/id-do-card";
+import { ehChaveDuplicada } from "@/lib/prisma-erros";
 import type { ReuniaoParaVariaveis } from "@/lib/agenda/reuniao-tipos";
 import { contaConectada, enviarPelaCloudApi } from "@/lib/integracoes/whatsapp-oficial";
 import { enviarEmailOuFalhar } from "@/lib/email";
@@ -713,19 +715,29 @@ export function acoesReais(params: {
           await prisma.negocioCard.update({ where: { id: card.id }, data: { etapaId: etapa.id, ordem: 0 } });
           return ok(`Movido para "${etapaTitulo}".`);
         }
-        await prisma.negocioCard.create({
-          data: {
-            id: `${workspaceId}-${contatoNome}-${Date.now()}`,
-            etapaId: etapa.id,
-            ordem: 0,
-            workspaceId,
-            nome: contatoNome,
-            valor: "-",
-            origem: "Automação",
-            dias: "Hoje",
-            data: new Date().toISOString().slice(0, 10),
-          },
-        });
+        const idNovo = idDoCard(workspaceId, contatoNome);
+        try {
+          await prisma.negocioCard.create({
+            data: {
+              id: idNovo ?? idDeCardSemChave(workspaceId),
+              etapaId: etapa.id,
+              ordem: 0,
+              workspaceId,
+              nome: contatoNome,
+              valor: "-",
+              origem: "Automação",
+              dias: "Hoje",
+              data: new Date().toISOString().slice(0, 10),
+            },
+          });
+        } catch (erro) {
+          // Outra chamada criou o card entre a conferência e agora. O que este bloco quer é o
+          // contato NESTA etapa, então mover o card dela faz o trabalho — criar um segundo
+          // deixaria a pessoa com dois cards no funil.
+          if (!ehChaveDuplicada(erro) || !idNovo) throw erro;
+          await prisma.negocioCard.update({ where: { id: idNovo }, data: { etapaId: etapa.id, ordem: 0 } });
+          return ok(`Movido para "${etapaTitulo}".`);
+        }
         return ok(`Card criado em "${etapaTitulo}".`);
       } catch (erro) {
         return falha("Falha ao mover no funil.", mensagemDoErro(erro));

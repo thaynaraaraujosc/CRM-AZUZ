@@ -9,6 +9,7 @@ import { contaConectada } from "@/lib/integracoes/whatsapp-oficial";
 import { anotarNaLinhaDoTempo } from "@/lib/integracoes/instagram-eventos";
 import { slugId } from "@/lib/ids";
 import { normalizarTelefoneParaComparacao } from "@/lib/telefone";
+import { ehChaveDuplicada } from "@/lib/prisma-erros";
 import { dataIsoEmBrasilia, horaEmBrasilia } from "@/lib/agenda/fuso";
 import type { LeadDoFlow, ReuniaoDoFlow } from "./azuz-flow-payload";
 
@@ -87,12 +88,10 @@ export type DependenciasDoFlow = {
  * pedidos perguntam "esse nome está livre?" antes de qualquer um gravar, os dois ouvem "está", e o
  * segundo `create` bate na chave primária.
  *
- * Conferir o código em vez da mensagem porque a mensagem vem do MySQL, em inglês, e muda de versão
- * pra versão: "Unique constraint failed on the constraint: PRIMARY" é texto, não contrato.
+ * Mora em `@/lib/prisma-erros` agora, porque o funil e as automações precisam da mesma pergunta.
+ * Continua exportado daqui pra não quebrar quem já importava.
  */
-export function ehChaveDuplicada(erro: unknown): boolean {
-  return typeof erro === "object" && erro !== null && (erro as { code?: unknown }).code === "P2002";
-}
+export { ehChaveDuplicada } from "@/lib/prisma-erros";
 
 /** Etiqueta que as automações usam pra filtrar de qual formulário o lead veio. É o que permite um
  *  fluxo por formulário sem inventar um tipo de gatilho novo pra cada um. */
@@ -135,11 +134,23 @@ export async function receberLeadDoFlow(params: {
    * nome). Antes isso virava 500, e só se resolvia porque o Flow repetia a entrega um minuto
    * depois.
    *
-   * A correção não é travar o banco: é REFAZER a decisão uma vez. Na segunda passada o contato do
+   * A correção não é travar o banco: é REFAZER a decisão. Na passada seguinte o contato do
    * concorrente já existe, e aí as mesmas regras de sempre resolvem sozinhas — mesmo telefone cai
    * no caminho de completar, telefone diferente encontra o nome ocupado e usa o sufixo. Nenhuma
    * regra nova, só a chance de olhar de novo.
+   *
+   * ATÉ TRÊS PASSADAS, e o teste com banco de verdade (14/10/2026) mostrou por quê: com UMA
+   * repetição, três pessoas homônimas chegando juntas falhavam em 25 de 25 rodadas. As três
+   * perguntam pelo nome base, uma vence; as outras duas repetem, as duas acham o base ocupado, as
+   * duas escolhem o MESMO nome com sufixo do formulário, e a perdedora dessa segunda corrida não
+   * tinha mais passada nenhuma — virava 500.
+   *
+   * Três passadas bastam pra qualquer número de chamadas simultâneas porque a terceira não disputa
+   * nada: ela usa o id da entrega, que é único por definição. Não é um laço "tenta até dar" — é um
+   * degrau por forma de nome, e as formas acabam.
    */
+  const MAXIMO_DE_PASSADAS = 3;
+
   async function resolverEGravarContato(tentativa: number): Promise<{
     contatoId: string;
     nomeDoContato: string;
@@ -158,13 +169,21 @@ export async function receberLeadDoFlow(params: {
      * OUTRA pessoa, acrescenta o sufixo do formulário. Feio, e muito melhor do que perder um
      * cliente dentro do cadastro de outro.
      */
+    const comFormulario = `${lead.nomeDoContato} (${lead.formularioNome})`.slice(0, 120);
+    const comEntrega = `${lead.nomeDoContato} (${lead.respostaId.slice(-6)})`.slice(0, 120);
+
     let nomeDoContato = existente?.nome ?? lead.nomeDoContato;
     if (!existente && (await deps.nomeOcupado(nomeDoContato))) {
-      nomeDoContato = `${lead.nomeDoContato} (${lead.formularioNome})`.slice(0, 120);
-      // Ainda ocupado (o mesmo formulário já trouxe um homônimo): desempata pelo id da entrega, que
-      // é único por definição.
-      if (await deps.nomeOcupado(nomeDoContato)) {
-        nomeDoContato = `${lead.nomeDoContato} (${lead.respostaId.slice(-6)})`.slice(0, 120);
+      // Na ÚLTIMA passada vai direto pro nome da entrega, sem passar pelo do formulário: já se sabe
+      // que o do formulário está sendo disputado (foi ele que falhou na passada anterior), e perder
+      // a última chance nele deixaria o lead sem onde entrar.
+      if (tentativa >= MAXIMO_DE_PASSADAS - 1) {
+        nomeDoContato = comEntrega;
+      } else {
+        nomeDoContato = comFormulario;
+        // Ainda ocupado (o mesmo formulário já trouxe um homônimo): desempata pelo id da entrega,
+        // que é único por definição.
+        if (await deps.nomeOcupado(nomeDoContato)) nomeDoContato = comEntrega;
       }
       avisos.push(
         `Já havia outro contato chamado "${lead.nomeDoContato}", então este entrou como "${nomeDoContato}".`,
@@ -209,13 +228,13 @@ export async function receberLeadDoFlow(params: {
       });
       return { contatoId: novo.id, nomeDoContato, criado: true };
     } catch (erro) {
-      // Outro pedido criou este nome entre a conferência e agora. UMA repetição: na segunda passada
-      // o concorrente já existe, e as regras normais decidem. Insistir além disso esconderia um
-      // defeito de verdade atrás de um laço.
-      if (ehChaveDuplicada(erro) && tentativa === 0) {
+      // Outro pedido criou este nome entre a conferência e agora. Repete a DECISÃO, não o `create`:
+      // na passada seguinte o concorrente já existe e as regras normais resolvem. O limite existe
+      // pra um defeito de verdade não ficar escondido atrás de um laço.
+      if (ehChaveDuplicada(erro) && tentativa + 1 < MAXIMO_DE_PASSADAS) {
         // O aviso de homônimo da passada anterior não vale mais: a decisão vai ser refeita do zero.
         avisos.length = lead.avisos.length;
-        return resolverEGravarContato(1);
+        return resolverEGravarContato(tentativa + 1);
       }
       throw erro;
     }

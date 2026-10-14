@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
-import { slugId } from "@/lib/ids";
 import { chaveDeContato } from "@/lib/contatos/chave-nome";
+import { ehChaveDuplicada } from "@/lib/prisma-erros";
+import { idDeCardSemChave, idDoCard } from "./id-do-card";
 
 /**
  * O negócio daquele contato, achado pelo nome NORMALIZADO.
@@ -33,6 +34,12 @@ async function cardDoContato(workspaceId: string, contatoNome: string) {
  * porque chegou mais uma mensagem dele. Idempotente por natureza: se por algum motivo o contato já
  * tiver um card em qualquer funil (reprocessamento do mesmo evento, corrida entre dois webhooks),
  * não duplica.
+ *
+ * "Não duplica" passou a valer TAMBÉM pra chamadas simultâneas, e não só pra sequenciais. A
+ * conferência de card existente é um passo separado do `create`, e nada impede duas chamadas de
+ * passarem pelas duas ao mesmo tempo — foi assim que o teste com banco de verdade produziu dois
+ * cards pra mesma pessoa. Agora quem garante é a chave primária do card, deduzida do nome: ver
+ * `idDoCard`.
  */
 export async function entrarNaPrimeiraEtapaComoNovoLead(params: {
   workspaceId: string;
@@ -114,20 +121,34 @@ export async function entrarNaPrimeiraEtapaComoNovoLead(params: {
   // 0..n na próxima vez que a tela salvar, mantendo a posição.
   const menorOrdem = primeiraEtapa.cards.reduce((min, c) => Math.min(min, c.ordem), 0);
 
-  return prisma.negocioCard.create({
-    data: {
-      id: `${workspaceId}-${slugId(contatoNome)}-${Date.now()}`,
-      etapaId: primeiraEtapa.id,
-      ordem: menorOrdem - 1,
-      workspaceId,
-      nome: contatoNome,
-      valor: "-",
-      origem,
-      contaCanal,
-      dias: "Hoje",
-      data: new Date().toISOString().slice(0, 10),
-    },
-  });
+  const id = idDoCard(workspaceId, contatoNome);
+  try {
+    return await prisma.negocioCard.create({
+      data: {
+        id: id ?? idDeCardSemChave(workspaceId),
+        etapaId: primeiraEtapa.id,
+        ordem: menorOrdem - 1,
+        workspaceId,
+        nome: contatoNome,
+        valor: "-",
+        origem,
+        contaCanal,
+        dias: "Hoje",
+        data: new Date().toISOString().slice(0, 10),
+      },
+    });
+  } catch (erro) {
+    // A chamada concorrente criou o card primeiro. Isso é a RESPOSTA, não um erro: devolve o card
+    // dela, que é exatamente o que o caminho sequencial devolveria. Estourar aqui viraria 500 numa
+    // entrega que deu certo, e o Flow repetiria tudo.
+    if (!ehChaveDuplicada(erro)) throw erro;
+    const doConcorrente = id
+      ? await prisma.negocioCard.findUnique({ where: { id } })
+      : await cardDoContato(workspaceId, contatoNome);
+    // Sem o card da vencedora não há o que devolver: aí o erro é de verdade e sobe.
+    if (!doConcorrente) throw erro;
+    return doConcorrente;
+  }
 }
 
 /**
