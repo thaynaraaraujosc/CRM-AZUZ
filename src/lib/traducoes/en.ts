@@ -2657,6 +2657,15 @@ export const TRADUCOES_EN: Record<string, string> = {
   "Funil, automações e Azuz IA inclusos": "Pipeline, automations and Azuz AI included",
   "Usuários e permissões ilimitados": "Unlimited users and permissions",
   "Primeiro nome": "First name",
+  "Lendo o estado da integração…": "Reading the integration status…",
+  "Estado desconhecido.": "Status unknown.",
+  "Não deu pra ler o estado da integração.": "Couldn't read the integration status.",
+  "Não deu pra ler o estado da integração. Confira a conexão e recarregue.": "Couldn't read the integration status. Check your connection and reload.",
+  // Vem do servidor (ver `AVISO_DE_ESTRUTURA`): o cartão passa a mensagem pelo dicionário, e o que
+  // não estiver aqui continua aparecendo em português, como qualquer chave ausente.
+  "O banco deste ambiente está sem a estrutura desta versão do CRM. Rode a sincronização do schema e tente de novo.":
+    "This environment's database is missing the structure this version of the CRM expects. Run the schema sync and try again.",
+  "Não deu pra concluir agora. Tente de novo em instantes.": "Couldn't finish right now. Try again in a moment.",
   "Se estiver vazio, usar:": "If empty, use:",
   "Data da reunião": "Meeting date",
   "Data da reunião (curta)": "Meeting date (short)",

@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { IconAlerta } from "@/components/icons";
 import { useIdioma } from "@/lib/idioma-context";
 import { lerJson } from "@/lib/ler-resposta";
+import { precisaConfirmarAntesDeGerar } from "@/lib/integracoes/estado-do-cartao";
 
 type Estado = {
   chave: { prefixo: string; criadaEm: string; criadaPor: string; ultimoUsoEm: string | null } | null;
@@ -25,10 +26,26 @@ const ENDERECO_DO_CRM = "https://azuzcrm.com.br";
  * de a pessoa fechar o modal — não é escolha de design, é a consequência de guardarmos só o hash.
  * Quem fechar sem copiar tem que gerar outra, e gerar outra derruba a anterior.
  */
+/**
+ * Três situações, não duas.
+ *
+ * Com `Estado | null`, "ainda não li" e "não consegui ler" viravam a mesma coisa na tela — e o
+ * cartão então AFIRMAVA, a partir de um `null`, que a empresa não tem funil, que o WhatsApp não
+ * está conectado e que não há chave ativa. Nenhuma das três tinha sido lida. Em 14/10/2026 foi
+ * exatamente o que apareceu em produção: três frases inventadas sobre o estado de um cliente.
+ *
+ * Pior: `gerar()` só pede confirmação quando enxerga uma chave existente. Com a leitura falhando
+ * ele não enxergava nenhuma, e o botão passava a revogar a chave em uso sem perguntar nada.
+ */
+type Leitura =
+  | { situacao: "lendo" }
+  | { situacao: "lido"; dados: Estado }
+  | { situacao: "falhou"; motivo: string };
+
 export function AzuzFlow() {
   const { t: traduzir, localeNumero } = useIdioma();
   const { data: sessao } = useSession();
-  const [estado, setEstado] = useState<Estado | null>(null);
+  const [leitura, setLeitura] = useState<Leitura>({ situacao: "lendo" });
   const [chaveNova, setChaveNova] = useState<string | null>(null);
   const [copiada, setCopiada] = useState(false);
   const [ocupado, setOcupado] = useState(false);
@@ -44,12 +61,14 @@ export function AzuzFlow() {
     void (async () => {
       const r = await fetch("/api/integracoes/azuz-flow/chave").catch(() => null);
       if (!r) {
-        setErro(traduzir("Não deu pra ler o estado da integração. Confira a conexão e recarregue."));
+        setLeitura({
+          situacao: "falhou",
+          motivo: traduzir("Não deu pra ler o estado da integração. Confira a conexão e recarregue."),
+        });
         return;
       }
       const lido = await lerJson<Estado>(r, traduzir("Não deu pra ler o estado da integração."));
-      if (lido.ok) setEstado(lido.dados);
-      else setErro(lido.erro);
+      setLeitura(lido.ok ? { situacao: "lido", dados: lido.dados } : { situacao: "falhou", motivo: lido.erro });
     })();
     // `traduzir` muda com o idioma; reler o estado por troca de idioma não faria mal, mas também
     // não faz falta — o que importa é rodar quando a pessoa é admin.
@@ -60,16 +79,28 @@ export function AzuzFlow() {
   // nem o estado dela.
   if (!ehAdmin) return null;
 
+  // O que a tela sabe de verdade. `undefined` quer dizer "não sei", nunca "não tem".
+  const estado = leitura.situacao === "lido" ? leitura.dados : undefined;
+  // Erro de ação tem prioridade: é o que a pessoa acabou de provocar.
+  const mensagemDeErro = erro ?? (leitura.situacao === "falhou" ? leitura.motivo : null);
+
   async function recarregar() {
     const r = await fetch("/api/integracoes/azuz-flow/chave");
     const lido = await lerJson<Estado>(r, traduzir("Não deu pra ler o estado da integração."));
-    if (!lido.ok) throw new Error(lido.erro);
-    setEstado(lido.dados);
+    if (!lido.ok) {
+      setLeitura({ situacao: "falhou", motivo: lido.erro });
+      throw new Error(lido.erro);
+    }
+    setLeitura({ situacao: "lido", dados: lido.dados });
   }
 
   async function gerar() {
+    const confirmar = precisaConfirmarAntesDeGerar(
+      leitura.situacao,
+      leitura.situacao === "lido" && Boolean(leitura.dados.chave),
+    );
     if (
-      estado?.chave &&
+      confirmar &&
       !window.confirm(
         traduzir("Gerar uma chave nova faz a atual parar de funcionar na hora. O AZUZ Flow vai precisar da chave nova pra continuar entregando leads. Continuar?"),
       )
@@ -171,25 +202,33 @@ export function AzuzFlow() {
             {traduzir("Último lead recebido: {quando}", { quando: data(estado?.ultimoLeadEm) })}
           </p>
         </div>
-      ) : (
+      ) : leitura.situacao === "lido" ? (
         <p className="hint" style={{ margin: "0 0 12px" }}>{traduzir("Nenhuma chave ativa.")}</p>
+      ) : (
+        <p className="hint" style={{ margin: "0 0 12px" }}>
+          {leitura.situacao === "lendo" ? traduzir("Lendo o estado da integração…") : traduzir("Estado desconhecido.")}
+        </p>
       )}
 
-      <div className="card" style={{ padding: 12, marginBottom: 12 }}>
-        <p className="hint" style={{ margin: 0 }}>
-          {estado?.destino
-            ? traduzir("O lead entra em {funil} › {etapa}.", {
-                funil: estado.destino.funil,
-                etapa: estado.destino.etapa,
-              })
-            : traduzir("Esta empresa ainda não tem funil: o lead entra como contato, sem card.")}
-        </p>
-        <p className="hint" style={{ margin: "4px 0 0" }}>
-          {estado?.whatsappOficialConectado
-            ? traduzir("WhatsApp oficial conectado: a conversa é criada junto com o lead.")
-            : traduzir("WhatsApp oficial não conectado: o lead entra, mas sem conversa pra automação responder.")}
-        </p>
-      </div>
+      {/* Só descreve o destino do lead quando ele foi LIDO. Dizer "esta empresa não tem funil" a
+          partir de uma leitura que falhou é inventar um fato sobre a conta de um cliente. */}
+      {leitura.situacao === "lido" ? (
+        <div className="card" style={{ padding: 12, marginBottom: 12 }}>
+          <p className="hint" style={{ margin: 0 }}>
+            {leitura.dados.destino
+              ? traduzir("O lead entra em {funil} › {etapa}.", {
+                  funil: leitura.dados.destino.funil,
+                  etapa: leitura.dados.destino.etapa,
+                })
+              : traduzir("Esta empresa ainda não tem funil: o lead entra como contato, sem card.")}
+          </p>
+          <p className="hint" style={{ margin: "4px 0 0" }}>
+            {leitura.dados.whatsappOficialConectado
+              ? traduzir("WhatsApp oficial conectado: a conversa é criada junto com o lead.")
+              : traduzir("WhatsApp oficial não conectado: o lead entra, mas sem conversa pra automação responder.")}
+          </p>
+        </div>
+      ) : null}
 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         <button type="button" className="btn primary" disabled={ocupado} onClick={() => void gerar()}>
@@ -202,9 +241,11 @@ export function AzuzFlow() {
         ) : null}
       </div>
 
-      {erro ? (
+      {mensagemDeErro ? (
         <p className="hint" style={{ color: "var(--danger)", marginTop: 8 }}>
-          <IconAlerta width={12} height={12} aria-hidden="true" /> {erro}
+          {/* Passa pelo dicionário: a frase pode ter vindo do servidor, em português, e as do
+              catálogo têm tradução. Chave ausente degrada pro português, como em todo o resto. */}
+          <IconAlerta width={12} height={12} aria-hidden="true" /> {traduzir(mensagemDeErro)}
         </p>
       ) : null}
     </div>
