@@ -99,3 +99,79 @@ describe("validarPayloadDoFlow", () => {
     expect(validarPayloadDoFlow(payload({ origem: { formularioNome: "X" } })).ok).toBe(false);
   });
 });
+
+/**
+ * O campo `reuniao` é opcional, e o que não dá pra ler dele NÃO custa o lead.
+ *
+ * Um lead chega uma vez. Recusar a entrega inteira porque o horário veio num formato estranho perde
+ * o nome e o WhatsApp de uma pessoa de verdade por causa de um campo que o vendedor consegue
+ * preencher na mão depois.
+ */
+describe("a reunião no pedido", () => {
+  const base = {
+    origem: { formularioId: "f1", formularioNome: "Diagnóstico", respostaId: "resp-1" },
+    lead: { nome: "Ana", whatsapp: "5562996340438" },
+    respostas: [],
+    consentimento: { whatsapp: { aceitou: true, texto: null, em: null } },
+  };
+
+  function validar(reuniao: unknown) {
+    const r = validarPayloadDoFlow({ ...base, reuniao });
+    if (!r.ok) throw new Error(`esperava lead válido, veio: ${r.erro}`);
+    return r.lead;
+  }
+
+  it("lê início, fim e link", () => {
+    const lead = validar({
+      inicio: "2026-10-20T17:00:00.000Z",
+      fim: "2026-10-20T17:30:00.000Z",
+      link: "https://meet.google.com/abc-defg-hij",
+    });
+    expect(lead.reuniao?.inicio.toISOString()).toBe("2026-10-20T17:00:00.000Z");
+    expect(lead.reuniao?.fim?.toISOString()).toBe("2026-10-20T17:30:00.000Z");
+    expect(lead.reuniao?.link).toBe("https://meet.google.com/abc-defg-hij");
+    expect(lead.avisos).toEqual([]);
+  });
+
+  it("sem o campo, o lead entra sem reunião e sem aviso", () => {
+    const r = validarPayloadDoFlow(base);
+    expect(r.ok && r.lead.reuniao).toBeNull();
+    expect(r.ok && r.lead.avisos).toEqual([]);
+  });
+
+  it("fim e link podem vir nulos", () => {
+    const lead = validar({ inicio: "2026-10-20T17:00:00.000Z", fim: null, link: null });
+    expect(lead.reuniao?.fim).toBeNull();
+    expect(lead.reuniao?.link).toBeNull();
+    expect(lead.avisos).toEqual([]);
+  });
+
+  it("data ilegível não derruba o lead: vira aviso", () => {
+    const lead = validar({ inicio: "amanhã às 14h" });
+    expect(lead.reuniao).toBeNull();
+    expect(lead.nomeDoContato).toBe("Ana");
+    expect(lead.avisos.join(" ")).toContain("não pôde ser lida");
+  });
+
+  it("link que não é http(s) é descartado, e a reunião fica", () => {
+    // Aceitar `javascript:` aqui plantaria, pelo que um formulário de fora manda, um link que o
+    // navegador executa — e o `local` do compromisso aparece na tela.
+    const lead = validar({ inicio: "2026-10-20T17:00:00.000Z", link: "javascript:alert(1)" });
+    expect(lead.reuniao?.link).toBeNull();
+    expect(lead.reuniao?.inicio).toBeInstanceOf(Date);
+    expect(lead.avisos.join(" ")).toContain("http(s)");
+  });
+
+  it("fim antes do início perde só o fim", () => {
+    const lead = validar({ inicio: "2026-10-20T17:00:00.000Z", fim: "2026-10-20T16:00:00.000Z" });
+    expect(lead.reuniao?.fim).toBeNull();
+    expect(lead.reuniao?.inicio).toBeInstanceOf(Date);
+    expect(lead.avisos.join(" ")).toContain("término");
+  });
+
+  it("campo que não é objeto vira aviso", () => {
+    const lead = validar("2026-10-20T17:00:00.000Z");
+    expect(lead.reuniao).toBeNull();
+    expect(lead.avisos.join(" ")).toContain("não era um objeto");
+  });
+});

@@ -7,6 +7,7 @@ import type { BotaoTemplate } from "@/lib/templates/regras";
 export function valoresDeExemplo(variaveis: MapeamentoVariavel[]): Record<string, string> {
   const exemplo: Record<string, string> = {
     "contato.nome": "Maria",
+    "contato.primeiroNome": "Maria",
     "contato.sobrenome": "Silva",
     "contato.empresa": "Empresa Exemplo",
     "contato.cargo": "Gerente",
@@ -14,6 +15,12 @@ export function valoresDeExemplo(variaveis: MapeamentoVariavel[]): Record<string
     "contato.email": "maria@exemplo.com",
     "contato.whatsapp": "(62) 99999-9999",
     "contato.responsavel": "Ana",
+    // Os mesmos exemplos que vão pra análise da Meta (ver `exemploDe`), pra a prévia na tela e a
+    // frase que o analista lê serem a mesma frase.
+    "reuniao.data": "terça-feira, 20 de outubro",
+    "reuniao.dataCurta": "20/10/2026",
+    "reuniao.hora": "14:00",
+    "reuniao.link": "https://meet.google.com/abc-defg-hij",
   };
   const valores: Record<string, string> = {};
   for (const v of variaveis) {

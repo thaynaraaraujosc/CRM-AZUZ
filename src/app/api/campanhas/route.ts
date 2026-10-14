@@ -5,7 +5,7 @@ import { auditar } from "@/lib/seguranca/auditoria";
 import { prisma } from "@/lib/prisma";
 import { RITMO, preverDuracao, type CanalCampanha } from "@/lib/campanhas/ritmo";
 import { resolverParametros, type MapeamentoVariavel } from "@/lib/campanhas/variaveis";
-import { destinoDoContato, resolverAudiencia, type Audiencia } from "@/lib/campanhas/audiencia";
+import { anexarProximaReuniao, destinoDoContato, resolverAudiencia, type Audiencia } from "@/lib/campanhas/audiencia";
 import { contaConectada, limiteDiarioDaConta } from "@/lib/integracoes/whatsapp-oficial";
 
 /** GET lista as campanhas do workspace com a contagem de cada situação, mais recentes primeiro. */
@@ -151,7 +151,9 @@ export async function POST(request: Request) {
       ? { modo: "selecionados", nomes: corpo.contatos }
       : null;
   if (!audiencia) return NextResponse.json({ erro: "Escolha o público." }, { status: 400 });
-  const contatos = await resolverAudiencia(workspaceId, audiencia);
+  // A reunião de cada um entra antes de congelar os parâmetros: é a Agenda que diz o horário,
+  // nunca o que veio no formulário.
+  const contatos = await anexarProximaReuniao(workspaceId, await resolverAudiencia(workspaceId, audiencia), variaveis);
 
   const destinos: { contatoNome: string; destino: string; parametros: Record<string, string> }[] = [];
   const semDestino: string[] = [];

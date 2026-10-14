@@ -3,7 +3,14 @@
 import { useMemo, useRef, useState } from "react";
 
 import { Modal } from "@/components/ui";
-import { ORIGENS_DO_CONTATO, mapearVariaveis, type MapeamentoVariavel, type OrigemVariavel } from "@/lib/campanhas/variaveis";
+import {
+  ORIGENS_DA_REUNIAO,
+  ORIGENS_DO_CONTATO,
+  chaveSugeridaDe,
+  mapearVariaveis,
+  type MapeamentoVariavel,
+  type OrigemVariavel,
+} from "@/lib/campanhas/variaveis";
 import {
   CATEGORIAS_META,
   IDIOMAS,
@@ -261,11 +268,13 @@ export function EditorTemplate({
             />
             <div className="tpl-inserir">
               <span className="hint">{traduzir("Inserir:")}</span>
-              {ORIGENS_DO_CONTATO.slice(0, 5).map((o) => {
-                const chave = o.origem.slice("contato.".length);
+              {/* As da reunião entram junto das do contato, e não num menu separado: quem escreve
+                  "sua reunião de {{data}} às {{hora}}" quer as quatro à mão. */}
+              {[...ORIGENS_DO_CONTATO.slice(0, 6), ...ORIGENS_DA_REUNIAO].map((o) => {
+                const chave = chaveSugeridaDe(o.origem);
                 return (
                   <button key={o.origem} type="button" className="pill" onClick={() => inserirNoCorpo(`{{${chave}}}`)} disabled={!editavelNaMeta}>
-                    {o.label}
+                    {traduzir(o.label)}
                   </button>
                 );
               })}
@@ -296,11 +305,22 @@ export function EditorTemplate({
                       onChange={(e) => mudarVariavel(v.chave, { origem: e.target.value as OrigemVariavel })}
                       disabled={!editavelNaMeta}
                     >
-                      {ORIGENS_DO_CONTATO.map((o) => (
-                        <option key={o.origem} value={o.origem}>
-                          {traduzir(o.label)} do contato
-                        </option>
-                      ))}
+                      <optgroup label={traduzir("Do contato")}>
+                        {ORIGENS_DO_CONTATO.map((o) => (
+                          <option key={o.origem} value={o.origem}>
+                            {traduzir(o.label)}
+                          </option>
+                        ))}
+                      </optgroup>
+                      {/* Separado porque o valor não sai do cadastro do contato, sai da Agenda: é
+                          a próxima reunião dele que ainda não aconteceu. */}
+                      <optgroup label={traduzir("Da próxima reunião")}>
+                        {ORIGENS_DA_REUNIAO.map((o) => (
+                          <option key={o.origem} value={o.origem}>
+                            {traduzir(o.label)}
+                          </option>
+                        ))}
+                      </optgroup>
                       <option value="texto">{traduzir("Texto fixo (preencho no disparo)")}</option>
                     </select>
                     {v.origem === "texto" ? (
@@ -311,7 +331,20 @@ export function EditorTemplate({
                         onChange={(e) => mudarVariavel(v.chave, { valor: e.target.value })}
                         disabled={!editavelNaMeta}
                       />
-                    ) : null}
+                    ) : (
+                      /* O valor reserva, pros campos que vêm do contato.
+                         A Meta recusa o envio INTEIRO quando um parâmetro vai vazio, e campo vazio é
+                         o caso comum: o lead não preencheu "empresa" e a mensagem não sai pra
+                         ninguém. Com reserva, ela sai. Sem reserva, o CRM nem tenta e diz qual
+                         variável faltou. */
+                      <input
+                        className="input"
+                        placeholder={traduzir("Se estiver vazio, usar:")}
+                        value={v.reserva ?? ""}
+                        onChange={(e) => mudarVariavel(v.chave, { reserva: e.target.value })}
+                        disabled={!editavelNaMeta}
+                      />
+                    )}
                   </div>
                 ))}
               </div>

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { decidirConsentimento, receberLeadDoFlow, type DependenciasDoFlow, type ResultadoDoLead } from "../azuz-flow-lead";
 import { validarPayloadDoFlow, type LeadDoFlow } from "../azuz-flow-payload";
+import { dataIsoEmBrasilia, horaEmBrasilia } from "@/lib/agenda/fuso";
 
 /**
  * As dependências são injetadas, então aqui dá pra exercitar a ORDEM e as decisões sem banco.
@@ -13,6 +14,8 @@ import { validarPayloadDoFlow, type LeadDoFlow } from "../azuz-flow-payload";
 function fazerDeps(ajustes: Partial<DependenciasDoFlow> = {}) {
   const ordem: string[] = [];
   const entregas = new Map<string, ResultadoDoLead>();
+  // A agenda do teste é um mapa por id, igual ao banco: é o que faz a repetição não duplicar.
+  const compromissos = new Map<string, { dataIso: string; hora: string; horaFim: string | null; local: string | null }>();
 
   const deps: DependenciasDoFlow = {
     acharEntregaAnterior: vi.fn(async (chave) => entregas.get(chave) ?? null),
@@ -33,6 +36,17 @@ function fazerDeps(ajustes: Partial<DependenciasDoFlow> = {}) {
     }),
     anotarNaLinhaDoTempo: vi.fn(async () => {
       ordem.push("linhaDoTempo");
+    }),
+    garantirCompromisso: vi.fn(async ({ chaveDaEntrega, reuniao }) => {
+      ordem.push("garantirCompromisso");
+      const id = `flow-reuniao-${chaveDaEntrega}`;
+      if (compromissos.has(id)) return;
+      compromissos.set(id, {
+        dataIso: dataIsoEmBrasilia(reuniao.inicio),
+        hora: horaEmBrasilia(reuniao.inicio),
+        horaFim: reuniao.fim ? horaEmBrasilia(reuniao.fim) : null,
+        local: reuniao.link,
+      });
     }),
     contaOficial: vi.fn(async () => ({ phoneNumberId: "111" })),
     garantirConversa: vi.fn(async () => {
@@ -55,7 +69,7 @@ function fazerDeps(ajustes: Partial<DependenciasDoFlow> = {}) {
     }),
     ...ajustes,
   };
-  return { deps, ordem, entregas };
+  return { deps, ordem, entregas, compromissos };
 }
 
 function lead(extra: Record<string, unknown> = {}): LeadDoFlow {
@@ -206,5 +220,80 @@ describe("decidirConsentimento", () => {
     // A ausência de uma caixa marcada num formulário qualquer não é a pessoa pedindo pra parar.
     const r = decidirConsentimento({ ...base, novo: false, jaGravado: true, aceitou: false });
     expect(r).toEqual({});
+  });
+});
+
+/**
+ * A reunião do formulário virando compromisso na mesma passada do lead.
+ *
+ * A ordem aqui é tão contrato quanto a da conversa: as variáveis `reuniao.*` são lidas do banco na
+ * hora do envio, então o compromisso tem que existir ANTES de a automação disparar. Gravar depois
+ * mandaria "sua reunião é dia " com um buraco no lugar da data.
+ */
+describe("a reunião do Flow", () => {
+  const COM_REUNIAO = {
+    reuniao: {
+      inicio: "2026-10-20T17:00:00.000Z",
+      fim: "2026-10-20T17:30:00.000Z",
+      link: "https://meet.google.com/abc-defg-hij",
+    },
+  };
+
+  it("grava o compromisso ANTES de disparar a automação", async () => {
+    const { deps, ordem, compromissos } = fazerDeps();
+    await receberLeadDoFlow({ workspaceId: "w1", lead: lead(COM_REUNIAO), deps });
+
+    expect(ordem.indexOf("garantirCompromisso")).toBeGreaterThan(-1);
+    expect(ordem.indexOf("garantirCompromisso")).toBeLessThan(ordem.indexOf("dispararAutomacoes"));
+    // E depois do contato: o compromisso é ligado a ele.
+    expect(ordem.indexOf("criarContato")).toBeLessThan(ordem.indexOf("garantirCompromisso"));
+    expect([...compromissos.values()][0]).toMatchObject({
+      dataIso: "2026-10-20",
+      hora: "14:00",
+      horaFim: "14:30",
+      local: "https://meet.google.com/abc-defg-hij",
+    });
+  });
+
+  it("lead sem reunião não toca a agenda", async () => {
+    const { deps, ordem, compromissos } = fazerDeps();
+    await receberLeadDoFlow({ workspaceId: "w1", lead: lead(), deps });
+    expect(ordem).not.toContain("garantirCompromisso");
+    expect(compromissos.size).toBe(0);
+  });
+
+  it("a entrega repetida não cria um segundo compromisso", async () => {
+    const { deps, compromissos } = fazerDeps();
+    await receberLeadDoFlow({ workspaceId: "w1", lead: lead(COM_REUNIAO), deps });
+    await receberLeadDoFlow({ workspaceId: "w1", lead: lead(COM_REUNIAO), deps });
+    expect(compromissos.size).toBe(1);
+  });
+
+  it("falha ao gravar o compromisso NÃO derruba o lead", async () => {
+    // O nome e o WhatsApp da pessoa valem mais do que o compromisso, e devolver erro faria o Flow
+    // repetir uma entrega que, no essencial, deu certo.
+    const erros = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { deps } = fazerDeps({
+      garantirCompromisso: vi.fn(async () => {
+        throw new Error("banco fora do ar");
+      }),
+    });
+    const r = await receberLeadDoFlow({ workspaceId: "w1", lead: lead(COM_REUNIAO), deps });
+    expect(r.ok).toBe(true);
+    expect(r.criado).toBe(true);
+    expect(r.avisos.join(" ")).toContain("não pôde ser gravada na Agenda");
+    erros.mockRestore();
+  });
+
+  it("o aviso do payload sobre reunião inválida chega na resposta", async () => {
+    const { deps, compromissos } = fazerDeps();
+    const r = await receberLeadDoFlow({
+      workspaceId: "w1",
+      lead: lead({ reuniao: { inicio: "amanhã" } }),
+      deps,
+    });
+    expect(r.ok).toBe(true);
+    expect(compromissos.size).toBe(0);
+    expect(r.avisos.join(" ")).toContain("não pôde ser lida");
   });
 });

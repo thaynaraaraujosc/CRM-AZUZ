@@ -6,7 +6,13 @@ import { enviarDirectComRespostasRapidas } from "@/lib/integracoes/instagram-log
 import { decriptar } from "@/lib/integracoes/crypto";
 import { dentroDaJanelaDirect } from "@/lib/social/janela-direct";
 import { RITMO, intervaloEntreEnvios, type CanalCampanha } from "./ritmo";
-import { componentesParaMeta, preencherVariaveis, type MapeamentoVariavel } from "./variaveis";
+import {
+  componentesParaMeta,
+  motivoDeVariavelVazia,
+  preencherVariaveis,
+  variaveisSemValor,
+  type MapeamentoVariavel,
+} from "./variaveis";
 import { registrarEnvioNaConversa } from "./registrar-envio";
 import {
   MOTIVO_SEM_CONSENTIMENTO,
@@ -159,6 +165,20 @@ async function enviarUm(
   // caminho que a tela de Conversas usa, pra campanha e atendimento nunca divergirem.
   const conta = await contaConectada(workspaceId);
   if (!conta) throw new Error("WhatsApp oficial não está conectado.");
+
+  /*
+   * Variável vazia NÃO vai pra Meta.
+   *
+   * Os parâmetros desta pessoa foram congelados na criação da campanha (com o valor reserva do
+   * modelo já aplicado, ver `resolverParametros`). Chegando aqui ainda vazio, não há o que mandar:
+   * a Meta recusa o envio inteiro por um parâmetro em branco, e o destinatário é marcado como
+   * falha com o erro técnico dela, em inglês. Falhar aqui diz QUAL variável faltou, que é o que
+   * permite consertar o contato e reenviar.
+   */
+  if (template) {
+    const faltando = variaveisSemValor(variaveis, parametros);
+    if (faltando.length) throw new Error(motivoDeVariavelVazia(faltando));
+  }
 
   // Template COM os parâmetros na ordem que a Meta espera. Sem eles a Meta recusa qualquer modelo
   // que tenha variável: e a versão anterior mandava só nome e idioma, então todo modelo com

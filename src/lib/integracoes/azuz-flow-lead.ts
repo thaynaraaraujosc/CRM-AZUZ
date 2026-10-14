@@ -9,7 +9,8 @@ import { contaConectada } from "@/lib/integracoes/whatsapp-oficial";
 import { anotarNaLinhaDoTempo } from "@/lib/integracoes/instagram-eventos";
 import { slugId } from "@/lib/ids";
 import { normalizarTelefoneParaComparacao } from "@/lib/telefone";
-import type { LeadDoFlow } from "./azuz-flow-payload";
+import { dataIsoEmBrasilia, horaEmBrasilia } from "@/lib/agenda/fuso";
+import type { LeadDoFlow, ReuniaoDoFlow } from "./azuz-flow-payload";
 
 export const ORIGEM_FLOW = "azuz_flow";
 
@@ -50,6 +51,15 @@ export type DependenciasDoFlow = {
 
   anotarNaLinhaDoTempo: (params: { contatoNome: string; descricao: string }) => Promise<void>;
 
+  /** Idempotente por definição: repetir a mesma entrega não cria um segundo compromisso. */
+  garantirCompromisso: (params: {
+    chaveDaEntrega: string;
+    contatoId: string;
+    contatoNome: string;
+    formularioNome: string;
+    reuniao: ReuniaoDoFlow;
+  }) => Promise<void>;
+
   contaOficial: () => Promise<{ phoneNumberId: string } | null>;
   garantirConversa: (params: {
     nome: string;
@@ -68,6 +78,21 @@ export type DependenciasDoFlow = {
   avisarContatoCriado: (params: { contatoNome: string; contatoId: string }) => void;
   dispararAutomacoes: (params: { contatoNome: string; chaveEvento: string }) => Promise<void>;
 };
+
+/**
+ * O banco recusou por chave repetida (`P2002`).
+ *
+ * Isto não é um caso raro de laboratório: um formulário que publica em dois canais entrega dois
+ * leads no mesmo segundo, e o id do contato é derivado do NOME (`workspaceId-slug(nome)`). Os dois
+ * pedidos perguntam "esse nome está livre?" antes de qualquer um gravar, os dois ouvem "está", e o
+ * segundo `create` bate na chave primária.
+ *
+ * Conferir o código em vez da mensagem porque a mensagem vem do MySQL, em inglês, e muda de versão
+ * pra versão: "Unique constraint failed on the constraint: PRIMARY" é texto, não contrato.
+ */
+export function ehChaveDuplicada(erro: unknown): boolean {
+  return typeof erro === "object" && erro !== null && (erro as { code?: unknown }).code === "P2002";
+}
 
 /** Etiqueta que as automações usam pra filtrar de qual formulário o lead veio. É o que permite um
  *  fluxo por formulário sem inventar um tipo de gatilho novo pra cada um. */
@@ -101,69 +126,102 @@ export async function receberLeadDoFlow(params: {
 
   const avisos = [...lead.avisos];
 
-  // 2. Achar a pessoa: telefone primeiro (é a chave mais confiável), e-mail depois.
-  let existente: { id: string; nome: string } | null = null;
-  if (lead.whatsapp) existente = await deps.acharContatoPorTelefone(lead.whatsapp);
-  if (!existente && lead.email) existente = await deps.acharContatoPorEmail(lead.email);
-
   /*
-   * O NOME, quando o contato é novo.
+   * ACHAR, DECIDIR O NOME E GRAVAR — tudo junto, porque tudo isso pode precisar ser refeito.
    *
-   * Duas pessoas diferentes com o mesmo nome não podem virar uma só: o nome é a chave do contato,
-   * e fundir é irreversível — o histórico de uma passa a ser o da outra. Então, nome ocupado por
-   * OUTRA pessoa, acrescenta o sufixo do formulário. Feio, e muito melhor do que perder um cliente
-   * dentro do cadastro de outro.
+   * Entre a pergunta "esse nome está livre?" e o `create` existe uma janela, e ela não é teórica:
+   * um formulário publicado em dois canais entrega dois leads no mesmo segundo. Os dois perguntam,
+   * os dois ouvem "está livre", e o segundo `create` bate na chave primária (o id do contato sai do
+   * nome). Antes isso virava 500, e só se resolvia porque o Flow repetia a entrega um minuto
+   * depois.
+   *
+   * A correção não é travar o banco: é REFAZER a decisão uma vez. Na segunda passada o contato do
+   * concorrente já existe, e aí as mesmas regras de sempre resolvem sozinhas — mesmo telefone cai
+   * no caminho de completar, telefone diferente encontra o nome ocupado e usa o sufixo. Nenhuma
+   * regra nova, só a chance de olhar de novo.
    */
-  let nomeDoContato = existente?.nome ?? lead.nomeDoContato;
-  if (!existente && (await deps.nomeOcupado(nomeDoContato))) {
-    nomeDoContato = `${lead.nomeDoContato} (${lead.formularioNome})`.slice(0, 120);
-    // Ainda ocupado (o mesmo formulário já trouxe um homônimo): desempata pelo id da entrega, que
-    // é único por definição.
-    if (await deps.nomeOcupado(nomeDoContato)) {
-      nomeDoContato = `${lead.nomeDoContato} (${lead.respostaId.slice(-6)})`.slice(0, 120);
+  async function resolverEGravarContato(tentativa: number): Promise<{
+    contatoId: string;
+    nomeDoContato: string;
+    criado: boolean;
+  }> {
+    // 2. Achar a pessoa: telefone primeiro (é a chave mais confiável), e-mail depois.
+    let existente: { id: string; nome: string } | null = null;
+    if (lead.whatsapp) existente = await deps.acharContatoPorTelefone(lead.whatsapp);
+    if (!existente && lead.email) existente = await deps.acharContatoPorEmail(lead.email);
+
+    /*
+     * O NOME, quando o contato é novo.
+     *
+     * Duas pessoas diferentes com o mesmo nome não podem virar uma só: o nome é a chave do contato,
+     * e fundir é irreversível — o histórico de uma passa a ser o da outra. Então, nome ocupado por
+     * OUTRA pessoa, acrescenta o sufixo do formulário. Feio, e muito melhor do que perder um
+     * cliente dentro do cadastro de outro.
+     */
+    let nomeDoContato = existente?.nome ?? lead.nomeDoContato;
+    if (!existente && (await deps.nomeOcupado(nomeDoContato))) {
+      nomeDoContato = `${lead.nomeDoContato} (${lead.formularioNome})`.slice(0, 120);
+      // Ainda ocupado (o mesmo formulário já trouxe um homônimo): desempata pelo id da entrega, que
+      // é único por definição.
+      if (await deps.nomeOcupado(nomeDoContato)) {
+        nomeDoContato = `${lead.nomeDoContato} (${lead.respostaId.slice(-6)})`.slice(0, 120);
+      }
+      avisos.push(
+        `Já havia outro contato chamado "${lead.nomeDoContato}", então este entrou como "${nomeDoContato}".`,
+      );
     }
-    avisos.push(`Já havia outro contato chamado "${lead.nomeDoContato}", então este entrou como "${nomeDoContato}".`);
-  }
 
-  const contatoAtual = existente ? await deps.lerContato(nomeDoContato) : null;
-  const etiquetas = new Set(etiquetasAtuais(contatoAtual));
-  etiquetas.add(etiquetaDoFormulario(lead.formularioNome));
-  if (lead.consentimentoWhatsApp) etiquetas.add("WhatsApp: consentiu");
+    const contatoAtual = existente ? await deps.lerContato(nomeDoContato) : null;
+    const etiquetas = new Set(etiquetasAtuais(contatoAtual));
+    etiquetas.add(etiquetaDoFormulario(lead.formularioNome));
+    if (lead.consentimentoWhatsApp) etiquetas.add("WhatsApp: consentiu");
 
-  const consentimento = decidirConsentimento({
-    novo: !existente,
-    jaGravado: contatoAtual?.consentimentoWhatsApp as boolean | null | undefined,
-    aceitou: lead.consentimentoWhatsApp,
-    texto: lead.consentimentoTexto,
-    em: lead.consentimentoEm ?? lead.recebidaEm ?? new Date(),
-    origem: `azuz-flow:${lead.formularioNome}`,
-  });
-
-  // 3. Criar ou completar. Em contato existente só entra o que está VAZIO: o CRM é a fonte da
-  //    verdade sobre quem já é cliente, e um formulário preenchido às pressas não pode sobrescrever
-  //    o telefone que a equipe confirmou por telefone.
-  let contatoId: string;
-  let criado = false;
-  if (existente) {
-    const completar: Record<string, unknown> = { etiquetas: [...etiquetas], ...consentimento };
-    for (const [campo, valor] of camposDoLead(lead)) {
-      if (valor && !contatoAtual?.[campo]) completar[campo] = valor;
-    }
-    await deps.atualizarContato(nomeDoContato, completar);
-    contatoId = existente.id;
-  } else {
-    const novo = await deps.criarContato({
-      nome: nomeDoContato,
-      origem: `Formulário: ${lead.formularioNome}`,
-      criadoVia: "azuz-flow",
-      etapa: "Novo",
-      etiquetas: [...etiquetas],
-      ...Object.fromEntries(camposDoLead(lead).filter(([, valor]) => Boolean(valor))),
-      ...consentimento,
+    const consentimento = decidirConsentimento({
+      novo: !existente,
+      jaGravado: contatoAtual?.consentimentoWhatsApp as boolean | null | undefined,
+      aceitou: lead.consentimentoWhatsApp,
+      texto: lead.consentimentoTexto,
+      em: lead.consentimentoEm ?? lead.recebidaEm ?? new Date(),
+      origem: `azuz-flow:${lead.formularioNome}`,
     });
-    contatoId = novo.id;
-    criado = true;
+
+    // 3. Criar ou completar. Em contato existente só entra o que está VAZIO: o CRM é a fonte da
+    //    verdade sobre quem já é cliente, e um formulário preenchido às pressas não pode
+    //    sobrescrever o telefone que a equipe confirmou por telefone.
+    if (existente) {
+      const completar: Record<string, unknown> = { etiquetas: [...etiquetas], ...consentimento };
+      for (const [campo, valor] of camposDoLead(lead)) {
+        if (valor && !contatoAtual?.[campo]) completar[campo] = valor;
+      }
+      await deps.atualizarContato(nomeDoContato, completar);
+      return { contatoId: existente.id, nomeDoContato, criado: false };
+    }
+
+    try {
+      const novo = await deps.criarContato({
+        nome: nomeDoContato,
+        origem: `Formulário: ${lead.formularioNome}`,
+        criadoVia: "azuz-flow",
+        etapa: "Novo",
+        etiquetas: [...etiquetas],
+        ...Object.fromEntries(camposDoLead(lead).filter(([, valor]) => Boolean(valor))),
+        ...consentimento,
+      });
+      return { contatoId: novo.id, nomeDoContato, criado: true };
+    } catch (erro) {
+      // Outro pedido criou este nome entre a conferência e agora. UMA repetição: na segunda passada
+      // o concorrente já existe, e as regras normais decidem. Insistir além disso esconderia um
+      // defeito de verdade atrás de um laço.
+      if (ehChaveDuplicada(erro) && tentativa === 0) {
+        // O aviso de homônimo da passada anterior não vale mais: a decisão vai ser refeita do zero.
+        avisos.length = lead.avisos.length;
+        return resolverEGravarContato(1);
+      }
+      throw erro;
+    }
   }
+
+  const { contatoId, nomeDoContato, criado } = await resolverEGravarContato(0);
 
   // 4. Linha do tempo: o que a pessoa respondeu, por extenso. É o que o vendedor lê antes de falar
   //    com ela, e é a única cópia dessas respostas dentro do CRM.
@@ -175,7 +233,36 @@ export async function receberLeadDoFlow(params: {
     })
     .catch(() => {});
 
-  // 5. Conversa. Ela nasce VAZIA e com zero não lidas: existe pra a automação ter por onde falar,
+  /*
+   * 5. A REUNIÃO, como dado na Agenda.
+   *
+   * Antes disso ela só existia como frase na linha do tempo, que ninguém consegue consultar: não
+   * aparece na Agenda, não vira lembrete e não dá pra pôr num modelo. Como `Compromisso` ela é um
+   * registro com dia e hora.
+   *
+   * Vem ANTES das automações de propósito, porque as variáveis `reuniao.*` são lidas do banco na
+   * hora do envio. Gravar depois mandaria "sua reunião é dia " — a automação já teria rodado.
+   *
+   * Falhar aqui NÃO derruba o lead: o nome e o WhatsApp da pessoa valem mais do que o compromisso,
+   * e devolver erro faria o Flow repetir uma entrega que, no essencial, deu certo. Fica o aviso na
+   * resposta e o registro no log (só ids, nunca o conteúdo do lead).
+   */
+  if (lead.reuniao) {
+    try {
+      await deps.garantirCompromisso({
+        chaveDaEntrega: lead.respostaId,
+        contatoId,
+        contatoNome: nomeDoContato,
+        formularioNome: lead.formularioNome,
+        reuniao: lead.reuniao,
+      });
+    } catch (erro) {
+      avisos.push("A reunião não pôde ser gravada na Agenda; o lead entrou sem compromisso.");
+      console.error("[azuz-flow] compromisso não gravado:", { contatoId, erro });
+    }
+  }
+
+  // 6. Conversa. Ela nasce VAZIA e com zero não lidas: existe pra a automação ter por onde falar,
   //    não porque alguém escreveu. Contar como não lida poria um badge vermelho numa conversa em
   //    que ninguém disse nada.
   const conta = await deps.contaOficial();
@@ -195,7 +282,7 @@ export async function receberLeadDoFlow(params: {
     avisos.push("O WhatsApp oficial não está conectado, então o lead entrou sem conversa.");
   }
 
-  // 6. Funil. Quem já está no funil NÃO muda de etapa: o vendedor pôs a pessoa onde ela está, e um
+  // 7. Funil. Quem já está no funil NÃO muda de etapa: o vendedor pôs a pessoa onde ela está, e um
   //    formulário novo não é motivo pra jogá-la de volta pro começo. Só sobe pro topo.
   let etapa: { funil: string; etapa: string } | null = null;
   if (await deps.temCardNoFunil(nomeDoContato)) {
@@ -215,12 +302,27 @@ export async function receberLeadDoFlow(params: {
     avisos,
   };
 
-  // 7. Marca a entrega como feita ANTES de disparar automação: se o processo morrer entre uma coisa
-  //    e outra, a repetição do Flow não cria tudo de novo. Automação perdida é um lead sem
-  //    mensagem; entrega não registrada é um lead duplicado, com duas mensagens.
-  await deps.gravarEntrega({ chave: lead.respostaId, contatoId, conversaId, resultado });
+  /*
+   * 8. Marca a entrega como feita ANTES de disparar automação: se o processo morrer entre uma coisa
+   *    e outra, a repetição do Flow não cria tudo de novo. Automação perdida é um lead sem
+   *    mensagem; entrega não registrada é um lead duplicado, com duas mensagens.
+   *
+   *    DUAS CHAMADAS SIMULTÂNEAS COM A MESMA ENTREGA chegam aqui juntas: as duas passaram pela
+   *    conferência de idempotência antes de qualquer uma gravar. Uma vence, a outra bate na chave
+   *    única — e isso é a resposta, não um erro. Ela devolve o resultado que a vencedora guardou,
+   *    como qualquer repetição. Devolver 500 faria o Flow repetir uma entrega que já deu certo.
+   */
+  try {
+    await deps.gravarEntrega({ chave: lead.respostaId, contatoId, conversaId, resultado });
+  } catch (erro) {
+    if (!ehChaveDuplicada(erro)) throw erro;
+    const guardado = await deps.acharEntregaAnterior(lead.respostaId);
+    // Sem o registro da vencedora não há o que devolver: aí o erro é de verdade e sobe.
+    if (!guardado) throw erro;
+    return { ...guardado, duplicado: true };
+  }
 
-  // 8. Por último, com tudo gravado. Falha aqui não derruba a resposta: o lead já está no CRM, e
+  // 9. Por último, com tudo gravado. Falha aqui não derruba a resposta: o lead já está no CRM, e
   //    devolver erro faria o Flow repetir uma entrega que deu certo.
   if (criado) deps.avisarContatoCriado({ contatoNome: nomeDoContato, contatoId });
   await deps
@@ -358,6 +460,45 @@ export function dependenciasReais(workspaceId: string): DependenciasDoFlow {
         tipo: "formulario_respondido",
         descricao,
       });
+    },
+
+    /*
+     * O ID DO COMPROMISSO É DERIVADO DA ENTREGA, e é isso que dá a idempotência.
+     *
+     * `Compromisso.id` é chave primária. Com um id que sai do `respostaId`, a repetição do Flow e
+     * duas chamadas simultâneas com a mesma entrega colidem no banco: o segundo `create` recebe
+     * `P2002` e a gente trata isso como "já está gravado", porque é o que é. Não precisou de índice
+     * novo nem de transação — e a regra do projeto é mudança de banco só aditiva.
+     *
+     * O `slugId` entra porque o `respostaId` vem de fora e pode ter caractere que não se quer numa
+     * chave primária. O corte em 180 respeita o varchar(191) que o Prisma usa pra `String @id`.
+     */
+    async garantirCompromisso({ chaveDaEntrega, contatoId, contatoNome, formularioNome, reuniao }) {
+      const id = `flow-reuniao-${workspaceId}-${slugId(chaveDaEntrega)}`.slice(0, 180);
+      try {
+        await prisma.compromisso.create({
+          data: {
+            id,
+            workspaceId,
+            contato: contatoNome,
+            contatoId,
+            responsavel: "-",
+            // Dia e hora no fuso de Brasília: `Compromisso.dataIso`/`hora` são hora LOCAL (é o que
+            // o usuário digita na Agenda), e o Flow manda o instante em UTC.
+            dataIso: dataIsoEmBrasilia(reuniao.inicio),
+            hora: horaEmBrasilia(reuniao.inicio),
+            horaFim: reuniao.fim ? horaEmBrasilia(reuniao.fim) : null,
+            tipo: "Reunião",
+            descricao: `Agendada no formulário ${formularioNome}`,
+            local: reuniao.link,
+            status: "agendado",
+            origem: "azuz-flow",
+          },
+        });
+      } catch (erro) {
+        // Já gravado por uma entrega repetida ou pela chamada concorrente: é o resultado esperado.
+        if (!ehChaveDuplicada(erro)) throw erro;
+      }
     },
 
     async contaOficial() {
