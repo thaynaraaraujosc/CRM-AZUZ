@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { contaConectada, enviarPelaCloudApi } from "@/lib/integracoes/whatsapp-oficial";
-import { componentesParaMeta, resolverParametros, type MapeamentoVariavel } from "@/lib/campanhas/variaveis";
+import { prepararEnvioDeModelo, type MapeamentoVariavel } from "@/lib/campanhas/variaveis";
 import { modeloDeRetomada } from "./retomada";
 
 /**
@@ -28,14 +28,19 @@ export async function enviarModeloDeRetomada(params: {
       where: { workspaceId_nome: { workspaceId, nome: conversaNome } },
     });
     const mapeamento = ((registro?.variaveis ?? []) as MapeamentoVariavel[]) ?? [];
-    const parametros = resolverParametros(mapeamento, contato ? { ...contato, nome: conversaNome } : null);
+    // Mesma regra do bloco de automação: a Meta recusa o envio inteiro por um parâmetro vazio, e
+    // aqui a janela já fechou — o modelo de retomada é a última chance de falar com a pessoa.
+    const preparo = prepararEnvioDeModelo(mapeamento, contato ? { ...contato, nome: conversaNome } : null);
+    if (!preparo.ok) {
+      return { enviado: false, motivo: `a janela de 24 horas fechou e ${preparo.motivo}` };
+    }
 
     const wamid = await enviarPelaCloudApi(conta, destinatario, {
       type: "template",
       template: {
         name: modelo.nome,
         language: { code: modelo.idioma },
-        components: componentesParaMeta(mapeamento, parametros),
+        components: preparo.componentes,
       },
     });
     return { enviado: true, wamid };

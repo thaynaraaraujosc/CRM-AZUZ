@@ -11,7 +11,7 @@ import {
 } from "@/lib/conversas/enviar-pergunta";
 import { enviarMidiaPeloCanal, type TipoMidia } from "@/lib/conversas/enviar-midia";
 import { reagirAUltimaMensagem } from "@/lib/conversas/enviar-reacao";
-import { componentesParaMeta, resolverParametros, type MapeamentoVariavel } from "@/lib/campanhas/variaveis";
+import { prepararEnvioDeModelo, type MapeamentoVariavel } from "@/lib/campanhas/variaveis";
 import { contaConectada, enviarPelaCloudApi } from "@/lib/integracoes/whatsapp-oficial";
 import { enviarEmailOuFalhar } from "@/lib/email";
 import { encerrarExecucao, execucoesVivasDoContato } from "./execucoes";
@@ -313,14 +313,17 @@ export function acoesReais(params: {
           // Valor fixo escolhido no bloco tem prioridade sobre o padrão do modelo.
           ...(variaveis?.[v.chave] ? { origem: "texto" as const, valor: variaveis[v.chave] } : {}),
         }));
-        const parametros = resolverParametros(mapeamento, contato ? { ...contato, nome: contatoNome } : null);
+        // Variável vazia faz a Meta recusar o envio INTEIRO. Conferir antes é o que transforma
+        // um "falhou" técnico em inglês numa frase que diz qual campo preencher.
+        const preparo = prepararEnvioDeModelo(mapeamento, contato ? { ...contato, nome: contatoNome } : null);
+        if (!preparo.ok) return falha(preparo.motivo);
 
         await enviarPelaCloudApi(conta, conversa.contato, {
           type: "template",
           template: {
             name: modelo.nome,
             language: { code: modelo.idioma },
-            components: componentesParaMeta(mapeamento, parametros),
+            components: preparo.componentes,
           },
         });
         return ok(`Modelo "${modelo.nome}" enviado.`);

@@ -69,6 +69,21 @@ export type DependenciasDoFlow = {
   dispararAutomacoes: (params: { contatoNome: string; chaveEvento: string }) => Promise<void>;
 };
 
+/**
+ * O banco recusou por chave repetida (`P2002`).
+ *
+ * Isto não é um caso raro de laboratório: um formulário que publica em dois canais entrega dois
+ * leads no mesmo segundo, e o id do contato é derivado do NOME (`workspaceId-slug(nome)`). Os dois
+ * pedidos perguntam "esse nome está livre?" antes de qualquer um gravar, os dois ouvem "está", e o
+ * segundo `create` bate na chave primária.
+ *
+ * Conferir o código em vez da mensagem porque a mensagem vem do MySQL, em inglês, e muda de versão
+ * pra versão: "Unique constraint failed on the constraint: PRIMARY" é texto, não contrato.
+ */
+export function ehChaveDuplicada(erro: unknown): boolean {
+  return typeof erro === "object" && erro !== null && (erro as { code?: unknown }).code === "P2002";
+}
+
 /** Etiqueta que as automações usam pra filtrar de qual formulário o lead veio. É o que permite um
  *  fluxo por formulário sem inventar um tipo de gatilho novo pra cada um. */
 export function etiquetaDoFormulario(formularioNome: string): string {
@@ -101,69 +116,102 @@ export async function receberLeadDoFlow(params: {
 
   const avisos = [...lead.avisos];
 
-  // 2. Achar a pessoa: telefone primeiro (é a chave mais confiável), e-mail depois.
-  let existente: { id: string; nome: string } | null = null;
-  if (lead.whatsapp) existente = await deps.acharContatoPorTelefone(lead.whatsapp);
-  if (!existente && lead.email) existente = await deps.acharContatoPorEmail(lead.email);
-
   /*
-   * O NOME, quando o contato é novo.
+   * ACHAR, DECIDIR O NOME E GRAVAR — tudo junto, porque tudo isso pode precisar ser refeito.
    *
-   * Duas pessoas diferentes com o mesmo nome não podem virar uma só: o nome é a chave do contato,
-   * e fundir é irreversível — o histórico de uma passa a ser o da outra. Então, nome ocupado por
-   * OUTRA pessoa, acrescenta o sufixo do formulário. Feio, e muito melhor do que perder um cliente
-   * dentro do cadastro de outro.
+   * Entre a pergunta "esse nome está livre?" e o `create` existe uma janela, e ela não é teórica:
+   * um formulário publicado em dois canais entrega dois leads no mesmo segundo. Os dois perguntam,
+   * os dois ouvem "está livre", e o segundo `create` bate na chave primária (o id do contato sai do
+   * nome). Antes isso virava 500, e só se resolvia porque o Flow repetia a entrega um minuto
+   * depois.
+   *
+   * A correção não é travar o banco: é REFAZER a decisão uma vez. Na segunda passada o contato do
+   * concorrente já existe, e aí as mesmas regras de sempre resolvem sozinhas — mesmo telefone cai
+   * no caminho de completar, telefone diferente encontra o nome ocupado e usa o sufixo. Nenhuma
+   * regra nova, só a chance de olhar de novo.
    */
-  let nomeDoContato = existente?.nome ?? lead.nomeDoContato;
-  if (!existente && (await deps.nomeOcupado(nomeDoContato))) {
-    nomeDoContato = `${lead.nomeDoContato} (${lead.formularioNome})`.slice(0, 120);
-    // Ainda ocupado (o mesmo formulário já trouxe um homônimo): desempata pelo id da entrega, que
-    // é único por definição.
-    if (await deps.nomeOcupado(nomeDoContato)) {
-      nomeDoContato = `${lead.nomeDoContato} (${lead.respostaId.slice(-6)})`.slice(0, 120);
+  async function resolverEGravarContato(tentativa: number): Promise<{
+    contatoId: string;
+    nomeDoContato: string;
+    criado: boolean;
+  }> {
+    // 2. Achar a pessoa: telefone primeiro (é a chave mais confiável), e-mail depois.
+    let existente: { id: string; nome: string } | null = null;
+    if (lead.whatsapp) existente = await deps.acharContatoPorTelefone(lead.whatsapp);
+    if (!existente && lead.email) existente = await deps.acharContatoPorEmail(lead.email);
+
+    /*
+     * O NOME, quando o contato é novo.
+     *
+     * Duas pessoas diferentes com o mesmo nome não podem virar uma só: o nome é a chave do contato,
+     * e fundir é irreversível — o histórico de uma passa a ser o da outra. Então, nome ocupado por
+     * OUTRA pessoa, acrescenta o sufixo do formulário. Feio, e muito melhor do que perder um
+     * cliente dentro do cadastro de outro.
+     */
+    let nomeDoContato = existente?.nome ?? lead.nomeDoContato;
+    if (!existente && (await deps.nomeOcupado(nomeDoContato))) {
+      nomeDoContato = `${lead.nomeDoContato} (${lead.formularioNome})`.slice(0, 120);
+      // Ainda ocupado (o mesmo formulário já trouxe um homônimo): desempata pelo id da entrega, que
+      // é único por definição.
+      if (await deps.nomeOcupado(nomeDoContato)) {
+        nomeDoContato = `${lead.nomeDoContato} (${lead.respostaId.slice(-6)})`.slice(0, 120);
+      }
+      avisos.push(
+        `Já havia outro contato chamado "${lead.nomeDoContato}", então este entrou como "${nomeDoContato}".`,
+      );
     }
-    avisos.push(`Já havia outro contato chamado "${lead.nomeDoContato}", então este entrou como "${nomeDoContato}".`);
-  }
 
-  const contatoAtual = existente ? await deps.lerContato(nomeDoContato) : null;
-  const etiquetas = new Set(etiquetasAtuais(contatoAtual));
-  etiquetas.add(etiquetaDoFormulario(lead.formularioNome));
-  if (lead.consentimentoWhatsApp) etiquetas.add("WhatsApp: consentiu");
+    const contatoAtual = existente ? await deps.lerContato(nomeDoContato) : null;
+    const etiquetas = new Set(etiquetasAtuais(contatoAtual));
+    etiquetas.add(etiquetaDoFormulario(lead.formularioNome));
+    if (lead.consentimentoWhatsApp) etiquetas.add("WhatsApp: consentiu");
 
-  const consentimento = decidirConsentimento({
-    novo: !existente,
-    jaGravado: contatoAtual?.consentimentoWhatsApp as boolean | null | undefined,
-    aceitou: lead.consentimentoWhatsApp,
-    texto: lead.consentimentoTexto,
-    em: lead.consentimentoEm ?? lead.recebidaEm ?? new Date(),
-    origem: `azuz-flow:${lead.formularioNome}`,
-  });
-
-  // 3. Criar ou completar. Em contato existente só entra o que está VAZIO: o CRM é a fonte da
-  //    verdade sobre quem já é cliente, e um formulário preenchido às pressas não pode sobrescrever
-  //    o telefone que a equipe confirmou por telefone.
-  let contatoId: string;
-  let criado = false;
-  if (existente) {
-    const completar: Record<string, unknown> = { etiquetas: [...etiquetas], ...consentimento };
-    for (const [campo, valor] of camposDoLead(lead)) {
-      if (valor && !contatoAtual?.[campo]) completar[campo] = valor;
-    }
-    await deps.atualizarContato(nomeDoContato, completar);
-    contatoId = existente.id;
-  } else {
-    const novo = await deps.criarContato({
-      nome: nomeDoContato,
-      origem: `Formulário: ${lead.formularioNome}`,
-      criadoVia: "azuz-flow",
-      etapa: "Novo",
-      etiquetas: [...etiquetas],
-      ...Object.fromEntries(camposDoLead(lead).filter(([, valor]) => Boolean(valor))),
-      ...consentimento,
+    const consentimento = decidirConsentimento({
+      novo: !existente,
+      jaGravado: contatoAtual?.consentimentoWhatsApp as boolean | null | undefined,
+      aceitou: lead.consentimentoWhatsApp,
+      texto: lead.consentimentoTexto,
+      em: lead.consentimentoEm ?? lead.recebidaEm ?? new Date(),
+      origem: `azuz-flow:${lead.formularioNome}`,
     });
-    contatoId = novo.id;
-    criado = true;
+
+    // 3. Criar ou completar. Em contato existente só entra o que está VAZIO: o CRM é a fonte da
+    //    verdade sobre quem já é cliente, e um formulário preenchido às pressas não pode
+    //    sobrescrever o telefone que a equipe confirmou por telefone.
+    if (existente) {
+      const completar: Record<string, unknown> = { etiquetas: [...etiquetas], ...consentimento };
+      for (const [campo, valor] of camposDoLead(lead)) {
+        if (valor && !contatoAtual?.[campo]) completar[campo] = valor;
+      }
+      await deps.atualizarContato(nomeDoContato, completar);
+      return { contatoId: existente.id, nomeDoContato, criado: false };
+    }
+
+    try {
+      const novo = await deps.criarContato({
+        nome: nomeDoContato,
+        origem: `Formulário: ${lead.formularioNome}`,
+        criadoVia: "azuz-flow",
+        etapa: "Novo",
+        etiquetas: [...etiquetas],
+        ...Object.fromEntries(camposDoLead(lead).filter(([, valor]) => Boolean(valor))),
+        ...consentimento,
+      });
+      return { contatoId: novo.id, nomeDoContato, criado: true };
+    } catch (erro) {
+      // Outro pedido criou este nome entre a conferência e agora. UMA repetição: na segunda passada
+      // o concorrente já existe, e as regras normais decidem. Insistir além disso esconderia um
+      // defeito de verdade atrás de um laço.
+      if (ehChaveDuplicada(erro) && tentativa === 0) {
+        // O aviso de homônimo da passada anterior não vale mais: a decisão vai ser refeita do zero.
+        avisos.length = lead.avisos.length;
+        return resolverEGravarContato(1);
+      }
+      throw erro;
+    }
   }
+
+  const { contatoId, nomeDoContato, criado } = await resolverEGravarContato(0);
 
   // 4. Linha do tempo: o que a pessoa respondeu, por extenso. É o que o vendedor lê antes de falar
   //    com ela, e é a única cópia dessas respostas dentro do CRM.
@@ -215,10 +263,25 @@ export async function receberLeadDoFlow(params: {
     avisos,
   };
 
-  // 7. Marca a entrega como feita ANTES de disparar automação: se o processo morrer entre uma coisa
-  //    e outra, a repetição do Flow não cria tudo de novo. Automação perdida é um lead sem
-  //    mensagem; entrega não registrada é um lead duplicado, com duas mensagens.
-  await deps.gravarEntrega({ chave: lead.respostaId, contatoId, conversaId, resultado });
+  /*
+   * 7. Marca a entrega como feita ANTES de disparar automação: se o processo morrer entre uma coisa
+   *    e outra, a repetição do Flow não cria tudo de novo. Automação perdida é um lead sem
+   *    mensagem; entrega não registrada é um lead duplicado, com duas mensagens.
+   *
+   *    DUAS CHAMADAS SIMULTÂNEAS COM A MESMA ENTREGA chegam aqui juntas: as duas passaram pela
+   *    conferência de idempotência antes de qualquer uma gravar. Uma vence, a outra bate na chave
+   *    única — e isso é a resposta, não um erro. Ela devolve o resultado que a vencedora guardou,
+   *    como qualquer repetição. Devolver 500 faria o Flow repetir uma entrega que já deu certo.
+   */
+  try {
+    await deps.gravarEntrega({ chave: lead.respostaId, contatoId, conversaId, resultado });
+  } catch (erro) {
+    if (!ehChaveDuplicada(erro)) throw erro;
+    const guardado = await deps.acharEntregaAnterior(lead.respostaId);
+    // Sem o registro da vencedora não há o que devolver: aí o erro é de verdade e sobe.
+    if (!guardado) throw erro;
+    return { ...guardado, duplicado: true };
+  }
 
   // 8. Por último, com tudo gravado. Falha aqui não derruba a resposta: o lead já está no CRM, e
   //    devolver erro faria o Flow repetir uma entrega que deu certo.

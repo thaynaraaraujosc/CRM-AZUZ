@@ -261,11 +261,11 @@ export function EditorTemplate({
             />
             <div className="tpl-inserir">
               <span className="hint">{traduzir("Inserir:")}</span>
-              {ORIGENS_DO_CONTATO.slice(0, 5).map((o) => {
+              {ORIGENS_DO_CONTATO.slice(0, 6).map((o) => {
                 const chave = o.origem.slice("contato.".length);
                 return (
                   <button key={o.origem} type="button" className="pill" onClick={() => inserirNoCorpo(`{{${chave}}}`)} disabled={!editavelNaMeta}>
-                    {o.label}
+                    {traduzir(o.label)}
                   </button>
                 );
               })}
@@ -311,7 +311,20 @@ export function EditorTemplate({
                         onChange={(e) => mudarVariavel(v.chave, { valor: e.target.value })}
                         disabled={!editavelNaMeta}
                       />
-                    ) : null}
+                    ) : (
+                      /* O valor reserva, pros campos que vêm do contato.
+                         A Meta recusa o envio INTEIRO quando um parâmetro vai vazio, e campo vazio é
+                         o caso comum: o lead não preencheu "empresa" e a mensagem não sai pra
+                         ninguém. Com reserva, ela sai. Sem reserva, o CRM nem tenta e diz qual
+                         variável faltou. */
+                      <input
+                        className="input"
+                        placeholder={traduzir("Se estiver vazio, usar:")}
+                        value={v.reserva ?? ""}
+                        onChange={(e) => mudarVariavel(v.chave, { reserva: e.target.value })}
+                        disabled={!editavelNaMeta}
+                      />
+                    )}
                   </div>
                 ))}
               </div>

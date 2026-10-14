@@ -13,6 +13,17 @@
 /** De onde sai o valor de uma variável. `texto` = valor fixo digitado na hora do disparo. */
 export type OrigemVariavel =
   | "contato.nome"
+  /**
+   * Só a primeira palavra, sem o sufixo de homônimo.
+   *
+   * `contato.nome` é o nome-chave do CRM, e ele carrega coisa que não é nome de gente: quando dois
+   * leads diferentes têm o mesmo nome, o segundo entra como "Marina Alves (Consultoria grátis)".
+   * Mandar isso num "Olá, {{nome}}" escancara pro cliente um detalhe interno do cadastro.
+   *
+   * Uma origem própria, e não um ajuste dentro de `contato.nome`, porque as duas coisas são
+   * legítimas: cabeçalho de proposta quer o nome inteiro, saudação quer o primeiro.
+   */
+  | "contato.primeiroNome"
   | "contato.sobrenome"
   | "contato.empresa"
   | "contato.cargo"
@@ -30,11 +41,22 @@ export type MapeamentoVariavel = {
   origem: OrigemVariavel;
   /** Só quando `origem === "texto"`. */
   valor?: string;
+  /**
+   * O que usar quando o campo do contato está vazio ("se estiver vazio, usar: …").
+   *
+   * Existe porque a Meta recusa o ENVIO INTEIRO quando um parâmetro vai vazio, e campo vazio é o
+   * caso comum, não a exceção: o lead não preencheu "empresa", e a mensagem não sai. Com reserva,
+   * `{{empresa}}` vira "sua empresa" e o envio acontece.
+   *
+   * Sem reserva o envio não é tentado: ver `prepararEnvioDeModelo`.
+   */
+  reserva?: string;
 };
 
 /** Campos do contato que uma variável pode ler, com o rótulo pra tela. */
 export const ORIGENS_DO_CONTATO: { origem: OrigemVariavel; label: string }[] = [
   { origem: "contato.nome", label: "Nome" },
+  { origem: "contato.primeiroNome", label: "Primeiro nome" },
   { origem: "contato.sobrenome", label: "Sobrenome" },
   { origem: "contato.empresa", label: "Empresa" },
   { origem: "contato.cargo", label: "Cargo" },
@@ -93,7 +115,11 @@ export function mapearVariaveis(texto: string, anterior: MapeamentoVariavel[] = 
   return chaves.map((chave) => {
     const existente = porChave.get(chave);
     if (existente) return existente;
-    const origemAdivinhada = ORIGENS_DO_CONTATO.find((o) => o.origem === `contato.${chave.toLowerCase()}`)?.origem;
+    // A comparação é sem caixa: quem escreve `{{primeiroNome}}` e quem escreve `{{primeironome}}`
+    // querem a mesma coisa, e errar aqui deixa a variável como "texto" — a pessoa preenche na mão e
+    // nunca entende por que aquela não puxou sozinha.
+    const alvo = `contato.${chave}`.toLowerCase();
+    const origemAdivinhada = ORIGENS_DO_CONTATO.find((o) => o.origem.toLowerCase() === alvo)?.origem;
     return { chave, indice: proximoIndiceLivre(), origem: origemAdivinhada ?? "texto" };
   });
 }
@@ -109,6 +135,19 @@ export function preencherVariaveis(texto: string, valores: Record<string, string
 
 /** Resolve os valores de UMA pessoa a partir do mapeamento. É isto que vai congelado em
  * `CampanhaDestinatario.parametros`. */
+/**
+ * A primeira palavra do nome, sem o sufixo de homônimo.
+ *
+ * O nome-chave do CRM pode ser "Marina Alves (Consultoria grátis)": quando dois leads diferentes
+ * têm o mesmo nome, o segundo ganha o sufixo pra não fundir com o primeiro. Isso é cadastro, não é
+ * como a pessoa se chama — tirar o parêntese final antes de cortar a primeira palavra cobre também
+ * o caso de nome de uma palavra só ("Marina (Consultoria grátis)").
+ */
+export function primeiroNomeDe(nome: string): string {
+  const semSufixo = nome.replace(/\s*\([^()]*\)\s*$/, "").trim();
+  return (semSufixo || nome).split(/\s+/)[0] ?? "";
+}
+
 export function resolverParametros(
   variaveis: MapeamentoVariavel[],
   contato: ContatoParaVariaveis | null,
@@ -119,8 +158,14 @@ export function resolverParametros(
       valores[v.chave] = v.valor ?? "";
       continue;
     }
-    const campo = v.origem.slice("contato.".length) as keyof ContatoParaVariaveis;
-    valores[v.chave] = (contato?.[campo] ?? "").toString().trim();
+    const bruto =
+      v.origem === "contato.primeiroNome"
+        ? primeiroNomeDe(contato?.nome ?? "")
+        : (contato?.[v.origem.slice("contato.".length) as keyof ContatoParaVariaveis] ?? "").toString();
+
+    // A reserva entra DEPOIS de resolver, não no lugar de resolver: ela é o que fazer quando o
+    // campo está vazio, e campo vazio é o caso comum (o lead não preencheu "empresa").
+    valores[v.chave] = bruto.trim() || (v.reserva ?? "").trim();
   }
   return valores;
 }
@@ -174,4 +219,38 @@ export function componentesParaMeta(
       parameters: ordenadas.map((v) => ({ type: "text", text: parametros[v.chave] ?? "" })),
     },
   ];
+}
+
+/**
+ * Prepara o envio de um modelo: resolve os valores desta pessoa e diz se dá pra mandar.
+ *
+ * Existe porque a regra "não mande com variável vazia" precisa valer nos TRÊS lugares que mandam
+ * modelo (bloco de automação, campanha e retomada), e uma regra escrita três vezes é uma regra que
+ * um dia vai divergir em duas.
+ *
+ * E ela não é preciosismo: a Meta recusa o envio INTEIRO quando um parâmetro vai vazio. O CRM
+ * mandava `""` e levava a recusa — erro técnico em inglês, longe da causa, um destinatário por vez,
+ * gastando cota. Agora quem não tem valor nem reserva nem chega a sair, e a execução diz qual
+ * variável faltou e pra quem.
+ */
+export function prepararEnvioDeModelo(
+  variaveis: MapeamentoVariavel[],
+  contato: ContatoParaVariaveis | null,
+):
+  | { ok: true; parametros: Record<string, string>; componentes: ReturnType<typeof componentesParaMeta> }
+  | { ok: false; faltando: string[]; motivo: string } {
+  const parametros = resolverParametros(variaveis, contato);
+  const faltando = variaveisSemValor(variaveis, parametros);
+  if (faltando.length) {
+    return { ok: false, faltando, motivo: motivoDeVariavelVazia(faltando) };
+  }
+  return { ok: true, parametros, componentes: componentesParaMeta(variaveis, parametros) };
+}
+
+/** A frase que aparece na tela de execuções. Diz a variável e diz que nada saiu — as duas coisas,
+ *  porque "falhou" sem dizer o quê é o que fazia ninguém conseguir corrigir. */
+export function motivoDeVariavelVazia(chaves: string[]): string {
+  const lista = chaves.map((c) => `{{${c}}}`).join(", ");
+  const concorda = chaves.length === 1 ? "está vazia" : "estão vazias";
+  return `A variável ${lista} ${concorda} para este contato; nada foi enviado. Preencha o contato ou defina um valor reserva no modelo.`;
 }

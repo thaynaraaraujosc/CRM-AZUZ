@@ -2656,4 +2656,6 @@ export const TRADUCOES_EN: Record<string, string> = {
   "WhatsApp, Instagram e Meta Ads conectados": "WhatsApp, Instagram and Meta Ads connected",
   "Funil, automações e Azuz IA inclusos": "Pipeline, automations and Azuz AI included",
   "Usuários e permissões ilimitados": "Unlimited users and permissions",
+  "Primeiro nome": "First name",
+  "Se estiver vazio, usar:": "If empty, use:",
 };
