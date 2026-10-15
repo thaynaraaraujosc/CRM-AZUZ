@@ -84,6 +84,28 @@ describe("rotas que dispensam sessão", () => {
     expect(ehRotaPublica("/api/integracoes/azuz-flow")).toBe(false);
   });
 
+  it("abre a rota de saúde do banco, que a tela de login consulta sem sessão", () => {
+    /*
+     * Quem chama é a tela de login, DEPOIS de um `signIn` recusado, para escolher entre "e-mail ou
+     * senha incorretos" e "o banco não está respondendo". Quem está nessa tela não tem sessão por
+     * definição — então fora da lista o proxy devolve 307 e o que chega na tela é a página de
+     * login, nunca o JSON. A rota escrita para explicar a queda não explicava nada.
+     *
+     * Foi o que prolongou a queda de 14/10/2026: a causa e o código do driver estavam calculados e
+     * prontos dentro da rota, e não chegavam na tela.
+     */
+    expect(ehRotaPublica("/api/saude/banco")).toBe(true);
+
+    // A irmã dela lista tabela e coluna que faltam: isso é mapa do schema e continua exigindo
+    // sessão de administrador.
+    expect(ehRotaPublica("/api/saude/estrutura")).toBe(false);
+
+    // E a liberação é do caminho exato, não da pasta: nenhuma rota de saúde futura nasce aberta
+    // por acidente.
+    expect(ehRotaPublica("/api/saude")).toBe(false);
+    expect(ehRotaPublica("/api/saude/banco/detalhe")).toBe(false);
+  });
+
   it("abre a tela pública do formulário, que é aberta por um lead sem login", () => {
     // O link compartilhado leva pra cá. Se esta rota exigisse sessão, o proxy devolveria 307 pro
     // /login e o formulário nunca seria respondido: foi assim que a tela pública ficou inacessível

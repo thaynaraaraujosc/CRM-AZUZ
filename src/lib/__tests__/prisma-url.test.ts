@@ -14,6 +14,11 @@ import { montarUrlDoBanco } from "../prisma";
  * muda a string não tem como quebrar a conexão. É isso que o primeiro teste prova, e é por isso
  * que ele compara com o texto literal em vez de reusar a função: reusar provaria só que a função
  * concorda consigo mesma.
+ *
+ * E quando a string MUDAR de propósito — como mudou em 15/10/2026, com o `connectTimeout` — este
+ * teste quebra, e é esse o trabalho dele. Ele não existe pra impedir mudança; existe pra que
+ * nenhuma aconteça sem alguém escrever aqui o que mudou e por quê. Nunca "ajusta o literal e
+ * segue".
  */
 
 const URL_REAL = "mysql://usuario:senha@host.proxy.rlwy.net:12345/railway";
@@ -21,7 +26,7 @@ const URL_REAL = "mysql://usuario:senha@host.proxy.rlwy.net:12345/railway";
 describe("montarUrlDoBanco", () => {
   it("sem a variável, sai exatamente o que já rodava antes dela existir", () => {
     expect(montarUrlDoBanco(URL_REAL)).toBe(
-      "mariadb://usuario:senha@host.proxy.rlwy.net:12345/railway?connectionLimit=3&compress=true&allowPublicKeyRetrieval=true",
+      "mariadb://usuario:senha@host.proxy.rlwy.net:12345/railway?connectionLimit=3&compress=true&allowPublicKeyRetrieval=true&connectTimeout=8000",
     );
   });
 
@@ -33,14 +38,14 @@ describe("montarUrlDoBanco", () => {
   it("com a variável, os parâmetros entram no fim", () => {
     expect(montarUrlDoBanco(URL_REAL, "&minimumIdle=0&idleTimeout=30")).toBe(
       "mariadb://usuario:senha@host.proxy.rlwy.net:12345/railway" +
-        "?connectionLimit=3&compress=true&allowPublicKeyRetrieval=true&minimumIdle=0&idleTimeout=30",
+        "?connectionLimit=3&compress=true&allowPublicKeyRetrieval=true&connectTimeout=8000&minimumIdle=0&idleTimeout=30",
     );
   });
 
   it("URL que já tem query continua válida", () => {
     expect(montarUrlDoBanco(`${URL_REAL}?ssl-mode=REQUIRED`)).toBe(
       "mariadb://usuario:senha@host.proxy.rlwy.net:12345/railway" +
-        "?ssl-mode=REQUIRED&connectionLimit=3&compress=true&allowPublicKeyRetrieval=true",
+        "?ssl-mode=REQUIRED&connectionLimit=3&compress=true&allowPublicKeyRetrieval=true&connectTimeout=8000",
     );
   });
 
@@ -53,6 +58,36 @@ describe("montarUrlDoBanco", () => {
   it("não fatia a URL, então senha com ? e @ passa intacta", () => {
     const url = montarUrlDoBanco("mysql://root:p@ss?w0rd@host:3306/railway");
     expect(url.startsWith("mariadb://root:p@ss?w0rd@host:3306/railway")).toBe(true);
+  });
+});
+
+/**
+ * O limite que ninguém tinha escolhido.
+ *
+ * Sem `connectTimeout` escrito, o driver usa 1000 ms (`connection-options.js`, linha 99). Um
+ * segundo pra TCP mais o aperto de mão completo do MySQL, com a função rodando num continente e o
+ * banco em outro. Nunca foi decisão de ninguém: era o que sobrava quando a opção não aparece.
+ */
+describe("tempo pra abrir a conexão", () => {
+  it("escreve um limite explícito, em vez de herdar 1 segundo do driver", () => {
+    expect(montarUrlDoBanco("mysql://u:s@host:3306/banco")).toContain("connectTimeout=8000");
+  });
+
+  it("fica abaixo do acquireTimeout padrão do pool", () => {
+    /*
+     * `pool-options.js` rebaixa o `connectTimeout` pro valor do `acquireTimeout` quando ele passa
+     * disso. Com os dois iguais, uma tentativa que falha consome a espera inteira e o pool não
+     * chega a tentar outra. Abaixo, sobra margem pra uma segunda tentativa.
+     */
+    const ACQUIRE_TIMEOUT_PADRAO_DO_DRIVER = 10_000;
+    const escrito = Number(/connectTimeout=(\d+)/.exec(montarUrlDoBanco("mysql://u:s@h:3306/b"))?.[1]);
+    expect(escrito).toBeLessThan(ACQUIRE_TIMEOUT_PADRAO_DO_DRIVER);
+  });
+
+  it("os parâmetros extras continuam podendo sobrescrever o limite", () => {
+    // Mesma regra de tudo que entra nesta montagem: precisa ser ajustável sem passar por build.
+    const url = montarUrlDoBanco("mysql://u:s@host:3306/banco", "&connectTimeout=20000");
+    expect(url.indexOf("connectTimeout=20000")).toBeGreaterThan(url.indexOf("connectTimeout=8000"));
   });
 });
 

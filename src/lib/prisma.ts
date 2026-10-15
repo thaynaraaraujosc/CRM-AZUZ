@@ -50,10 +50,59 @@ export function montarUrlDoBanco(databaseUrl: string, poolParams?: string): stri
    * quando o cache esfriar.
    */
   url += "&allowPublicKeyRetrieval=true";
+  /*
+   * `connectTimeout`: o padrão do driver é 1000 ms — `node_modules/mariadb/lib/config/
+   * connection-options.js`, linha 99 — e ninguém escolheu esse valor; ele é o que sobra quando a
+   * opção não é escrita.
+   *
+   * Um segundo é pouco pro que esta conexão faz: TCP, mais o aperto de mão completo do
+   * `caching_sha2_password`, às vezes com a chave pública RSA no meio. E a função do CRM roda em
+   * outro continente do banco: cada ida e volta entre Washington e São Paulo custa ~120 ms, e o
+   * aperto de mão precisa de várias.
+   *
+   * 8 segundos, e não mais: o `acquireTimeout` do pool é 10 s por padrão, e `pool-options.js`
+   * rebaixa o `connectTimeout` pro valor do `acquireTimeout` quando ele passa disso. Ficando
+   * abaixo, sobra margem pro pool tentar de novo dentro da mesma espera.
+   *
+   * Isto NÃO foi a causa da queda de 14/10/2026 — foi `REQUIRE SSL` na conta do banco, ver abaixo.
+   * Mas o limite de 1 segundo estava lá, sem decisão de ninguém, esperando a primeira engasgada de
+   * rede pra derrubar o CRM inteiro.
+   */
+  url += "&connectTimeout=8000";
   url += poolParams ?? "";
   return url;
 }
 
+/*
+ * QUANDO A CONEXÃO FALHA E NADA AQUI EXPLICA: OLHE A CONTA DO BANCO.
+ *
+ * Em 14/10/2026 o CRM passou a noite fora do ar com este erro, e nenhuma linha deste arquivo era
+ * a causa:
+ *
+ *     pool timeout: failed to retrieve a connection from pool after 20001ms
+ *         (pool connections: active=0 idle=0 limit=3)
+ *
+ * `active=0 idle=0` é a informação inteira: o pool não tem conexão nenhuma — não é disputa por
+ * conexão ocupada, é que nenhuma chega a nascer. O driver não repassa o motivo da recusa nesse
+ * caminho (`pool.js`, linha 362: só anexa a causa quando já existe erro de criação registrado), e
+ * por isso o motivo real nunca aparece no log do CRM.
+ *
+ * O motivo estava na conta, não no código: `ssl_type = 'ANY'` na linha do usuário em `mysql.user`,
+ * que é `REQUIRE SSL` gravado na própria conta. Vale mesmo com `require_secure_transport` desligado
+ * no servidor, e o CRM conecta sem TLS. Duas camadas, e a de baixo invisível de fora.
+ *
+ * O que torna isso traiçoeiro: testar pelo cliente `mysql` da linha de comando NÃO reproduz o
+ * problema. Ele negocia TLS sozinho por padrão, conecta, e você conclui que a conta está boa.
+ *
+ * Então o comando que responde, com o usuário da `DATABASE_URL`:
+ *
+ *     SELECT user, host, plugin, ssl_type, account_locked, password_expired, max_user_connections
+ *     FROM mysql.user WHERE user = '<usuario>';
+ *
+ * `ssl_type` preenchido, `account_locked = Y`, `password_expired = Y` ou `max_user_connections`
+ * com número: qualquer um dos quatro derruba a conexão sem dizer por quê, e nenhum deles se
+ * conserta por deploy.
+ */
 function criarPrismaClient() {
   const adapter = new PrismaMariaDb(
     montarUrlDoBanco(process.env.DATABASE_URL!, process.env.DATABASE_POOL_PARAMS),

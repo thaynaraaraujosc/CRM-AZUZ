@@ -86,6 +86,27 @@ const EXATOS_PUBLICOS = [
   "/api/webhooks/evolution",
   // Asaas (eventos de cobrança da assinatura), validada pelo `asaas-access-token` na rota.
   "/api/webhooks/asaas",
+  /*
+   * O diagnóstico que a tela de login consulta quando a senha é recusada.
+   *
+   * Ela existe exatamente para quem NÃO tem sessão: é chamada depois de um `signIn` que falhou,
+   * para decidir entre "e-mail ou senha incorretos" e "o banco não está respondendo". Fora desta
+   * lista, o proxy devolvia 307 pro /login e a resposta que chegava na tela era a página de login
+   * — nunca o JSON. Ou seja: a rota escrita para explicar a queda nunca explicou queda nenhuma,
+   * desde o dia em que nasceu.
+   *
+   * É o quarto caso do sintoma descrito no topo deste arquivo, e o mais caro: em 14/10/2026 o CRM
+   * ficou fora do ar a noite inteira, e o único sinal que a tela sabia dar era "banco fora do ar",
+   * sem a causa nem o código do driver que a rota já calculava e já devolvia.
+   *
+   * Não há o que vazar: a resposta é `{ ok, causa, codigo }`. Categoria e código do driver, nunca
+   * endereço, usuário, senha ou mensagem crua — e com limite por IP dentro da própria rota, porque
+   * cada chamada encosta no banco.
+   *
+   * A IRMÃ DELA FICA DE FORA DE PROPÓSITO: `/api/saude/estrutura` lista tabela e coluna que faltam,
+   * o que é mapa do schema, e exige sessão de administrador.
+   */
+  "/api/saude/banco",
   // Verificação diária das conexões oficiais, chamada pelo cron: mesma regra dos `/api/cron/`,
   // só que esta rota nasceu antes dessa pasta existir.
   "/api/integracoes/meta/whatsapp/saude",
