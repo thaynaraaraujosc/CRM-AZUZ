@@ -33,3 +33,32 @@ export function normalizarTelefoneParaComparacao(numero: string): string {
   const semDdi = /^[1-9][1-9]9\d{8}$/.test(digitos) || /^[1-9][1-9]\d{8}$/.test(digitos);
   return normalizarNumeroBrasileiro(semDdi ? `55${digitos}` : digitos);
 }
+
+/**
+ * O telefone como se escreve pra uma pessoa ler: `+55 (62) 99999-9999`.
+ *
+ * Existe por causa da menção de quem o CRM não conhece. Mencionar alguém num grupo grava o número
+ * cru no texto (`@5562999999999`), e quando não há nome em lugar nenhum pra pôr no lugar o que
+ * sobra é esse monte de dígito colado — que ninguém lê como telefone, e que o detector de números
+ * ainda tentava transformar em atalho de ligação.
+ *
+ * Formata só o que tem forma brasileira reconhecível. Número de outro país sai como `+<dígitos>`:
+ * inventar parênteses e hífen em cima de um formato que não se conhece deixa o número mais difícil
+ * de ler, não menos. Entrada sem dígito nenhum volta como veio, porque devolver string vazia
+ * esconderia o problema em vez de mostrá-lo.
+ */
+export function formatarTelefoneParaExibicao(numero: string): string {
+  const digitos = numero.replace(/\D/g, "");
+  if (!digitos) return numero;
+
+  // Sem DDI, mas com cara de brasileiro: o mesmo teste estreito de `normalizarTelefoneParaComparacao`.
+  const brasileiroSemDdi = /^[1-9][1-9]\d{8,9}$/.test(digitos);
+  const comDdi = brasileiroSemDdi ? `55${digitos}` : digitos;
+
+  // 55 + DDD + 8 ou 9 dígitos. Só aqui a máscara brasileira é verdade.
+  const casou = /^55([1-9][1-9])(\d{4,5})(\d{4})$/.exec(comDdi);
+  if (!casou) return `+${digitos}`;
+
+  const [, ddd, inicio, fim] = casou;
+  return `+55 (${ddd}) ${inicio}-${fim}`;
+}

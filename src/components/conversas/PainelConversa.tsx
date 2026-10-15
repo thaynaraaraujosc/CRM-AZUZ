@@ -6,6 +6,9 @@ import type { ConvMensagem } from "@/lib/data";
 import { useContatos } from "@/lib/contatos-context";
 import { useMensagensExtra } from "@/lib/mensagens-extra-context";
 import { BolhaMensagem } from "./BolhaMensagem";
+import { renderizarTrechos } from "./TextoDaMensagem";
+import { interpretarMensagem } from "@/lib/conversas/formatacao-mensagem";
+import { criarResolvedorDeMencao } from "@/lib/conversas/mencoes";
 import { IconClose, IconConfiguracoes, IconDoc, IconEnviar, IconImage, IconLocalizacao, IconUpload } from "@/components/icons";
 import { TransferirNegocio } from "@/components/funil/TransferirNegocio";
 import { useFunis } from "@/lib/funis-context";
@@ -50,6 +53,19 @@ export function PainelConversa({
   const { t: traduzir, localeNumero } = useIdioma();
   const { mensagensExtraPorContato, setMensagensExtraPorContato } = useMensagensExtra();
   const { contatos, salvarDadosContato } = useContatos();
+
+  /*
+   * O mesmo interpretador da tela de Conversas, e não uma segunda versão dele.
+   *
+   * O comentário no topo deste arquivo já avisa o que acontece quando a mesma conversa tem duas
+   * implementações: uma fica pra trás. Aqui ela ficaria de um jeito visível — link sem cor,
+   * `*negrito*` com os asteriscos à mostra e menção como número cru, só porque a conversa foi
+   * aberta pelo card do Funil em vez da tela de Conversas.
+   *
+   * Sem lista de participantes porque este painel é sempre uma conversa de uma pessoa só, nunca um
+   * grupo: a menção se resolve pela agenda da empresa ou, não achando, pelo número formatado.
+   */
+  const resolverMencao = criarResolvedorDeMencao(contatos, null);
 
   const [texto, setTexto] = useState("");
   const [maisAberto, setMaisAberto] = useState(false);
@@ -337,7 +353,12 @@ export function PainelConversa({
                 return (
                   <Fragment key={msg.id ?? i}>
                     {dia && dia !== diaAnterior ? <span className="wa-separador-dia">{dia}</span> : null}
-                    <BolhaMensagem msg={msg} />
+                    <BolhaMensagem
+                      msg={msg}
+                      renderizarTexto={(textoCru) =>
+                        renderizarTrechos(interpretarMensagem(textoCru, resolverMencao), traduzir)
+                      }
+                    />
                   </Fragment>
                 );
               })

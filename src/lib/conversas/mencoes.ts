@@ -1,44 +1,60 @@
-import { normalizarTelefoneParaComparacao } from "@/lib/telefone";
+import { formatarTelefoneParaExibicao, normalizarTelefoneParaComparacao } from "@/lib/telefone";
 
 export type ParticipanteGrupo = { nome: string; telefone: string };
 
+/** Um contato do CRM, pro índice de nomes. Só o que a menção precisa. */
+export type ContatoParaMencao = { nome: string; whatsapp?: string | null };
+
 /**
- * Troca a menção pelo NOME de quem foi mencionado.
+ * De quem é esta menção, escrito do jeito que quem lê reconhece.
  *
- * No WhatsApp, mencionar alguém num grupo grava no texto o telefone cru: `@87600555651`. Quem lê
- * pelo WhatsApp vê o nome, porque o aplicativo troca na hora de exibir usando a lista do grupo. O
- * CRM mostrava o texto como veio — e, pior, o detector de telefone reconhecia aquilo como um número
- * compartilhado e pendurava os atalhos "WhatsApp" e "Ligar" ao lado. Uma menção a uma pessoa da
- * conversa virava um convite a ligar pra ela.
+ * No WhatsApp, mencionar alguém num grupo grava no texto o telefone cru: `@5587600555651`. Quem lê
+ * pelo aplicativo vê um nome, porque o WhatsApp troca na hora de exibir. O CRM mostrava o número
+ * como veio — e o detector de telefone ainda pendurava "WhatsApp" e "Ligar" ao lado, de modo que
+ * citar alguém da conversa virava um convite a ligar pra essa pessoa.
  *
- * A troca acontece na EXIBIÇÃO, não na gravação: o nome de perfil muda quando a pessoa quiser, e
+ * A ORDEM DAS TRÊS FONTES É A REGRA, e ela é esta:
+ *
+ *   1. O nome que ESTA empresa salvou no contato. É o nome pelo qual quem atende conhece a pessoa,
+ *      e ganha de todos os outros — do mesmo jeito que o celular mostra o nome da sua agenda em vez
+ *      do nome que a pessoa escolheu pra si.
+ *   2. O nome que a PRÓPRIA pessoa pôs no perfil (o `pushName` que vem na lista do grupo). Serve
+ *      pra quem ainda não está cadastrado: é melhor que um número, e é o que o WhatsApp mostraria.
+ *   3. O telefone formatado, `+55 (62) 99999-9999`. Último recurso, e honesto: dígito colado não se
+ *      lê como telefone, e inventar nome seria pior que mostrar número.
+ *
+ * A troca acontece na EXIBIÇÃO, nunca na gravação: o nome de perfil muda quando a pessoa quiser, e
  * reescrever a mensagem guardada congelaria o nome de hoje no histórico de ontem.
  *
- * Quem não está na lista continua como veio. Melhor um número honesto do que um nome inventado —
- * e, como o nome substituto não parece telefone, só a menção reconhecida deixa de virar atalho.
- *
- * Pura de propósito: é regra de texto, e regra de texto se testa sem navegador.
+ * Devolve uma função, e não um texto, porque quem chama precisa resolver uma menção por vez,
+ * enquanto varre o texto — e montar os dois índices a cada menção de cada mensagem de uma conversa
+ * longa seria refazer o mesmo trabalho centenas de vezes.
  */
-export function aplicarMencoes(texto: string, participantes: ParticipanteGrupo[] | null | undefined): string {
-  if (!texto.includes("@") || !participantes?.length) return texto;
-
-  // Índice por telefone normalizado: a menção traz o número com DDI e sem máscara, a lista do grupo
-  // pode ter vindo em outro formato. É a mesma comparação que decide se dois números são a mesma
-  // pessoa em todo o resto do CRM.
+export function criarResolvedorDeMencao(
+  contatos: readonly ContatoParaMencao[] | null | undefined,
+  participantes: readonly ParticipanteGrupo[] | null | undefined,
+): (digitos: string) => string {
+  // Chave: telefone na forma canônica. A menção traz o número com DDI e sem máscara, o contato
+  // pode ter sido salvo como "(62) 99999-9999". É a mesma comparação que decide, em todo o resto
+  // do CRM, se dois números são a mesma pessoa.
   const porTelefone = new Map<string, string>();
-  for (const p of participantes) {
-    const chave = normalizarTelefoneParaComparacao(p.telefone);
-    // Participante sem nome entra na lista com o próprio telefone como nome: trocar número por
-    // número não ajuda ninguém, e ainda tiraria o atalho de quem talvez quisesse usá-lo.
-    if (chave && p.nome && p.nome !== p.telefone) porTelefone.set(chave, p.nome);
-  }
-  if (!porTelefone.size) return texto;
 
-  // 8 a 15 dígitos cobre do número sem DDI ao internacional mais longo (E.164 vai até 15).
-  return texto.replace(/@(\d{8,15})\b/g, (original, digitos: string) => {
-    const nome = porTelefone.get(normalizarTelefoneParaComparacao(digitos));
-    return nome ? `@${nome}` : original;
-  });
+  // Participantes primeiro, contatos depois: quem vem depois sobrescreve, e é assim que o nome
+  // salvo pela empresa ganha do nome que o dono do número escolheu pra si.
+  for (const p of participantes ?? []) {
+    const chave = normalizarTelefoneParaComparacao(p.telefone);
+    // Participante sem nome entra na lista com o próprio telefone no lugar do nome. Trocar número
+    // por número não ajuda ninguém — e deixaria passar como "nome" algo que o passo 3 formataria
+    // bem melhor. Exigir uma letra é o teste que separa nome de número em qualquer formato.
+    if (chave && /\p{L}/u.test(p.nome)) porTelefone.set(chave, p.nome);
+  }
+  for (const c of contatos ?? []) {
+    const chave = c.whatsapp ? normalizarTelefoneParaComparacao(c.whatsapp) : "";
+    if (chave && c.nome.trim()) porTelefone.set(chave, c.nome.trim());
+  }
+
+  return (digitos) =>
+    porTelefone.get(normalizarTelefoneParaComparacao(digitos)) ?? formatarTelefoneParaExibicao(digitos);
 }
 
 /**

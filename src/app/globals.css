@@ -3451,6 +3451,26 @@ table.tbl tbody tr:hover td {
   text-decoration: underline;
 }
 
+/* Menção a uma pessoa dentro da mensagem (`@Fulano`). Destacada como no WhatsApp: a citação salta
+   da frase sem virar botão. NÃO é clicável de propósito — marcar alguém é citar, e pendurar ali um
+   atalho de ligação foi exatamente o defeito que a menção tinha antes.
+
+   Cor da marca mais peso, e os dois juntos porque nem todo tema separa as duas coisas: no claro a
+   tinta da marca é a mesma do texto, e quem destaca é o peso; no escuro a cor já basta. Assim a
+   menção se lê como destaque nos dois, sem regra por tema. */
+.wa-mencao {
+  color: var(--blue);
+  font-weight: 600;
+}
+
+/* `*assim*` do WhatsApp. O peso é escrito aqui, e não deixado no padrão do navegador, porque
+   dentro do balão o texto já tem peso próprio: sem um valor explícito a diferença entre a frase
+   normal e a frase enfatizada ficava pequena demais pra cumprir o que a pessoa pediu ao escrever
+   os asteriscos. */
+.bubble strong {
+  font-weight: 700;
+}
+
 /* Os dois balões são claros agora, então a hora segue a mesma opacidade dos dois lados. A regra
    que subia pra 0,85 existia porque o balão enviado era escuro. */
 .bubble.out .tm {
