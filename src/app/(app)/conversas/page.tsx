@@ -106,7 +106,7 @@ import {
   IconVideoCam,
   IconVolume,
 } from "@/components/icons";
-import { FloatingDropdown, RadioList, Toggle, Topbar } from "@/components/ui";
+import { FloatingDropdown, Modal, RadioList, Toggle, Topbar } from "@/components/ui";
 import { SeletorDeData } from "@/components/seletor-de-data";
 
 const FILTROS_CONVERSA = [
@@ -773,7 +773,6 @@ function ConversasPageInner() {
   const [fotoParticipante, setFotoParticipante] = useState<string | null>(null);
   const [carregandoFotoParticipante, setCarregandoFotoParticipante] = useState(false);
   const [criandoConversaParticipante, setCriandoConversaParticipante] = useState(false);
-  const participanteRef = useRef<HTMLDivElement>(null);
   const naoOficial = useIntegracaoNaoOficial();
   // Status da API oficial (Meta). Sem hook compartilhado com polling (o `useIntegracaoMeta` só
   // busca uma vez); polling próprio aqui porque a conversa some/reaparece conforme o canal
@@ -825,7 +824,6 @@ function ConversasPageInner() {
   useFecharAoClicarFora(midiasRef, midiasAberto, () => setMidiasAberto(false));
   useFecharAoClicarFora(participantesRef, participantesAberto, () => setParticipantesAberto(false));
   useFecharAoClicarFora(dadosGrupoRef, dadosGrupoAberto, () => setDadosGrupoAberto(false));
-  useFecharAoClicarFora(participanteRef, !!participanteAberto, () => setParticipanteAberto(null));
 
   // Reseta o estado da foto assim que o participante clicado muda. Ajusta durante a renderização
   // (não num `useEffect`), mesmo padrão já usado no resto do arquivo pra "resetar estado derivado
@@ -8422,121 +8420,150 @@ function ConversasPageInner() {
         </div>
       ) : null}
 
-      {participanteAberto ? (
-        <div ref={participanteRef} className="wa-email-modal wa-email-floating wa-participante-modal">
-          <div className="wa-email-drag">
-            <div>
-              <p className="n">Contato</p>
-            </div>
-            <button
-              type="button"
-              className="modal-close-btn"
-              aria-label={traduzir("Fechar")}
-              onClick={() => setParticipanteAberto(null)}
-            >
-              <IconClose width={12} height={12} />
-            </button>
-          </div>
-          <div className="wa-dados-grupo-corpo">
-            <div className="avatar wa-dados-grupo-avatar">
-              {carregandoFotoParticipante ? (
-                <span className="wa-participante-foto-carregando" />
-              ) : fotoParticipante ? (
-                <img src={fotoParticipante} alt="" className="wa-avatar-foto" />
-              ) : (
-                (() => {
-                  // As iniciais saem do nome IDENTIFICADO. Tiradas do identificador cru, saíam
-                  // dois dígitos ("67") fazendo as vezes de iniciais de uma pessoa.
-                  const quem = identificar(participanteAberto);
-                  return quem.temNomeReal
-                    ? quem.nome
-                        .split(" ")
-                        .filter(Boolean)
-                        .slice(0, 2)
-                        .map((p) => p[0])
-                        .join("")
-                        .toUpperCase()
-                    : "?";
-                })()
-              )}
-            </div>
-            {(() => {
+      {/*
+        O CARTÃO DA PESSOA, no meio da tela.
+        
+        Era uma caixinha flutuante com o mesmo desenho dos painéis auxiliares do CRM. Mas isto aqui
+        não é painel auxiliar: é a ficha de uma pessoa, o mesmo gesto do WhatsApp quando se toca num
+        participante — e lá ela abre centralizada, com a foto grande, o nome, o número e o que dá
+        pra fazer com aquela pessoa. Reusa o `Modal` que o CRM já tem (fecha com Esc e com clique no
+        fundo), pra não nascer um terceiro jeito de abrir janela nesta tela.
+        
+        O QUE NÃO ESTÁ AQUI, e é de propósito: o WhatsApp mostra "Vídeo" ao lado de "Conversar" e
+        "Ligar". O CRM não faz chamada de vídeo. Um botão que não liga pra lugar nenhum é enfeite, e
+        enfeite não entra.
+      */}
+      <Modal
+        aberto={participanteAberto !== null}
+        onFechar={() => setParticipanteAberto(null)}
+        titulo={traduzir("Contato")}
+        largura={380}
+      >
+        {participanteAberto
+          ? (() => {
               const quem = identificar(participanteAberto);
+              const conversaDele = quem.telefone
+                ? conversaIndividualDoParticipante(participanteAberto.telefone)
+                : null;
+              /*
+               * Os grupos que esta pessoa e a empresa têm em comum — a mesma seção que o WhatsApp
+               * mostra, e com dado de verdade: sai das conversas de grupo do próprio CRM que têm
+               * este identificador na lista de participantes.
+               *
+               * Procura pelos DOIS identificadores porque um grupo pode ter guardado o telefone e
+               * outro o LID, dependendo de quando ele foi cadastrado.
+               */
+              const gruposEmComum = conversas.filter(
+                (c) =>
+                  c.ehGrupo &&
+                  c.id !== aberta.id &&
+                  c.participantesGrupo?.some((p) => p.telefone === quem.identificador),
+              );
+              const iniciais = quem.temNomeReal
+                ? quem.nome
+                    .split(" ")
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .map((p) => p[0])
+                    .join("")
+                    .toUpperCase()
+                : "?";
+
               return (
-                <>
-                  <p className="wa-dados-grupo-nome">{quem.nome}</p>
-                  {/*
-                    O telefone só aparece quando É telefone.
-                    
-                    O WhatsApp passou a identificar participante de grupo por LID, que tem cara de
-                    número e não é. Escrever aquilo aqui embaixo do nome, onde todo mundo lê como
-                    "telefone desta pessoa", seria mostrar um número que não existe.
-                  */}
-                  <p className="wa-dados-grupo-descricao hint">
+                <div className="wa-ficha-pessoa">
+                  <div className="avatar wa-ficha-foto">
+                    {carregandoFotoParticipante ? (
+                      <span className="wa-participante-foto-carregando" />
+                    ) : fotoParticipante ? (
+                      <img src={fotoParticipante} alt="" className="wa-avatar-foto" />
+                    ) : (
+                      iniciais
+                    )}
+                  </div>
+
+                  <p className="wa-ficha-nome">{quem.nome}</p>
+
+                  {/* O número só aparece quando É número. O identificador de grupo do WhatsApp tem
+                      cara de telefone e não é: escrevê-lo aqui, onde todo mundo lê "o número desta
+                      pessoa", seria mostrar um número que não existe. */}
+                  <p className="wa-ficha-numero">
                     {quem.telefone ?? traduzir("O WhatsApp não informou o número desta pessoa.")}
                   </p>
-                  {/* Ligar, do mesmo jeito que o WhatsApp oferece — e só quando há pra onde ligar. */}
+
                   {quem.telefone ? (
-                    <a
-                      className="btn"
-                      style={{ marginTop: 12, width: "100%", textAlign: "center" }}
-                      href={`tel:+${participanteAberto.telefone.replace(/\D/g, "")}`}
-                    >
-                      {traduzir("Ligar")}
-                    </a>
+                    <div className="wa-ficha-acoes">
+                      <button
+                        type="button"
+                        className="wa-ficha-acao"
+                        disabled={criandoConversaParticipante}
+                        onClick={async () => {
+                          if (conversaDele) {
+                            setSelectedId(conversaDele.id);
+                            setParticipanteAberto(null);
+                            return;
+                          }
+                          setCriandoConversaParticipante(true);
+                          try {
+                            const nova = await criarConversaIndividual(
+                              quem.nome,
+                              participanteAberto.telefone,
+                              "WhatsApp",
+                            );
+                            setSelectedId(nova.id);
+                            setParticipanteAberto(null);
+                          } catch (erro) {
+                            console.error("Falha ao iniciar conversa com participante:", erro);
+                          } finally {
+                            setCriandoConversaParticipante(false);
+                          }
+                        }}
+                      >
+                        <IconConversas width={20} height={20} />
+                        <span>{criandoConversaParticipante ? traduzir("Abrindo…") : traduzir("Conversar")}</span>
+                      </button>
+                      <a
+                        className="wa-ficha-acao"
+                        href={`tel:+${participanteAberto.telefone.replace(/\D/g, "")}`}
+                      >
+                        <IconTelefone width={20} height={20} />
+                        <span>{traduzir("Ligar")}</span>
+                      </a>
+                    </div>
                   ) : null}
-                </>
+
+                  {gruposEmComum.length ? (
+                    <div className="wa-ficha-secao">
+                      <p className="wa-ficha-secao-titulo">
+                        {gruposEmComum.length} {traduzir("grupos em comum")}
+                      </p>
+                      {gruposEmComum.map((g) => (
+                        <button
+                          type="button"
+                          key={g.id}
+                          className="wa-ficha-grupo"
+                          onClick={() => {
+                            setSelectedId(g.id);
+                            setParticipanteAberto(null);
+                          }}
+                        >
+                          <span className="avatar" style={{ width: 34, height: 34, fontSize: 12 }}>
+                            {g.fotoUrl ? (
+                              <img src={g.fotoUrl} alt="" className="wa-avatar-foto" />
+                            ) : (
+                              g.initials
+                            )}
+                          </span>
+                          <span className="wa-ficha-grupo-nome">{g.nome}</span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
               );
-            })()}
-            {(() => {
-              const quem = identificar(participanteAberto);
-              /*
-                Sem telefone não há conversa individual pra abrir: `criarConversaIndividual` com um
-                LID criaria uma conversa com um número inexistente, que nunca entregaria mensagem
-                nenhuma e ficaria pra sempre na lista. Melhor não oferecer do que oferecer quebrado.
-              */
-              if (!quem.telefone) return null;
-              const conversaDele = conversaIndividualDoParticipante(participanteAberto.telefone);
-              return (
-                <button
-                  type="button"
-                  className="btn primary"
-                  style={{ marginTop: 12, width: "100%" }}
-                  disabled={criandoConversaParticipante}
-                  title={
-                    conversaDele
-                      ? `Abrir conversa individual com ${participanteAberto.nome}`
-                      : `Iniciar conversa com ${participanteAberto.nome}`
-                  }
-                  onClick={async () => {
-                    if (conversaDele) {
-                      setSelectedId(conversaDele.id);
-                      setParticipanteAberto(null);
-                      return;
-                    }
-                    setCriandoConversaParticipante(true);
-                    try {
-                      const nova = await criarConversaIndividual(
-                        participanteAberto.nome,
-                        participanteAberto.telefone,
-                        "WhatsApp",
-                      );
-                      setSelectedId(nova.id);
-                      setParticipanteAberto(null);
-                    } catch (erro) {
-                      console.error("Falha ao iniciar conversa com participante:", erro);
-                    } finally {
-                      setCriandoConversaParticipante(false);
-                    }
-                  }}
-                >
-                  {criandoConversaParticipante ? "Iniciando…" : "Enviar mensagem"}
-                </button>
-              );
-            })()}
-          </div>
-        </div>
-      ) : null}
+            })()
+          : null}
+      </Modal>
+
 
       {respostasGerenciarAberto ? (
         <div
