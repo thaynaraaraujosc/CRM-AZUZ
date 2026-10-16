@@ -759,6 +759,8 @@ function ConversasPageInner() {
    */
   const gruposJaConsultados = useRef<Set<string>>(new Set());
   const [participantesAberto, setParticipantesAberto] = useState(false);
+  const [atualizandoParticipantes, setAtualizandoParticipantes] = useState(false);
+  const [erroParticipantes, setErroParticipantes] = useState<string | null>(null);
   const [participantesPos, setParticipantesPos] = useState<{ x: number; y: number } | null>(null);
   const participantesRef = useRef<HTMLDivElement>(null);
   const [dadosGrupoAberto, setDadosGrupoAberto] = useState(false);
@@ -8315,15 +8317,61 @@ function ConversasPageInner() {
               <p className="n">{traduzir("Participantes")}</p>
               <p className="s">{aberta.participantesGrupo?.length ?? 0} pessoas em {aberta.nome}</p>
             </div>
-            <button
-              type="button"
-              className="modal-close-btn"
-              aria-label={traduzir("Fechar")}
-              onClick={() => setParticipantesAberto(false)}
-            >
-              <IconClose width={12} height={12} />
-            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              {/*
+                Perguntar de novo quem está no grupo.
+                
+                A lista é guardada na primeira vez que o grupo aparece e nunca mais — então ela
+                envelhece: quem entrou depois não aparece, quem saiu continua aparecendo. Sem este
+                botão, a única saída era esperar que alguém mandasse mensagem.
+              */}
+              <button
+                type="button"
+                className="btn"
+                style={{ fontSize: 11, padding: "4px 8px" }}
+                disabled={atualizandoParticipantes}
+                onClick={async () => {
+                  setAtualizandoParticipantes(true);
+                  setErroParticipantes(null);
+                  try {
+                    const resposta = await fetch(
+                      `/api/conversas/${encodeURIComponent(aberta.id)}/participantes`,
+                      {
+                        method: "POST",
+                        headers: { "content-type": "application/json" },
+                        body: JSON.stringify({ forcar: true }),
+                      },
+                    );
+                    const dados = (await resposta.json().catch(() => null)) as
+                      | { participantesGrupo?: unknown[]; erro?: string }
+                      | null;
+                    if (dados?.erro) setErroParticipantes(dados.erro);
+                    if (dados?.participantesGrupo?.length) recarregarConversas();
+                  } catch (erro) {
+                    console.error("Falha ao atualizar participantes do grupo:", erro);
+                    setErroParticipantes(traduzir("Não deu pra falar com o WhatsApp agora."));
+                  } finally {
+                    setAtualizandoParticipantes(false);
+                  }
+                }}
+              >
+                {atualizandoParticipantes ? traduzir("Atualizando…") : traduzir("Atualizar")}
+              </button>
+              <button
+                type="button"
+                className="modal-close-btn"
+                aria-label={traduzir("Fechar")}
+                onClick={() => setParticipantesAberto(false)}
+              >
+                <IconClose width={12} height={12} />
+              </button>
+            </div>
           </div>
+          {erroParticipantes ? (
+            <p className="hint" style={{ padding: "6px 0 0" }}>
+              {erroParticipantes}
+            </p>
+          ) : null}
           {aberta.participantesGrupo?.length ? (
             <div className="wa-participantes-lista">
               {aberta.participantesGrupo.map((p) => {
