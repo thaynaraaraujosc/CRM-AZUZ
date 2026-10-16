@@ -21052,3 +21052,122 @@ td.trafego-col-crm:first-of-type {
 .form-public-campos.sem-paginas {
   margin-top: 16px;
 }
+
+/* ---------------------------------------------------------------- ficha da pessoa
+   O cartão que abre ao tocar num participante do grupo, no meio da tela.
+   
+   É o gesto do WhatsApp: foto grande, nome, número e o que dá pra fazer com aquela pessoa. O
+   desenho segue os tokens do CRM — nada de sombra colorida, vidro ou arredondamento exagerado;
+   o que dá a sensação de acabado aqui é proporção e espaçamento, não efeito. */
+.wa-ficha-pessoa {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--space-2) 0 0;
+}
+
+/* 112px: grande o bastante pra a foto ser a primeira coisa que se lê, como no WhatsApp, sem virar
+   o painel inteiro numa tela de notebook. */
+.wa-ficha-foto {
+  width: 112px;
+  height: 112px;
+  font-size: 34px;
+  margin-bottom: var(--space-4);
+}
+
+.wa-ficha-nome {
+  font-size: 19px;
+  font-weight: 650;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.wa-ficha-numero {
+  margin: var(--space-1) 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  /* Quando não há número, o que entra aqui é uma frase inteira. Sem isto ela sai numa linha só,
+     espremida contra as bordas. */
+  max-width: 28ch;
+  line-height: 1.4;
+}
+
+/* Conversar e Ligar lado a lado, com a mesma largura: é a fileira de ações do WhatsApp. São duas e
+   não três — o CRM não faz chamada de vídeo, e botão que não liga pra lugar nenhum é enfeite. */
+.wa-ficha-acoes {
+  display: flex;
+  gap: var(--space-2);
+  width: 100%;
+  margin-top: var(--space-5);
+}
+
+.wa-ficha-acao {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md, 10px);
+  background: var(--surface-2, transparent);
+  color: var(--blue);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.wa-ficha-acao:hover:not(:disabled) {
+  background: var(--hover, rgba(0, 0, 0, 0.04));
+}
+
+.wa-ficha-acao:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* Grupos em comum. Mesma seção do WhatsApp, e com dado de verdade: sai das conversas de grupo do
+   próprio CRM que têm esta pessoa na lista de participantes. */
+.wa-ficha-secao {
+  width: 100%;
+  margin-top: var(--space-5);
+  border-top: 1px solid var(--line);
+  padding-top: var(--space-4);
+  text-align: left;
+}
+
+.wa-ficha-secao-titulo {
+  margin: 0 0 var(--space-2);
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--muted);
+}
+
+.wa-ficha-grupo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2);
+  border: 0;
+  border-radius: var(--radius-md, 10px);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.wa-ficha-grupo:hover {
+  background: var(--hover, rgba(0, 0, 0, 0.04));
+}
+
+.wa-ficha-grupo-nome {
+  font-size: 13px;
+  font-weight: 550;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
