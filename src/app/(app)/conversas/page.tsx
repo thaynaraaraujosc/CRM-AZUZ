@@ -7,7 +7,6 @@ import {
   useRef,
   useState,
   type CSSProperties,
-  type ReactNode,
 } from "react";
 import { useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
@@ -52,7 +51,9 @@ import { HOJE_ISO } from "@/lib/hoje";
 import { useFunis } from "@/lib/funis-context";
 import { useIdioma } from "@/lib/idioma-context";
 import { useMensagensExtra } from "@/lib/mensagens-extra-context";
-import { aplicarMencoes, filtrarParticipantes, inserirMencao, mencaoEmDigitacao } from "@/lib/conversas/mencoes";
+import { criarResolvedorDeMencao, filtrarParticipantes, inserirMencao, mencaoEmDigitacao } from "@/lib/conversas/mencoes";
+import { interpretarMensagem } from "@/lib/conversas/formatacao-mensagem";
+import { renderizarTrechos } from "@/components/conversas/TextoDaMensagem";
 import { normalizarTelefoneParaComparacao } from "@/lib/telefone";
 import {
   useConfigConversas,
@@ -210,74 +211,6 @@ function lerComoDataUrl(file: File | Blob): Promise<string> {
     leitor.onload = () => resolve(leitor.result as string);
     leitor.onerror = () => reject(new Error("Falha ao ler o arquivo"));
     leitor.readAsDataURL(file);
-  });
-}
-
-// URL e telefone no mesmo passe: dois grupos de captura, um por tipo, pra `split` continuar
-// devolvendo os pedaços intercalados de forma previsível.
-//
-// O telefone cobre o jeito que as pessoas escrevem de verdade. Com e sem +55, com DDD entre
-// parênteses, com hífen, com espaço. Exige 10 a 13 dígitos pra não transformar preço, CEP ou
-// número de pedido em link de ligação.
-const REGEX_LINKIFICAVEL = /(https?:\/\/[^\s]+)|((?:\+?55\s?)?(?:\(?\d{2}\)?[\s.-]?)?\d{4,5}[\s.-]?\d{4})/g;
-
-/** Só dígitos, com o 55 do Brasil na frente. Formato que `wa.me` exige. */
-function telefoneParaWhatsapp(bruto: string): string | null {
-  const digitos = bruto.replace(/\D/g, "");
-  if (digitos.length < 10 || digitos.length > 13) return null;
-  return digitos.startsWith("55") ? digitos : `55${digitos}`;
-}
-
-/**
- * Transforma link e telefone do texto da mensagem em algo clicável.
- *
- * O link já era: sem isso, um endereço mandado na conversa ficava como texto plano.
- *
- * O telefone entrou depois, por paridade com o Instagram: lá, mandar um número faz aparecer os
- * atalhos de "Mensagem no WhatsApp" e "Ligar" pra quem recebe. No CRM ficava um número solto, e
- * quem atendia tinha que selecionar e copiar na mão pra ligar ou abrir a conversa.
- */
-/* `traduzir` entra por parâmetro, não por hook: esta é uma função comum que devolve nós, não um
-   componente, e hook só pode ser chamado de dentro de um. */
-function renderizarTextoComLinks(texto: string, traduzir: (s: string) => string): ReactNode[] {
-  // `String.split` com grupos de captura intercala os pedaços não casados com os casados. Com dois
-  // grupos, cada trecho casado vira uma dupla (url, telefone) em que só um dos dois é preenchido.
-  // Mais seguro que re-testar a regex global (que mantém `lastIndex` entre chamadas e dá resultado
-  // errado se reusada assim).
-  const partes = texto.split(REGEX_LINKIFICAVEL);
-  return partes.map((parte, i) => {
-    if (parte === undefined || parte === "") return null;
-    const resto = i % 3;
-    if (resto === 1) {
-      return (
-        <a key={i} href={parte} target="_blank" rel="noopener noreferrer" className="wa-link-mensagem">
-          {parte}
-        </a>
-      );
-    }
-    if (resto === 2) {
-      const numero = telefoneParaWhatsapp(parte);
-      if (!numero) return <span key={i}>{parte}</span>;
-      return (
-        <span key={i} className="wa-telefone-detectado">
-          {parte}
-          <span className="wa-telefone-acoes">
-            <a
-              href={`https://wa.me/${numero}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="wa-telefone-acao"
-            >
-              WhatsApp
-            </a>
-            <a href={`tel:+${numero}`} className="wa-telefone-acao">
-              {traduzir("Ligar")}
-            </a>
-          </span>
-        </span>
-      );
-    }
-    return <span key={i}>{parte}</span>;
   });
 }
 
@@ -1128,6 +1061,17 @@ function ConversasPageInner() {
   const localizacao = localizarNoFunil(funis, aberta.nome);
 
   const contatoDaConversa = contatos.find((c) => c.nome === aberta.nome) ?? null;
+
+  /*
+   * De quem é cada menção: montado uma vez por desenho da tela e reusado em todas as mensagens.
+   *
+   * Sem `useMemo` de propósito. Este arquivo não usa nenhum, e enfiar o primeiro no meio de um
+   * componente desta altura é convidar erro de ordem de hook por um ganho que não existe: o índice
+   * é a agenda da empresa, algumas centenas de linhas, e custa microssegundos. O que importava
+   * evitar — remontar o índice uma vez por MENSAGEM da conversa — já está evitado por ele ser
+   * montado aqui, e não lá dentro.
+   */
+  const resolverMencao = criarResolvedorDeMencao(contatos, aberta.participantesGrupo);
 
   function etapaPadraoPara(funilId: string) {
     const f = funis.find((x) => x.id === funilId);
@@ -4487,15 +4431,22 @@ function ConversasPageInner() {
                     msg.status === "erro" && msg.id ? () => tentarNovamenteMensagem(msg.id!) : undefined
                   }
                   renderizarTexto={(textoCru) => {
-                    // Menção vira NOME antes de qualquer outra coisa. O WhatsApp grava a menção
-                    // como telefone cru (`@87600555651`) e troca pelo nome só na hora de exibir;
-                    // aqui, além de aparecer o número, o detector de telefone pendurava "WhatsApp"
-                    // e "Ligar" ao lado — citar alguém da conversa virava um convite a ligar pra
-                    // essa pessoa. Ver `aplicarMencoes`.
-                    const texto = aplicarMencoes(textoCru, aberta.participantesGrupo);
-                    return texto.length > 500 && !mensagensExpandidas.has(chave) ? (
+                    /*
+                     * Um passe só sobre o texto, em `interpretarMensagem`: negrito, menção,
+                     * endereço e telefone saem classificados de lá, e aqui só viram tela.
+                     *
+                     * O corte de 500 caracteres acontece ANTES de interpretar, e não depois: a
+                     * contagem é do que a pessoa escreveu, e interpretar primeiro faria "Ler mais"
+                     * aparecer em lugar diferente conforme a mensagem tivesse ou não um link.
+                     */
+                    const cortar = textoCru.length > 500 && !mensagensExpandidas.has(chave);
+                    const trechos = interpretarMensagem(
+                      cortar ? textoCru.slice(0, 500) : textoCru,
+                      resolverMencao,
+                    );
+                    return cortar ? (
                       <>
-                        {renderizarTextoComLinks(texto.slice(0, 500), traduzir)}…{" "}
+                        {renderizarTrechos(trechos, traduzir)}…{" "}
                         <button
                           type="button"
                           className="wa-ler-mais"
@@ -4505,7 +4456,7 @@ function ConversasPageInner() {
                         </button>
                       </>
                     ) : (
-                      renderizarTextoComLinks(texto, traduzir)
+                      renderizarTrechos(trechos, traduzir)
                     );
                   }}
                 />

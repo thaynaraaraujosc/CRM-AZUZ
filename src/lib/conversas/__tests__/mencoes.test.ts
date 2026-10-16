@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { aplicarMencoes } from "../mencoes";
+import { criarResolvedorDeMencao } from "../mencoes";
 
 /**
- * A REGRESSÃO QUE ESTES TESTES PRENDEM: menção a uma pessoa do grupo aparecendo como número cru,
- * com os atalhos "WhatsApp" e "Ligar" pendurados — um convite a ligar pra quem só foi citado.
+ * A REGRESSÃO QUE ESTES TESTES PRENDEM: menção a uma pessoa aparecendo como número cru, com os
+ * atalhos "WhatsApp" e "Ligar" pendurados — um convite a ligar pra quem só foi citado.
+ *
+ * E a regra nova, que é de ordem: o nome que ESTA empresa salvou ganha do nome que o dono do
+ * número escolheu pra si, e o número formatado é o último recurso.
  */
 const participantes = [
   { nome: "Raquel Fernandes Brito", telefone: "5587600555651" },
@@ -12,46 +15,60 @@ const participantes = [
   { nome: "556299990002", telefone: "556299990002" },
 ];
 
-describe("aplicarMencoes", () => {
-  it("troca a menção pelo nome de quem foi mencionado", () => {
-    expect(aplicarMencoes("@5587600555651 disponibilizei as cenas", participantes)).toBe(
-      "@Raquel Fernandes Brito disponibilizei as cenas",
-    );
+const contatos = [
+  { nome: "Raquel — Studio Bia", whatsapp: "5587600555651" },
+  { nome: "Sem telefone salvo", whatsapp: null },
+];
+
+describe("de quem é a menção", () => {
+  it("prefere o nome salvo no CRM ao nome que a pessoa pôs no perfil", () => {
+    // É o que o celular faz: mostra o nome da SUA agenda, não o que a pessoa escolheu pra si.
+    const resolver = criarResolvedorDeMencao(contatos, participantes);
+
+    expect(resolver("5587600555651")).toBe("Raquel — Studio Bia");
   });
 
-  it("casa mesmo com a lista do grupo em outro formato de número", () => {
-    // A menção vem com DDI e sem máscara; a lista pode ter vindo como "(62) 99999-0001".
-    expect(aplicarMencoes("bom dia @5562999990001", participantes)).toBe("bom dia @Ariane Aires de Brito");
+  it("usa o nome do perfil quando o contato não está salvo", () => {
+    const resolver = criarResolvedorDeMencao(contatos, participantes);
+
+    expect(resolver("5562999990001")).toBe("Ariane Aires de Brito");
   });
 
-  it("troca várias menções na mesma mensagem", () => {
-    const r = aplicarMencoes("@5587600555651 e @5562999990001, podem ver?", participantes);
+  it("casa mesmo com o telefone guardado em outro formato", () => {
+    // A menção vem com DDI e sem máscara; a lista do grupo pode ter vindo como "(62) 99999-0001".
+    const resolver = criarResolvedorDeMencao(null, participantes);
 
-    expect(r).toBe("@Raquel Fernandes Brito e @Ariane Aires de Brito, podem ver?");
+    expect(resolver("5562999990001")).toBe("Ariane Aires de Brito");
   });
 
-  it("quem não está na lista continua como veio", () => {
-    // Melhor um número honesto do que um nome inventado.
-    expect(aplicarMencoes("@5511888887777 vc viu?", participantes)).toBe("@5511888887777 vc viu?");
+  it("sem nome em lugar nenhum, mostra o telefone legível em vez de dígito colado", () => {
+    /*
+     * O caso que motivou tudo: `@33230329753761` aparecia inteiro na tela, e o detector de telefone
+     * ainda mordia onze dos quatorze dígitos pra pendurar "WhatsApp" e "Ligar" no meio da frase.
+     */
+    const resolver = criarResolvedorDeMencao(contatos, participantes);
+
+    expect(resolver("5511888887777")).toBe("+55 (11) 88888-7777");
   });
 
-  it("participante sem nome real não vira troca de número por número", () => {
-    expect(aplicarMencoes("@556299990002 oi", participantes)).toBe("@556299990002 oi");
+  it("participante cujo nome é o próprio número não conta como nome", () => {
+    // Trocar número por número não ajuda ninguém — e esconderia a formatação, que ajuda.
+    const resolver = criarResolvedorDeMencao(null, participantes);
+
+    expect(resolver("556299990002")).toBe("+55 (62) 9999-0002");
   });
 
-  it("não mexe em texto sem menção", () => {
-    expect(aplicarMencoes("o meu está indo rs", participantes)).toBe("o meu está indo rs");
+  it("contato sem telefone salvo não entra no índice", () => {
+    // `whatsapp` nulo não pode virar chave vazia e casar com qualquer menção.
+    const resolver = criarResolvedorDeMencao(contatos, null);
+
+    expect(resolver("5562988887777")).toBe("+55 (62) 98888-7777");
   });
 
-  it("não mexe em e-mail nem em @ de usuário", () => {
-    expect(aplicarMencoes("manda pra contato@azuz.com e chama o @joao", participantes)).toBe(
-      "manda pra contato@azuz.com e chama o @joao",
-    );
-  });
+  it("sem fonte nenhuma, ainda devolve algo legível", () => {
+    const resolver = criarResolvedorDeMencao(null, null);
 
-  it("sem lista de participantes, devolve o texto intacto", () => {
-    expect(aplicarMencoes("@5587600555651 oi", null)).toBe("@5587600555651 oi");
-    expect(aplicarMencoes("@5587600555651 oi", [])).toBe("@5587600555651 oi");
+    expect(resolver("5587600555651")).toBe("+55 (87) 60055-5651");
   });
 });
 
