@@ -51,6 +51,21 @@ describe("de quem é a menção", () => {
     expect(resolver("5511888887777")).toBe("+55 (11) 88888-7777");
   });
 
+  it("identificador de grupo que não é telefone sai como veio, sem virar telefone falso", () => {
+    /*
+     * O WhatsApp passou a identificar participante de grupo por LID: 14 ou 15 dígitos que NÃO são
+     * o número da pessoa. Eles cabem no tamanho de um E.164 e começam por dígitos que parecem
+     * código de país, então não há como distinguir olhando.
+     *
+     * A primeira versão disto devolvia `+33230329753761` — um `+` e quatorze dígitos, com toda a
+     * cara de telefone internacional, embaixo de uma menção. Alguém poderia tentar ligar.
+     */
+    const resolver = criarResolvedorDeMencao(contatos, participantes);
+
+    expect(resolver("33230329753761")).toBe("33230329753761");
+    expect(resolver("157797132062834")).toBe("157797132062834");
+  });
+
   it("participante cujo nome é o próprio número não conta como nome", () => {
     // Trocar número por número não ajuda ninguém — e esconderia a formatação, que ajuda.
     const resolver = criarResolvedorDeMencao(null, participantes);

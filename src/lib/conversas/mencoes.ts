@@ -53,8 +53,19 @@ export function criarResolvedorDeMencao(
     if (chave && c.nome.trim()) porTelefone.set(chave, c.nome.trim());
   }
 
+  /*
+   * Sem nome e sem forma de telefone, o identificador sai como veio.
+   *
+   * É o caso do LID: o WhatsApp passou a identificar participante de grupo por um número de 14 ou
+   * 15 dígitos que NÃO é o telefone da pessoa. Formatá-lo com `+` na frente escreveria um telefone
+   * que não existe — e quem lesse poderia tentar ligar. Mostrar o identificador cru é feio e é
+   * honesto; a frase que vale aqui é a mesma de sempre: melhor um número honesto que um nome
+   * inventado.
+   */
   return (digitos) =>
-    porTelefone.get(normalizarTelefoneParaComparacao(digitos)) ?? formatarTelefoneParaExibicao(digitos);
+    porTelefone.get(normalizarTelefoneParaComparacao(digitos)) ??
+    formatarTelefoneParaExibicao(digitos) ??
+    digitos;
 }
 
 /**

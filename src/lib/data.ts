@@ -637,6 +637,22 @@ export type ConvMensagem = {
    * (`Conversa.ehGrupo`): sem isso não dá pra saber qual dos participantes escreveu cada balão,
    * igual o WhatsApp de verdade mostra. Ausente em conversa individual (não faz sentido lá). */
   remetenteNome?: string;
+  /**
+   * QUEM escreveu, pelo identificador que o WhatsApp usa — não o nome.
+   *
+   * Existe porque o `remetenteNome` sozinho não liga a mensagem a ninguém: dois participantes
+   * podem usar o mesmo nome de perfil, e a lista do grupo muitas vezes vem sem nome nenhum. Com o
+   * identificador guardado, cada mensagem recebida ensina o nome de quem a escreveu, e o painel de
+   * participantes deixa de depender de a API resolver o LID. Ver `participantes.ts`.
+   *
+   * Pode ser um telefone ou um LID (`@lid`), que é o identificador novo de participante de grupo e
+   * NÃO é telefone. Por isso o nome do campo não diz "telefone".
+   */
+  remetenteId?: string;
+  /** O MESMO remetente pelo outro endereçamento, quando a Evolution manda os dois: se o principal
+   *  é o telefone, aqui vem o LID, e vice-versa. Existe porque a lista de participantes do grupo
+   *  pode ter vindo só com um dos dois, e sem o par não haveria como ligar a mensagem à pessoa. */
+  remetenteIdAlt?: string;
   /** Mídia recebida cujo conteúdo real não veio no webhook (mídia embutida em base64 foi desligada
    * de propósito, pra não derrubar o servidor com arquivo grande. Ver `configurarWebhook`): só
    * texto de aviso apareceu na hora. Guarda o suficiente pra buscar o conteúdo de verdade sob

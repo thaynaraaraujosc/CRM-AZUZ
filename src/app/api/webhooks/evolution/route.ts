@@ -193,7 +193,16 @@ export async function processarMensagemRecebida(
   opcoes: { permitirHistorico?: boolean } = {},
 ) {
   const data = item as {
-    key?: { id?: string; remoteJid?: string; fromMe?: boolean; participant?: string };
+    key?: {
+      id?: string;
+      remoteJid?: string;
+      fromMe?: boolean;
+      participant?: string;
+      /* O MESMO participante pelo outro endereçamento. Quando `addressingMode` é `lid`, a Evolution
+         manda o LID num campo e o telefone no outro — e qual vai em qual varia. Ver abaixo. */
+      participantAlt?: string;
+      addressingMode?: string;
+    };
     message?: {
       conversation?: string;
       extendedTextMessage?: { text?: string };
@@ -379,6 +388,16 @@ export async function processarMensagemRecebida(
         // participante na tela, igual o WhatsApp de verdade mostra. Não se aplica fora de grupo (lá
         // "quem mandou" já é o próprio nome da conversa).
         ...(ehGrupo && !fromMe ? { remetenteNome: data.pushName ?? waId } : {}),
+        /*
+         * E QUEM é, pelo identificador. `key.participant` é o único lugar do evento que diz de
+         * qual participante do grupo veio a mensagem.
+         *
+         * Guardar isto é o que permite o painel de participantes mostrar nome: o WhatsApp passou a
+         * identificar participante por LID, e a lista do grupo chega sem nome nenhum. Mas toda
+         * mensagem recebida traz o `pushName` de quem escreveu — então cada mensagem ensina um
+         * nome, e quem já falou no grupo fica identificado sem depender de a API resolver o LID.
+         */
+        ...(ehGrupo && !fromMe ? identificadoresDoRemetente(data.key) : {}),
         // Áudio/imagem recebidos: conteúdo real não veio no payload (base64 desligado de
         // propósito), só esse aviso de que existe. Guarda o suficiente pra buscar sob demanda (ver
         // GET /api/integracoes/whatsapp-nao-oficial/midia): hoje isso acontece automaticamente
@@ -496,4 +515,33 @@ export async function processarMensagemRecebida(
       textoRecebido: texto,
     }).catch((erro) => console.error("[webhook evolution] falha ao disparar automações:", erro));
   }
+}
+
+/**
+ * Os identificadores de quem escreveu num grupo — os DOIS, quando a Evolution manda os dois.
+ *
+ * O WhatsApp passou a endereçar participante de grupo por LID (`addressingMode: 'lid'` no evento),
+ * um identificador de 14 ou 15 dígitos que NÃO é o telefone da pessoa. Nesse modo a Evolution manda
+ * o participante em dois campos, `participant` e `participantAlt`: um traz o LID, o outro traz o
+ * telefone — e qual vai em qual não é estável entre versões.
+ *
+ * Então a escolha é pelo CONTEÚDO: o que termina em `@s.whatsapp.net` é o telefone e vira o
+ * identificador principal, porque é ele que casa com o contato salvo no CRM. O outro é guardado
+ * junto, e não por precaução vaga: a lista de participantes do grupo pode ter vindo só com o LID,
+ * e sem ele não haveria como ligar a mensagem à linha do painel. Ver `participantes.ts`.
+ */
+function identificadoresDoRemetente(key: { participant?: string; participantAlt?: string } | undefined) {
+  const candidatos = [key?.participant, key?.participantAlt].filter(
+    (v): v is string => typeof v === "string" && v.length > 0,
+  );
+  if (!candidatos.length) return {};
+
+  const telefone = candidatos.find((v) => v.includes("@s.whatsapp.net"));
+  const principal = telefone ?? candidatos[0];
+  const outro = candidatos.find((v) => v !== principal);
+
+  return {
+    remetenteId: principal.split("@")[0],
+    ...(outro ? { remetenteIdAlt: outro.split("@")[0] } : {}),
+  };
 }

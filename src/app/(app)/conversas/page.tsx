@@ -52,6 +52,7 @@ import { useFunis } from "@/lib/funis-context";
 import { useIdioma } from "@/lib/idioma-context";
 import { useMensagensExtra } from "@/lib/mensagens-extra-context";
 import { criarResolvedorDeMencao, filtrarParticipantes, inserirMencao, mencaoEmDigitacao } from "@/lib/conversas/mencoes";
+import { identificarParticipante, nomesVistosNasMensagens } from "@/lib/conversas/participantes";
 import { interpretarMensagem } from "@/lib/conversas/formatacao-mensagem";
 import { renderizarTrechos } from "@/components/conversas/TextoDaMensagem";
 import { normalizarTelefoneParaComparacao } from "@/lib/telefone";
@@ -1072,6 +1073,22 @@ function ConversasPageInner() {
    * montado aqui, e não lá dentro.
    */
   const resolverMencao = criarResolvedorDeMencao(contatos, aberta.participantesGrupo);
+
+  /*
+   * Os nomes que as mensagens deste grupo já ensinaram.
+   *
+   * A lista de participantes que a API devolve costuma vir SEM nome nenhum desde que o WhatsApp
+   * passou a endereçar participante por LID. Mas toda mensagem recebida num grupo traz o nome de
+   * perfil de quem escreveu — então quem já falou aqui está identificado, sem depender de a API
+   * resolver coisa nenhuma. É daqui que sai o nome no painel de participantes.
+   */
+  const nomesVistosNoGrupo = aberta.ehGrupo
+    ? nomesVistosNasMensagens(mensagensExtraPorContato[aberta.nome] ?? [])
+    : null;
+
+  /** Um participante com o melhor nome que existe, e com telefone só quando há telefone de verdade. */
+  const identificar = (p: { nome: string; telefone: string }) =>
+    identificarParticipante(p, { nomesVistos: nomesVistosNoGrupo, contatos });
 
   function etapaPadraoPara(funilId: string) {
     const f = funis.find((x) => x.id === funilId);
@@ -8309,31 +8326,45 @@ function ConversasPageInner() {
           </div>
           {aberta.participantesGrupo?.length ? (
             <div className="wa-participantes-lista">
-              {aberta.participantesGrupo.map((p) => (
-                <button
-                  type="button"
-                  className="wa-participante-linha"
-                  key={p.telefone}
-                  onClick={() => {
-                    setParticipantesAberto(false);
-                    setParticipanteAberto(p);
-                  }}
-                >
-                  <span className="avatar" style={{ width: 32, height: 32, fontSize: 12 }}>
-                    {p.nome
-                      .split(" ")
-                      .filter(Boolean)
-                      .slice(0, 2)
-                      .map((parte) => parte[0])
-                      .join("")
-                      .toUpperCase() || "?"}
-                  </span>
-                  <div className="wa-participante-info">
-                    <p className="n">{p.nome}</p>
-                    <p className="s">{p.telefone}</p>
-                  </div>
-                </button>
-              ))}
+              {aberta.participantesGrupo.map((p) => {
+                const quem = identificar(p);
+                return (
+                  <button
+                    type="button"
+                    className="wa-participante-linha"
+                    key={quem.identificador}
+                    onClick={() => {
+                      setParticipantesAberto(false);
+                      setParticipanteAberto(p);
+                    }}
+                  >
+                    <span className="avatar" style={{ width: 32, height: 32, fontSize: 12 }}>
+                      {quem.temNomeReal
+                        ? quem.nome
+                            .split(" ")
+                            .filter(Boolean)
+                            .slice(0, 2)
+                            .map((parte) => parte[0])
+                            .join("")
+                            .toUpperCase()
+                        : "?"}
+                    </span>
+                    <div className="wa-participante-info">
+                      <p className="n">{quem.nome}</p>
+                      {/*
+                        A segunda linha só existe quando tem o que dizer.
+                        
+                        Antes ela repetia o identificador embaixo do identificador — a mesma coisa
+                        duas vezes, uma delas fingindo ser telefone. Sem nome e sem telefone, o
+                        honesto é dizer que ainda não dá pra saber quem é.
+                      */}
+                      <p className="s">
+                        {quem.telefone ?? (quem.temNomeReal ? "" : traduzir("Ainda não identificado"))}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           ) : (
             <p className="hint" style={{ padding: "10px 0" }}>
@@ -8365,18 +8396,58 @@ function ConversasPageInner() {
               ) : fotoParticipante ? (
                 <img src={fotoParticipante} alt="" className="wa-avatar-foto" />
               ) : (
-                participanteAberto.nome
-                  .split(" ")
-                  .filter(Boolean)
-                  .slice(0, 2)
-                  .map((p) => p[0])
-                  .join("")
-                  .toUpperCase() || "?"
+                (() => {
+                  // As iniciais saem do nome IDENTIFICADO. Tiradas do identificador cru, saíam
+                  // dois dígitos ("67") fazendo as vezes de iniciais de uma pessoa.
+                  const quem = identificar(participanteAberto);
+                  return quem.temNomeReal
+                    ? quem.nome
+                        .split(" ")
+                        .filter(Boolean)
+                        .slice(0, 2)
+                        .map((p) => p[0])
+                        .join("")
+                        .toUpperCase()
+                    : "?";
+                })()
               )}
             </div>
-            <p className="wa-dados-grupo-nome">{participanteAberto.nome}</p>
-            <p className="wa-dados-grupo-descricao hint">{participanteAberto.telefone}</p>
             {(() => {
+              const quem = identificar(participanteAberto);
+              return (
+                <>
+                  <p className="wa-dados-grupo-nome">{quem.nome}</p>
+                  {/*
+                    O telefone só aparece quando É telefone.
+                    
+                    O WhatsApp passou a identificar participante de grupo por LID, que tem cara de
+                    número e não é. Escrever aquilo aqui embaixo do nome, onde todo mundo lê como
+                    "telefone desta pessoa", seria mostrar um número que não existe.
+                  */}
+                  <p className="wa-dados-grupo-descricao hint">
+                    {quem.telefone ?? traduzir("O WhatsApp não informou o número desta pessoa.")}
+                  </p>
+                  {/* Ligar, do mesmo jeito que o WhatsApp oferece — e só quando há pra onde ligar. */}
+                  {quem.telefone ? (
+                    <a
+                      className="btn"
+                      style={{ marginTop: 12, width: "100%", textAlign: "center" }}
+                      href={`tel:+${participanteAberto.telefone.replace(/\D/g, "")}`}
+                    >
+                      {traduzir("Ligar")}
+                    </a>
+                  ) : null}
+                </>
+              );
+            })()}
+            {(() => {
+              const quem = identificar(participanteAberto);
+              /*
+                Sem telefone não há conversa individual pra abrir: `criarConversaIndividual` com um
+                LID criaria uma conversa com um número inexistente, que nunca entregaria mensagem
+                nenhuma e ficaria pra sempre na lista. Melhor não oferecer do que oferecer quebrado.
+              */
+              if (!quem.telefone) return null;
               const conversaDele = conversaIndividualDoParticipante(participanteAberto.telefone);
               return (
                 <button

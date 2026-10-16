@@ -335,12 +335,47 @@ async function buscarParticipantesDoGrupo(
 /** De `{ id, pushName }` (ou as variações que cada versão usa) pro par { nome, telefone } que o CRM
  *  guarda. Sem nome, o telefone fica no lugar dele: é o que o próprio WhatsApp Web mostra pra quem
  *  está fora da agenda. */
-function normalizarParticipantes(brutos: unknown[]): { nome: string; telefone: string }[] {
+/**
+ * A lista de participantes do jeito que o CRM guarda: nome e telefone.
+ *
+ * O CUIDADO QUE ESTA FUNÇÃO TEM, e por quê: o WhatsApp migrou a identificação de participante de
+ * grupo para o LID (`@lid`), um identificador de 14 ou 15 dígitos que NÃO é o telefone da pessoa.
+ * Quando isso acontece, o campo `id` vem com o LID, e a versão anterior desta função pegava `id`
+ * primeiro — gravando o LID na coluna chamada `telefone`. O efeito aparecia na tela: painel de
+ * participantes listando `67113209352342` sete vezes, nenhum nome, e menção que nunca casava com
+ * contato nenhum, porque estava comparando um LID com um telefone.
+ *
+ * Então a escolha passa a ser pelo CONTEÚDO, não pela ordem dos campos: entre tudo que veio, vale
+ * primeiro o que é JID de telefone (`@s.whatsapp.net`), depois o que pelo menos não é LID, e o LID
+ * só como último recurso — melhor um identificador que não serve pra ligar do que participante
+ * nenhum na lista.
+ *
+ * Exportada pra ter teste. Sem lista de participantes o grupo ainda funciona, mas perde o nome de
+ * quem fala, e isso já passou despercebido uma vez.
+ */
+export function normalizarParticipantes(brutos: unknown[]): { nome: string; telefone: string }[] {
   return brutos
     .map((p) => {
-      const item = p as { id?: string; jid?: string; pushName?: string; name?: string; notify?: string };
-      const jid = item.id ?? item.jid;
-      const telefone = jid?.split("@")[0];
+      // A lista vem de fora: um `null` ou um número no meio dela derrubava a função inteira, e com
+      // ela o cadastro do grupo. Entrada que não é objeto simplesmente não é participante.
+      if (typeof p !== "object" || p === null) return null;
+      const item = p as {
+        id?: string;
+        jid?: string;
+        lid?: string;
+        phoneNumber?: string;
+        pushName?: string;
+        name?: string;
+        notify?: string;
+      };
+      const candidatos = [item.phoneNumber, item.jid, item.id, item.lid].filter(
+        (v): v is string => typeof v === "string" && v.length > 0,
+      );
+      const escolhido =
+        candidatos.find((v) => v.includes("@s.whatsapp.net")) ??
+        candidatos.find((v) => !v.includes("@lid")) ??
+        candidatos[0];
+      const telefone = escolhido?.split("@")[0];
       if (!telefone) return null;
       return { nome: item.pushName ?? item.name ?? item.notify ?? telefone, telefone };
     })

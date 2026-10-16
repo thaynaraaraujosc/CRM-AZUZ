@@ -89,6 +89,27 @@ export function BolhaMensagem({
     </div>
   ) : null;
 
+  /**
+   * Quem escreveu, num grupo.
+   *
+   * ERA SÓ NO BALÃO DE TEXTO, e esse era o defeito: cada tipo de conteúdo tem o seu `return`, e o
+   * nome do remetente estava escrito dentro do último deles. Áudio, imagem, figurinha, documento e
+   * mídia ainda carregando saíam todos sem autor — num grupo de sete pessoas, um áudio chegava sem
+   * dizer de quem era. É justamente na mídia que o nome faz mais falta: num texto dá pra deduzir
+   * pelo assunto, num áudio não dá pra deduzir nada sem ouvir.
+   *
+   * Agora é uma const, igual ao `rodape`, e entra em todos os `return` — inclusive nos que ainda
+   * vierem a existir, porque quem copiar um bloco existente leva as duas linhas junto.
+   */
+  const remetente =
+    mostrarRemetenteGrupo && msg.tipo === "in" && msg.remetenteNome ? (
+      // `data-autor` escolhe a cor; quem pinta é o CSS, que tem a paleta de cada tema. Ver
+      // `corDoAutor`: a mesma pessoa cai sempre na mesma cor.
+      <span className="wa-remetente-grupo" data-autor={corDoAutor(msg.remetenteNome)}>
+        {msg.remetenteNome}
+      </span>
+    ) : null;
+
   /** Hora + tiquinhos, o rodapé que toda bolha tem. */
   const rodape = (
     <>
@@ -160,6 +181,7 @@ export function BolhaMensagem({
     return (
       <div {...abrir("bubble-localizacao")}>
         {chrome}
+        {remetente}
         {citacao}
         <a
           className="bubble-localizacao-link-area"
@@ -208,6 +230,7 @@ export function BolhaMensagem({
     return (
       <div {...abrir("bubble-contato")}>
         {chrome}
+        {remetente}
         {citacao}
         {aoAbrirContato ? (
           <button type="button" className="bubble-contato-area" onClick={() => aoAbrirContato(msg.contatoCompartilhado!)}>
@@ -229,6 +252,7 @@ export function BolhaMensagem({
     return (
       <div {...abrir("bubble-midia")}>
         {chrome}
+        {remetente}
         {topoDoShare}
         {liberada("imagem") ? (
           <div className={`bubble-imagens${msg.imagens.length > 1 ? " grade" : ""}`}>
@@ -287,6 +311,7 @@ export function BolhaMensagem({
     return (
       <div {...abrir("bubble-midia")}>
         {chrome}
+        {remetente}
         {topoDoShare}
         {msg.linkExterno ? (
           // Vídeo que vive no Instagram: o CRM não guarda cópia, então o que existe é a porta pra
@@ -318,6 +343,7 @@ export function BolhaMensagem({
     return (
       <div {...abrir("bubble-figurinha")}>
         {chrome}
+        {remetente}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="bubble-figurinha-img" src={msg.figurinha.url} alt="Figurinha" />
         {rodape}
@@ -330,6 +356,7 @@ export function BolhaMensagem({
     return (
       <div {...abrir("bubble-documento")}>
         {chrome}
+        {remetente}
         <a
           className="bubble-documento-cartao"
           /*
@@ -373,6 +400,7 @@ export function BolhaMensagem({
     return (
       <div {...abrir("")}>
         {chrome}
+        {remetente}
         <span className="wa-carregar-midia">
           <span className="wa-participante-foto-carregando" />
           {rotuloCarregando}
@@ -387,6 +415,7 @@ export function BolhaMensagem({
     return (
       <div {...abrir("bubble-audio")}>
         {chrome}
+        {remetente}
         <AudioBubblePlayer
           audio={msg.audio}
           tipo={msg.tipo === "in" ? "in" : "out"}
@@ -401,13 +430,7 @@ export function BolhaMensagem({
   return (
     <div {...abrir("")}>
       {chrome}
-      {mostrarRemetenteGrupo && msg.tipo === "in" && msg.remetenteNome ? (
-        // `data-autor` escolhe a cor; quem pinta é o CSS, que tem a paleta de cada tema. Ver
-        // `corDoAutor`: a mesma pessoa cai sempre na mesma cor.
-        <span className="wa-remetente-grupo" data-autor={corDoAutor(msg.remetenteNome)}>
-          {msg.remetenteNome}
-        </span>
-      ) : null}
+      {remetente}
       {citacao}
       {texto}
       {opcoesEnviadas}

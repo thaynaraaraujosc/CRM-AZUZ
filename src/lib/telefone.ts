@@ -35,21 +35,26 @@ export function normalizarTelefoneParaComparacao(numero: string): string {
 }
 
 /**
- * O telefone como se escreve pra uma pessoa ler: `+55 (62) 99999-9999`.
+ * O telefone como se escreve pra uma pessoa ler: `+55 (62) 99999-9999`. `null` quando o que chegou
+ * não tem forma de telefone brasileiro.
  *
- * Existe por causa da menção de quem o CRM não conhece. Mencionar alguém num grupo grava o número
- * cru no texto (`@5562999999999`), e quando não há nome em lugar nenhum pra pôr no lugar o que
- * sobra é esse monte de dígito colado — que ninguém lê como telefone, e que o detector de números
- * ainda tentava transformar em atalho de ligação.
+ * O `null` é o ponto deste arquivo, e ele veio de um erro meu de 15/10/2026. A versão anterior
+ * devolvia `+<dígitos>` pra qualquer coisa que não reconhecesse, e com isso passou a escrever
+ * `+33230329753761` embaixo de uma menção — um `+` e quatorze dígitos, com toda a cara de telefone
+ * internacional. Não é telefone nenhum.
  *
- * Formata só o que tem forma brasileira reconhecível. Número de outro país sai como `+<dígitos>`:
- * inventar parênteses e hífen em cima de um formato que não se conhece deixa o número mais difícil
- * de ler, não menos. Entrada sem dígito nenhum volta como veio, porque devolver string vazia
- * esconderia o problema em vez de mostrá-lo.
+ * O WhatsApp migrou os participantes de grupo pra um identificador novo, o LID (`@lid`), que tem
+ * 14 ou 15 dígitos e NÃO é o número da pessoa. Ele cabe no tamanho de um número E.164, começa por
+ * dígitos que parecem código de país, e não há como distinguir um do outro só olhando. Então a
+ * regra passa a ser: formata o que tem forma brasileira reconhecível, e para o resto devolve
+ * `null` pra quem chamou decidir — em vez de carimbar um `+` na frente e transformar um
+ * identificador interno em telefone falso na tela de alguém.
+ *
+ * Entrada sem dígito nenhum também é `null`: devolver string vazia esconderia o problema.
  */
-export function formatarTelefoneParaExibicao(numero: string): string {
+export function formatarTelefoneParaExibicao(numero: string): string | null {
   const digitos = numero.replace(/\D/g, "");
-  if (!digitos) return numero;
+  if (!digitos) return null;
 
   // Sem DDI, mas com cara de brasileiro: o mesmo teste estreito de `normalizarTelefoneParaComparacao`.
   const brasileiroSemDdi = /^[1-9][1-9]\d{8,9}$/.test(digitos);
@@ -57,7 +62,7 @@ export function formatarTelefoneParaExibicao(numero: string): string {
 
   // 55 + DDD + 8 ou 9 dígitos. Só aqui a máscara brasileira é verdade.
   const casou = /^55([1-9][1-9])(\d{4,5})(\d{4})$/.exec(comDdi);
-  if (!casou) return `+${digitos}`;
+  if (!casou) return null;
 
   const [, ddd, inicio, fim] = casou;
   return `+55 (${ddd}) ${inicio}-${fim}`;
