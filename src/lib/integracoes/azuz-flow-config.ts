@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { CANAIS_DO_FLOW, type CanalDoFlow } from "@/lib/integracoes/azuz-flow-canal";
+import { TEXTO_PADRAO_DA_CONFIRMACAO } from "@/lib/integracoes/azuz-flow-confirmacao-texto";
 
 /**
  * As opções do AZUZ Flow por empresa.
@@ -15,6 +16,19 @@ const CHAVE = "azuz-flow";
 export type ConfigDoFlow = {
   /** Por qual conexão de WhatsApp o lead ganha conversa. */
   canal: CanalDoFlow;
+  /** A confirmação de reunião: liga/desliga e o texto. */
+  confirmacao: {
+    /**
+     * NASCE DESLIGADA, e não é timidez de produto.
+     *
+     * Ligar isto faz o CRM mandar mensagem, sozinho, pra quem nunca escreveu, por um número que
+     * pode ser bloqueado por denúncia. Uma empresa que nunca abriu essa tela não escolheu isso — e
+     * um padrão ligado significaria todo mundo começando a disparar na primeira atualização.
+     */
+    ativa: boolean;
+    /** O que a pessoa recebe. Vazio vale como "use o padrão". */
+    texto: string;
+  };
 };
 
 export const CONFIG_PADRAO: ConfigDoFlow = {
@@ -31,6 +45,7 @@ export const CONFIG_PADRAO: ConfigDoFlow = {
    * falham em silêncio. Quem quer o QR escolhe, depois de conferir as automações.
    */
   canal: "oficial",
+  confirmacao: { ativa: false, texto: TEXTO_PADRAO_DA_CONFIRMACAO },
 };
 
 /**
@@ -47,8 +62,20 @@ export function lerConfigDoFlow(dados: unknown): ConfigDoFlow {
   if (typeof dados !== "object" || dados === null) return CONFIG_PADRAO;
   const bruto = dados as Record<string, unknown>;
   const canal = bruto.canal;
+  const confirmacao = (typeof bruto.confirmacao === "object" && bruto.confirmacao !== null
+    ? bruto.confirmacao
+    : {}) as Record<string, unknown>;
+  const texto = typeof confirmacao.texto === "string" ? confirmacao.texto.trim() : "";
   return {
     canal: CANAIS_DO_FLOW.includes(canal as CanalDoFlow) ? (canal as CanalDoFlow) : CONFIG_PADRAO.canal,
+    confirmacao: {
+      // `=== true` e não "truthy": qualquer coisa que não seja o booleano verdadeiro mantém
+      // desligado. Ligar por acidente aqui é mandar mensagem pra gente de verdade.
+      ativa: confirmacao.ativa === true,
+      // Texto vazio vale como padrão. Alguém que apagou tudo no campo não quis mandar mensagem em
+      // branco — e mensagem em branco é o que aconteceria.
+      texto: texto || CONFIG_PADRAO.confirmacao.texto,
+    },
   };
 }
 
@@ -80,7 +107,17 @@ export async function salvarConfigDoFlow(
   mudancas: Partial<ConfigDoFlow>,
 ): Promise<ConfigDoFlow> {
   const atual = await configDoFlow(workspaceId);
-  const novo: ConfigDoFlow = { ...atual, ...mudancas };
+  /*
+   * Mescla CAMPO A CAMPO no objeto aninhado.
+   *
+   * `{ ...atual, ...mudancas }` sozinho trocaria `confirmacao` inteira: salvar só o liga/desliga
+   * apagaria o texto que a agência escreveu, sem avisar.
+   */
+  const novo: ConfigDoFlow = {
+    ...atual,
+    ...mudancas,
+    confirmacao: { ...atual.confirmacao, ...(mudancas.confirmacao ?? {}) },
+  };
   await prisma.preferencia.upsert({
     where: { workspaceId_chave: { workspaceId, chave: CHAVE } },
     create: { workspaceId, chave: CHAVE, dados: novo },
