@@ -67,6 +67,44 @@ describe("escolha fixa", () => {
   });
 });
 
+describe("o pedido do formulário", () => {
+  it("manda sobre a opção da empresa", () => {
+    // A empresa escolhe o padrão; o formulário escolhe a exceção. Um institucional pode cair no
+    // número oficial e um de campanha no QR, na mesma conta.
+    expect(escolherCanalDoFlow("oficial", OS_DOIS, "qrcode").conexao).toBe("qrcode");
+    expect(escolherCanalDoFlow("qrcode", OS_DOIS, "oficial").conexao).toBe("oficial");
+  });
+
+  it("não tem plano B: canal pedido e desconectado não cai no outro", () => {
+    /*
+     * Cair no outro mandaria a mensagem pelo número errado, e em silêncio — ninguém revisa um lead
+     * que "deu certo". Quem escolheu um canal escolheu contra o outro.
+     */
+    const pediuQr = escolherCanalDoFlow("automatico", SO_OFICIAL, "qrcode");
+    expect(pediuQr.contaCanal).toBeNull();
+    expect(pediuQr.aviso).toContain("O formulário pediu o WhatsApp QR Code");
+
+    const pediuOficial = escolherCanalDoFlow("automatico", SO_QR, "oficial");
+    expect(pediuOficial.contaCanal).toBeNull();
+    expect(pediuOficial.aviso).toContain("O formulário pediu o WhatsApp oficial");
+  });
+
+  it("ausente devolve a decisão pra empresa", () => {
+    // É o que mantém o comportamento de quem nunca mexeu em nada: o padrão da empresa é "só
+    // oficial", igual a antes de tudo isto existir.
+    for (const ausente of [null, undefined]) {
+      expect(escolherCanalDoFlow("oficial", OS_DOIS, ausente).conexao).toBe("oficial");
+      expect(escolherCanalDoFlow("qrcode", OS_DOIS, ausente).conexao).toBe("qrcode");
+    }
+  });
+
+  it("o aviso diz QUAL conexão faltou, não só que faltou", () => {
+    // Quem lê está no painel do Flow e precisa saber o que ligar. "Não foi possível" não diz nada.
+    expect(escolherCanalDoFlow("automatico", NENHUM, "qrcode").aviso).toContain("QR Code");
+    expect(escolherCanalDoFlow("automatico", NENHUM, "oficial").aviso).toContain("oficial");
+  });
+});
+
 describe("o aviso", () => {
   it("é uma frase em português, pronta pra tela de Respostas do Flow", () => {
     // Quem lê é a agência no painel do Flow, não um desenvolvedor no log: a frase diz o que está

@@ -518,6 +518,7 @@ model Workspace {
   templates             Template[]
   chavesDeIntegracao    ChaveDeIntegracao[]
   leadsRecebidos        LeadRecebido[]
+  confirmacoesDeReuniao ConfirmacaoDeReuniao[]
 }
 
 // Núcleo comercial (2ª leva): espelha o tipo `Membro` de src/lib/data.ts. Segue o mesmo padrão de
@@ -1698,4 +1699,74 @@ model LeadRecebido {
 
   @@unique([workspaceId, origem, chaveExterna])
   @@index([workspaceId, criadoEm])
+}
+
+
+// ============================================================================
+// Confirmação de reunião do AZUZ Flow
+//
+// Uma linha por confirmação, gravada ANTES de qualquer envio. É o mesmo desenho de
+// `CampanhaDestinatario`, e pela mesma razão: estado no banco é o que dá idempotência, retomada e
+// rastreio individual sem truque nenhum.
+//
+// A TRAVA É `telefone + inicio`, e cada metade foi escolhida contra uma alternativa pior:
+//
+//   - não pelo NOME do contato, que ganha sufixo quando há homônimo e portanto não identifica
+//     pessoa;
+//   - não pelo `respostaId` da entrega, porque o Flow não tem "remarcar": um segundo envio da mesma
+//     pessoa nasce de alguém preencher o formulário de novo, com `respostaId` novo. Travar por ele
+//     deixaria a mesma pessoa receber duas confirmações do MESMO horário.
+//
+// Com `telefone + inicio`: mesmo número e mesmo horário, uma vez só, para sempre. Horário diferente
+// é reunião diferente e recebe a confirmação dela.
+// ============================================================================
+
+model ConfirmacaoDeReuniao {
+  id String @id
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  /// Telefone na forma canônica (DDI + DDD + 9), a mesma de `normalizarTelefoneParaComparacao`.
+  /// Guardado normalizado de propósito: a trava compara ESTE valor, e "(62) 99999-0001" e
+  /// "5562999990001" são a mesma pessoa.
+  telefone String
+
+  /// Início da reunião. A outra metade da trava.
+  inicio DateTime
+
+  /// Quem é, pra tela e pro envio. `conversaNome` é a chave que `enviarTextoPeloCanal` usa.
+  contatoNome  String
+  conversaNome String?
+
+  /// na_fila | enviada | nao_enviada | cancelada
+  situacao String @default("na_fila")
+
+  /// Por que não foi enviada, em português e pronto pra ler. Nunca mensagem crua de erro.
+  motivo String? @db.Text
+
+  /// A partir de quando pode sair. O cron processa o que já venceu — é isto que substitui um
+  /// `sleep` dentro de função serverless.
+  enviarApos DateTime
+
+  enviadaEm DateTime?
+
+  /// O texto que saiu. Guardado porque "o que foi que o CRM mandou pro meu cliente" é a primeira
+  /// pergunta quando algo dá errado, e o modelo pode ter mudado desde então.
+  texto String? @db.Text
+
+  /// Por onde saiu (`contaCanal`). Null enquanto não saiu.
+  canal String?
+
+  tentativas Int @default(0)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  /// A trava. Ver o comentário do modelo.
+  @@unique([workspaceId, telefone, inicio])
+  /// O que o cron varre: o que está na fila e já pode sair.
+  @@index([workspaceId, situacao, enviarApos])
+  /// O teto por número nas últimas 24h.
+  @@index([workspaceId, telefone, criadoEm])
 }

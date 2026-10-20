@@ -55,6 +55,14 @@ export type LeadDoFlow = {
   consentimentoEm: Date | null;
   /** `null` quando o formulário não tem agendamento, ou quando o que veio era inválido. */
   reuniao: ReuniaoDoFlow | null;
+  /**
+   * Por qual conexão de WhatsApp ESTE lead deve ser atendido, escolhido no formulário.
+   *
+   * A escolha é do FORMULÁRIO, não da empresa: a mesma agência pode ter um formulário institucional
+   * caindo no número oficial e um de campanha caindo no QR. Quando vem, manda sobre a opção da
+   * empresa; `null` é "use o que a empresa configurou".
+   */
+  canalWhatsApp: "qrcode" | "oficial" | null;
   /** O nome-chave sugerido pro contato, pelas regras do contrato. */
   nomeDoContato: string;
   avisos: string[];
@@ -111,6 +119,23 @@ function linkValido(valor: unknown): string | null {
  * Nunca devolve erro: um horário ilegível não pode custar o lead inteiro, porque o lead chega uma
  * vez só e o nome e o WhatsApp continuam bons. O que não dá pra entender vira aviso.
  */
+/**
+ * Por qual conexão este lead deve ser atendido.
+ *
+ * NÃO derruba a entrega quando vem errado, e isso é a regra do contrato inteiro: campo opcional
+ * mal preenchido vira aviso, não 400. Um valor desconhecido aqui significa que o Flow mandou algo
+ * que este CRM ainda não entende — e perder o lead por causa disso seria o pior desfecho possível.
+ * Cai no padrão da empresa, que é o que acontecia antes deste campo existir.
+ */
+function lerCanalDoLead(bruto: unknown, avisos: string[]): "qrcode" | "oficial" | null {
+  if (bruto === undefined || bruto === null || bruto === "") return null;
+  if (bruto === "qrcode" || bruto === "oficial") return bruto;
+  avisos.push(
+    "O campo `canalWhatsApp` não era `qrcode` nem `oficial`; o lead seguiu pelo canal configurado no CRM.",
+  );
+  return null;
+}
+
 function lerReuniao(bruto: unknown, avisos: string[]): ReuniaoDoFlow | null {
   if (bruto === undefined || bruto === null) return null;
   if (typeof bruto !== "object" || Array.isArray(bruto)) {
@@ -247,6 +272,7 @@ export function validarPayloadDoFlow(bruto: unknown): ResultadoDaValidacao {
       pais: limpar(lead.pais, LIMITES.campo),
       endereco: limpar(lead.endereco, LIMITES.campo),
       respostas,
+      canalWhatsApp: lerCanalDoLead(corpo.canalWhatsApp, avisos),
       consentimentoWhatsApp: consentimentoWa.aceitou,
       consentimentoTexto: limpar(consentimentoWa.texto, LIMITES.consentimentoTexto),
       consentimentoEm: dataValida(consentimentoWa.em),

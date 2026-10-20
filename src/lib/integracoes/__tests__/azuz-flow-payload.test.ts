@@ -175,3 +175,42 @@ describe("a reunião no pedido", () => {
     expect(lead.avisos.join(" ")).toContain("não era um objeto");
   });
 });
+
+/**
+ * `canalWhatsApp`: por qual conexão ESTE lead deve ser atendido, escolhido no formulário.
+ *
+ * Campo opcional de um contrato que continua na versão 1 — então a regra aqui é a mesma de todo
+ * campo opcional: valor ruim vira AVISO, nunca 400. Perder um lead porque o Flow mandou uma
+ * palavra que este CRM ainda não conhece seria o pior desfecho possível.
+ */
+describe("o canal pedido no formulário", () => {
+  it("aceita os dois valores do contrato", () => {
+    for (const canal of ["qrcode", "oficial"] as const) {
+      const r = validarPayloadDoFlow(payload({ canalWhatsApp: canal }));
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.lead.canalWhatsApp).toBe(canal);
+    }
+  });
+
+  it("ausente devolve a decisão pro CRM, sem aviso nenhum", () => {
+    // É o caso da maioria dos formulários: ausência não é problema, e avisar sobre ela seria ruído
+    // em toda entrega.
+    const r = validarPayloadDoFlow(payload());
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.lead.canalWhatsApp).toBeNull();
+      expect(r.lead.avisos).toEqual([]);
+    }
+  });
+
+  it("valor desconhecido não derruba a entrega: vira aviso e o CRM decide", () => {
+    for (const ruim of ["whatsapp", "QRCODE", 7, true, {}]) {
+      const r = validarPayloadDoFlow(payload({ canalWhatsApp: ruim }));
+      expect(r.ok).toBe(true);
+      if (r.ok) {
+        expect(r.lead.canalWhatsApp).toBeNull();
+        expect(r.lead.avisos.join(" ")).toContain("`canalWhatsApp`");
+      }
+    }
+  });
+});

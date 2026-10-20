@@ -79,7 +79,7 @@ export type DependenciasDoFlow = {
    * ganha dono). Aqui isso seria um estrago: alguém que já fala com a empresa pelo Instagram ou
    * pelo número oficial preencheria um formulário e veria a conversa mudar de canal embaixo dela.
    */
-  conversaDoContato: (nome: string) => Promise<{ id: string } | null>;
+  conversaDoContato: (nome: string) => Promise<{ id: string; canal: string } | null>;
   garantirConversa: (params: {
     nome: string;
     telefone: string;
@@ -304,7 +304,11 @@ export async function receberLeadDoFlow(params: {
   //    que ninguém disse nada.
   const conexoes = await deps.conexoesDeWhatsapp();
   const whatsappOficialConectado = Boolean(conexoes.oficial);
-  const escolha = escolherCanalDoFlow(await deps.canalDoFlow(), conexoes);
+  /*
+   * O pedido do FORMULÁRIO manda sobre a opção da empresa — e não tem plano B. Ver
+   * `escolherCanalDoFlow`.
+   */
+  const escolha = escolherCanalDoFlow(await deps.canalDoFlow(), conexoes, lead.canalWhatsApp);
   const contaCanal = escolha.contaCanal;
 
   let conversaId: string | null = null;
@@ -319,6 +323,19 @@ export async function receberLeadDoFlow(params: {
      * conversa antiga.
      */
     const jaExiste = await deps.conversaDoContato(nomeDoContato);
+    /*
+     * Conversa que já existe e NÃO é de WhatsApp.
+     *
+     * Acontece com quem chegou pelo Direct do Instagram e depois preencheu um formulário: a
+     * conversa dessa pessoa é do Instagram, e é por lá que o atendimento acontece. O lead entra
+     * normalmente e a conversa é reaproveitada — mas a confirmação por WhatsApp não tem como sair
+     * dali, e dizer isso é melhor do que a mensagem simplesmente não acontecer.
+     */
+    if (jaExiste && jaExiste.canal !== "WhatsApp") {
+      avisos.push(
+        `Este contato já é atendido por ${jaExiste.canal}; a confirmação por WhatsApp não será enviada.`,
+      );
+    }
     if (jaExiste || contaCanal) {
       const conversa = await deps.garantirConversa({
         nome: nomeDoContato,
@@ -558,7 +575,7 @@ export function dependenciasReais(workspaceId: string): DependenciasDoFlow {
     async conversaDoContato(nome) {
       return prisma.conversa.findUnique({
         where: { workspaceId_nome: { workspaceId, nome } },
-        select: { id: true },
+        select: { id: true, canal: true },
       });
     },
     async garantirConversa({ nome, telefone, contatoId, contaCanal }) {
