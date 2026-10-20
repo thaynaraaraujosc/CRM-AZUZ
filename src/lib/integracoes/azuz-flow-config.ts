@@ -18,9 +18,19 @@ export type ConfigDoFlow = {
 };
 
 export const CONFIG_PADRAO: ConfigDoFlow = {
-  // `automatico` e não `oficial`: o padrão tem que ser o que funciona pra quem acabou de ligar
-  // qualquer um dos dois. Quem precisa de um canal específico escolhe.
-  canal: "automatico",
+  /*
+   * `oficial`, que é EXATAMENTE o que o CRM fazia antes desta opção existir.
+   *
+   * A tentação era `automatico`, porque resolve sozinho o caso de quem só tem o QR. Mas o padrão
+   * vale pra toda empresa que nunca abriu essa tela, e trocá-lo significaria passar a mandar lead
+   * pelo QR em contas onde ninguém pediu isso — e o envio pelo QR ainda não tem ritmo, janela de
+   * horário nem teto diário.
+   *
+   * Pior: o que segurava uma automação antiga de "formulário preenchido" era a AUSÊNCIA de
+   * conversa. Dar conversa a ela por padrão faria disparar, pelo número do QR, mensagens que hoje
+   * falham em silêncio. Quem quer o QR escolhe, depois de conferir as automações.
+   */
+  canal: "oficial",
 };
 
 /**

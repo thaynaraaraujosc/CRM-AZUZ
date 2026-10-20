@@ -20,10 +20,17 @@ describe("lendo a configuração guardada", () => {
     expect(lerConfigDoFlow(null)).toEqual(CONFIG_PADRAO);
   });
 
-  it("o padrão é automático, e não 'só oficial'", () => {
-    // O padrão tem que funcionar pra quem acabou de ligar qualquer um dos dois canais. Com "só
-    // oficial" como padrão, quem usa QR Code continuaria com lead sem conversa sem entender por quê.
-    expect(CONFIG_PADRAO.canal).toBe("automatico");
+  it("o padrão é 'só oficial': exatamente o que o CRM fazia antes desta opção existir", () => {
+    /*
+     * O padrão vale pra toda empresa que nunca abriu essa tela. `automatico` passaria a mandar lead
+     * pelo QR em contas onde ninguém pediu — e o envio pelo QR ainda não tem ritmo, janela de
+     * horário nem teto diário.
+     *
+     * E tem o efeito indireto: o que segura uma automação antiga de "formulário preenchido" é a
+     * AUSÊNCIA de conversa. Dar conversa por padrão faria disparar mensagens que hoje falham em
+     * silêncio, pelo número que pode ser banido.
+     */
+    expect(CONFIG_PADRAO.canal).toBe("oficial");
   });
 
   it("lixo não derruba a entrega do lead: volta pro padrão", () => {
