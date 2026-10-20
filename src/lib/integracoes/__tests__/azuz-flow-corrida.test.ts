@@ -81,7 +81,10 @@ function bancoDeMentira() {
         }
       },
       conexoesDeWhatsapp: async () => ({ oficial: "111", qrcode: null }),
-      canalDoFlow: async () => "automatico" as const,
+      config: async () => ({ canal: "automatico" as const, confirmacao: { ativa: false, texto: "" } }),
+      nomeDaEmpresa: async () => "Azuz Digital",
+      enfileirarConfirmacao: async () => ({ situacao: "enfileirada" as const }),
+      anotarNaConversa: async () => {},
       conversaDoContato: async () => null,
       garantirConversa: async () => ({ id: "conv" }),
       temCardNoFunil: async (contatoNome) =>

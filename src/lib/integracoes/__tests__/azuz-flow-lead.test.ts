@@ -49,7 +49,10 @@ function fazerDeps(ajustes: Partial<DependenciasDoFlow> = {}) {
       });
     }),
     conexoesDeWhatsapp: vi.fn(async () => ({ oficial: "111", qrcode: null })),
-    canalDoFlow: vi.fn(async () => "automatico" as const),
+    config: vi.fn(async () => CONFIG_DE_TESTE),
+    nomeDaEmpresa: vi.fn(async () => "Azuz Digital"),
+    enfileirarConfirmacao: vi.fn(async () => ({ situacao: "enfileirada" as const })),
+    anotarNaConversa: vi.fn(async () => {}),
     conversaDoContato: vi.fn(async () => null),
     garantirConversa: vi.fn(async () => {
       ordem.push("garantirConversa");
@@ -87,6 +90,13 @@ function lead(extra: Record<string, unknown> = {}): LeadDoFlow {
 }
 
 beforeEach(() => vi.clearAllMocks());
+
+/** A configuração da empresa nos testes: canal automático e confirmação DESLIGADA, que é o padrão
+ *  de produção. Os testes da confirmação ligam explicitamente — e isso é parte do que eles provam. */
+const CONFIG_DE_TESTE = {
+  canal: "automatico" as const,
+  confirmacao: { ativa: false, texto: "Oi, {{primeiroNome}}! {{data}} às {{hora}}.\n{{link}}" },
+};
 
 describe("receberLeadDoFlow", () => {
   it("cria contato, conversa e card, e só então dispara a automação", async () => {
@@ -194,7 +204,7 @@ describe("receberLeadDoFlow", () => {
   it("a escolha da empresa manda: só oficial ignora o QR ligado", async () => {
     const { deps } = fazerDeps({
       conexoesDeWhatsapp: vi.fn(async () => ({ oficial: null, qrcode: "5562999990001" })),
-      canalDoFlow: vi.fn(async () => "oficial" as const),
+      config: vi.fn(async () => ({ ...CONFIG_DE_TESTE, canal: "oficial" as const })),
     });
     const r = await receberLeadDoFlow({ workspaceId: "w1", lead: lead(), deps });
 
@@ -225,7 +235,7 @@ describe("receberLeadDoFlow", () => {
      */
     const { deps } = fazerDeps({
       conexoesDeWhatsapp: vi.fn(async () => ({ oficial: "111", qrcode: "5562999990001" })),
-      canalDoFlow: vi.fn(async () => "oficial" as const),
+      config: vi.fn(async () => ({ ...CONFIG_DE_TESTE, canal: "oficial" as const })),
     });
     await receberLeadDoFlow({
       workspaceId: "w1",
@@ -256,17 +266,17 @@ describe("receberLeadDoFlow", () => {
     expect(r.avisos.join(" ")).toContain("O formulário pediu o WhatsApp QR Code");
   });
 
-  it("conversa que já existe e não é de WhatsApp vira aviso, não envio pelo canal errado", async () => {
+  it("conversa que já existe é reaproveitada mesmo quando é de outro canal", async () => {
     // Quem chegou pelo Direct do Instagram e depois preencheu um formulário: o atendimento é por
-    // lá, e a confirmação por WhatsApp não tem como sair dali.
+    // lá, e a conversa não muda de dono. O que fazer com a confirmação é decidido depois.
     const { deps } = fazerDeps({
       conexoesDeWhatsapp: vi.fn(async () => ({ oficial: null, qrcode: "5562999990001" })),
       conversaDoContato: vi.fn(async () => ({ id: "conversa-do-direct", canal: "Instagram" })),
     });
     const r = await receberLeadDoFlow({ workspaceId: "w1", lead: lead(), deps });
 
-    expect(r.avisos.join(" ")).toContain("já é atendido por Instagram");
     expect(deps.garantirConversa).toHaveBeenCalledWith(expect.objectContaining({ contaCanal: null }));
+    expect(r.conversaId).toBeTruthy();
   });
 
   it("empresa sem funil recebe o contato mesmo assim", async () => {
@@ -393,5 +403,117 @@ describe("a reunião do Flow", () => {
     expect(r.ok).toBe(true);
     expect(compromissos.size).toBe(0);
     expect(r.avisos.join(" ")).toContain("não pôde ser lida");
+  });
+});
+
+/**
+ * A CONFIRMAÇÃO DE REUNIÃO.
+ *
+ * O que estes testes prendem é uma mensagem indo pro WhatsApp de uma pessoa de verdade quando ela
+ * não devia ir — e, do outro lado, uma pessoa esperando uma confirmação que nunca foi mandada sem
+ * nada na tela dizendo por quê.
+ */
+describe("a confirmação de reunião", () => {
+  const REUNIAO = { inicio: "2099-10-20T17:30:00.000Z", fim: null, link: "https://meet.google.com/x" };
+  const LIGADA = {
+    config: vi.fn(async () => ({ ...CONFIG_DE_TESTE, confirmacao: { ...CONFIG_DE_TESTE.confirmacao, ativa: true } })),
+  };
+
+  it("desligada, não enfileira nem avisa nada", async () => {
+    // É o padrão de produção. Nada acontece, e nada é dito: a empresa escolheu não mandar.
+    const { deps } = fazerDeps();
+    const r = await receberLeadDoFlow({ workspaceId: "w1", lead: lead({ reuniao: REUNIAO }), deps });
+
+    expect(deps.enfileirarConfirmacao).not.toHaveBeenCalled();
+    expect(r.avisos.join(" ")).not.toContain("Confirmação");
+  });
+
+  it("ligada e com tudo no lugar, vai pra fila e anota na conversa", async () => {
+    const { deps } = fazerDeps(LIGADA);
+    const r = await receberLeadDoFlow({ workspaceId: "w1", lead: lead({ reuniao: REUNIAO }), deps });
+
+    expect(deps.enfileirarConfirmacao).toHaveBeenCalledWith(
+      expect.objectContaining({ telefone: "5562996340438", inicio: new Date(REUNIAO.inicio) }),
+    );
+    expect(deps.anotarNaConversa).toHaveBeenCalledWith(expect.objectContaining({ marca: "fila" }));
+    expect(r.avisos.join(" ")).toContain("na fila para envio");
+  });
+
+  it("o texto já vai montado, com as variáveis trocadas", async () => {
+    // Guardar o texto PRONTO é o que responde "o que foi que o CRM mandou pro meu cliente" quando
+    // o modelo já mudou desde então.
+    const { deps } = fazerDeps(LIGADA);
+    await receberLeadDoFlow({ workspaceId: "w1", lead: lead({ reuniao: REUNIAO }), deps });
+
+    const texto = vi.mocked(deps.enfileirarConfirmacao).mock.calls[0][0].texto;
+    expect(texto).toContain("Oi, Ana!");
+    expect(texto).toContain("https://meet.google.com/x");
+    expect(texto).not.toContain("{{");
+  });
+
+  it("sem consentimento não enfileira, e a razão aparece nos dois lugares", async () => {
+    /*
+     * Os dois lugares importam: `avisos` é o que o Flow mostra a quem publicou o formulário, e a
+     * bolha é o que quem atende vê ao abrir a conversa. Falha só no log não serve a nenhum dos dois.
+     */
+    const { deps } = fazerDeps(LIGADA);
+    const r = await receberLeadDoFlow({
+      workspaceId: "w1",
+      lead: lead({ reuniao: REUNIAO, consentimento: { whatsapp: { aceitou: false, texto: null, em: null } } }),
+      deps,
+    });
+
+    expect(deps.enfileirarConfirmacao).not.toHaveBeenCalled();
+    expect(r.avisos.join(" ")).toContain("sem consentimento");
+    expect(deps.anotarNaConversa).toHaveBeenCalledWith(
+      expect.objectContaining({ marca: "recusa", texto: expect.stringContaining("sem consentimento") }),
+    );
+  });
+
+  it("contato atendido por outro canal não recebe pelo WhatsApp, e isso é dito", async () => {
+    const { deps } = fazerDeps({
+      ...LIGADA,
+      conversaDoContato: vi.fn(async () => ({ id: "conversa-do-direct", canal: "Instagram" })),
+    });
+    const r = await receberLeadDoFlow({ workspaceId: "w1", lead: lead({ reuniao: REUNIAO }), deps });
+
+    expect(deps.enfileirarConfirmacao).not.toHaveBeenCalled();
+    expect(r.avisos.join(" ")).toContain("atendido por Instagram");
+  });
+
+  it("entrega repetida não conta duas vezes: 'já existia' é silêncio", async () => {
+    // A trava de verdade é a chave única do banco; aqui o que se prova é que a repetição não vira
+    // uma segunda frase na tela nem uma segunda bolha na conversa.
+    const { deps } = fazerDeps({
+      ...LIGADA,
+      enfileirarConfirmacao: vi.fn(async () => ({ situacao: "ja_existia" as const })),
+    });
+    const r = await receberLeadDoFlow({ workspaceId: "w1", lead: lead({ reuniao: REUNIAO }), deps });
+
+    expect(r.avisos.join(" ")).not.toContain("na fila");
+    expect(deps.anotarNaConversa).not.toHaveBeenCalled();
+  });
+
+  it("falha ao enfileirar não derruba o lead: vira aviso", async () => {
+    // Tabela ainda não aplicada, banco engasgado. O lead já está gravado; perdê-lo por causa da
+    // confirmação seria trocar um problema pequeno por um grande.
+    const { deps } = fazerDeps({
+      ...LIGADA,
+      enfileirarConfirmacao: vi.fn(async () => ({ situacao: "falhou" as const, aviso: "não pôde ser agendada" })),
+    });
+    const r = await receberLeadDoFlow({ workspaceId: "w1", lead: lead({ reuniao: REUNIAO }), deps });
+
+    expect(r.ok).toBe(true);
+    expect(r.contatoId).toBeTruthy();
+    expect(r.avisos.join(" ")).toContain("não pôde ser agendada");
+  });
+
+  it("lead sem reunião não gera registro nenhum", async () => {
+    const { deps } = fazerDeps(LIGADA);
+    const r = await receberLeadDoFlow({ workspaceId: "w1", lead: lead(), deps });
+
+    expect(deps.enfileirarConfirmacao).not.toHaveBeenCalled();
+    expect(deps.anotarNaConversa).not.toHaveBeenCalled();
+    expect(r.avisos.join(" ")).not.toContain("Confirmação");
   });
 });

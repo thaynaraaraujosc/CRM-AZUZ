@@ -4,8 +4,11 @@ import { dispararAutomacoesDoCrm } from "@/lib/automation-flow/disparar-no-servi
 import { encontrarContatoPorTelefone } from "@/lib/contatos/upsert";
 import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
 import { entrarNaPrimeiraEtapaComoNovoLead, subirCardParaOTopo } from "@/lib/funis/upsert";
-import { escolherCanalDoFlow, type CanalDoFlow, type ConexoesDoWorkspace } from "@/lib/integracoes/azuz-flow-canal";
-import { configDoFlow } from "@/lib/integracoes/azuz-flow-config";
+import { escolherCanalDoFlow, type ConexoesDoWorkspace } from "@/lib/integracoes/azuz-flow-canal";
+import { configDoFlow, type ConfigDoFlow } from "@/lib/integracoes/azuz-flow-config";
+import { decidirConfirmacao } from "@/lib/integracoes/azuz-flow-confirmacao-decisao";
+import { montarTextoDaConfirmacao } from "@/lib/integracoes/azuz-flow-confirmacao-texto";
+import { anotarNaConversa, enfileirarConfirmacao, type ResultadoDaFila } from "@/lib/integracoes/azuz-flow-confirmacao-fila";
 import { conexoesDeWhatsappDoWorkspace } from "@/lib/integracoes/azuz-flow-conexoes";
 import { anotarNaLinhaDoTempo } from "@/lib/integracoes/instagram-eventos";
 import { slugId } from "@/lib/ids";
@@ -69,8 +72,27 @@ export type DependenciasDoFlow = {
    * lead entrava sem conversa toda vez que ele estivesse fora, mesmo com o QR Code conectado.
    */
   conexoesDeWhatsapp: () => Promise<ConexoesDoWorkspace>;
-  /** A opção da empresa: automático, só oficial, ou só QR. Ver `azuz-flow-config.ts`. */
-  canalDoFlow: () => Promise<CanalDoFlow>;
+  /** As opções desta empresa: canal e confirmação. Ver `azuz-flow-config.ts`. */
+  config: () => Promise<ConfigDoFlow>;
+  /** O nome da empresa, pra mensagem dizer de onde a pessoa veio. */
+  nomeDaEmpresa: () => Promise<string>;
+  /** Põe a confirmação na fila. Quem envia é quem processa a fila, nunca a entrega do lead. */
+  enfileirarConfirmacao: (params: {
+    telefone: string;
+    inicio: Date;
+    contatoNome: string;
+    conversaNome: string | null;
+    texto: string;
+  }) => Promise<ResultadoDaFila>;
+  /** Escreve o que aconteceu com a confirmação dentro da conversa, como bolha de sistema. */
+  anotarNaConversa: (params: {
+    conversaNome: string;
+    contaCanal: string | null;
+    marca: string;
+    telefone: string;
+    inicio: Date;
+    texto: string;
+  }) => Promise<void>;
   /**
    * A conversa que este contato já tem, se tiver.
    *
@@ -308,10 +330,14 @@ export async function receberLeadDoFlow(params: {
    * O pedido do FORMULÁRIO manda sobre a opção da empresa — e não tem plano B. Ver
    * `escolherCanalDoFlow`.
    */
-  const escolha = escolherCanalDoFlow(await deps.canalDoFlow(), conexoes, lead.canalWhatsApp);
+  const config = await deps.config();
+  const escolha = escolherCanalDoFlow(config.canal, conexoes, lead.canalWhatsApp);
   const contaCanal = escolha.contaCanal;
 
   let conversaId: string | null = null;
+  /** O canal da conversa onde a confirmação sairia. `null` quando não há conversa. */
+  let canalDaConversa: string | null = null;
+
   if (lead.whatsapp) {
     /*
      * Conversa que já existe é REAPROVEITADA, nunca reivindicada.
@@ -323,19 +349,6 @@ export async function receberLeadDoFlow(params: {
      * conversa antiga.
      */
     const jaExiste = await deps.conversaDoContato(nomeDoContato);
-    /*
-     * Conversa que já existe e NÃO é de WhatsApp.
-     *
-     * Acontece com quem chegou pelo Direct do Instagram e depois preencheu um formulário: a
-     * conversa dessa pessoa é do Instagram, e é por lá que o atendimento acontece. O lead entra
-     * normalmente e a conversa é reaproveitada — mas a confirmação por WhatsApp não tem como sair
-     * dali, e dizer isso é melhor do que a mensagem simplesmente não acontecer.
-     */
-    if (jaExiste && jaExiste.canal !== "WhatsApp") {
-      avisos.push(
-        `Este contato já é atendido por ${jaExiste.canal}; a confirmação por WhatsApp não será enviada.`,
-      );
-    }
     if (jaExiste || contaCanal) {
       const conversa = await deps.garantirConversa({
         nome: nomeDoContato,
@@ -344,8 +357,79 @@ export async function receberLeadDoFlow(params: {
         contaCanal: jaExiste ? null : contaCanal,
       });
       conversaId = conversa?.id ?? jaExiste?.id ?? null;
+      // Conversa nova nasce de WhatsApp; a que já existia pode ser de qualquer canal. Quem decide o
+      // que fazer com isso é `decidirConfirmacao`, pra a frase existir num lugar só.
+      canalDaConversa = jaExiste?.canal ?? "WhatsApp";
     } else if (escolha.aviso) {
       avisos.push(escolha.aviso);
+    }
+  }
+
+  /*
+   * 6b. A CONFIRMAÇÃO DE REUNIÃO.
+   *
+   * Decidir e enfileirar, nunca enviar daqui. Enviar neste ponto seria uma chamada de rede dentro
+   * da entrega de um lead: ela atrasaria a resposta ao Flow, e uma falha dela viraria um 500 que
+   * faz o Flow repetir uma entrega que já deu certo. A fila separa as duas coisas.
+   *
+   * Tudo que acontece aqui é relatado em DOIS lugares, e os dois importam: `avisos`, que o Flow
+   * mostra na tela de Respostas de quem publicou o formulário, e uma bolha de sistema dentro da
+   * conversa, que é onde quem atende vai olhar. Falha silenciosa aqui é uma pessoa esperando uma
+   * mensagem que nunca foi mandada.
+   */
+  if (lead.reuniao) {
+    const decisao = decidirConfirmacao({
+      ativa: config.confirmacao.ativa,
+      inicio: lead.reuniao.inicio,
+      consentiu: lead.consentimentoWhatsApp,
+      telefone: lead.whatsapp,
+      conversa: conversaId && canalDaConversa ? { nome: nomeDoContato, canal: canalDaConversa } : null,
+      agora: new Date(),
+    });
+
+    if (decisao.acao === "nao_enviar") {
+      avisos.push(decisao.motivo);
+      if (conversaId) {
+        await deps.anotarNaConversa({
+          conversaNome: nomeDoContato,
+          contaCanal,
+          marca: "recusa",
+          telefone: lead.whatsapp ?? nomeDoContato,
+          inicio: lead.reuniao.inicio,
+          texto: decisao.motivo,
+        });
+      }
+    } else if (decisao.acao === "enfileirar" && lead.whatsapp) {
+      const texto = montarTextoDaConfirmacao(config.confirmacao.texto, {
+        primeiroNome: lead.nome ?? nomeDoContato,
+        inicio: lead.reuniao.inicio,
+        link: lead.reuniao.link,
+        empresa: await deps.nomeDaEmpresa(),
+      });
+      const resultado = await deps.enfileirarConfirmacao({
+        telefone: lead.whatsapp,
+        inicio: lead.reuniao.inicio,
+        contatoNome: nomeDoContato,
+        conversaNome: nomeDoContato,
+        texto,
+      });
+
+      if (resultado.situacao === "falhou") {
+        avisos.push(resultado.aviso);
+      } else if (resultado.situacao === "enfileirada") {
+        const frase = "Confirmação de reunião na fila para envio.";
+        avisos.push(frase);
+        await deps.anotarNaConversa({
+          conversaNome: nomeDoContato,
+          contaCanal,
+          marca: "fila",
+          telefone: lead.whatsapp,
+          inicio: lead.reuniao.inicio,
+          texto: frase,
+        });
+      }
+      // `ja_existia` é silêncio de propósito: é a entrega repetida do Flow, ou a mesma pessoa
+      // preenchendo o formulário de novo com a mesma reunião. Nada aconteceu de novo pra contar.
     }
   }
 
@@ -569,9 +653,17 @@ export function dependenciasReais(workspaceId: string): DependenciasDoFlow {
     },
 
     conexoesDeWhatsapp: () => conexoesDeWhatsappDoWorkspace(workspaceId),
-    async canalDoFlow() {
-      return (await configDoFlow(workspaceId)).canal;
+    config: () => configDoFlow(workspaceId),
+    async nomeDaEmpresa() {
+      const workspace = await prisma.workspace
+        .findUnique({ where: { id: workspaceId }, select: { nome: true } })
+        .catch(() => null);
+      // Sem nome, a frase "pelo formulário da ..." fica estranha mas continua verdadeira o
+      // bastante. Derrubar a confirmação por causa disso seria desproporcional.
+      return workspace?.nome?.trim() || "nossa equipe";
     },
+    enfileirarConfirmacao: (params) => enfileirarConfirmacao({ workspaceId, enviarApos: new Date(), ...params }),
+    anotarNaConversa: (params) => anotarNaConversa({ workspaceId, ...params }),
     async conversaDoContato(nome) {
       return prisma.conversa.findUnique({
         where: { workspaceId_nome: { workspaceId, nome } },

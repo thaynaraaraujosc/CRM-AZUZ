@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 
 import { IconAlerta } from "@/components/icons";
-import { ModalConfirmacao } from "@/components/ui";
+import { ModalConfirmacao, Toggle } from "@/components/ui";
 import { useIdioma } from "@/lib/idioma-context";
 import { lerJson } from "@/lib/ler-resposta";
 import { precisaConfirmarAntesDeGerar } from "@/lib/integracoes/estado-do-cartao";
@@ -45,7 +45,19 @@ type ConfigDoCanal = {
   /** A conexão que o próximo lead vai usar de verdade. `null` = nenhuma serve. */
   conexaoEfetiva: "oficial" | "qrcode" | null;
   aviso: string | null;
+  confirmacao: { ativa: boolean; texto: string };
 };
+
+/** O que cada variável vale, pra listar embaixo do campo. Copiado da lista do servidor em vez de
+ *  importado: é texto de tela, e importar puxaria o módulo de fuso horário pro navegador à toa. */
+const VARIAVEIS_DA_CONFIRMACAO: [string, string][] = [
+  ["{{primeiroNome}}", "o primeiro nome de quem preencheu"],
+  ["{{data}}", "a data por extenso"],
+  ["{{dataCurta}}", "a data em números"],
+  ["{{hora}}", "a hora em Brasília"],
+  ["{{link}}", "o link da reunião (sozinho numa linha, a linha some quando não houver link)"],
+  ["{{empresa}}", "o nome da sua empresa"],
+];
 
 const ROTULOS_DE_CANAL: Record<ConfigDoCanal["canal"], string> = {
   automatico: "Automático (oficial se conectado, senão QR Code)",
@@ -76,6 +88,9 @@ export function AzuzFlow() {
    */
   const [canal, setCanal] = useState<ConfigDoCanal | null>(null);
   const [salvandoCanal, setSalvandoCanal] = useState(false);
+  /** O texto em edição. Separado de `canal.confirmacao.texto` porque digitar não pode salvar a
+   *  cada tecla: seriam dezenas de gravações por frase. */
+  const [textoEmEdicao, setTextoEmEdicao] = useState<string | null>(null);
 
   const ehAdmin = sessao?.user?.papelTipo === "admin" || sessao?.user?.superAdmin;
 
@@ -108,7 +123,10 @@ export function AzuzFlow() {
       const r = await fetch("/api/integracoes/azuz-flow/config").catch(() => null);
       if (!r?.ok) return;
       const lido = await lerJson<ConfigDoCanal>(r, "");
-      if (lido.ok) setCanal(lido.dados);
+      if (lido.ok) {
+        setCanal(lido.dados);
+        setTextoEmEdicao(lido.dados.confirmacao.texto);
+      }
     })();
     // `traduzir` muda com o idioma; reler o estado por troca de idioma não faria mal, mas também
     // não faz falta — o que importa é rodar quando a pessoa é admin.
@@ -180,18 +198,21 @@ export function AzuzFlow() {
     }
   }
 
-  async function trocarCanal(novo: ConfigDoCanal["canal"]) {
+  /** Salva o que mudou. Serve pro canal e pra confirmação: a rota mescla campo a campo. */
+  async function salvarConfig(mudancas: Record<string, unknown>) {
     setSalvandoCanal(true);
     setErro(null);
     try {
       const r = await fetch("/api/integracoes/azuz-flow/config", {
         method: "PUT",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ canal: novo }),
+        body: JSON.stringify(mudancas),
       });
-      const lido = await lerJson<ConfigDoCanal>(r, traduzir("Não deu pra salvar o canal."));
-      if (lido.ok) setCanal(lido.dados);
-      else setErro(lido.erro);
+      const lido = await lerJson<ConfigDoCanal>(r, traduzir("Não deu pra salvar."));
+      if (lido.ok) {
+        setCanal(lido.dados);
+        setTextoEmEdicao(lido.dados.confirmacao.texto);
+      } else setErro(lido.erro);
     } finally {
       setSalvandoCanal(false);
     }
@@ -280,7 +301,7 @@ export function AzuzFlow() {
             style={{ width: "100%" }}
             value={canal.canal}
             disabled={salvandoCanal}
-            onChange={(e) => void trocarCanal(e.target.value as ConfigDoCanal["canal"])}
+            onChange={(e) => void salvarConfig({ canal: e.target.value })}
           >
             {(Object.keys(ROTULOS_DE_CANAL) as ConfigDoCanal["canal"][]).map((opcao) => (
               <option key={opcao} value={opcao}>
@@ -288,6 +309,66 @@ export function AzuzFlow() {
               </option>
             ))}
           </select>
+        </div>
+      ) : null}
+
+      {/*
+        A CONFIRMAÇÃO DE REUNIÃO.
+        
+        Só aparece com uma chave ativa: sem chave não chega lead, e uma opção que não pode fazer
+        efeito ocupando espaço é ruído.
+        
+        O AVISO EMBAIXO DO INTERRUPTOR não é texto de rodapé. Ligar isto faz o CRM mandar mensagem
+        sozinho, pra quem nunca escreveu, por um número que pode ser bloqueado por denúncia. Quem
+        liga precisa ler isso antes, não depois.
+      */}
+      {canal && estado?.chave ? (
+        <div className="card" style={{ padding: 12, marginBottom: 12 }}>
+          <Toggle
+            label={traduzir("Confirmação de reunião do Flow")}
+            defaultOn={canal.confirmacao.ativa}
+            onToggle={(ligado) => void salvarConfig({ confirmacao: { ativa: ligado } })}
+          />
+          <p className="hint" style={{ margin: "6px 0 0" }}>
+            {traduzir(
+              "Quando o lead marca reunião no formulário, o CRM manda UMA mensagem confirmando dia, hora e link — só para quem marcou a caixa de consentimento.",
+            )}
+          </p>
+
+          <div className="field" style={{ marginTop: 12 }}>
+            <label>{traduzir("Texto da mensagem")}</label>
+            <textarea
+              className="input"
+              style={{ width: "100%", minHeight: 120, fontFamily: "inherit" }}
+              value={textoEmEdicao ?? ""}
+              maxLength={2000}
+              onChange={(e) => setTextoEmEdicao(e.target.value)}
+            />
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+              <button
+                type="button"
+                className="btn"
+                disabled={salvandoCanal || textoEmEdicao === canal.confirmacao.texto}
+                onClick={() => void salvarConfig({ confirmacao: { texto: textoEmEdicao ?? "" } })}
+              >
+                {salvandoCanal ? traduzir("Salvando…") : traduzir("Salvar texto")}
+              </button>
+              {textoEmEdicao !== canal.confirmacao.texto ? (
+                <span className="hint">{traduzir("Alterações não salvas.")}</span>
+              ) : null}
+            </div>
+          </div>
+
+          <p className="hint" style={{ margin: "8px 0 0" }}>
+            {traduzir("Você pode usar:")}
+          </p>
+          <ul className="hint" style={{ margin: "2px 0 0", paddingLeft: 16 }}>
+            {VARIAVEIS_DA_CONFIRMACAO.map(([chave, explicacao]) => (
+              <li key={chave}>
+                <code>{chave}</code> — {traduzir(explicacao)}
+              </li>
+            ))}
+          </ul>
         </div>
       ) : null}
 
