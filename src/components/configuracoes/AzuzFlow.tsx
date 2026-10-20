@@ -38,6 +38,21 @@ const ENDERECO_DO_CRM = "https://azuzcrm.com.br";
  * Pior: `gerar()` só pede confirmação quando enxerga uma chave existente. Com a leitura falhando
  * ele não enxergava nenhuma, e o botão passava a revogar a chave em uso sem perguntar nada.
  */
+/** O que a rota de opções devolve: a escolha guardada E o que ela significa agora. */
+type ConfigDoCanal = {
+  canal: "automatico" | "oficial" | "qrcode";
+  conexoes: { oficial: boolean; qrcode: boolean };
+  /** A conexão que o próximo lead vai usar de verdade. `null` = nenhuma serve. */
+  conexaoEfetiva: "oficial" | "qrcode" | null;
+  aviso: string | null;
+};
+
+const ROTULOS_DE_CANAL: Record<ConfigDoCanal["canal"], string> = {
+  automatico: "Automático (oficial se conectado, senão QR Code)",
+  oficial: "Só o WhatsApp oficial",
+  qrcode: "Só o WhatsApp QR Code",
+};
+
 type Leitura =
   | { situacao: "lendo" }
   | { situacao: "lido"; dados: Estado }
@@ -53,6 +68,14 @@ export function AzuzFlow() {
   const [erro, setErro] = useState<string | null>(null);
   /** Qual confirmação está aberta. `null` = nenhuma. Substitui o `window.confirm` do navegador. */
   const [confirmando, setConfirmando] = useState<"gerar" | "revogar" | null>(null);
+  /**
+   * Por qual conexão o lead do Flow ganha conversa.
+   *
+   * `null` enquanto não foi lido: o seletor não pode mostrar "Automático" por padrão e dar a
+   * entender que foi isso que a empresa escolheu, quando na verdade ainda não se sabe.
+   */
+  const [canal, setCanal] = useState<ConfigDoCanal | null>(null);
+  const [salvandoCanal, setSalvandoCanal] = useState(false);
 
   const ehAdmin = sessao?.user?.papelTipo === "admin" || sessao?.user?.superAdmin;
 
@@ -72,6 +95,20 @@ export function AzuzFlow() {
       }
       const lido = await lerJson<Estado>(r, traduzir("Não deu pra ler o estado da integração."));
       setLeitura(lido.ok ? { situacao: "lido", dados: lido.dados } : { situacao: "falhou", motivo: lido.erro });
+    })();
+
+    /*
+     * As opções vêm numa chamada à parte, de propósito.
+     *
+     * Falhar ao ler o canal não pode esconder a chave, nem o contrário: são duas informações
+     * independentes, e juntá-las numa chamada só faria um erro em qualquer uma apagar as duas da
+     * tela. O seletor fica simplesmente ausente enquanto não for lido.
+     */
+    void (async () => {
+      const r = await fetch("/api/integracoes/azuz-flow/config").catch(() => null);
+      if (!r?.ok) return;
+      const lido = await lerJson<ConfigDoCanal>(r, "");
+      if (lido.ok) setCanal(lido.dados);
     })();
     // `traduzir` muda com o idioma; reler o estado por troca de idioma não faria mal, mas também
     // não faz falta — o que importa é rodar quando a pessoa é admin.
@@ -140,6 +177,23 @@ export function AzuzFlow() {
       setErro(e instanceof Error ? e.message : traduzir("Não deu pra revogar a chave."));
     } finally {
       setOcupado(false);
+    }
+  }
+
+  async function trocarCanal(novo: ConfigDoCanal["canal"]) {
+    setSalvandoCanal(true);
+    setErro(null);
+    try {
+      const r = await fetch("/api/integracoes/azuz-flow/config", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ canal: novo }),
+      });
+      const lido = await lerJson<ConfigDoCanal>(r, traduzir("Não deu pra salvar o canal."));
+      if (lido.ok) setCanal(lido.dados);
+      else setErro(lido.erro);
+    } finally {
+      setSalvandoCanal(false);
     }
   }
 
@@ -212,7 +266,42 @@ export function AzuzFlow() {
         Continua só aparecendo com a leitura FEITA: dizer "esta empresa não tem funil" a partir de
         uma leitura que falhou seria inventar um fato sobre a conta de um cliente.
       */}
-      {leitura.situacao === "lido" && (!leitura.dados.destino || !leitura.dados.whatsappOficialConectado) ? (
+      {/*
+        POR QUAL NÚMERO O LEAD É ATENDIDO.
+        
+        Só aparece depois de lido: um seletor que abre em "Automático" antes de saber o que está
+        guardado afirma uma escolha que a empresa talvez não tenha feito.
+      */}
+      {canal ? (
+        <div className="field">
+          <label>{traduzir("Canal que recebe os leads do Flow")}</label>
+          <select
+            className="input"
+            style={{ width: "100%" }}
+            value={canal.canal}
+            disabled={salvandoCanal}
+            onChange={(e) => void trocarCanal(e.target.value as ConfigDoCanal["canal"])}
+          >
+            {(Object.keys(ROTULOS_DE_CANAL) as ConfigDoCanal["canal"][]).map((opcao) => (
+              <option key={opcao} value={opcao}>
+                {traduzir(ROTULOS_DE_CANAL[opcao])}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : null}
+
+      {/*
+        O AVISO VEM DO SERVIDOR, não de um palpite da tela.
+        
+        Antes ele era "WhatsApp oficial não conectado", escrito a partir de um booleano — e isso
+        passou a ser MENTIRA no dia em que o lead passou a poder cair no QR Code: com o QR ligado e
+        a opção em Automático, o lead ganha conversa normalmente e a tela continuava alarmando.
+        
+        Quem decide é a mesma função que a entrega do lead usa (`escolherCanalDoFlow`), então a
+        frase aqui e o comportamento lá não têm como divergir.
+      */}
+      {leitura.situacao === "lido" && (!leitura.dados.destino || canal?.aviso) ? (
         <div className="card" style={{ padding: 12, marginBottom: 12 }}>
           {!leitura.dados.destino ? (
             <p className="hint" style={{ margin: 0 }}>
@@ -220,10 +309,10 @@ export function AzuzFlow() {
               {traduzir("Esta empresa ainda não tem funil: o lead entra como contato, sem card.")}
             </p>
           ) : null}
-          {!leitura.dados.whatsappOficialConectado ? (
+          {canal?.aviso ? (
             <p className="hint" style={{ margin: leitura.dados.destino ? 0 : "4px 0 0" }}>
-              <IconAlerta width={12} height={12} aria-hidden="true" />{" "}
-              {traduzir("WhatsApp oficial não conectado: o lead entra, mas sem conversa pra automação responder.")}
+              <IconAlerta width={12} height={12} aria-hidden="true" /> {traduzir(canal.aviso)}{" "}
+              {traduzir("Sem conversa, a automação não tem por onde responder.")}
             </p>
           ) : null}
         </div>

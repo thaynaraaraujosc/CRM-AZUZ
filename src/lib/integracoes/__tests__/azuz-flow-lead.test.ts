@@ -48,7 +48,9 @@ function fazerDeps(ajustes: Partial<DependenciasDoFlow> = {}) {
         local: reuniao.link,
       });
     }),
-    contaOficial: vi.fn(async () => ({ phoneNumberId: "111" })),
+    conexoesDeWhatsapp: vi.fn(async () => ({ oficial: "111", qrcode: null })),
+    canalDoFlow: vi.fn(async () => "automatico" as const),
+    conversaDoContato: vi.fn(async () => null),
     garantirConversa: vi.fn(async () => {
       ordem.push("garantirConversa");
       return { id: "conv-1" };
@@ -159,16 +161,61 @@ describe("receberLeadDoFlow", () => {
     expect(r.contatoId).toBe("c-7");
   });
 
-  it("sem WhatsApp oficial conectado o lead entra do mesmo jeito, sem conversa", async () => {
-    const { deps } = fazerDeps({ contaOficial: vi.fn(async () => null) });
+  it("sem WhatsApp nenhum conectado o lead entra do mesmo jeito, sem conversa", async () => {
+    const { deps } = fazerDeps({ conexoesDeWhatsapp: vi.fn(async () => ({ oficial: null, qrcode: null })) });
     const r = await receberLeadDoFlow({ workspaceId: "w1", lead: lead(), deps });
 
     expect(r.whatsappOficialConectado).toBe(false);
     expect(r.conversaId).toBeNull();
     expect(deps.garantirConversa).not.toHaveBeenCalled();
-    expect(r.avisos.join(" ")).toContain("não está conectado");
+    expect(r.avisos.join(" ")).toContain("Nenhum WhatsApp está conectado");
     // O que importa: o lead não se perde por causa de um canal desligado.
     expect(deps.criarContato).toHaveBeenCalled();
+  });
+
+  it("com só o QR conectado, a conversa nasce presa ao canal do QR", async () => {
+    /*
+     * O caso que motivou isto: o WhatsApp oficial em revisão na Meta. Antes, o lead entrava sem
+     * conversa — e sem conversa a automação que fosse falar com a pessoa falhava com "conversa sem
+     * destinatário". O lead chegava no CRM e morria ali.
+     */
+    const { deps } = fazerDeps({
+      conexoesDeWhatsapp: vi.fn(async () => ({ oficial: null, qrcode: "5562999990001" })),
+    });
+    const r = await receberLeadDoFlow({ workspaceId: "w1", lead: lead(), deps });
+
+    expect(r.whatsappOficialConectado).toBe(false);
+    expect(deps.garantirConversa).toHaveBeenCalledWith(
+      expect.objectContaining({ contaCanal: "whatsapp_nao_oficial:5562999990001" }),
+    );
+    expect(r.avisos.join(" ")).not.toContain("não está conectado");
+  });
+
+  it("a escolha da empresa manda: só oficial ignora o QR ligado", async () => {
+    const { deps } = fazerDeps({
+      conexoesDeWhatsapp: vi.fn(async () => ({ oficial: null, qrcode: "5562999990001" })),
+      canalDoFlow: vi.fn(async () => "oficial" as const),
+    });
+    const r = await receberLeadDoFlow({ workspaceId: "w1", lead: lead(), deps });
+
+    expect(deps.garantirConversa).not.toHaveBeenCalled();
+    expect(r.avisos.join(" ")).toContain("oficial não está conectado");
+  });
+
+  it("conversa que já existe é reaproveitada sem trocar de canal", async () => {
+    /*
+     * Quem já fala com a empresa pelo Instagram ou pelo número oficial não pode ver a conversa
+     * mudar de dono por ter preenchido um formulário. `contaCanal: null` é o que diz ao upsert
+     * "não mexa no dono"; o resto do upsert continua valendo.
+     */
+    const { deps } = fazerDeps({
+      conexoesDeWhatsapp: vi.fn(async () => ({ oficial: null, qrcode: "5562999990001" })),
+      conversaDoContato: vi.fn(async () => ({ id: "conversa-que-ja-existia" })),
+    });
+    const r = await receberLeadDoFlow({ workspaceId: "w1", lead: lead(), deps });
+
+    expect(deps.garantirConversa).toHaveBeenCalledWith(expect.objectContaining({ contaCanal: null }));
+    expect(r.conversaId).toBeTruthy();
   });
 
   it("empresa sem funil recebe o contato mesmo assim", async () => {

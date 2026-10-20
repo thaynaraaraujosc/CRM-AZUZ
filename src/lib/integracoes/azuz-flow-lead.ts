@@ -4,8 +4,9 @@ import { dispararAutomacoesDoCrm } from "@/lib/automation-flow/disparar-no-servi
 import { encontrarContatoPorTelefone } from "@/lib/contatos/upsert";
 import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
 import { entrarNaPrimeiraEtapaComoNovoLead, subirCardParaOTopo } from "@/lib/funis/upsert";
-import { CANAL_OFICIAL, contaCanalDaConexao } from "@/lib/integracoes/conta-canal";
-import { contaConectada } from "@/lib/integracoes/whatsapp-oficial";
+import { escolherCanalDoFlow, type CanalDoFlow, type ConexoesDoWorkspace } from "@/lib/integracoes/azuz-flow-canal";
+import { configDoFlow } from "@/lib/integracoes/azuz-flow-config";
+import { conexoesDeWhatsappDoWorkspace } from "@/lib/integracoes/azuz-flow-conexoes";
 import { anotarNaLinhaDoTempo } from "@/lib/integracoes/instagram-eventos";
 import { slugId } from "@/lib/ids";
 import { normalizarTelefoneParaComparacao } from "@/lib/telefone";
@@ -61,7 +62,24 @@ export type DependenciasDoFlow = {
     reuniao: ReuniaoDoFlow;
   }) => Promise<void>;
 
-  contaOficial: () => Promise<{ phoneNumberId: string } | null>;
+  /**
+   * As conexões de WhatsApp ligadas agora, por identificador.
+   *
+   * Substituiu `contaOficial`, que só sabia responder sobre o canal oficial — e era por isso que o
+   * lead entrava sem conversa toda vez que ele estivesse fora, mesmo com o QR Code conectado.
+   */
+  conexoesDeWhatsapp: () => Promise<ConexoesDoWorkspace>;
+  /** A opção da empresa: automático, só oficial, ou só QR. Ver `azuz-flow-config.ts`. */
+  canalDoFlow: () => Promise<CanalDoFlow>;
+  /**
+   * A conversa que este contato já tem, se tiver.
+   *
+   * Existe pra o lead NÃO ROUBAR uma conversa que já é de outro canal. `upsertConversaAoReceber-
+   * Mensagem` sobrescreve `contaCanal` quando recebe um, de propósito (é assim que conversa antiga
+   * ganha dono). Aqui isso seria um estrago: alguém que já fala com a empresa pelo Instagram ou
+   * pelo número oficial preencheria um formulário e veria a conversa mudar de canal embaixo dela.
+   */
+  conversaDoContato: (nome: string) => Promise<{ id: string } | null>;
   garantirConversa: (params: {
     nome: string;
     telefone: string;
@@ -284,21 +302,34 @@ export async function receberLeadDoFlow(params: {
   // 6. Conversa. Ela nasce VAZIA e com zero não lidas: existe pra a automação ter por onde falar,
   //    não porque alguém escreveu. Contar como não lida poria um badge vermelho numa conversa em
   //    que ninguém disse nada.
-  const conta = await deps.contaOficial();
-  const whatsappOficialConectado = Boolean(conta);
-  const contaCanal = conta ? contaCanalDaConexao(CANAL_OFICIAL, conta.phoneNumberId) : null;
+  const conexoes = await deps.conexoesDeWhatsapp();
+  const whatsappOficialConectado = Boolean(conexoes.oficial);
+  const escolha = escolherCanalDoFlow(await deps.canalDoFlow(), conexoes);
+  const contaCanal = escolha.contaCanal;
 
   let conversaId: string | null = null;
-  if (lead.whatsapp && conta) {
-    const conversa = await deps.garantirConversa({
-      nome: nomeDoContato,
-      telefone: lead.whatsapp,
-      contatoId,
-      contaCanal,
-    });
-    conversaId = conversa?.id ?? null;
-  } else if (lead.whatsapp && !conta) {
-    avisos.push("O WhatsApp oficial não está conectado, então o lead entrou sem conversa.");
+  if (lead.whatsapp) {
+    /*
+     * Conversa que já existe é REAPROVEITADA, nunca reivindicada.
+     *
+     * A diferença está no `contaCanal` que vai (ou não) pro upsert: num registro novo ele diz de
+     * quem é a conversa; num que já existe, ele TROCARIA o dono. Mandar `null` aqui é o que faz
+     * quem já fala com a empresa por outro canal continuar falando por lá depois de preencher um
+     * formulário. O resto do upsert continua valendo, inclusive o conserto do `contatoId` em
+     * conversa antiga.
+     */
+    const jaExiste = await deps.conversaDoContato(nomeDoContato);
+    if (jaExiste || contaCanal) {
+      const conversa = await deps.garantirConversa({
+        nome: nomeDoContato,
+        telefone: lead.whatsapp,
+        contatoId,
+        contaCanal: jaExiste ? null : contaCanal,
+      });
+      conversaId = conversa?.id ?? jaExiste?.id ?? null;
+    } else if (escolha.aviso) {
+      avisos.push(escolha.aviso);
+    }
   }
 
   // 7. Funil. Quem já está no funil NÃO muda de etapa: o vendedor pôs a pessoa onde ela está, e um
@@ -520,9 +551,15 @@ export function dependenciasReais(workspaceId: string): DependenciasDoFlow {
       }
     },
 
-    async contaOficial() {
-      const conta = await contaConectada(workspaceId);
-      return conta ? { phoneNumberId: conta.phoneNumberId } : null;
+    conexoesDeWhatsapp: () => conexoesDeWhatsappDoWorkspace(workspaceId),
+    async canalDoFlow() {
+      return (await configDoFlow(workspaceId)).canal;
+    },
+    async conversaDoContato(nome) {
+      return prisma.conversa.findUnique({
+        where: { workspaceId_nome: { workspaceId, nome } },
+        select: { id: true },
+      });
     },
     async garantirConversa({ nome, telefone, contatoId, contaCanal }) {
       await upsertConversaAoReceberMensagem({

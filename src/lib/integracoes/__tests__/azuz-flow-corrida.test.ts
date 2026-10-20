@@ -80,7 +80,9 @@ function bancoDeMentira() {
           if ((erro as { code?: string }).code !== "P2002") throw erro;
         }
       },
-      contaOficial: async () => ({ phoneNumberId: "111" }),
+      conexoesDeWhatsapp: async () => ({ oficial: "111", qrcode: null }),
+      canalDoFlow: async () => "automatico" as const,
+      conversaDoContato: async () => null,
       garantirConversa: async () => ({ id: "conv" }),
       temCardNoFunil: async (contatoNome) =>
         [...cards.values()].some((c) => chaveDeContato(c.nome) === chaveDeContato(contatoNome)),

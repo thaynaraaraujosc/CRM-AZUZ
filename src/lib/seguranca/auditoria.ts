@@ -41,7 +41,10 @@ export type AcaoAuditada =
   // A chave que o AZUZ Flow usa pra entregar lead nesta empresa. Quem a tem cria contato e dispara
   // automação aqui dentro: gerar e revogar são do mesmo peso que conectar e desconectar um canal.
   | "integracao.chave_gerada"
-  | "integracao.chave_revogada";
+  | "integracao.chave_revogada"
+  // Por qual número a empresa fala com quem preenche o formulário do Flow. Trocar isso redireciona
+  // o atendimento de todo lead novo, então pesa o mesmo que conectar ou desconectar um canal.
+  | "integracao.canal_do_flow_alterado";
 
 type Entrada = {
   acao: AcaoAuditada;
