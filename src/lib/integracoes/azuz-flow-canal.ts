@@ -47,7 +47,23 @@ export type EscolhaDeCanal = {
   aviso: string | null;
 };
 
-export function escolherCanalDoFlow(preferencia: CanalDoFlow, conexoes: ConexoesDoWorkspace): EscolhaDeCanal {
+/**
+ * Por onde este lead é atendido.
+ *
+ * DUAS FONTES, e a ordem entre elas é o ponto: o pedido do FORMULÁRIO manda sobre a opção da
+ * empresa. A mesma agência pode ter um formulário institucional caindo no número oficial e um de
+ * campanha caindo no QR — a empresa escolhe o padrão, o formulário escolhe a exceção.
+ *
+ * E o pedido do formulário NÃO TEM PLANO B. Se ele pede o QR e o QR está fora, o lead entra sem
+ * conversa, e não pelo oficial. Quem escolheu um canal escolheu contra o outro: cair no outro
+ * mandaria a mensagem pelo número errado, que é pior do que não mandar — e silenciosamente, porque
+ * ninguém olha um lead que "deu certo".
+ */
+export function escolherCanalDoFlow(
+  preferenciaDaEmpresa: CanalDoFlow,
+  conexoes: ConexoesDoWorkspace,
+  pedidoDoFormulario?: "qrcode" | "oficial" | null,
+): EscolhaDeCanal {
   const oficial = (): EscolhaDeCanal | null =>
     conexoes.oficial
       ? { contaCanal: contaCanalDaConexao(CANAL_OFICIAL, conexoes.oficial), conexao: "oficial", aviso: null }
@@ -58,11 +74,18 @@ export function escolherCanalDoFlow(preferencia: CanalDoFlow, conexoes: Conexoes
       ? { contaCanal: contaCanalDaConexao(CANAL_NAO_OFICIAL, conexoes.qrcode), conexao: "qrcode", aviso: null }
       : null;
 
-  if (preferencia === "oficial") {
+  if (pedidoDoFormulario === "oficial") {
+    return oficial() ?? semConexao("O formulário pediu o WhatsApp oficial, que não está conectado; o lead entrou sem conversa.");
+  }
+  if (pedidoDoFormulario === "qrcode") {
+    return qrcode() ?? semConexao("O formulário pediu o WhatsApp QR Code, que não está conectado; o lead entrou sem conversa.");
+  }
+
+  if (preferenciaDaEmpresa === "oficial") {
     return oficial() ?? semConexao("O WhatsApp oficial não está conectado, então o lead entrou sem conversa.");
   }
 
-  if (preferencia === "qrcode") {
+  if (preferenciaDaEmpresa === "qrcode") {
     return qrcode() ?? semConexao("O WhatsApp QR Code não está conectado, então o lead entrou sem conversa.");
   }
 

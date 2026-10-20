@@ -210,12 +210,63 @@ describe("receberLeadDoFlow", () => {
      */
     const { deps } = fazerDeps({
       conexoesDeWhatsapp: vi.fn(async () => ({ oficial: null, qrcode: "5562999990001" })),
-      conversaDoContato: vi.fn(async () => ({ id: "conversa-que-ja-existia" })),
+      conversaDoContato: vi.fn(async () => ({ id: "conversa-que-ja-existia", canal: "WhatsApp" })),
     });
     const r = await receberLeadDoFlow({ workspaceId: "w1", lead: lead(), deps });
 
     expect(deps.garantirConversa).toHaveBeenCalledWith(expect.objectContaining({ contaCanal: null }));
     expect(r.conversaId).toBeTruthy();
+  });
+
+  it("o canal pedido no formulário manda sobre a opção da empresa", async () => {
+    /*
+     * A escolha é do FORMULÁRIO: a mesma agência pode ter um institucional caindo no número oficial
+     * e um de campanha caindo no QR. A empresa escolhe o padrão, o formulário escolhe a exceção.
+     */
+    const { deps } = fazerDeps({
+      conexoesDeWhatsapp: vi.fn(async () => ({ oficial: "111", qrcode: "5562999990001" })),
+      canalDoFlow: vi.fn(async () => "oficial" as const),
+    });
+    await receberLeadDoFlow({
+      workspaceId: "w1",
+      lead: { ...lead(), canalWhatsApp: "qrcode" as const },
+      deps,
+    });
+
+    expect(deps.garantirConversa).toHaveBeenCalledWith(
+      expect.objectContaining({ contaCanal: "whatsapp_nao_oficial:5562999990001" }),
+    );
+  });
+
+  it("canal pedido e desconectado NÃO cai no outro: o lead entra sem conversa", async () => {
+    /*
+     * Cair no outro canal mandaria a mensagem pelo número errado — e em silêncio, porque ninguém
+     * revisa um lead que "deu certo". Quem escolheu um canal escolheu contra o outro.
+     */
+    const { deps } = fazerDeps({
+      conexoesDeWhatsapp: vi.fn(async () => ({ oficial: "111", qrcode: null })),
+    });
+    const r = await receberLeadDoFlow({
+      workspaceId: "w1",
+      lead: { ...lead(), canalWhatsApp: "qrcode" as const },
+      deps,
+    });
+
+    expect(deps.garantirConversa).not.toHaveBeenCalled();
+    expect(r.avisos.join(" ")).toContain("O formulário pediu o WhatsApp QR Code");
+  });
+
+  it("conversa que já existe e não é de WhatsApp vira aviso, não envio pelo canal errado", async () => {
+    // Quem chegou pelo Direct do Instagram e depois preencheu um formulário: o atendimento é por
+    // lá, e a confirmação por WhatsApp não tem como sair dali.
+    const { deps } = fazerDeps({
+      conexoesDeWhatsapp: vi.fn(async () => ({ oficial: null, qrcode: "5562999990001" })),
+      conversaDoContato: vi.fn(async () => ({ id: "conversa-do-direct", canal: "Instagram" })),
+    });
+    const r = await receberLeadDoFlow({ workspaceId: "w1", lead: lead(), deps });
+
+    expect(r.avisos.join(" ")).toContain("já é atendido por Instagram");
+    expect(deps.garantirConversa).toHaveBeenCalledWith(expect.objectContaining({ contaCanal: null }));
   });
 
   it("empresa sem funil recebe o contato mesmo assim", async () => {
