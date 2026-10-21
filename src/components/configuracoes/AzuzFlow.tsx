@@ -114,6 +114,21 @@ function protecoesMudaram(c: ConfigDoCanal, p: Protecoes): boolean {
   );
 }
 
+/**
+ * O que chegou da rota, com o estado do canal garantido.
+ *
+ * A rota responde o recurso inteiro no GET e no PUT (ver `azuz-flow-resposta.ts`), e é dela a
+ * obrigação. Isto aqui é cinto de segurança: um corpo sem `disjuntor` derrubava a tela INTEIRA de
+ * Configurações em "Algo deu errado por aqui", porque o render lê `canal.disjuntor.pausadoEm`. Um
+ * campo faltando pode esconder um aviso; não pode apagar a tela.
+ */
+function comEstadoCompleto(dados: ConfigDoCanal): ConfigDoCanal {
+  return {
+    ...dados,
+    disjuntor: dados.disjuntor ?? { falhasSeguidas: 0, pausadoEm: null, ultimoMotivo: null },
+  };
+}
+
 type Leitura =
   | { situacao: "lendo" }
   | { situacao: "lido"; dados: Estado }
@@ -178,9 +193,10 @@ export function AzuzFlow() {
       if (!r?.ok) return;
       const lido = await lerJson<ConfigDoCanal>(r, "");
       if (lido.ok) {
-        setCanal(lido.dados);
-        setTextoEmEdicao(lido.dados.confirmacao.texto);
-        setProtecoes(protecoesDe(lido.dados));
+        const completo = comEstadoCompleto(lido.dados);
+        setCanal(completo);
+        setTextoEmEdicao(completo.confirmacao.texto);
+        setProtecoes(protecoesDe(completo));
       }
     })();
     // `traduzir` muda com o idioma; reler o estado por troca de idioma não faria mal, mas também
@@ -265,9 +281,10 @@ export function AzuzFlow() {
       });
       const lido = await lerJson<ConfigDoCanal>(r, traduzir("Não deu pra salvar."));
       if (lido.ok) {
-        setCanal(lido.dados);
-        setTextoEmEdicao(lido.dados.confirmacao.texto);
-        setProtecoes(protecoesDe(lido.dados));
+        const completo = comEstadoCompleto(lido.dados);
+        setCanal(completo);
+        setTextoEmEdicao(completo.confirmacao.texto);
+        setProtecoes(protecoesDe(completo));
       } else setErro(lido.erro);
     } finally {
       setSalvandoCanal(false);
