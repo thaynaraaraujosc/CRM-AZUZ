@@ -508,14 +508,9 @@ export function AzuzFlow() {
           ) : null}
 
           <div className="flow-interruptor">
-            <div>
-              <div className="flow-rotulo">
-                {traduzir("Confirmação de reunião")}
-                <span className={`badge ${situacao.cor}`}>{traduzir(situacao.texto)}</span>
-              </div>
-              <p className="hint">
-                {traduzir("Uma mensagem por reunião, só para quem marcou o consentimento.")}
-              </p>
+            <div className="flow-rotulo">
+              {traduzir("Confirmação de reunião")}
+              <span className={`badge ${situacao.cor}`}>{traduzir(situacao.texto)}</span>
             </div>
             <Toggle
               label={traduzir("Confirmação de reunião")}

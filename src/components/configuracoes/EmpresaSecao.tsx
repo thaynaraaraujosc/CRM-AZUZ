@@ -14,7 +14,12 @@ import {
   lerNomeDoEspaco,
 } from "@/lib/empresa/dados";
 import { LOGO_SLOT } from "@/lib/imagens/tamanho-da-logo";
-import { enviarLogoDaEmpresa, tirarLogoDaEmpresa, useLogoDaEmpresa } from "@/lib/logo-da-empresa";
+import {
+  enviarLogoDaEmpresa,
+  publicarNomeDaEmpresa,
+  tirarLogoDaEmpresa,
+  useIdentidadeDaEmpresa,
+} from "@/lib/empresa/identidade";
 
 /**
  * DADOS DA EMPRESA: o cartão de visita da agência dentro do CRM.
@@ -98,7 +103,7 @@ export function EmpresaSecao() {
   const [recado, setRecado] = useState<string | null>(null);
   const [trocandoLogo, setTrocandoLogo] = useState(false);
   const entradaDaLogo = useRef<HTMLInputElement>(null);
-  const { logo } = useLogoDaEmpresa();
+  const { logo } = useIdentidadeDaEmpresa();
 
   async function carregar() {
     const resposta = await fetch("/api/workspace", { cache: "no-store" }).catch(() => null);
@@ -158,6 +163,10 @@ export function EmpresaSecao() {
       setErro(corpo?.erro ?? traduzir("Não deu pra salvar agora. Tente de novo."));
       return;
     }
+    // O menu mostra o nome do espaço a partir do token da SESSÃO, que é tirado no login e não
+    // muda sozinho. Sem este aviso, gravar aqui mudava a coluna e o menu seguia com o nome antigo
+    // até a pessoa sair e entrar de novo — parecia que não tinha salvado.
+    publicarNomeDaEmpresa(nomeLido.valor);
     // Relê em vez de confiar no rascunho: é o servidor que diz como o documento e o telefone
     // ficaram gravados depois da normalização.
     await carregar();
