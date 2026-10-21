@@ -42,6 +42,22 @@ export async function POST(request: Request) {
 }
 
 async function receber(request: Request) {
+  /*
+   * QUANTO TEMPO CADA PEDAÇO LEVOU.
+   *
+   * O Flow desiste em 10 segundos (`lib/crm/cliente.ts` lá) e mostra "O CRM demorou demais para
+   * responder". A entrega acontece assim mesmo — a repetição é idempotente —, mas o aviso aparece
+   * pra agência a cada formulário respondido, e eu não sei dizer PARA ONDE vão os 10 segundos sem
+   * medir: pode ser a primeira conexão com o banco (função fria), pode ser o trabalho da entrega.
+   *
+   * Então o log diz as duas coisas. Comparando `banco` (que inclui a primeira consulta, e com ela
+   * o custo de abrir a conexão) com `entrega`, a próxima entrega responde sozinha onde está o
+   * tempo. Nenhum dado do lead entra aqui: nome, telefone e respostas são de uma pessoa que não é
+   * cliente nosso.
+   */
+  const comecou = Date.now();
+  let marcaDoBanco = 0;
+
   const ip = await ipDeQuemChamou();
   const porIp = contarChamada(`flow-leads:ip:${ip}`, POR_IP);
   if (!porIp.permitido) {
@@ -57,6 +73,9 @@ async function receber(request: Request) {
   // sondando se o palpite acertou, e não ajuda quem é legítimo — a agência vê o estado da chave na
   // tela do CRM.
   if (!autenticado) return recusar(401, "Chave de integração inválida.");
+  // A autenticação é a PRIMEIRA consulta do pedido: o tempo até aqui carrega o custo de abrir a
+  // conexão com o banco, que é o suspeito número um numa função que roda fria quase sempre.
+  marcaDoBanco = Date.now() - comecou;
 
   const porChave = contarChamada(`flow-leads:chave:${autenticado.chaveId}`, POR_CHAVE);
   if (!porChave.permitido) {
@@ -76,11 +95,16 @@ async function receber(request: Request) {
   if (!validado.ok) return recusar(400, validado.erro);
 
   try {
+    const antesDaEntrega = Date.now();
     const resultado = await receberLeadDoFlow({
       workspaceId: autenticado.workspaceId,
       lead: validado.lead,
       deps: dependenciasReais(autenticado.workspaceId),
     });
+    console.log(
+      `[azuz-flow] lead recebido (workspace ${autenticado.workspaceId}, entrega ${validado.lead.respostaId}): ` +
+        `banco ${marcaDoBanco}ms, entrega ${Date.now() - antesDaEntrega}ms, total ${Date.now() - comecou}ms`,
+    );
     return NextResponse.json(resultado, {
       // 201 só quando o contato nasceu agora. Entrega repetida e contato que já existia são 200:
       // nada foi criado.
