@@ -94,6 +94,25 @@ export async function enviarTextoPeloCanal(params: {
       return { enviado: true };
     }
 
+    /*
+     * CONVERSA SEM DONO É DO QR CODE, e isso já é regra do produto — só não estava aqui.
+     *
+     * `contasCanalVisiveis` diz com todas as letras: `contaCanal IS NULL` é o histórico anterior a
+     * essa coluna existir, e todo ele veio do QR Code, o único canal que já espelhou histórico. É
+     * por isso que essas conversas aparecem na caixa de entrada quando o QR está ligado.
+     *
+     * Aqui elas caíam no caminho da API oficial e voltavam "WhatsApp não conectado" — num
+     * workspace que estava com o WhatsApp funcionando o dia inteiro. Valia pra toda automação
+     * respondendo a conversa antiga, e passou a valer também pro lead do Flow, que agora pode
+     * nascer sem marca quando o CRM não sabe o número da conexão (ver `azuz-flow-canal.ts`).
+     *
+     * Só quando o QR está LIGADO: com ele fora e o oficial de pé, a saída é o caminho de baixo.
+     */
+    if (!conversa.contaCanal && (await qrCodeConectado(workspaceId))) {
+      await enviarMensagemWhatsAppNaoOficial(workspaceId, conversa.contato, texto);
+      return { enviado: true };
+    }
+
     const conta = await contaConectada(workspaceId);
     if (!conta) return { enviado: false, motivo: "WhatsApp não conectado" };
 
@@ -131,4 +150,17 @@ export async function enviarTextoPeloCanal(params: {
   } catch (erro) {
     return { enviado: false, motivo: erro instanceof Error ? erro.message : "falha no envio" };
   }
+}
+
+/** O WhatsApp por QR Code está ligado neste workspace? Consulta curta e própria: a leitura completa
+ *  das conexões (`azuz-flow-conexoes.ts`) ainda descriptografa o token do oficial, que aqui não
+ *  serve pra nada. */
+async function qrCodeConectado(workspaceId: string): Promise<boolean> {
+  const integracao = await prisma.integracao
+    .findUnique({
+      where: { workspaceId_provedor: { workspaceId, provedor: "whatsapp_nao_oficial" } },
+      select: { status: true },
+    })
+    .catch(() => null);
+  return integracao?.status === "conectado";
 }

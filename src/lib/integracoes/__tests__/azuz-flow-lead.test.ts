@@ -193,7 +193,7 @@ describe("receberLeadDoFlow", () => {
      * destinatário". O lead chegava no CRM e morria ali.
      */
     const { deps } = fazerDeps({
-      conexoesDeWhatsapp: vi.fn(async () => ({ oficial: null, qrcode: "5562999990001" })),
+      conexoesDeWhatsapp: vi.fn(async () => ({ oficial: null, qrcode: { numero: "5562999990001" } })),
     });
     const r = await receberLeadDoFlow({ workspaceId: "w1", lead: lead(), deps });
 
@@ -206,7 +206,7 @@ describe("receberLeadDoFlow", () => {
 
   it("a escolha da empresa manda: só oficial ignora o QR ligado", async () => {
     const { deps } = fazerDeps({
-      conexoesDeWhatsapp: vi.fn(async () => ({ oficial: null, qrcode: "5562999990001" })),
+      conexoesDeWhatsapp: vi.fn(async () => ({ oficial: null, qrcode: { numero: "5562999990001" } })),
       config: vi.fn(async () => ({ ...CONFIG_DE_TESTE, canal: "oficial" as const })),
     });
     const r = await receberLeadDoFlow({ workspaceId: "w1", lead: lead(), deps });
@@ -222,7 +222,7 @@ describe("receberLeadDoFlow", () => {
      * "não mexa no dono"; o resto do upsert continua valendo.
      */
     const { deps } = fazerDeps({
-      conexoesDeWhatsapp: vi.fn(async () => ({ oficial: null, qrcode: "5562999990001" })),
+      conexoesDeWhatsapp: vi.fn(async () => ({ oficial: null, qrcode: { numero: "5562999990001" } })),
       conversaDoContato: vi.fn(async () => ({ id: "conversa-que-ja-existia", canal: "WhatsApp", contaCanal: "whatsapp_nao_oficial:5562988887777" })),
     });
     const r = await receberLeadDoFlow({ workspaceId: "w1", lead: lead(), deps });
@@ -237,7 +237,7 @@ describe("receberLeadDoFlow", () => {
      * e um de campanha caindo no QR. A empresa escolhe o padrão, o formulário escolhe a exceção.
      */
     const { deps } = fazerDeps({
-      conexoesDeWhatsapp: vi.fn(async () => ({ oficial: "111", qrcode: "5562999990001" })),
+      conexoesDeWhatsapp: vi.fn(async () => ({ oficial: "111", qrcode: { numero: "5562999990001" } })),
       config: vi.fn(async () => ({ ...CONFIG_DE_TESTE, canal: "oficial" as const })),
     });
     await receberLeadDoFlow({
@@ -273,7 +273,7 @@ describe("receberLeadDoFlow", () => {
     // Quem chegou pelo Direct do Instagram e depois preencheu um formulário: o atendimento é por
     // lá, e a conversa não muda de dono. O que fazer com a confirmação é decidido depois.
     const { deps } = fazerDeps({
-      conexoesDeWhatsapp: vi.fn(async () => ({ oficial: null, qrcode: "5562999990001" })),
+      conexoesDeWhatsapp: vi.fn(async () => ({ oficial: null, qrcode: { numero: "5562999990001" } })),
       conversaDoContato: vi.fn(async () => ({ id: "conversa-do-direct", canal: "Instagram", contaCanal: "meta_instagram:1" })),
     });
     const r = await receberLeadDoFlow({ workspaceId: "w1", lead: lead(), deps });
@@ -428,7 +428,7 @@ describe("a confirmação de reunião", () => {
    */
   const LIGADA = {
     config: vi.fn(async () => ({ ...CONFIG_DE_TESTE, confirmacao: { ...CONFIG_DE_TESTE.confirmacao, ativa: true } })),
-    conexoesDeWhatsapp: vi.fn(async () => ({ oficial: null, qrcode: "5562988887777" })),
+    conexoesDeWhatsapp: vi.fn(async () => ({ oficial: null, qrcode: { numero: "5562988887777" } })),
   };
 
   it("desligada, não enfileira nem avisa nada", async () => {

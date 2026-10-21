@@ -422,7 +422,16 @@ export async function receberLeadDoFlow(params: {
      * conversa antiga.
      */
     const jaExiste = await deps.conversaDoContato(nomeDoContato);
-    if (jaExiste || contaCanal) {
+    /*
+     * A PORTA É "EXISTE CANAL", e não "existe marca de dono".
+     *
+     * Era `jaExiste || contaCanal`, e isso escondia um defeito: `contaCanal` é nulo quando o CRM
+     * não sabe o NÚMERO da conexão do QR Code — o que acontece quando o evento que ensina esse
+     * número se perde. O canal estava de pé, mandando e recebendo, e mesmo assim o lead entrava
+     * sem conversa. Sem conversa não há confirmação, e quem preencheu o formulário não recebia
+     * nada. Ver `azuz-flow-canal.ts`.
+     */
+    if (jaExiste || escolha.conexao) {
       const conversa = await deps.garantirConversa({
         nome: nomeDoContato,
         telefone: lead.whatsapp,
@@ -477,6 +486,16 @@ export async function receberLeadDoFlow(params: {
           inicio: lead.reuniao.inicio,
           texto: decisao.motivo,
         });
+      } else {
+        /*
+         * SEM CONVERSA, O MOTIVO IA PRA LUGAR NENHUM dentro do CRM.
+         *
+         * Ele entrava em `avisos`, que o Flow mostra na tela de Respostas dele — outro produto,
+         * outra tela, que quem atende não abre. No CRM o lead aparecia como um card comum, sem
+         * nada dizendo que uma confirmação tinha sido recusada. A linha do tempo do contato é
+         * onde essa resposta pertence quando não há conversa pra receber a bolha.
+         */
+        await deps.anotarNaLinhaDoTempo({ contatoNome: nomeDoContato, descricao: decisao.motivo });
       }
     } else if (decisao.acao === "enfileirar" && lead.whatsapp) {
       /*
@@ -504,6 +523,8 @@ export async function receberLeadDoFlow(params: {
             inicio: lead.reuniao.inicio,
             texto: quando.motivo,
           });
+        } else {
+          await deps.anotarNaLinhaDoTempo({ contatoNome: nomeDoContato, descricao: quando.motivo });
         }
       } else {
         const texto = montarTextoDaConfirmacao(config.confirmacao.texto, {

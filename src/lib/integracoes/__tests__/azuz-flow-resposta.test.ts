@@ -32,7 +32,7 @@ describe("a forma do recurso", () => {
   it("carrega todo campo que a tela lê", () => {
     const corpo = montarRespostaDoFlow({
       config: CONFIG_PADRAO,
-      conexoes: { oficial: null, qrcode: "5562988887777" },
+      conexoes: { oficial: null, qrcode: { numero: "5562988887777" } },
       disjuntor: DISJUNTOR,
     });
 
@@ -63,7 +63,7 @@ describe("o estado, não só a opção guardada", () => {
   it('"só oficial" com o oficial desconectado vira aviso e nenhuma conexão efetiva', () => {
     const corpo = montarRespostaDoFlow({
       config: { ...CONFIG_PADRAO, canal: "oficial" },
-      conexoes: { oficial: null, qrcode: "5562988887777" },
+      conexoes: { oficial: null, qrcode: { numero: "5562988887777" } },
       disjuntor: DISJUNTOR,
     });
 
@@ -76,7 +76,7 @@ describe("o estado, não só a opção guardada", () => {
   it("as conexões viram booleano: a tela não precisa do número de ninguém", () => {
     const corpo = montarRespostaDoFlow({
       config: CONFIG_PADRAO,
-      conexoes: { oficial: "111222333", qrcode: "5562988887777" },
+      conexoes: { oficial: "111222333", qrcode: { numero: "5562988887777" } },
       disjuntor: DISJUNTOR,
     });
 
@@ -87,7 +87,7 @@ describe("o estado, não só a opção guardada", () => {
   it("o disjuntor pausado chega inteiro, com o motivo", () => {
     const corpo = montarRespostaDoFlow({
       config: CONFIG_PADRAO,
-      conexoes: { oficial: null, qrcode: "5562988887777" },
+      conexoes: { oficial: null, qrcode: { numero: "5562988887777" } },
       disjuntor: { falhasSeguidas: 5, pausadoEm: "2026-10-21T12:00:00.000Z", ultimoMotivo: "a conexão caiu" },
     });
 
