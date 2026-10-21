@@ -474,6 +474,32 @@ model Workspace {
   slug     String   @unique
   criadoEm DateTime @default(now())
 
+  /// A LOGO DA AGÊNCIA, guardada como data URL.
+  ///
+  /// Não é preguiça de não usar o R2: a imagem é reduzida no navegador até caber no quadradinho do
+  /// topo do menu em 3× (uns poucos KB). Um arquivo desse tamanho num bucket custaria uma chamada
+  /// de rede a cada carregamento de página pra buscar algo menor do que o próprio cabeçalho HTTP —
+  /// e um link que pode quebrar. Aqui ela chega junto com o nome do workspace, numa leitura só.
+  logo String? @db.Text
+
+  /// OS DADOS DA EMPRESA: o cartão de visita da agência dentro do produto.
+  ///
+  /// Separados do `nome` acima de propósito, porque são duas coisas: `nome` é o ESPAÇO DE TRABALHO
+  /// (o que aparece no menu, nos convites e nos e-mails) e estes são a EMPRESA (quem ela é). Uma
+  /// agência pode se chamar "AZUZ Digital" e ter o espaço "AZUZ DIGITAL TECH"; um campo só
+  /// obrigaria um a imitar o outro.
+  ///
+  /// Todos opcionais: toda conta que já existe nasceu antes destas colunas, e exigir preenchimento
+  /// retroativo travaria a tela de quem nunca pediu nada disso.
+  empresaNome      String?
+  empresaFantasia  String?
+  /// CNPJ ou CPF. É o MESMO documento da cobrança da assinatura — um dado só, não dois.
+  empresaDocumento String?
+  empresaEmail     String?
+  empresaTelefone  String?
+  empresaSite      String?
+  empresaEndereco  String? @db.Text
+
   membros Membro[]
 
   // Fase 2: back-relations exigidas pelo Prisma pra cada modelo de negócio que ganhou

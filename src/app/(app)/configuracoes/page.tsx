@@ -12,6 +12,7 @@ import { ExpedienteSecao } from "@/components/configuracoes/ExpedienteSecao";
 import { NotificacoesSecao } from "@/components/configuracoes/NotificacoesSecao";
 import { SegurancaSecao } from "@/components/configuracoes/SegurancaSecao";
 import { EtiquetasSecao } from "@/components/configuracoes/EtiquetasSecao";
+import { EmpresaSecao } from "@/components/configuracoes/EmpresaSecao";
 import { WhatsAppSecao } from "@/components/configuracoes/WhatsAppSecao";
 import { InstagramSecao } from "@/components/configuracoes/InstagramSecao";
 import { AzuzIaSecao } from "@/components/configuracoes/AzuzIaSecao";
@@ -80,6 +81,7 @@ function ConfiguracoesConteudo() {
             {categoriaAtiva === "expediente" ? <ExpedienteSecao /> : null}
             {categoriaAtiva === "seguranca" ? <SegurancaSecao /> : null}
             {categoriaAtiva === "etiquetas" ? <EtiquetasSecao /> : null}
+            {categoriaAtiva === "empresa" ? <EmpresaSecao /> : null}
             {categoriaAtiva === "whatsapp" ? <WhatsAppSecao /> : null}
             {categoriaAtiva === "instagram" ? <InstagramSecao /> : null}
             {categoriaAtiva === "azuz-ia" ? <AzuzIaSecao /> : null}
