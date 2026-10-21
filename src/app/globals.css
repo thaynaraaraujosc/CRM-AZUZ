@@ -14493,6 +14493,210 @@ button.camp-row:hover {
   gap: var(--space-3);
 }
 
+/* ---------------- AZUZ Flow: a confirmação de reunião ----------------
+
+   Por que um punhado de classes em vez de `style={{}}` solto no componente: o cartão tem DOIS
+   interruptores, e os dois estavam na tela como pílulas nuas, sem rótulo visível ao lado — o
+   `Toggle` só levava `aria-label`. Quem olhava via dois botõezinhos iguais flutuando sobre
+   parágrafos cinza e não tinha como saber qual era qual.
+
+   O resto segue a mesma regra do produto: a sensação de caro vem de proporção, tipografia e
+   espaçamento, não de brilho. Nenhuma cor nova, nenhum gradiente, nenhum vidro — só os tokens que
+   já existem, então o tema escuro vem junto sem uma linha a mais. */
+
+/* Linha de interruptor: o que ele faz à esquerda, o controle à direita. */
+.flow-interruptor {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4);
+}
+
+.flow-interruptor + .flow-bloco,
+.flow-bloco + .flow-interruptor,
+.flow-bloco + .flow-bloco {
+  border-top: 1px solid var(--line-soft);
+}
+
+.flow-interruptor .flow-rotulo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 13px;
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
+  letter-spacing: var(--track-snug);
+}
+
+/* O parágrafo de apoio: o `.hint` tem padding de topo próprio, que aqui abriria um buraco. */
+.flow-interruptor .hint,
+.flow-bloco .hint {
+  padding-top: var(--space-1);
+  margin: 0;
+  max-width: 62ch;
+}
+
+.flow-bloco {
+  padding: var(--space-4);
+}
+
+/* Título de seção: micro-rótulo, o mesmo vocabulário dos rótulos de campo. Separa "Mensagem" de
+   "Proteções" sem precisar de mais uma divisória — a hierarquia já faz o trabalho. */
+.flow-bloco-titulo {
+  font-size: var(--texto-xs);
+  font-weight: var(--fw-semibold);
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: var(--track-wide);
+  margin: 0 0 var(--space-3);
+}
+
+.flow-area {
+  width: 100%;
+  min-height: 132px;
+  font-family: inherit;
+  line-height: var(--lh-base);
+  resize: vertical;
+}
+
+.flow-contagem {
+  display: block;
+  text-align: right;
+  font-size: var(--fs-caption);
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+  margin-top: var(--space-1);
+}
+
+/* As variáveis: grade compacta de botões, não uma lista de documentação. Clicar insere no texto,
+   que é a única coisa que alguém quer fazer com essa lista. */
+.flow-vars {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-1) var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.flow-var {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.flow-var:hover {
+  background: var(--surface-hover);
+  border-color: var(--line);
+}
+
+.flow-var code {
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-semibold);
+  color: var(--blue);
+  background: var(--blue-soft);
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+  white-space: nowrap;
+}
+
+/* Uma linha por variável, sem quebrar: a explicação longa de uma delas desalinhava a grade
+   inteira. O texto completo fica no `title`, e é explicação, não instrução — quem precisa já leu. */
+.flow-var span {
+  font-size: var(--fs-secondary);
+  color: var(--text-muted);
+  line-height: var(--lh-tight);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Os campos. `.field` tem padding e divisória por construção (ele é feito pra formulário
+   empilhado): usado em linha, sobravam traços soltos embaixo de "ATÉ" e embaixo dos números. */
+.flow-campos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  /* Alinha pela BASE dos campos. Um rótulo que quebra em duas linhas empurrava só o seu input pra
+     baixo, e a fila de campos ficava em degrau. */
+  align-items: end;
+}
+
+/* Largura fixa e modesta: um campo de hora esticado na largura do cartão não fica mais fácil de
+   usar, fica só grande. `flex-basis` pequeno com `wrap` faz a linha quebrar sozinha no celular. */
+.flow-campo {
+  flex: 0 1 168px;
+}
+
+.flow-campo label {
+  display: block;
+  font-size: var(--texto-xs);
+  font-weight: var(--fw-semibold);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: var(--space-2);
+}
+
+.flow-campo .input {
+  width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+
+/* As setinhas do `input[type=number]`: o navegador desenha um par de triângulos que não combina
+   com nenhum outro controle da tela. Digitar e as setas do teclado continuam funcionando. */
+.flow-campo .input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.flow-campo .input[type="number"]::-webkit-outer-spin-button,
+.flow-campo .input[type="number"]::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+/* A barra de salvar SÓ EXISTE quando há o que salvar.
+   Um botão cinza parado é a tela dizendo "tem coisa aqui que você não pode fazer"; aparecendo
+   junto com a mudança, ele responde ao que a pessoa acabou de digitar. */
+.flow-salvar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line-soft);
+  animation: flow-salvar-entra var(--transition-base);
+}
+
+.flow-salvar .hint {
+  padding: 0;
+  margin: 0;
+}
+
+@keyframes flow-salvar-entra {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flow-salvar {
+    animation: none;
+  }
+}
+
 .config-abas {
   display: flex;
   gap: var(--space-1);

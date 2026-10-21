@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 
 import { IconAlerta } from "@/components/icons";
@@ -65,9 +65,15 @@ const VARIAVEIS_DA_CONFIRMACAO: [string, string][] = [
   ["{{data}}", "a data por extenso"],
   ["{{dataCurta}}", "a data em números"],
   ["{{hora}}", "a hora em Brasília"],
-  ["{{link}}", "o link da reunião (sozinho numa linha, a linha some quando não houver link)"],
+  // Curta pra caber numa linha da grade; a frase inteira está no `title` do botão.
+  ["{{link}}", "o link da reunião"],
   ["{{empresa}}", "o nome da sua empresa"],
 ];
+
+/** O que o `title` conta além do rótulo curto. Só onde a explicação curta deixa algo de fora. */
+const DETALHE_DA_VARIAVEL: Record<string, string> = {
+  "{{link}}": "O link da reunião. Sozinho numa linha, a linha inteira some quando não houver link.",
+};
 
 const ROTULOS_DE_CANAL: Record<ConfigDoCanal["canal"], string> = {
   automatico: "Automático (oficial se conectado, senão QR Code)",
@@ -137,6 +143,8 @@ export function AzuzFlow() {
   /** As proteções em edição, pelo mesmo motivo do texto: horário e teto se digitam dígito a
    *  dígito, e salvar a cada tecla gravaria "0", "3", "30" — sendo que "0" é recusado. */
   const [protecoes, setProtecoes] = useState<Protecoes | null>(null);
+  /** O campo do texto, pra variável clicada entrar onde o cursor estava. */
+  const areaDoTexto = useRef<HTMLTextAreaElement>(null);
 
   const ehAdmin = sessao?.user?.papelTipo === "admin" || sessao?.user?.superAdmin;
 
@@ -269,6 +277,46 @@ export function AzuzFlow() {
   const data = (valor: string | null | undefined) =>
     valor ? new Date(valor).toLocaleString(localeNumero) : traduzir("nunca");
 
+  /**
+   * Põe a variável onde o cursor estava, não no fim.
+   *
+   * Quem clica em `{{hora}}` está escrevendo uma frase e quer a variável ali, no meio dela. Jogar
+   * no fim do texto obrigaria a recortar e colar toda vez — e aí a lista vira enfeite.
+   */
+  function inserirVariavel(chave: string) {
+    const atual = textoEmEdicao ?? "";
+    const area = areaDoTexto.current;
+    const inicio = area?.selectionStart ?? atual.length;
+    const fim = area?.selectionEnd ?? inicio;
+    const novo = atual.slice(0, inicio) + chave + atual.slice(fim);
+    // O limite é do servidor (2000). Truncar em silêncio apagaria o fim do texto de alguém.
+    if (novo.length > 2000) return;
+    setTextoEmEdicao(novo);
+    if (!area) return;
+    // Depois do React reescrever o valor: sem isso o cursor volta pro começo do campo.
+    requestAnimationFrame(() => {
+      area.focus();
+      const posicao = inicio + chave.length;
+      area.setSelectionRange(posicao, posicao);
+    });
+  }
+
+  /**
+   * O estado da confirmação em uma palavra, do mais grave pro mais comum.
+   *
+   * A ordem importa: pausada pelo disjuntor é diferente de pausada por decisão, e as duas são
+   * diferentes de desligada. O ângulo de um interruptor não diz qual das três é.
+   */
+  const situacao = !canal
+    ? { texto: "Desligada", cor: "badge-neutral" }
+    : canal.disjuntor.pausadoEm
+      ? { texto: "Pausada automaticamente", cor: "badge-danger" }
+      : !canal.confirmacao.ativa
+        ? { texto: "Desligada", cor: "badge-neutral" }
+        : canal.confirmacao.pausada
+          ? { texto: "Pausada", cor: "badge-warning" }
+          : { texto: "Ligada", cor: "badge-success" };
+
   return (
     <div className="config-bloco">
       <p className="config-bloco-titulo">{traduzir("AZUZ Flow")}</p>
@@ -362,16 +410,20 @@ export function AzuzFlow() {
 
       {/*
         A CONFIRMAÇÃO DE REUNIÃO.
-        
+
         Só aparece com uma chave ativa: sem chave não chega lead, e uma opção que não pode fazer
         efeito ocupando espaço é ruído.
-        
+
+        CADA INTERRUPTOR TEM NOME AO LADO. Eram duas pílulas iguais flutuando sobre parágrafos
+        cinza — o `Toggle` só leva `aria-label`, que ninguém vê. Dois controles sem rótulo, um
+        deles capaz de fazer o CRM mandar mensagem sozinho pra gente de verdade.
+
         O AVISO EMBAIXO DO INTERRUPTOR não é texto de rodapé. Ligar isto faz o CRM mandar mensagem
         sozinho, pra quem nunca escreveu, por um número que pode ser bloqueado por denúncia. Quem
         liga precisa ler isso antes, não depois.
       */}
       {canal && estado?.chave ? (
-        <div className="card" style={{ padding: 12, marginBottom: 12 }}>
+        <div className="card" style={{ marginBottom: 12 }}>
           {/*
             O DISJUNTOR VEM PRIMEIRO, antes de qualquer opção.
 
@@ -380,81 +432,107 @@ export function AzuzFlow() {
             motivo e o botão desfaz, no mesmo lugar.
           */}
           {canal.disjuntor.pausadoEm ? (
-            <div className="int-aviso-conflito" style={{ marginBottom: 12 }}>
-              <p className="int-title" style={{ margin: 0 }}>
-                <IconAlerta width={12} height={12} aria-hidden="true" />{" "}
-                {traduzir("As confirmações foram pausadas automaticamente.")}
-              </p>
-              <p className="hint" style={{ margin: "4px 0 0" }}>
-                {traduzir("Foram {falhas} falhas seguidas no envio, em {quando}.", {
-                  falhas: String(canal.disjuntor.falhasSeguidas),
-                  quando: data(canal.disjuntor.pausadoEm),
-                })}{" "}
-                {canal.disjuntor.ultimoMotivo
-                  ? traduzir("Último motivo: {motivo}.", { motivo: canal.disjuntor.ultimoMotivo })
-                  : null}
-              </p>
-              <p className="hint" style={{ margin: "4px 0 8px" }}>
-                {traduzir(
-                  "Nada foi perdido: as confirmações continuam na fila e voltam a sair quando você religar.",
-                )}
-              </p>
-              <button
-                type="button"
-                className="btn"
-                disabled={salvandoCanal}
-                onClick={() => void salvarConfig({ religar: true })}
-              >
-                {salvandoCanal ? traduzir("Religando…") : traduzir("Religar")}
-              </button>
+            <div className="flow-bloco">
+              <div className="int-aviso-conflito">
+                <p className="int-title" style={{ margin: 0 }}>
+                  <IconAlerta width={12} height={12} aria-hidden="true" />{" "}
+                  {traduzir("As confirmações foram pausadas automaticamente.")}
+                </p>
+                <p className="hint" style={{ margin: "4px 0 0" }}>
+                  {traduzir("Foram {falhas} falhas seguidas no envio, em {quando}.", {
+                    falhas: String(canal.disjuntor.falhasSeguidas),
+                    quando: data(canal.disjuntor.pausadoEm),
+                  })}{" "}
+                  {canal.disjuntor.ultimoMotivo
+                    ? traduzir("Último motivo: {motivo}.", { motivo: canal.disjuntor.ultimoMotivo })
+                    : null}
+                </p>
+                <p className="hint" style={{ margin: "4px 0 10px" }}>
+                  {traduzir(
+                    "Nada foi perdido: as confirmações continuam na fila e voltam a sair quando você religar.",
+                  )}
+                </p>
+                <button
+                  type="button"
+                  className="btn"
+                  disabled={salvandoCanal}
+                  onClick={() => void salvarConfig({ religar: true })}
+                >
+                  {salvandoCanal ? traduzir("Religando…") : traduzir("Religar")}
+                </button>
+              </div>
             </div>
           ) : null}
 
-          <Toggle
-            label={traduzir("Confirmação de reunião do Flow")}
-            defaultOn={canal.confirmacao.ativa}
-            onToggle={(ligado) => void salvarConfig({ confirmacao: { ativa: ligado } })}
-          />
-          <p className="hint" style={{ margin: "6px 0 0" }}>
-            {traduzir(
-              "Quando o lead marca reunião no formulário, o CRM manda UMA mensagem confirmando dia, hora e link — só para quem marcou a caixa de consentimento.",
-            )}
-          </p>
+          <div className="flow-interruptor">
+            <div>
+              <div className="flow-rotulo">
+                {traduzir("Confirmação de reunião do Flow")}
+                {/* O estado por extenso, ao lado do nome. O ângulo de uma pílula é a pior forma de
+                    dizer se o CRM está mandando mensagem sozinho ou não. */}
+                <span className={`badge ${situacao.cor}`}>{traduzir(situacao.texto)}</span>
+              </div>
+              <p className="hint">
+                {traduzir(
+                  "Quando o lead marca reunião no formulário, o CRM manda UMA mensagem confirmando dia, hora e link — só para quem marcou a caixa de consentimento.",
+                )}
+              </p>
+            </div>
+            <Toggle
+              label={traduzir("Confirmação de reunião do Flow")}
+              defaultOn={canal.confirmacao.ativa}
+              onToggle={(ligado) => void salvarConfig({ confirmacao: { ativa: ligado } })}
+            />
+          </div>
 
-          <div className="field" style={{ marginTop: 12 }}>
-            <label>{traduzir("Texto da mensagem")}</label>
+          <div className="flow-bloco">
+            <p className="flow-bloco-titulo">{traduzir("Mensagem")}</p>
             <textarea
-              className="input"
-              style={{ width: "100%", minHeight: 120, fontFamily: "inherit" }}
+              ref={areaDoTexto}
+              className="input flow-area"
               value={textoEmEdicao ?? ""}
               maxLength={2000}
               onChange={(e) => setTextoEmEdicao(e.target.value)}
             />
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
-              <button
-                type="button"
-                className="btn"
-                disabled={salvandoCanal || textoEmEdicao === canal.confirmacao.texto}
-                onClick={() => void salvarConfig({ confirmacao: { texto: textoEmEdicao ?? "" } })}
-              >
-                {salvandoCanal ? traduzir("Salvando…") : traduzir("Salvar texto")}
-              </button>
-              {textoEmEdicao !== canal.confirmacao.texto ? (
-                <span className="hint">{traduzir("Alterações não salvas.")}</span>
-              ) : null}
-            </div>
-          </div>
+            <span className="flow-contagem">
+              {(textoEmEdicao ?? "").length}/2000
+            </span>
 
-          <p className="hint" style={{ margin: "8px 0 0" }}>
-            {traduzir("Você pode usar:")}
-          </p>
-          <ul className="hint" style={{ margin: "2px 0 0", paddingLeft: 16 }}>
-            {VARIAVEIS_DA_CONFIRMACAO.map(([chave, explicacao]) => (
-              <li key={chave}>
-                <code>{chave}</code> — {traduzir(explicacao)}
-              </li>
-            ))}
-          </ul>
+            {/* As variáveis como botões, não como lista de documentação: clicar põe a variável no
+                ponto onde o cursor estava, que é a única coisa que alguém quer fazer com elas. */}
+            <div className="flow-vars">
+              {VARIAVEIS_DA_CONFIRMACAO.map(([chave, explicacao]) => (
+                <button
+                  key={chave}
+                  type="button"
+                  className="flow-var"
+                  title={
+                    DETALHE_DA_VARIAVEL[chave]
+                      ? `${traduzir(DETALHE_DA_VARIAVEL[chave])} · ${traduzir("Clique para inserir no texto")}`
+                      : traduzir("Clique para inserir no texto")
+                  }
+                  onClick={() => inserirVariavel(chave)}
+                >
+                  <code>{chave}</code>
+                  <span>{traduzir(explicacao)}</span>
+                </button>
+              ))}
+            </div>
+
+            {textoEmEdicao !== canal.confirmacao.texto ? (
+              <div className="flow-salvar">
+                <button
+                  type="button"
+                  className="btn primary"
+                  disabled={salvandoCanal}
+                  onClick={() => void salvarConfig({ confirmacao: { texto: textoEmEdicao ?? "" } })}
+                >
+                  {salvandoCanal ? traduzir("Salvando…") : traduzir("Salvar texto")}
+                </button>
+                <span className="hint">{traduzir("Alterações não salvas.")}</span>
+              </div>
+            ) : null}
+          </div>
 
           {/*
             AS PROTEÇÕES DO NÚMERO.
@@ -464,34 +542,41 @@ export function AzuzFlow() {
             lugar, o que impede o CRM de mandar cem mensagens de madrugada por um número que pode
             ser bloqueado por denúncia.
           */}
-          <hr style={{ border: 0, borderTop: "1px solid var(--line)", margin: "14px 0 12px" }} />
-
-          <Toggle
-            label={traduzir("Pausar confirmações do Flow")}
-            defaultOn={canal.confirmacao.pausada}
-            onToggle={(ligado) => void salvarConfig({ confirmacao: { pausada: ligado } })}
-          />
-          <p className="hint" style={{ margin: "6px 0 0" }}>
-            {traduzir(
-              "O freio de mão: para o envio agora e não apaga nada. A fila espera; nada é descartado.",
-            )}
-          </p>
+          <div className="flow-interruptor">
+            <div>
+              <div className="flow-rotulo">{traduzir("Pausar confirmações do Flow")}</div>
+              <p className="hint">
+                {traduzir(
+                  "O freio de mão: para o envio agora e não apaga nada. A fila espera; nada é descartado.",
+                )}
+              </p>
+            </div>
+            <Toggle
+              label={traduzir("Pausar confirmações do Flow")}
+              defaultOn={canal.confirmacao.pausada}
+              onToggle={(ligado) => void salvarConfig({ confirmacao: { pausada: ligado } })}
+            />
+          </div>
 
           {protecoes ? (
-            <>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
-                <div className="field" style={{ margin: 0 }}>
-                  <label>{traduzir("Enviar a partir de")}</label>
+            <div className="flow-bloco">
+              <p className="flow-bloco-titulo">{traduzir("Proteções do número")}</p>
+
+              <div className="flow-campos">
+                <div className="flow-campo">
+                  <label htmlFor="flow-janela-inicio">{traduzir("Enviar a partir de")}</label>
                   <input
+                    id="flow-janela-inicio"
                     className="input"
                     type="time"
                     value={protecoes.inicio}
                     onChange={(e) => setProtecoes({ ...protecoes, inicio: e.target.value })}
                   />
                 </div>
-                <div className="field" style={{ margin: 0 }}>
-                  <label>{traduzir("até")}</label>
+                <div className="flow-campo">
+                  <label htmlFor="flow-janela-fim">{traduzir("até")}</label>
                   <input
+                    id="flow-janela-fim"
                     className="input"
                     type="time"
                     value={protecoes.fim}
@@ -499,77 +584,84 @@ export function AzuzFlow() {
                   />
                 </div>
               </div>
-              <p className="hint" style={{ margin: "6px 0 0" }}>
+              <p className="hint">
                 {traduzir(
                   "Horário de Brasília. Fora da janela a confirmação espera a janela abrir — e nunca sai depois de a reunião começar.",
                 )}
               </p>
 
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
-                <div className="field" style={{ margin: 0 }}>
-                  <label>{traduzir("Máximo por dia")}</label>
+              <div className="flow-campos" style={{ marginTop: 16 }}>
+                <div className="flow-campo">
+                  <label htmlFor="flow-teto-dia">{traduzir("Máximo por dia")}</label>
                   <input
+                    id="flow-teto-dia"
                     className="input"
                     type="number"
                     min={1}
                     max={500}
-                    style={{ width: 110 }}
                     value={protecoes.tetoDiario}
                     onChange={(e) => setProtecoes({ ...protecoes, tetoDiario: e.target.value })}
                   />
                 </div>
-                <div className="field" style={{ margin: 0 }}>
-                  <label>{traduzir("Máximo por número em 24h")}</label>
+                <div className="flow-campo">
+                  <label htmlFor="flow-teto-numero">{traduzir("Máximo por número em 24h")}</label>
                   <input
+                    id="flow-teto-numero"
                     className="input"
                     type="number"
                     min={1}
                     max={20}
-                    style={{ width: 110 }}
                     value={protecoes.tetoPorNumero}
                     onChange={(e) => setProtecoes({ ...protecoes, tetoPorNumero: e.target.value })}
                   />
                 </div>
-                <div className="field" style={{ margin: 0 }}>
-                  <label>{traduzir("Falhas seguidas até pausar")}</label>
+                <div className="flow-campo">
+                  <label htmlFor="flow-falhas">{traduzir("Falhas até pausar")}</label>
                   <input
+                    id="flow-falhas"
                     className="input"
                     type="number"
                     min={1}
                     max={50}
-                    style={{ width: 110 }}
                     value={protecoes.falhasParaPausar}
                     onChange={(e) => setProtecoes({ ...protecoes, falhasParaPausar: e.target.value })}
                   />
                 </div>
               </div>
 
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
-                <button
-                  type="button"
-                  className="btn"
-                  disabled={salvandoCanal || !protecoesMudaram(canal, protecoes)}
-                  onClick={() =>
-                    void salvarConfig({
-                      confirmacao: {
-                        janela: { inicio: protecoes.inicio, fim: protecoes.fim },
-                        // `Number("")` é 0, que a rota recusa com a frase certa. Mandar o que foi
-                        // digitado, e deixar o servidor julgar, é o que faz a tela e o banco
-                        // concordarem sobre o que é um limite válido.
-                        tetoDiario: Number(protecoes.tetoDiario),
-                        tetoPorNumero: Number(protecoes.tetoPorNumero),
-                        falhasParaPausar: Number(protecoes.falhasParaPausar),
-                      },
-                    })
-                  }
-                >
-                  {salvandoCanal ? traduzir("Salvando…") : traduzir("Salvar proteções")}
-                </button>
-                {protecoesMudaram(canal, protecoes) ? (
+              <p className="hint">
+                {traduzir(
+                  "Depois de {falhas} falhas seguidas no envio, o CRM pausa sozinho e avisa quem administra. Nada é descartado.",
+                  { falhas: protecoes.falhasParaPausar || "0" },
+                )}
+              </p>
+
+              {protecoesMudaram(canal, protecoes) ? (
+                <div className="flow-salvar">
+                  <button
+                    type="button"
+                    className="btn primary"
+                    disabled={salvandoCanal}
+                    onClick={() =>
+                      void salvarConfig({
+                        confirmacao: {
+                          janela: { inicio: protecoes.inicio, fim: protecoes.fim },
+                          // `Number("")` é 0, que a rota recusa com a frase certa. Mandar o que foi
+                          // digitado, e deixar o servidor julgar, é o que faz a tela e o banco
+                          // concordarem sobre o que é um limite válido.
+                          tetoDiario: Number(protecoes.tetoDiario),
+                          tetoPorNumero: Number(protecoes.tetoPorNumero),
+                          falhasParaPausar: Number(protecoes.falhasParaPausar),
+                        },
+                      })
+                    }
+                  >
+                    {salvandoCanal ? traduzir("Salvando…") : traduzir("Salvar proteções")}
+                  </button>
                   <span className="hint">{traduzir("Alterações não salvas.")}</span>
-                ) : null}
-              </div>
-            </>
+                </div>
+              ) : null}
+            </div>
           ) : null}
         </div>
       ) : null}
