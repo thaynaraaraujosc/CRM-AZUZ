@@ -1,6 +1,7 @@
 import type { ComponentType, SVGProps } from "react";
 
 import {
+  IconContatos,
   IconCartao,
   IconEscudo,
   IconErro,
@@ -22,6 +23,7 @@ export type CategoriaId =
   | "etiquetas"
   | "importacao"
   | "azuz-ia"
+  | "empresa"
   | "whatsapp"
   | "instagram"
   | "integracoes"
@@ -70,6 +72,17 @@ export const GRUPOS_CONFIGURACOES: GrupoConfig[] = [
          tem usuário: não responde a única pergunta que uma auditoria existe pra responder.
          Detalhe que decide QUANDO fazer: auditoria não é retroativa. Ela precisa estar gravando
          antes do primeiro cliente com equipe, senão o histórico daquele período não existe. */
+    ],
+  },
+  {
+    titulo: "Empresa",
+    categorias: [
+      {
+        id: "empresa",
+        label: "Dados da empresa",
+        descricao: "Logo, nome do espaço de trabalho e dados da sua agência.",
+        Icon: IconContatos,
+      },
     ],
   },
   {

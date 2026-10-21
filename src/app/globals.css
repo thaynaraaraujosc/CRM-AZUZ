@@ -734,8 +734,8 @@ table {
    de auth (`.auth-mark`). Reforça que é o mesmo produto em todas as superfícies, dentro e fora
    do app logado. */
 .brand-mark {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: var(--radius-md);
   background: var(--blue);
   display: flex;
@@ -746,6 +746,21 @@ table {
   font-size: 14px;
   color: var(--white);
   flex: 0 0 auto;
+}
+
+/* COM LOGO o quadradinho perde o fundo azul: a marca da agência traz a cor dela, e um fundo
+   da marca do CRM atrás faria duas identidades disputando 32 pixels. A imagem cabe inteira, com
+   respiro — `object-fit: contain` é o que impede cortar um logo largo ou esticar um quadrado. */
+.brand-mark.com-logo {
+  background: none;
+  padding: 3px;
+}
+
+.brand-mark.com-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
 .sb-brand .wordmark {
@@ -2135,6 +2150,24 @@ table {
    Era `border: 1px solid transparent` sobre fundo claro: invisivel por construcao. Num formulario
    isso vira texto solto com um risco embaixo — a pessoa nao sabe onde clicar, e o controle
    desaparece dentro da pagina. Campo precisa parecer campo em repouso, nao so no foco. */
+/*
+ * NO TEMA ESCURO O CAMPO NÃO É BRANCO.
+ *
+ * `.input` nasceu com `background: #fff` escrito à mão e nunca ganhou a versão escura. Onde havia
+ * uma regra de tela por cima (dentro de `.config-bloco`, no construtor de formulário) ninguém
+ * percebia; fora delas — a busca do menu de Configurações, por exemplo — ficava uma caixa branca
+ * acesa no meio de uma tela marinho.
+ *
+ * O token é o mesmo que os campos dentro dos blocos já usavam, então isto não muda nada onde já
+ * estava certo: só alcança quem tinha ficado de fora.
+ */
+:root[data-theme="dark"] .input,
+:root[data-theme="dark"] select.input,
+:root[data-theme="dark"] textarea.input {
+  background: var(--surface-elevated);
+  border-color: var(--line);
+}
+
 .input {
   background: #fff;
   border: 1px solid var(--line-strong);
@@ -14354,17 +14387,46 @@ button.camp-row:hover {
 /* Configurações: painel administrativo (Etapa 1, Parte B)      */
 /* ============================================================= */
 
+/*
+ * A IDENTIDADE DAS CONFIGURAÇÕES.
+ *
+ * O que estava errado: blocos cinza sobre fundo cinza e itens de menu sem corpo. `--navy-raised`
+ * (bloco) e `--navy` (página) são quase a mesma cor — três degraus dentro de 2% de luminosidade.
+ * Tecnicamente diferentes, visualmente o mesmo plano, e o resultado era uma tela em que nada se
+ * destaca de nada.
+ *
+ * A receita é a mesma que já funciona no funil (e que o AZUZ Flow adotou nas Configurações dele):
+ * o conteúdo FLUTUA sobre o fundo. Bloco branco com borda e sombra baixa; item de menu como botão
+ * de verdade, branco com contorno, azul quando aberto.
+ *
+ * Os tons moram AQUI, no escopo da tela, e por tema: no escuro viram véus do mesmo azul sobre o
+ * marinho, em vez de branco que cegaria. Nada de cor nova no produto — `--blue` é o azul da marca
+ * que já existe.
+ */
 .config-layout {
+  --cfg-azul-raso: var(--blue-soft-2);
+  --cfg-azul-raso-forte: var(--blue-soft);
+  --cfg-azul-traco: color-mix(in srgb, var(--blue) 35%, transparent);
+  --cfg-botao: var(--surface-elevated);
+  --cfg-sombra: 0 1px 2px rgba(0, 32, 55, 0.05), 0 2px 6px rgba(0, 32, 55, 0.04);
   display: grid;
-  grid-template-columns: 240px 1fr;
+  grid-template-columns: 250px 1fr;
   gap: var(--space-5);
   align-items: start;
+}
+
+:root[data-theme="dark"] .config-layout {
+  --cfg-azul-raso: rgba(127, 185, 218, 0.1);
+  --cfg-azul-raso-forte: rgba(127, 185, 218, 0.2);
+  --cfg-azul-traco: rgba(127, 185, 218, 0.45);
+  --cfg-botao: rgba(255, 255, 255, 0.04);
+  --cfg-sombra: none;
 }
 
 .config-nav {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: var(--space-2);
   position: sticky;
   top: 0;
 }
@@ -14387,33 +14449,55 @@ button.camp-row:hover {
   padding: var(--space-2) var(--space-3) var(--space-1);
 }
 
+/* Cada item é um BOTÃO, não um texto clicável: sem corpo, a pessoa não percebe que há outras
+   seções pra abrir — era uma lista cinza em que só a aberta parecia existir. */
 .config-nav-item {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: 10px;
   width: 100%;
+  min-height: 42px;
   text-align: left;
-  padding: var(--space-2) var(--space-3);
+  padding: 9px 12px;
   border-radius: var(--radius-md);
-  background: none;
-  border: 1px solid transparent;
+  background: var(--cfg-botao);
+  border: 1px solid var(--line);
+  box-shadow: var(--cfg-sombra);
   font-size: 13px;
-  font-weight: 600;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
-}
-.config-nav-item:hover {
-  background: var(--surface-hover);
+  font-weight: var(--fw-semibold);
   color: var(--ink);
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast),
+    transform var(--transition-fast);
+}
+/* Como no menu lateral: no hover o botão anda dois pixels e se tinge de azul. O movimento responde
+   ao mouse antes de a cor registrar. */
+.config-nav-item:hover {
+  background: var(--cfg-azul-raso);
+  border-color: var(--cfg-azul-traco);
+  transform: translateX(2px);
 }
 .config-nav-item.active {
-  background: var(--blue-soft-2);
-  color: var(--blue);
-  border-color: var(--blue);
+  background: var(--cfg-azul-raso-forte);
+  border-color: var(--cfg-azul-traco);
+  font-weight: var(--fw-bold);
+  box-shadow: none;
+  transform: none;
 }
 .config-nav-item svg {
   flex-shrink: 0;
+  color: var(--text-faint);
+  transition: color var(--transition-fast);
+}
+.config-nav-item:hover svg,
+.config-nav-item.active svg {
+  color: var(--ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .config-nav-item:hover {
+    transform: none;
+  }
 }
 
 .config-detalhe {
@@ -14436,8 +14520,11 @@ button.camp-row:hover {
 }
 .config-cabecalho h3 {
   margin: 0 0 4px;
-  font-size: 16px;
-  font-weight: 700;
+  /* 20px: o título da seção é o maior texto da área de conteúdo, e tem que ganhar do título dos
+     blocos sem precisar de linha, cor ou caixa pra se distinguir. */
+  font-size: 20px;
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--track-snug);
   color: var(--ink);
 }
 
@@ -14485,6 +14572,121 @@ button.camp-row:hover {
   font-weight: 700;
   color: var(--ink);
   margin: 0 0 10px;
+}
+
+/*
+ * DENTRO DE CONFIGURAÇÕES o bloco é BRANCO, e não o cinza que fundia com a página — ele sobe do
+ * fundo com borda e sombra baixa, que é a mesma receita do cartão sobre a coluna do funil (a única
+ * parte do CRM onde essa profundidade já existia).
+ *
+ * O realce fica ESCOPADO no `.config-layout` de propósito: `.config-bloco` também é usado no painel
+ * de administração e na tela de assinatura, que têm fundo e vizinhança próprios. Mudar a classe na
+ * raiz repintaria telas que ninguém pediu pra mexer e que eu não estou olhando agora.
+ */
+.config-layout .config-bloco {
+  padding: var(--space-5);
+  background: var(--surface-elevated);
+  box-shadow: var(--cfg-sombra);
+}
+
+.config-layout .config-bloco-titulo {
+  font-size: 14px;
+  font-weight: var(--fw-bold);
+  margin: 0 0 12px;
+}
+
+/* Campos lado a lado dentro de um bloco: o `.field` solto traz padding e uma linha embaixo (ele
+   nasceu pra empilhar num card), e numa grade essa linha corta a coluna no meio. Quem manda no
+   espaço é a grade. */
+.config-campos .field {
+  padding: 0;
+  border-bottom: none;
+}
+
+/* O campo ocupa a coluna inteira. Sem isto, o `.input` fica na largura natural dele e sobra um
+   vão à direita de cada campo — e o endereço, que é o texto mais longo da tela, aparece cortado
+   numa caixinha com metade da largura disponível. */
+.config-campos .field .input {
+  width: 100%;
+}
+
+/* O campo que pede a largura toda (o endereço, o fuso): na grade de duas colunas, ocupa as duas. */
+.config-campos .config-campo-largo {
+  grid-column: 1 / -1;
+}
+
+/* A frase de apoio embaixo de um campo: colada nele, não solta com o respiro de parágrafo que o
+   `.hint` tem por padrão. */
+.config-campos .field .hint {
+  display: block;
+  padding: var(--space-1) 0 0;
+}
+
+/* Os botões secundários DENTRO das Configurações ganham o azulzinho da tela, em vez do cinza do
+   `.btn` comum. Salvar (`.primary`) e as ações destrutivas (`.danger`) mantêm a cor delas: cada
+   uma diz o que faz pela cor, e um destaque só por tela. */
+.config-detalhe .btn:not(.primary):not(.danger):not(.ghost) {
+  background: var(--cfg-azul-raso);
+  border-color: var(--cfg-azul-traco);
+  color: var(--ink);
+  box-shadow: none;
+}
+.config-detalhe .btn:not(.primary):not(.danger):not(.ghost):hover:not(:disabled) {
+  background: var(--cfg-azul-raso-forte);
+}
+
+/* ---------------- Dados da empresa: a logo ---------------- */
+
+.empresa-logo {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-5);
+}
+
+.empresa-logo-previa {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+}
+
+.empresa-logo-previa[role="button"] {
+  cursor: pointer;
+}
+
+.empresa-logo-previa[role="button"]:hover .brand-mark,
+.empresa-logo-previa[role="button"]:focus-visible .brand-mark {
+  box-shadow: 0 0 0 2px var(--cfg-azul-traco);
+}
+
+/* A PRÉVIA É O TOPO DO MENU DE VERDADE: o mesmo componente, sobre o mesmo fundo do menu lateral.
+   Por isso ela reaproveita `.sidebar` — e precisa desfazer o que a `.sidebar` faz como coluna
+   inteira da tela (largura, altura, posição). */
+.logo-previa-menu {
+  width: auto;
+  min-width: 0;
+  height: auto;
+  min-height: 0;
+  position: static;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.logo-previa-menu .sb-brand {
+  padding: var(--space-3) var(--space-4);
+  margin: 0;
+}
+
+.empresa-logo-acoes {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
 }
 
 .config-grid-2 {

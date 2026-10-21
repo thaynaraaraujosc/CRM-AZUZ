@@ -13,6 +13,7 @@ import {
   type SVGProps,
 } from "react";
 
+import { MarcaDoTopo } from "@/components/marca-do-topo";
 import { useEquipe } from "@/lib/equipe-context";
 import { useFunis } from "@/lib/funis-context";
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
@@ -167,8 +168,9 @@ export function Sidebar() {
   const [workspaceAnchorRect, setWorkspaceAnchorRect] = useState<AnchorRect | null>(null);
   const { ref: workspacePopRef, posicao: workspacePos } = useFloatingPosition(workspaceAnchorRect, workspaceAberto, 8, () => setWorkspaceAberto(false));
 
-  // Único lugar do CRM que edita o nome do workspace (`PATCH /api/workspace`, coluna real): a
-  // categoria "Workspace" de Configurações > Geral foi removida por ser redundante com isto aqui.
+  // Edição rápida do nome do workspace, aqui no menu (`PATCH /api/workspace`, coluna real).
+  // O outro lugar é Configurações › Dados da empresa, que edita o mesmo campo junto com a logo e os
+  // dados da agência — a mesma rota e a mesma coluna, então os dois não têm como divergir.
   function salvarNomeWorkspace() {
     const nome = nomeEmpresa.trim();
     if (!nome || nome === nomeEmpresaSincronizado) return;
@@ -253,8 +255,9 @@ export function Sidebar() {
   return (
     <aside className={`sidebar${recolhida ? " recolhida" : ""}`}>
       <div className="sb-brand">
-        <div className="brand-mark">a</div>
-        {!recolhida ? <span className="wordmark">azuz crm</span> : null}
+        {/* O quadradinho e o nome vêm do mesmo componente que a prévia em Configurações usa: é o
+            que garante que a logo enviada apareça aqui exatamente como foi mostrada lá. */}
+        <MarcaDoTopo mostrarNome={!recolhida} />
         <button
           type="button"
           className="sb-recolher"
