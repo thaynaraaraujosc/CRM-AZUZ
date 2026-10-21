@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { auditar } from "@/lib/seguranca/auditoria";
-import { CANAIS_DO_FLOW, escolherCanalDoFlow, type CanalDoFlow } from "@/lib/integracoes/azuz-flow-canal";
+import { CANAIS_DO_FLOW, type CanalDoFlow } from "@/lib/integracoes/azuz-flow-canal";
 import { conexoesDeWhatsappDoWorkspace } from "@/lib/integracoes/azuz-flow-conexoes";
 import { configDoFlow, salvarConfigDoFlow, type MudancasDoFlow } from "@/lib/integracoes/azuz-flow-config";
 import { lerDisjuntor, religarDisjuntor } from "@/lib/integracoes/azuz-flow-disjuntor";
+import { montarRespostaDoFlow } from "@/lib/integracoes/azuz-flow-resposta";
 import { minutosDoRelogio } from "@/lib/integracoes/azuz-flow-janela";
 import { comRespostaEmJson } from "@/lib/integracoes/resposta-em-json";
 
@@ -38,34 +39,24 @@ export async function GET() {
     const guarda = await exigirAdmin();
     if (!guarda.ok) return guarda.resposta;
     const workspaceId = guarda.sessao.user.workspaceId;
-    const [config, conexoes, disjuntor] = await Promise.all([
-      configDoFlow(workspaceId),
-      conexoesDeWhatsappDoWorkspace(workspaceId),
-      lerDisjuntor(workspaceId),
-    ]);
-    /*
-     * Devolve a ESCOLHA JÁ RESOLVIDA, e não só a opção guardada.
-     *
-     * A tela precisa dizer o que vai acontecer com o próximo lead, não o que está marcado num
-     * seletor. "Só oficial" com o oficial desconectado é um aviso; "automático" com o QR ligado não
-     * é. Quem sabe a diferença é a mesma função que o lead usa — então ela responde aqui também,
-     * em vez de a tela reimplementar a regra e as duas discordarem.
-     */
-    const escolha = escolherCanalDoFlow(config.canal, conexoes);
-    return NextResponse.json(
-      {
-        ...config,
-        opcoes: CANAIS_DO_FLOW,
-        conexoes: { oficial: Boolean(conexoes.oficial), qrcode: Boolean(conexoes.qrcode) },
-        conexaoEfetiva: escolha.conexao,
-        aviso: escolha.aviso,
-        // O estado do disjuntor vai junto porque a tela precisa poder dizer "pausado, por isto, e
-        // o botão é este". Pausa invisível é pior do que não pausar: a fila para e ninguém sabe.
-        disjuntor,
-      },
-      { headers: { "cache-control": "no-store" } },
-    );
+    return NextResponse.json(await recursoDoFlow(workspaceId), { headers: { "cache-control": "no-store" } });
   });
+}
+
+/**
+ * O recurso inteiro: a configuração MAIS o que está acontecendo com o canal.
+ *
+ * Uma função só, usada pelo GET e pelo PUT, porque a tela guarda o que a rota devolve. Enquanto o
+ * PUT respondia só com a configuração, salvar qualquer opção trocava o objeto da tela por um pela
+ * metade e o render seguinte morria em `canal.disjuntor.pausadoEm`. Ver `azuz-flow-resposta.ts`.
+ */
+async function recursoDoFlow(workspaceId: string) {
+  const [config, conexoes, disjuntor] = await Promise.all([
+    configDoFlow(workspaceId),
+    conexoesDeWhatsappDoWorkspace(workspaceId),
+    lerDisjuntor(workspaceId),
+  ]);
+  return montarRespostaDoFlow({ config, conexoes, disjuntor });
 }
 
 export async function PUT(request: Request) {
@@ -184,7 +175,6 @@ export async function PUT(request: Request) {
       // Religar sozinho é um pedido legítimo e não tem nada pra salvar: responde com o estado
       // atual em vez de 400.
       if (religou) {
-        const config = await configDoFlow(workspaceId);
         await auditar({
           workspaceId,
           membroId: guarda.sessao.user.id,
@@ -192,7 +182,7 @@ export async function PUT(request: Request) {
           recurso: "azuz_flow",
           detalhe: "confirmações religadas depois da pausa automática",
         }).catch(() => {});
-        return NextResponse.json(config, { headers: { "cache-control": "no-store" } });
+        return NextResponse.json(await recursoDoFlow(workspaceId), { headers: { "cache-control": "no-store" } });
       }
       return NextResponse.json({ erro: "Nada pra salvar." }, { status: 400 });
     }
@@ -209,6 +199,8 @@ export async function PUT(request: Request) {
         `canal=${config.canal} confirmacao=${config.confirmacao.ativa ? "ligada" : "desligada"}` +
         `${config.confirmacao.pausada ? " pausada" : ""}${religou ? " religada" : ""}`,
     }).catch(() => {});
-    return NextResponse.json(config, { headers: { "cache-control": "no-store" } });
+    // O recurso INTEIRO, igual ao GET: a tela substitui o que tem pelo que chega, e meia resposta
+    // deixava `disjuntor` e `aviso` de fora.
+    return NextResponse.json(await recursoDoFlow(workspaceId), { headers: { "cache-control": "no-store" } });
   });
 }
