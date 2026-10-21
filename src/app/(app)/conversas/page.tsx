@@ -20,6 +20,7 @@ import {
   type NegocioCard,
   type StatusMensagem,
 } from "@/lib/data";
+import { rotuloDoDiaEmBrasilia } from "@/lib/conversas/hora-da-mensagem";
 import { ehLinkDeMidia } from "@/lib/conversas/midia-mensagem";
 import {
   conexaoDaConversa,
@@ -215,35 +216,6 @@ function lerComoDataUrl(file: File | Blob): Promise<string> {
   });
 }
 
-/**
- * "Hoje", "Ontem" ou a data por extenso. O rótulo do separador de dia da conversa.
- *
- * Mensagem sem `criadoEm` (as de exemplo antigas) devolve `null`: melhor nenhum separador do que
- * um separador com a data errada.
- */
-function rotuloDoDia(
-  criadoEm: number | undefined,
-  traduzir: (texto: string) => string,
-  locale: string,
-): string | null {
-  if (!criadoEm) return null;
-  const data = new Date(criadoEm);
-  const hoje = new Date();
-  const ontem = new Date();
-  ontem.setDate(hoje.getDate() - 1);
-
-  const mesmoDia = (a: Date, b: Date) =>
-    a.getDate() === b.getDate() && a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear();
-
-  if (mesmoDia(data, hoje)) return traduzir("Hoje");
-  if (mesmoDia(data, ontem)) return traduzir("Ontem");
-  return data.toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "long",
-    // O ano só entra quando não é o corrente. Repetir "de 2026" em toda conversa é ruído.
-    year: data.getFullYear() === hoje.getFullYear() ? undefined : "numeric",
-  });
-}
 
 /** Ícone + rótulo + descrição de acessibilidade do estado real de uma mensagem enviada. */
 type FiltroConversa = (typeof FILTROS_CONVERSA)[number]["valor"];
@@ -4483,8 +4455,8 @@ function ConversasPageInner() {
               // Separador de dia entre as bolhas. Sem ele a conversa é um rolo contínuo e não dá
               // pra saber onde termina um dia e começa o outro, que é justamente o que se procura
               // ao reler um atendimento.
-              const diaDesta = rotuloDoDia(msg.criadoEm, traduzir, localeNumero);
-              const diaDaAnterior = iRelativo > 0 ? rotuloDoDia(arr[iRelativo - 1].criadoEm, traduzir, localeNumero) : null;
+              const diaDesta = rotuloDoDiaEmBrasilia(msg.criadoEm, traduzir, localeNumero);
+              const diaDaAnterior = iRelativo > 0 ? rotuloDoDiaEmBrasilia(arr[iRelativo - 1].criadoEm, traduzir, localeNumero) : null;
               const mudouDeDia = Boolean(diaDesta) && diaDesta !== diaDaAnterior;
 
               return (

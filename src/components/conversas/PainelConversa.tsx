@@ -2,6 +2,7 @@
 
 import { Fragment, useEffect, useRef, useState } from "react";
 
+import { horaDaMensagem, rotuloDoDiaEmBrasilia } from "@/lib/conversas/hora-da-mensagem";
 import type { ConvMensagem } from "@/lib/data";
 import { useContatos } from "@/lib/contatos-context";
 import { useMensagensExtra } from "@/lib/mensagens-extra-context";
@@ -348,8 +349,8 @@ export function PainelConversa({
               mensagens.map((msg, i) => {
                 // Mesmo separador de dia da tela de Conversas. Sem ele o histórico é um rolo
                 // contínuo e não dá pra saber onde termina um dia e começa o outro.
-                const dia = rotuloDoDia(msg.criadoEm, traduzir, localeNumero);
-                const diaAnterior = i > 0 ? rotuloDoDia(mensagens[i - 1].criadoEm, traduzir, localeNumero) : null;
+                const dia = rotuloDoDiaEmBrasilia(msg.criadoEm, traduzir, localeNumero);
+                const diaAnterior = i > 0 ? rotuloDoDiaEmBrasilia(mensagens[i - 1].criadoEm, traduzir, localeNumero) : null;
                 return (
                   <Fragment key={msg.id ?? i}>
                     {dia && dia !== diaAnterior ? <span className="wa-separador-dia">{dia}</span> : null}
@@ -603,7 +604,7 @@ export function PainelConversa({
                 </p>
                 <div className="field">
                   <label>{traduzir("Última mensagem")}</label>
-                  <div className="input">{ultima ? `${ultima.hora} · ${resumo(ultima.texto)}` : "-"}</div>
+                  <div className="input">{ultima ? `${horaDaMensagem(ultima)} · ${resumo(ultima.texto)}` : "-"}</div>
                 </div>
                 <div className="field">
                   <label>{traduzir("Recebidas / enviadas")}</label>
@@ -641,7 +642,7 @@ export function PainelConversa({
                       .slice(0, 40)
                       .map((m, i) => (
                         <li key={m.id ?? i}>
-                          <span className="hint">{m.hora}</span>{" "}
+                          <span className="hint">{horaDaMensagem(m)}</span>{" "}
                           {m.tipo === "in" ? "Recebida" : m.tipo === "out" ? "Enviada" : "Sistema"} · {resumo(m.texto)}
                         </li>
                       ))
@@ -714,28 +715,6 @@ function adicionarBolhaOtimista(
     }));
 }
 
-/** "Hoje", "Ontem" ou a data por extenso. O separador de dia da conversa. Mora aqui e na tela de
- * Conversas; quando o painel substituir aquela tela, sobra só esta cópia. */
-function rotuloDoDia(
-  criadoEm: number | undefined,
-  traduzir: (texto: string) => string,
-  locale: string,
-): string | null {
-  if (!criadoEm) return null;
-  const data = new Date(criadoEm);
-  const hoje = new Date();
-  const ontem = new Date();
-  ontem.setDate(hoje.getDate() - 1);
-  const mesmoDia = (a: Date, b: Date) =>
-    a.getDate() === b.getDate() && a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear();
-  if (mesmoDia(data, hoje)) return traduzir("Hoje");
-  if (mesmoDia(data, ontem)) return traduzir("Ontem");
-  return data.toLocaleDateString(locale, {
-    day: "2-digit",
-    month: "long",
-    year: data.getFullYear() === hoje.getFullYear() ? undefined : "numeric",
-  });
-}
 
 /** Primeira linha do texto, curta: o histórico é uma lista de referências, não a conversa toda. */
 function resumo(texto: string): string {
