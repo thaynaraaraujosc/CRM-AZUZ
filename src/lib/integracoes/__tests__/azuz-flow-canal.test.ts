@@ -11,8 +11,8 @@ import { escolherCanalDoFlow } from "../azuz-flow-canal";
  */
 
 const SO_OFICIAL = { oficial: "1234567890", qrcode: null };
-const SO_QR = { oficial: null, qrcode: "5562999990001" };
-const OS_DOIS = { oficial: "1234567890", qrcode: "5562999990001" };
+const SO_QR = { oficial: null, qrcode: { numero: "5562999990001" } };
+const OS_DOIS = { oficial: "1234567890", qrcode: { numero: "5562999990001" } };
 const NENHUM = { oficial: null, qrcode: null };
 
 describe("automático", () => {
@@ -115,5 +115,43 @@ describe("o aviso", () => {
       expect(aviso.endsWith(".")).toBe(true);
       expect(aviso).toContain("sem conversa");
     }
+  });
+});
+
+describe("o QR ligado sem o número conhecido", () => {
+  /*
+   * O DEFEITO DE 21/10/2026, e por que ele é fácil de voltar a cometer.
+   *
+   * O número da conexão do QR só é aprendido no evento `connection.update` da Evolution, e esse
+   * evento se perde (instância recriada, webhook fora do ar no momento certo, servidor
+   * restaurado). Quando se perde, a conexão segue de pé — mandando e recebendo o dia inteiro — e
+   * o CRM fica sem saber o número dela.
+   *
+   * Tratar isso como "desconectado" fazia o lead do Flow entrar SEM CONVERSA. Sem conversa não há
+   * confirmação de reunião, e quem preencheu o formulário não recebia nada, com o canal
+   * funcionando o tempo todo.
+   */
+  it("atende o lead mesmo sem o número: a conversa nasce sem marca de dono", () => {
+    const r = escolherCanalDoFlow("qrcode", { oficial: null, qrcode: { numero: null } });
+
+    expect(r.conexao).toBe("qrcode");
+    // Sem dono: é como todo o histórico anterior à coluna `contaCanal` já é tratado, e
+    // `contasCanalVisiveis` mostra essas conversas quando o QR está ligado.
+    expect(r.contaCanal).toBeNull();
+    // E NENHUM aviso: não falta nada pra pessoa resolver. O canal está conectado.
+    expect(r.aviso).toBeNull();
+  });
+
+  it("o pedido do formulário também é atendido", () => {
+    const r = escolherCanalDoFlow("oficial", { oficial: null, qrcode: { numero: null } }, "qrcode");
+    expect(r.conexao).toBe("qrcode");
+  });
+
+  it("desligado continua sendo desligado", () => {
+    // A distinção que importa: `null` é "não está ligado"; `{ numero: null }` é "ligado e eu não
+    // sei o número". Confundir os dois foi exatamente o defeito.
+    const r = escolherCanalDoFlow("qrcode", { oficial: null, qrcode: null });
+    expect(r.conexao).toBeNull();
+    expect(r.aviso).toContain("não está conectado");
   });
 });

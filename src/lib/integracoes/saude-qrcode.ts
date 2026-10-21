@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import {
   aplicarAjustesDaInstancia,
+  buscarNumeroConectado,
   buscarWebhookRegistrado,
   estadoDaInstancia,
   reconfigurarWebhook,
@@ -163,6 +164,32 @@ export async function conferirCanalQrCode(
         })
         .catch(() => {});
       integracao.status = deveriaSer;
+    }
+  }
+
+  /*
+   * O NÚMERO DA CONEXÃO, quando ele se perdeu.
+   *
+   * Ele só é aprendido uma vez, no evento `connection.update` da Evolution. Se esse evento não
+   * chegou (instância recriada, webhook fora do ar naquele instante, servidor restaurado), a
+   * conexão fica de pé e o CRM nunca mais descobre o número — porque não há um segundo momento em
+   * que ele pergunte.
+   *
+   * O que isso custava: toda conversa nova nascia sem dono, e o lead do AZUZ Flow entrava sem
+   * conversa nenhuma (hoje já não entra, ver `azuz-flow-canal.ts`, mas a marca continua faltando).
+   *
+   * Aqui é o segundo momento. Uma chamada, só quando o número falta e a conexão está de pé.
+   */
+  if (integracao?.status === "conectado" && !metadados.numero) {
+    const numero = await buscarNumeroConectado(workspaceId).catch(() => null);
+    if (numero) {
+      await prisma.integracao
+        .update({
+          where: { workspaceId_provedor: { workspaceId, provedor: "whatsapp_nao_oficial" } },
+          data: { metadados: { ...metadados, numero } },
+        })
+        .catch(() => {});
+      metadados.numero = numero;
     }
   }
 

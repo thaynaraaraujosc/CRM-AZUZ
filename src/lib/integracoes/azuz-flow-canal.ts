@@ -26,12 +26,27 @@ export const ROTULO_CANAL_DO_FLOW: Record<CanalDoFlow, string> = {
   qrcode: "Só o WhatsApp QR Code",
 };
 
-/** O identificador de cada conexão, ou `null` quando ela não está ligada. */
+/** O que cada conexão oferece agora, ou `null` quando ela não está ligada. */
 export type ConexoesDoWorkspace = {
   /** `phoneNumberId` da conta na Cloud API. */
   oficial: string | null;
-  /** Número conectado por QR Code. */
-  qrcode: string | null;
+  /**
+   * O QR Code: `null` quando não está ligado.
+   *
+   * LIGADO, ele vem como objeto — e o `numero` pode ser `null` DENTRO dele. A distinção existe por
+   * causa de um defeito real (21/10/2026): o número da conexão só é aprendido no evento
+   * `connection.update` da Evolution, e esse evento se perde (instância recriada, webhook fora do
+   * ar no momento certo, servidor restaurado). Quando se perde, o CRM fica com a conexão de pé,
+   * recebendo e mandando mensagem normalmente, e sem saber o número dela.
+   *
+   * Antes isso era tratado como "não conectado", e o lead do Flow entrava SEM CONVERSA — sem
+   * conversa não há confirmação, e a pessoa que preencheu o formulário não recebia nada. O canal
+   * estava funcionando o tempo todo.
+   *
+   * O número serve pra MARCAR o dono da conversa, não pra mandar. Conversa sem dono já é um caso
+   * previsto no produto: `contasCanalVisiveis` mostra as não marcadas quando o QR está ligado.
+   */
+  qrcode: { numero: string | null } | null;
 };
 
 export type EscolhaDeCanal = {
@@ -71,7 +86,14 @@ export function escolherCanalDoFlow(
 
   const qrcode = (): EscolhaDeCanal | null =>
     conexoes.qrcode
-      ? { contaCanal: contaCanalDaConexao(CANAL_NAO_OFICIAL, conexoes.qrcode), conexao: "qrcode", aviso: null }
+      ? {
+          // `contaCanal` nulo quando o número é desconhecido: a conversa nasce sem marca de dono,
+          // que é como todo o histórico anterior a essa coluna existir já é tratado. O que importa
+          // é que ela NASCE — o canal está de pé e a mensagem sai por ele.
+          contaCanal: contaCanalDaConexao(CANAL_NAO_OFICIAL, conexoes.qrcode.numero),
+          conexao: "qrcode",
+          aviso: null,
+        }
       : null;
 
   if (pedidoDoFormulario === "oficial") {

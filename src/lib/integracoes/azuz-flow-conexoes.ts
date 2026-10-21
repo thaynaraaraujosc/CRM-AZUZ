@@ -23,8 +23,16 @@ export async function conexoesDeWhatsappDoWorkspace(workspaceId: string): Promis
   const numero = typeof metadados.numero === "string" ? metadados.numero : null;
   return {
     oficial: oficial?.phoneNumberId ?? null,
-    // Conectado mas sem número nos metadados não serve: `contaCanal` sem identificador vira `null`,
-    // e conversa sem dono não aparece pra conexão nenhuma.
-    qrcode: qr?.status === "conectado" ? numero : null,
+    /*
+     * CONECTADO É CONECTADO, com ou sem o número nos metadados.
+     *
+     * Antes aqui dizia o contrário — "conectado mas sem número não serve" — e isso derrubava o
+     * lead do Flow inteiro: ele entrava sem conversa, e sem conversa não existe confirmação. Mas o
+     * número não é o que permite MANDAR (quem manda é a instância, que está de pé); ele só marca o
+     * dono da conversa. E conversa sem dono o produto já sabe mostrar.
+     *
+     * O número volta sozinho: o cron do QR Code pergunta pra Evolution e grava (`saude-qrcode.ts`).
+     */
+    qrcode: qr?.status === "conectado" ? { numero } : null,
   };
 }
