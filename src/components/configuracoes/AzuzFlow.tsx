@@ -140,6 +140,7 @@ export function AzuzFlow() {
   const [leitura, setLeitura] = useState<Leitura>({ situacao: "lendo" });
   const [chaveNova, setChaveNova] = useState<string | null>(null);
   const [copiada, setCopiada] = useState(false);
+  const [enderecoCopiado, setEnderecoCopiado] = useState(false);
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   /** Qual confirmação está aberta. `null` = nenhuma. Substitui o `window.confirm` do navegador. */
@@ -338,90 +339,137 @@ export function AzuzFlow() {
     <div className="config-bloco">
       <p className="config-bloco-titulo">{traduzir("AZUZ Flow")}</p>
 
-      <div className="field">
-        <label>{traduzir("Endereço do CRM (cole no AZUZ Flow)")}</label>
-        <input className="input" style={{ width: "100%" }} readOnly value={ENDERECO_DO_CRM} />
+      {/*
+        A CONEXÃO EM TRÊS LINHAS: endereço, chave, canal.
+
+        Cada linha é rótulo à esquerda e valor à direita, alinhados numa coluna só. Antes eram três
+        caixas empilhadas de alturas diferentes, com os botões da chave lá no fim do cartão, longe
+        da chave que eles mexem — pareciam botões soltos sem dono.
+      */}
+      <div className="flow-topo">
+        <div className="flow-linha">
+          <span className="flow-rotulo-micro">{traduzir("Endereço do CRM")}</span>
+          <div className="flow-valor">
+            <code className="flow-chave">{ENDERECO_DO_CRM}</code>
+            <button
+              type="button"
+              className="btn"
+              onClick={() => {
+                void navigator.clipboard.writeText(ENDERECO_DO_CRM).then(() => setEnderecoCopiado(true));
+              }}
+            >
+              {enderecoCopiado ? traduzir("Copiado") : traduzir("Copiar")}
+            </button>
+          </div>
+        </div>
+
+        <div className="flow-linha">
+          <span className="flow-rotulo-micro">{traduzir("Chave")}</span>
+          <div className="flow-valor">
+            {estado?.chave ? (
+              <>
+                <code className="flow-chave">{estado.chave.prefixo}…</code>
+                <button type="button" className="btn" disabled={ocupado} onClick={pedirParaGerar}>
+                  {traduzir("Gerar nova")}
+                </button>
+                <button
+                  type="button"
+                  className="btn danger"
+                  disabled={ocupado}
+                  onClick={() => setConfirmando("revogar")}
+                >
+                  {traduzir("Revogar")}
+                </button>
+              </>
+            ) : leitura.situacao === "lido" ? (
+              <>
+                <span className="hint">{traduzir("Nenhuma chave ativa.")}</span>
+                <button type="button" className="btn" disabled={ocupado} onClick={pedirParaGerar}>
+                  {traduzir("Gerar chave")}
+                </button>
+              </>
+            ) : (
+              <span className="hint">
+                {leitura.situacao === "lendo" ? traduzir("Lendo…") : traduzir("Estado desconhecido.")}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* "Último lead" responde a única pergunta que se faz desta tela depois de configurada:
+            está chegando? Só aparece quando existe o que contar — "nunca" é ruído com cara de dado. */}
+        {estado?.ultimoLeadEm ? (
+          <div className="flow-linha">
+            <span className="flow-rotulo-micro">{traduzir("Último lead")}</span>
+            <div className="flow-valor">
+              <span className="flow-texto">{data(estado.ultimoLeadEm)}</span>
+            </div>
+          </div>
+        ) : null}
+
+        {/* Só aparece depois de lido: um seletor que abre em "Automático" antes de saber o que está
+            guardado afirma uma escolha que a empresa talvez não tenha feito. */}
+        {canal ? (
+          <div className="flow-linha">
+            <span className="flow-rotulo-micro">{traduzir("Canal dos leads")}</span>
+            <div className="flow-valor">
+              <select
+                className="input flow-select"
+                value={canal.canal}
+                disabled={salvandoCanal}
+                onChange={(e) => void salvarConfig({ canal: e.target.value })}
+              >
+                {(Object.keys(ROTULOS_DE_CANAL) as ConfigDoCanal["canal"][]).map((opcao) => (
+                  <option key={opcao} value={opcao}>
+                    {traduzir(ROTULOS_DE_CANAL[opcao])}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       {chaveNova ? (
         <div className="int-aviso-conflito" style={{ marginBottom: 12 }}>
           <p className="int-title" style={{ margin: 0 }}>{traduzir("Copie agora: esta chave não aparece de novo.")}</p>
-          <p className="hint" style={{ margin: "4px 0 8px" }}>
-            {traduzir("O CRM guarda só um resumo dela. Perdeu, é só gerar outra — mas a atual para de funcionar.")}
-          </p>
-          <input className="input" style={{ width: "100%", fontFamily: "monospace" }} readOnly value={chaveNova} />
-          <button
-            type="button"
-            className="btn primary"
-            style={{ marginTop: 8 }}
-            onClick={() => {
-              void navigator.clipboard.writeText(chaveNova).then(() => setCopiada(true));
-            }}
-          >
-            {copiada ? traduzir("Copiada") : traduzir("Copiar chave")}
-          </button>
+          <div className="flow-valor" style={{ marginTop: 8 }}>
+            <code className="flow-chave flow-chave-inteira">{chaveNova}</code>
+            <button
+              type="button"
+              className="btn primary"
+              onClick={() => {
+                void navigator.clipboard.writeText(chaveNova).then(() => setCopiada(true));
+              }}
+            >
+              {copiada ? traduzir("Copiada") : traduzir("Copiar chave")}
+            </button>
+          </div>
         </div>
       ) : null}
 
-      {estado?.chave ? (
-        <div className="card" style={{ padding: 12, marginBottom: 12 }}>
-          <p className="int-title" style={{ margin: 0 }}>
-            {traduzir("Chave ativa: {prefixo}…", { prefixo: estado.chave.prefixo })}
-          </p>
-          <p className="hint" style={{ margin: "4px 0 0" }}>
-            {traduzir("Criada em {quando} por {quem}", {
-              quando: data(estado.chave.criadaEm),
-              quem: estado.chave.criadaPor,
-            })}
-          </p>
-          {/* "nunca" não é informação: é ruído com cara de dado. Estas duas linhas só aparecem
-              depois que existe o que contar. */}
-          {estado.ultimoLeadEm ? (
-            <p className="hint" style={{ margin: "2px 0 0" }}>
-              {traduzir("Último lead recebido: {quando}", { quando: data(estado.ultimoLeadEm) })}
+      {/*
+        AVISO SÓ QUANDO FALTA ALGO. Confirmar o esperado é ruído; o que merece espaço é a exceção,
+        porque ela muda o que vai acontecer com o lead. E só com a leitura FEITA: dizer "esta
+        empresa não tem funil" a partir de uma leitura que falhou seria inventar um fato sobre a
+        conta de um cliente.
+
+        A frase do canal vem do SERVIDOR, da mesma função que a entrega do lead usa
+        (`escolherCanalDoFlow`), então a tela e o comportamento não têm como divergir.
+      */}
+      {leitura.situacao === "lido" && (!leitura.dados.destino || canal?.aviso) ? (
+        <div className="flow-aviso">
+          {!leitura.dados.destino ? (
+            <p>
+              <IconAlerta width={12} height={12} aria-hidden="true" />{" "}
+              {traduzir("Esta empresa ainda não tem funil: o lead entra como contato, sem card.")}
             </p>
           ) : null}
-        </div>
-      ) : leitura.situacao === "lido" ? (
-        <p className="hint" style={{ margin: "0 0 12px" }}>{traduzir("Nenhuma chave ativa.")}</p>
-      ) : (
-        <p className="hint" style={{ margin: "0 0 12px" }}>
-          {leitura.situacao === "lendo" ? traduzir("Lendo o estado da integração…") : traduzir("Estado desconhecido.")}
-        </p>
-      )}
-
-      {/*
-        AVISO SÓ QUANDO FALTA ALGO.
-
-        Antes esta caixa aparecia sempre, e na maior parte do tempo ela dizia que estava tudo certo —
-        que é a informação menos útil que existe numa tela. Confirmar o esperado é ruído; o que
-        merece espaço é a exceção, porque ela muda o que vai acontecer com o lead.
-
-        Continua só aparecendo com a leitura FEITA: dizer "esta empresa não tem funil" a partir de
-        uma leitura que falhou seria inventar um fato sobre a conta de um cliente.
-      */}
-      {/*
-        POR QUAL NÚMERO O LEAD É ATENDIDO.
-        
-        Só aparece depois de lido: um seletor que abre em "Automático" antes de saber o que está
-        guardado afirma uma escolha que a empresa talvez não tenha feito.
-      */}
-      {canal ? (
-        <div className="field">
-          <label>{traduzir("Canal que recebe os leads do Flow")}</label>
-          <select
-            className="input"
-            style={{ width: "100%" }}
-            value={canal.canal}
-            disabled={salvandoCanal}
-            onChange={(e) => void salvarConfig({ canal: e.target.value })}
-          >
-            {(Object.keys(ROTULOS_DE_CANAL) as ConfigDoCanal["canal"][]).map((opcao) => (
-              <option key={opcao} value={opcao}>
-                {traduzir(ROTULOS_DE_CANAL[opcao])}
-              </option>
-            ))}
-          </select>
+          {canal?.aviso ? (
+            <p>
+              <IconAlerta width={12} height={12} aria-hidden="true" /> {traduzir(canal.aviso)}
+            </p>
+          ) : null}
         </div>
       ) : null}
 
@@ -431,72 +479,46 @@ export function AzuzFlow() {
         Só aparece com uma chave ativa: sem chave não chega lead, e uma opção que não pode fazer
         efeito ocupando espaço é ruído.
 
-        CADA INTERRUPTOR TEM NOME AO LADO. Eram duas pílulas iguais flutuando sobre parágrafos
-        cinza — o `Toggle` só leva `aria-label`, que ninguém vê. Dois controles sem rótulo, um
-        deles capaz de fazer o CRM mandar mensagem sozinho pra gente de verdade.
-
-        O AVISO EMBAIXO DO INTERRUPTOR não é texto de rodapé. Ligar isto faz o CRM mandar mensagem
-        sozinho, pra quem nunca escreveu, por um número que pode ser bloqueado por denúncia. Quem
-        liga precisa ler isso antes, não depois.
+        CADA INTERRUPTOR TEM NOME AO LADO, e o estado por extenso: ligar isto faz o CRM mandar
+        mensagem sozinho, pra quem nunca escreveu, por um número que pode ser bloqueado por
+        denúncia. O ângulo de uma pílula não distingue "desligada" de "pausada pelo disjuntor".
       */}
       {canal && estado?.chave ? (
-        <div className="card" style={{ marginBottom: 12 }}>
-          {/*
-            O DISJUNTOR VEM PRIMEIRO, antes de qualquer opção.
-
-            Se o canal está pausado, nada que a pessoa mexer aqui embaixo vai mandar mensagem — e
-            descobrir isso depois de ajustar texto e teto é a pior ordem possível. A frase diz o
-            motivo e o botão desfaz, no mesmo lugar.
-          */}
+        <div className="flow-cartao">
           {canal.disjuntor.pausadoEm ? (
-            <div className="flow-bloco">
-              <div className="int-aviso-conflito">
-                <p className="int-title" style={{ margin: 0 }}>
-                  <IconAlerta width={12} height={12} aria-hidden="true" />{" "}
-                  {traduzir("As confirmações foram pausadas automaticamente.")}
-                </p>
-                <p className="hint" style={{ margin: "4px 0 0" }}>
-                  {traduzir("Foram {falhas} falhas seguidas no envio, em {quando}.", {
-                    falhas: String(canal.disjuntor.falhasSeguidas),
-                    quando: data(canal.disjuntor.pausadoEm),
-                  })}{" "}
-                  {canal.disjuntor.ultimoMotivo
-                    ? traduzir("Último motivo: {motivo}.", { motivo: canal.disjuntor.ultimoMotivo })
-                    : null}
-                </p>
-                <p className="hint" style={{ margin: "4px 0 10px" }}>
-                  {traduzir(
-                    "Nada foi perdido: as confirmações continuam na fila e voltam a sair quando você religar.",
-                  )}
-                </p>
-                <button
-                  type="button"
-                  className="btn"
-                  disabled={salvandoCanal}
-                  onClick={() => void salvarConfig({ religar: true })}
-                >
-                  {salvandoCanal ? traduzir("Religando…") : traduzir("Religar")}
-                </button>
-              </div>
+            <div className="int-aviso-conflito" style={{ marginBottom: 14 }}>
+              <p className="int-title" style={{ margin: 0 }}>
+                <IconAlerta width={12} height={12} aria-hidden="true" />{" "}
+                {traduzir("Confirmações pausadas automaticamente.")}
+              </p>
+              <p className="hint" style={{ margin: "4px 0 8px" }}>
+                {traduzir("{falhas} falhas seguidas no envio.", { falhas: String(canal.disjuntor.falhasSeguidas) })}{" "}
+                {canal.disjuntor.ultimoMotivo ? traduzir(canal.disjuntor.ultimoMotivo) : null}{" "}
+                {traduzir("A fila está guardada e volta a sair quando você religar.")}
+              </p>
+              <button
+                type="button"
+                className="btn"
+                disabled={salvandoCanal}
+                onClick={() => void salvarConfig({ religar: true })}
+              >
+                {salvandoCanal ? traduzir("Religando…") : traduzir("Religar")}
+              </button>
             </div>
           ) : null}
 
           <div className="flow-interruptor">
             <div>
               <div className="flow-rotulo">
-                {traduzir("Confirmação de reunião do Flow")}
-                {/* O estado por extenso, ao lado do nome. O ângulo de uma pílula é a pior forma de
-                    dizer se o CRM está mandando mensagem sozinho ou não. */}
+                {traduzir("Confirmação de reunião")}
                 <span className={`badge ${situacao.cor}`}>{traduzir(situacao.texto)}</span>
               </div>
               <p className="hint">
-                {traduzir(
-                  "Quando o lead marca reunião no formulário, o CRM manda UMA mensagem confirmando dia, hora e link — só para quem marcou a caixa de consentimento.",
-                )}
+                {traduzir("Uma mensagem por reunião, só para quem marcou o consentimento.")}
               </p>
             </div>
             <Toggle
-              label={traduzir("Confirmação de reunião do Flow")}
+              label={traduzir("Confirmação de reunião")}
               defaultOn={canal.confirmacao.ativa}
               onToggle={(ligado) => void salvarConfig({ confirmacao: { ativa: ligado } })}
             />
@@ -511,12 +533,10 @@ export function AzuzFlow() {
               maxLength={2000}
               onChange={(e) => setTextoEmEdicao(e.target.value)}
             />
-            <span className="flow-contagem">
-              {(textoEmEdicao ?? "").length}/2000
-            </span>
+            <span className="flow-contagem">{(textoEmEdicao ?? "").length}/2000</span>
 
-            {/* As variáveis como botões, não como lista de documentação: clicar põe a variável no
-                ponto onde o cursor estava, que é a única coisa que alguém quer fazer com elas. */}
+            {/* As variáveis como botões: clicar põe a variável no ponto onde o cursor estava, que é
+                a única coisa que alguém quer fazer com essa lista. */}
             <div className="flow-vars">
               {VARIAVEIS_DA_CONFIRMACAO.map(([chave, explicacao]) => (
                 <button
@@ -552,36 +572,19 @@ export function AzuzFlow() {
           </div>
 
           {/*
-            AS PROTEÇÕES DO NÚMERO.
+            AS PROTEÇÕES DO NÚMERO, numa linha só.
 
-            Ficam à mostra, e não escondidas atrás de "avançado", porque são elas que decidem se
-            este recurso é seguro de usar. Quem liga a confirmação precisa poder ver, no mesmo
-            lugar, o que impede o CRM de mandar cem mensagens de madrugada por um número que pode
-            ser bloqueado por denúncia.
+            Os rótulos são curtos e a explicação inteira mora no `title` de cada um: eram três
+            parágrafos cinza explicando janela, teto e disjuntor, e três parágrafos numa tela de
+            ajuste é a tela pedindo pra ser lida em vez de usada. Quem precisa do detalhe encosta o
+            mouse; quem já sabe só ajusta o número.
           */}
-          <div className="flow-interruptor">
-            <div>
-              <div className="flow-rotulo">{traduzir("Pausar confirmações do Flow")}</div>
-              <p className="hint">
-                {traduzir(
-                  "O freio de mão: para o envio agora e não apaga nada. A fila espera; nada é descartado.",
-                )}
-              </p>
-            </div>
-            <Toggle
-              label={traduzir("Pausar confirmações do Flow")}
-              defaultOn={canal.confirmacao.pausada}
-              onToggle={(ligado) => void salvarConfig({ confirmacao: { pausada: ligado } })}
-            />
-          </div>
-
           {protecoes ? (
             <div className="flow-bloco">
               <p className="flow-bloco-titulo">{traduzir("Proteções do número")}</p>
-
               <div className="flow-campos">
-                <div className="flow-campo">
-                  <label htmlFor="flow-janela-inicio">{traduzir("Enviar a partir de")}</label>
+                <div className="flow-campo" title={traduzir("Horário de Brasília. Fora da janela a confirmação espera a janela abrir — e nunca sai depois de a reunião começar.")}>
+                  <label htmlFor="flow-janela-inicio">{traduzir("Das")}</label>
                   <input
                     id="flow-janela-inicio"
                     className="input"
@@ -590,8 +593,8 @@ export function AzuzFlow() {
                     onChange={(e) => setProtecoes({ ...protecoes, inicio: e.target.value })}
                   />
                 </div>
-                <div className="flow-campo">
-                  <label htmlFor="flow-janela-fim">{traduzir("até")}</label>
+                <div className="flow-campo" title={traduzir("Horário de Brasília. Fora da janela a confirmação espera a janela abrir — e nunca sai depois de a reunião começar.")}>
+                  <label htmlFor="flow-janela-fim">{traduzir("às")}</label>
                   <input
                     id="flow-janela-fim"
                     className="input"
@@ -600,16 +603,8 @@ export function AzuzFlow() {
                     onChange={(e) => setProtecoes({ ...protecoes, fim: e.target.value })}
                   />
                 </div>
-              </div>
-              <p className="hint">
-                {traduzir(
-                  "Horário de Brasília. Fora da janela a confirmação espera a janela abrir — e nunca sai depois de a reunião começar.",
-                )}
-              </p>
-
-              <div className="flow-campos" style={{ marginTop: 16 }}>
-                <div className="flow-campo">
-                  <label htmlFor="flow-teto-dia">{traduzir("Máximo por dia")}</label>
+                <div className="flow-campo" title={traduzir("Quantas confirmações podem sair por dia, neste canal.")}>
+                  <label htmlFor="flow-teto-dia">{traduzir("Por dia")}</label>
                   <input
                     id="flow-teto-dia"
                     className="input"
@@ -620,8 +615,8 @@ export function AzuzFlow() {
                     onChange={(e) => setProtecoes({ ...protecoes, tetoDiario: e.target.value })}
                   />
                 </div>
-                <div className="flow-campo">
-                  <label htmlFor="flow-teto-numero">{traduzir("Máximo por número em 24h")}</label>
+                <div className="flow-campo" title={traduzir("Quantas o mesmo número pode receber em 24 horas.")}>
+                  <label htmlFor="flow-teto-numero">{traduzir("Por número")}</label>
                   <input
                     id="flow-teto-numero"
                     className="input"
@@ -632,7 +627,7 @@ export function AzuzFlow() {
                     onChange={(e) => setProtecoes({ ...protecoes, tetoPorNumero: e.target.value })}
                   />
                 </div>
-                <div className="flow-campo">
+                <div className="flow-campo" title={traduzir("Depois dessas falhas seguidas no envio, o CRM pausa sozinho e avisa quem administra. Nada é descartado.")}>
                   <label htmlFor="flow-falhas">{traduzir("Falhas até pausar")}</label>
                   <input
                     id="flow-falhas"
@@ -645,13 +640,6 @@ export function AzuzFlow() {
                   />
                 </div>
               </div>
-
-              <p className="hint">
-                {traduzir(
-                  "Depois de {falhas} falhas seguidas no envio, o CRM pausa sozinho e avisa quem administra. Nada é descartado.",
-                  { falhas: protecoes.falhasParaPausar || "0" },
-                )}
-              </p>
 
               {protecoesMudaram(canal, protecoes) ? (
                 <div className="flow-salvar">
@@ -680,46 +668,17 @@ export function AzuzFlow() {
               ) : null}
             </div>
           ) : null}
+
+          <div className="flow-interruptor">
+            <div className="flow-rotulo">{traduzir("Pausar envios")}</div>
+            <Toggle
+              label={traduzir("Pausar envios")}
+              defaultOn={canal.confirmacao.pausada}
+              onToggle={(ligado) => void salvarConfig({ confirmacao: { pausada: ligado } })}
+            />
+          </div>
         </div>
       ) : null}
-
-      {/*
-        O AVISO VEM DO SERVIDOR, não de um palpite da tela.
-        
-        Antes ele era "WhatsApp oficial não conectado", escrito a partir de um booleano — e isso
-        passou a ser MENTIRA no dia em que o lead passou a poder cair no QR Code: com o QR ligado e
-        a opção em Automático, o lead ganha conversa normalmente e a tela continuava alarmando.
-        
-        Quem decide é a mesma função que a entrega do lead usa (`escolherCanalDoFlow`), então a
-        frase aqui e o comportamento lá não têm como divergir.
-      */}
-      {leitura.situacao === "lido" && (!leitura.dados.destino || canal?.aviso) ? (
-        <div className="card" style={{ padding: 12, marginBottom: 12 }}>
-          {!leitura.dados.destino ? (
-            <p className="hint" style={{ margin: 0 }}>
-              <IconAlerta width={12} height={12} aria-hidden="true" />{" "}
-              {traduzir("Esta empresa ainda não tem funil: o lead entra como contato, sem card.")}
-            </p>
-          ) : null}
-          {canal?.aviso ? (
-            <p className="hint" style={{ margin: leitura.dados.destino ? 0 : "4px 0 0" }}>
-              <IconAlerta width={12} height={12} aria-hidden="true" /> {traduzir(canal.aviso)}{" "}
-              {traduzir("Sem conversa, a automação não tem por onde responder.")}
-            </p>
-          ) : null}
-        </div>
-      ) : null}
-
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <button type="button" className="btn primary" disabled={ocupado} onClick={pedirParaGerar}>
-          {estado?.chave ? traduzir("Gerar nova chave") : traduzir("Gerar chave")}
-        </button>
-        {estado?.chave ? (
-          <button type="button" className="btn danger" disabled={ocupado} onClick={() => setConfirmando("revogar")}>
-            {traduzir("Revogar")}
-          </button>
-        ) : null}
-      </div>
 
       <ModalConfirmacao
         aberto={confirmando === "gerar"}
