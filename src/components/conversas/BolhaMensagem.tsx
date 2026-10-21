@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 
+import { horaDaMensagem } from "@/lib/conversas/hora-da-mensagem";
 import type { ConvMensagem } from "@/lib/data";
 import { AudioBubblePlayer } from "@/components/audio-player";
 import { IconDoc, IconImage, IconLocalizacao, IconVideoCam } from "@/components/icons";
@@ -114,7 +115,7 @@ export function BolhaMensagem({
   const rodape = (
     <>
       <span className="tm">
-        {msg.hora}
+        {horaDaMensagem(msg)}
         {msg.tipo === "out" ? <StatusMensagemIcone status={msg.status} onTentarNovamente={onTentarNovamente} /> : null}
       </span>
       {/*
@@ -405,7 +406,7 @@ export function BolhaMensagem({
           <span className="wa-participante-foto-carregando" />
           {rotuloCarregando}
         </span>
-        <span className="tm">{msg.hora}</span>
+        <span className="tm">{horaDaMensagem(msg)}</span>
       </div>
     );
   }

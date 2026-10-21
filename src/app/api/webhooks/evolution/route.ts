@@ -1,3 +1,4 @@
+import { FUSO_BRASILIA } from "@/lib/agenda/fuso";
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
@@ -380,7 +381,15 @@ export async function processarMensagemRecebida(
       contato: chaveContato,
       tipo: fromMe ? "out" : "in",
       texto,
-      hora: new Date(timestampMs).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+      hora: new Date(timestampMs).toLocaleTimeString("pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit",
+        // SEM ISTO A HORA SAI EM UTC. Esta função roda na Vercel, cujo relógio é UTC, e o
+        // resultado vira TEXTO gravado: "18:42" de Brasília era guardado como "21:42", pra
+        // sempre. A tela já deriva a hora de `criadoEm` (ver `hora-da-mensagem.ts`), mas a coluna
+        // não pode continuar nascendo errada.
+        timeZone: FUSO_BRASILIA,
+      }),
       criadoEm: new Date(timestampMs),
       canal: CANAL_NAO_OFICIAL,
       contaCanal,

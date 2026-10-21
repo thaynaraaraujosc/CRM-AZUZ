@@ -1,3 +1,4 @@
+import { FUSO_BRASILIA } from "@/lib/agenda/fuso";
 import { prisma } from "@/lib/prisma";
 import { decriptar } from "@/lib/integracoes/crypto";
 import { listarConversasRecentesInstagram } from "@/lib/integracoes/instagram-login";
@@ -75,7 +76,12 @@ export async function importarConversasRecentesDoInstagram(
           contato: nome,
           tipo: mensagem.deMim ? "out" : "in",
           texto: mensagem.texto,
-          hora: mensagem.quando.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+          hora: mensagem.quando.toLocaleTimeString("pt-BR", {
+            hour: "2-digit",
+            minute: "2-digit",
+            // Roda no servidor, que na Vercel é UTC: sem o fuso, a hora nasce 3 horas adiantada.
+            timeZone: FUSO_BRASILIA,
+          }),
           criadoEm: mensagem.quando,
           canal: CANAL_INSTAGRAM,
           contaCanal,
