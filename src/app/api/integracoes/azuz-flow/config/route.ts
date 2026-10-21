@@ -4,7 +4,9 @@ import { auth } from "@/lib/auth";
 import { auditar } from "@/lib/seguranca/auditoria";
 import { CANAIS_DO_FLOW, escolherCanalDoFlow, type CanalDoFlow } from "@/lib/integracoes/azuz-flow-canal";
 import { conexoesDeWhatsappDoWorkspace } from "@/lib/integracoes/azuz-flow-conexoes";
-import { configDoFlow, salvarConfigDoFlow, type ConfigDoFlow } from "@/lib/integracoes/azuz-flow-config";
+import { configDoFlow, salvarConfigDoFlow, type MudancasDoFlow } from "@/lib/integracoes/azuz-flow-config";
+import { lerDisjuntor, religarDisjuntor } from "@/lib/integracoes/azuz-flow-disjuntor";
+import { minutosDoRelogio } from "@/lib/integracoes/azuz-flow-janela";
 import { comRespostaEmJson } from "@/lib/integracoes/resposta-em-json";
 
 /**
@@ -36,7 +38,11 @@ export async function GET() {
     const guarda = await exigirAdmin();
     if (!guarda.ok) return guarda.resposta;
     const workspaceId = guarda.sessao.user.workspaceId;
-    const [config, conexoes] = await Promise.all([configDoFlow(workspaceId), conexoesDeWhatsappDoWorkspace(workspaceId)]);
+    const [config, conexoes, disjuntor] = await Promise.all([
+      configDoFlow(workspaceId),
+      conexoesDeWhatsappDoWorkspace(workspaceId),
+      lerDisjuntor(workspaceId),
+    ]);
     /*
      * Devolve a ESCOLHA JÁ RESOLVIDA, e não só a opção guardada.
      *
@@ -53,6 +59,9 @@ export async function GET() {
         conexoes: { oficial: Boolean(conexoes.oficial), qrcode: Boolean(conexoes.qrcode) },
         conexaoEfetiva: escolha.conexao,
         aviso: escolha.aviso,
+        // O estado do disjuntor vai junto porque a tela precisa poder dizer "pausado, por isto, e
+        // o botão é este". Pausa invisível é pior do que não pausar: a fila para e ninguém sabe.
+        disjuntor,
       },
       { headers: { "cache-control": "no-store" } },
     );
@@ -67,10 +76,32 @@ export async function PUT(request: Request) {
 
     const corpo = (await request.json().catch(() => ({}))) as {
       canal?: unknown;
-      confirmacao?: { ativa?: unknown; texto?: unknown };
+      confirmacao?: {
+        ativa?: unknown;
+        texto?: unknown;
+        pausada?: unknown;
+        janela?: { inicio?: unknown; fim?: unknown };
+        tetoDiario?: unknown;
+        tetoPorNumero?: unknown;
+        falhasParaPausar?: unknown;
+      };
+      religar?: unknown;
     };
 
-    const mudancas: Parameters<typeof salvarConfigDoFlow>[1] = {};
+    const mudancas: MudancasDoFlow = {};
+
+    /*
+     * Religar o disjuntor vem no mesmo pedido, e isto não é preguiça de rota.
+     *
+     * Religar é sempre o mesmo gesto da mesma pessoa no mesmo cartão: ela leu "pausado porque X" e
+     * decidiu que pode voltar. Separar num endpoint próprio só criaria o estado em que a pausa foi
+     * tirada e a opção ao lado não salvou (ou o contrário).
+     *
+     * Não é "config": o disjuntor é o que está ACONTECENDO com o canal, não uma escolha. Por isso
+     * mora em outra chave e é tratado aqui à parte, antes de qualquer validação de opção.
+     */
+    const religou = corpo.religar === true;
+    if (religou) await religarDisjuntor(workspaceId);
 
     if (corpo.canal !== undefined) {
       // Valor fora da lista é recusado em vez de corrigido em silêncio: salvar "automatico" quando
@@ -82,7 +113,7 @@ export async function PUT(request: Request) {
     }
 
     if (corpo.confirmacao !== undefined) {
-      const confirmacao: { ativa?: boolean; texto?: string } = {};
+      const confirmacao: NonNullable<MudancasDoFlow["confirmacao"]> = {};
       if (corpo.confirmacao.ativa !== undefined) {
         if (typeof corpo.confirmacao.ativa !== "boolean") {
           return NextResponse.json({ erro: "O liga/desliga da confirmação precisa ser true ou false." }, { status: 400 });
@@ -100,10 +131,69 @@ export async function PUT(request: Request) {
         }
         confirmacao.texto = corpo.confirmacao.texto;
       }
-      mudancas.confirmacao = confirmacao as ConfigDoFlow["confirmacao"];
+
+      if (corpo.confirmacao.pausada !== undefined) {
+        if (typeof corpo.confirmacao.pausada !== "boolean") {
+          return NextResponse.json({ erro: "A pausa precisa ser true ou false." }, { status: 400 });
+        }
+        confirmacao.pausada = corpo.confirmacao.pausada;
+      }
+
+      if (corpo.confirmacao.janela !== undefined) {
+        const bruto = corpo.confirmacao.janela ?? {};
+        const inicio = typeof bruto.inicio === "string" ? bruto.inicio : "";
+        const fim = typeof bruto.fim === "string" ? bruto.fim : "";
+        const minutosInicio = minutosDoRelogio(inicio);
+        const minutosFim = minutosDoRelogio(fim);
+        if (minutosInicio === null || minutosFim === null) {
+          return NextResponse.json({ erro: "Os horários da janela precisam estar no formato HH:MM." }, { status: 400 });
+        }
+        // Janela invertida é recusada aqui, com a frase inteira, em vez de descartada em silêncio
+        // pela leitura: quem digitou 21:00–08:00 quis dizer "à noite", e precisa saber que isso
+        // não é o que o campo faz.
+        if (minutosFim <= minutosInicio) {
+          return NextResponse.json(
+            { erro: "A janela precisa terminar depois de começar. Para enviar à noite, use por exemplo 18:00 às 21:00." },
+            { status: 400 },
+          );
+        }
+        confirmacao.janela = { inicio, fim };
+      }
+
+      const tetos = [
+        { campo: "tetoDiario" as const, valor: corpo.confirmacao.tetoDiario, minimo: 1, maximo: 500, nome: "O limite por dia" },
+        { campo: "tetoPorNumero" as const, valor: corpo.confirmacao.tetoPorNumero, minimo: 1, maximo: 20, nome: "O limite por número" },
+        { campo: "falhasParaPausar" as const, valor: corpo.confirmacao.falhasParaPausar, minimo: 1, maximo: 50, nome: "As falhas até pausar" },
+      ];
+      for (const teto of tetos) {
+        if (teto.valor === undefined) continue;
+        const n = typeof teto.valor === "number" ? teto.valor : Number(teto.valor);
+        if (!Number.isFinite(n) || !Number.isInteger(n) || n < teto.minimo || n > teto.maximo) {
+          return NextResponse.json(
+            { erro: `${teto.nome} precisa ser um número inteiro entre ${teto.minimo} e ${teto.maximo}.` },
+            { status: 400 },
+          );
+        }
+        confirmacao[teto.campo] = n;
+      }
+
+      if (Object.keys(confirmacao).length) mudancas.confirmacao = confirmacao;
     }
 
     if (!Object.keys(mudancas).length) {
+      // Religar sozinho é um pedido legítimo e não tem nada pra salvar: responde com o estado
+      // atual em vez de 400.
+      if (religou) {
+        const config = await configDoFlow(workspaceId);
+        await auditar({
+          workspaceId,
+          membroId: guarda.sessao.user.id,
+          acao: "integracao.canal_do_flow_alterado",
+          recurso: "azuz_flow",
+          detalhe: "confirmações religadas depois da pausa automática",
+        }).catch(() => {});
+        return NextResponse.json(config, { headers: { "cache-control": "no-store" } });
+      }
       return NextResponse.json({ erro: "Nada pra salvar." }, { status: 400 });
     }
 
@@ -115,7 +205,9 @@ export async function PUT(request: Request) {
       membroId: guarda.sessao.user.id,
       acao: "integracao.canal_do_flow_alterado",
       recurso: "azuz_flow",
-      detalhe: `canal=${config.canal} confirmacao=${config.confirmacao.ativa ? "ligada" : "desligada"}`,
+      detalhe:
+        `canal=${config.canal} confirmacao=${config.confirmacao.ativa ? "ligada" : "desligada"}` +
+        `${config.confirmacao.pausada ? " pausada" : ""}${religou ? " religada" : ""}`,
     }).catch(() => {});
     return NextResponse.json(config, { headers: { "cache-control": "no-store" } });
   });

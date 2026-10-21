@@ -45,7 +45,17 @@ type ConfigDoCanal = {
   /** A conexão que o próximo lead vai usar de verdade. `null` = nenhuma serve. */
   conexaoEfetiva: "oficial" | "qrcode" | null;
   aviso: string | null;
-  confirmacao: { ativa: boolean; texto: string };
+  confirmacao: {
+    ativa: boolean;
+    texto: string;
+    pausada: boolean;
+    janela: { inicio: string; fim: string };
+    tetoDiario: number;
+    tetoPorNumero: number;
+    falhasParaPausar: number;
+  };
+  /** O que está acontecendo com o canal agora. Não é escolha da empresa — ver o disjuntor. */
+  disjuntor: { falhasSeguidas: number; pausadoEm: string | null; ultimoMotivo: string | null };
 };
 
 /** O que cada variável vale, pra listar embaixo do campo. Copiado da lista do servidor em vez de
@@ -64,6 +74,39 @@ const ROTULOS_DE_CANAL: Record<ConfigDoCanal["canal"], string> = {
   oficial: "Só o WhatsApp oficial",
   qrcode: "Só o WhatsApp QR Code",
 };
+
+/** O que a tela edita antes de mandar salvar. Tudo texto: campo de número guarda o que foi
+ *  digitado, e converter na hora de salvar é o que permite apagar e redigitar sem o campo pular. */
+type Protecoes = {
+  inicio: string;
+  fim: string;
+  tetoDiario: string;
+  tetoPorNumero: string;
+  falhasParaPausar: string;
+};
+
+function protecoesDe(c: ConfigDoCanal): Protecoes {
+  return {
+    inicio: c.confirmacao.janela.inicio,
+    fim: c.confirmacao.janela.fim,
+    tetoDiario: String(c.confirmacao.tetoDiario),
+    tetoPorNumero: String(c.confirmacao.tetoPorNumero),
+    falhasParaPausar: String(c.confirmacao.falhasParaPausar),
+  };
+}
+
+/** Mudou algo em relação ao que está guardado? Compara como TEXTO: "30" e "030" são o mesmo
+ *  limite, e oferecer "Salvar" por causa de um zero à esquerda é oferecer trabalho inútil. */
+function protecoesMudaram(c: ConfigDoCanal, p: Protecoes): boolean {
+  const guardado = protecoesDe(c);
+  return (
+    guardado.inicio !== p.inicio ||
+    guardado.fim !== p.fim ||
+    guardado.tetoDiario !== String(Number(p.tetoDiario)) ||
+    guardado.tetoPorNumero !== String(Number(p.tetoPorNumero)) ||
+    guardado.falhasParaPausar !== String(Number(p.falhasParaPausar))
+  );
+}
 
 type Leitura =
   | { situacao: "lendo" }
@@ -91,6 +134,9 @@ export function AzuzFlow() {
   /** O texto em edição. Separado de `canal.confirmacao.texto` porque digitar não pode salvar a
    *  cada tecla: seriam dezenas de gravações por frase. */
   const [textoEmEdicao, setTextoEmEdicao] = useState<string | null>(null);
+  /** As proteções em edição, pelo mesmo motivo do texto: horário e teto se digitam dígito a
+   *  dígito, e salvar a cada tecla gravaria "0", "3", "30" — sendo que "0" é recusado. */
+  const [protecoes, setProtecoes] = useState<Protecoes | null>(null);
 
   const ehAdmin = sessao?.user?.papelTipo === "admin" || sessao?.user?.superAdmin;
 
@@ -126,6 +172,7 @@ export function AzuzFlow() {
       if (lido.ok) {
         setCanal(lido.dados);
         setTextoEmEdicao(lido.dados.confirmacao.texto);
+        setProtecoes(protecoesDe(lido.dados));
       }
     })();
     // `traduzir` muda com o idioma; reler o estado por troca de idioma não faria mal, mas também
@@ -212,6 +259,7 @@ export function AzuzFlow() {
       if (lido.ok) {
         setCanal(lido.dados);
         setTextoEmEdicao(lido.dados.confirmacao.texto);
+        setProtecoes(protecoesDe(lido.dados));
       } else setErro(lido.erro);
     } finally {
       setSalvandoCanal(false);
@@ -324,6 +372,44 @@ export function AzuzFlow() {
       */}
       {canal && estado?.chave ? (
         <div className="card" style={{ padding: 12, marginBottom: 12 }}>
+          {/*
+            O DISJUNTOR VEM PRIMEIRO, antes de qualquer opção.
+
+            Se o canal está pausado, nada que a pessoa mexer aqui embaixo vai mandar mensagem — e
+            descobrir isso depois de ajustar texto e teto é a pior ordem possível. A frase diz o
+            motivo e o botão desfaz, no mesmo lugar.
+          */}
+          {canal.disjuntor.pausadoEm ? (
+            <div className="int-aviso-conflito" style={{ marginBottom: 12 }}>
+              <p className="int-title" style={{ margin: 0 }}>
+                <IconAlerta width={12} height={12} aria-hidden="true" />{" "}
+                {traduzir("As confirmações foram pausadas automaticamente.")}
+              </p>
+              <p className="hint" style={{ margin: "4px 0 0" }}>
+                {traduzir("Foram {falhas} falhas seguidas no envio, em {quando}.", {
+                  falhas: String(canal.disjuntor.falhasSeguidas),
+                  quando: data(canal.disjuntor.pausadoEm),
+                })}{" "}
+                {canal.disjuntor.ultimoMotivo
+                  ? traduzir("Último motivo: {motivo}.", { motivo: canal.disjuntor.ultimoMotivo })
+                  : null}
+              </p>
+              <p className="hint" style={{ margin: "4px 0 8px" }}>
+                {traduzir(
+                  "Nada foi perdido: as confirmações continuam na fila e voltam a sair quando você religar.",
+                )}
+              </p>
+              <button
+                type="button"
+                className="btn"
+                disabled={salvandoCanal}
+                onClick={() => void salvarConfig({ religar: true })}
+              >
+                {salvandoCanal ? traduzir("Religando…") : traduzir("Religar")}
+              </button>
+            </div>
+          ) : null}
+
           <Toggle
             label={traduzir("Confirmação de reunião do Flow")}
             defaultOn={canal.confirmacao.ativa}
@@ -369,6 +455,122 @@ export function AzuzFlow() {
               </li>
             ))}
           </ul>
+
+          {/*
+            AS PROTEÇÕES DO NÚMERO.
+
+            Ficam à mostra, e não escondidas atrás de "avançado", porque são elas que decidem se
+            este recurso é seguro de usar. Quem liga a confirmação precisa poder ver, no mesmo
+            lugar, o que impede o CRM de mandar cem mensagens de madrugada por um número que pode
+            ser bloqueado por denúncia.
+          */}
+          <hr style={{ border: 0, borderTop: "1px solid var(--line)", margin: "14px 0 12px" }} />
+
+          <Toggle
+            label={traduzir("Pausar confirmações do Flow")}
+            defaultOn={canal.confirmacao.pausada}
+            onToggle={(ligado) => void salvarConfig({ confirmacao: { pausada: ligado } })}
+          />
+          <p className="hint" style={{ margin: "6px 0 0" }}>
+            {traduzir(
+              "O freio de mão: para o envio agora e não apaga nada. A fila espera; nada é descartado.",
+            )}
+          </p>
+
+          {protecoes ? (
+            <>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
+                <div className="field" style={{ margin: 0 }}>
+                  <label>{traduzir("Enviar a partir de")}</label>
+                  <input
+                    className="input"
+                    type="time"
+                    value={protecoes.inicio}
+                    onChange={(e) => setProtecoes({ ...protecoes, inicio: e.target.value })}
+                  />
+                </div>
+                <div className="field" style={{ margin: 0 }}>
+                  <label>{traduzir("até")}</label>
+                  <input
+                    className="input"
+                    type="time"
+                    value={protecoes.fim}
+                    onChange={(e) => setProtecoes({ ...protecoes, fim: e.target.value })}
+                  />
+                </div>
+              </div>
+              <p className="hint" style={{ margin: "6px 0 0" }}>
+                {traduzir(
+                  "Horário de Brasília. Fora da janela a confirmação espera a janela abrir — e nunca sai depois de a reunião começar.",
+                )}
+              </p>
+
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
+                <div className="field" style={{ margin: 0 }}>
+                  <label>{traduzir("Máximo por dia")}</label>
+                  <input
+                    className="input"
+                    type="number"
+                    min={1}
+                    max={500}
+                    style={{ width: 110 }}
+                    value={protecoes.tetoDiario}
+                    onChange={(e) => setProtecoes({ ...protecoes, tetoDiario: e.target.value })}
+                  />
+                </div>
+                <div className="field" style={{ margin: 0 }}>
+                  <label>{traduzir("Máximo por número em 24h")}</label>
+                  <input
+                    className="input"
+                    type="number"
+                    min={1}
+                    max={20}
+                    style={{ width: 110 }}
+                    value={protecoes.tetoPorNumero}
+                    onChange={(e) => setProtecoes({ ...protecoes, tetoPorNumero: e.target.value })}
+                  />
+                </div>
+                <div className="field" style={{ margin: 0 }}>
+                  <label>{traduzir("Falhas seguidas até pausar")}</label>
+                  <input
+                    className="input"
+                    type="number"
+                    min={1}
+                    max={50}
+                    style={{ width: 110 }}
+                    value={protecoes.falhasParaPausar}
+                    onChange={(e) => setProtecoes({ ...protecoes, falhasParaPausar: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
+                <button
+                  type="button"
+                  className="btn"
+                  disabled={salvandoCanal || !protecoesMudaram(canal, protecoes)}
+                  onClick={() =>
+                    void salvarConfig({
+                      confirmacao: {
+                        janela: { inicio: protecoes.inicio, fim: protecoes.fim },
+                        // `Number("")` é 0, que a rota recusa com a frase certa. Mandar o que foi
+                        // digitado, e deixar o servidor julgar, é o que faz a tela e o banco
+                        // concordarem sobre o que é um limite válido.
+                        tetoDiario: Number(protecoes.tetoDiario),
+                        tetoPorNumero: Number(protecoes.tetoPorNumero),
+                        falhasParaPausar: Number(protecoes.falhasParaPausar),
+                      },
+                    })
+                  }
+                >
+                  {salvandoCanal ? traduzir("Salvando…") : traduzir("Salvar proteções")}
+                </button>
+                {protecoesMudaram(canal, protecoes) ? (
+                  <span className="hint">{traduzir("Alterações não salvas.")}</span>
+                ) : null}
+              </div>
+            </>
+          ) : null}
         </div>
       ) : null}
 

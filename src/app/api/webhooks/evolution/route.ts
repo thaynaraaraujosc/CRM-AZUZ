@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
+import { ehPedidoDeParar, registrarPedidoDeParar } from "@/lib/integracoes/azuz-flow-optout";
 import { validarTokenWebhook, workspaceIdDaInstancia, buscarNumeroConectado, buscarInfoGrupo, buscarFotoPerfil } from "@/lib/integracoes/evolution";
 import { criarContatoPeloWhatsAppSeNaoExistir } from "@/lib/contatos/upsert";
 import { entrarNaPrimeiraEtapaComoNovoLead, subirCardParaOTopo } from "@/lib/funis/upsert";
@@ -491,6 +492,29 @@ export async function processarMensagemRecebida(
     await subirCardParaOTopo(workspaceId, chaveContato);
   }
 
+
+  /*
+   * "SAIR" / "PARAR": a pessoa desligando a mensagem do lado dela.
+   *
+   * VEM ANTES DAS AUTOMAÇÕES, e essa ordem é o recurso funcionando. Isto derruba o
+   * `consentimentoWhatsApp` do contato, e é esse mesmo booleano que `acoes.ts` consulta antes de
+   * mandar modelo. Registrando primeiro, a automação que fosse responder a este "SAIR" já encontra
+   * o consentimento desmarcado — ninguém precisou lembrar de tratar o caso lá dentro.
+   *
+   * Só mensagem AO VIVO, de pessoa, fora de grupo. Numa importação de histórico isto estaria
+   * desmarcando consentimento por causa de conversa de semanas atrás, e em grupo "parar" não é
+   * pedido de ninguém sobre o próprio número.
+   */
+  if (!fromMe && !ehGrupo && !opcoes.permitirHistorico && ehPedidoDeParar(texto)) {
+    await registrarPedidoDeParar({
+      workspaceId,
+      telefone: waId,
+      contatoId: contato?.id ?? null,
+      conversaNome: chaveContato,
+      contaCanal,
+      mensagemId: data.key.id,
+    }).catch((erro) => console.error("[webhook evolution] falha ao registrar o pedido de parar:", erro));
+  }
 
   // `fromMe` é mensagem que saiu do próprio celular conectado (espelhada aqui). Não é uma pessoa
   // falando com você, e disparar automação nela faria o CRM responder a si mesmo. Grupo também

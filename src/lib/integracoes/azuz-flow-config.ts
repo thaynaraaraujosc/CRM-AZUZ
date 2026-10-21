@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { CANAIS_DO_FLOW, type CanalDoFlow } from "@/lib/integracoes/azuz-flow-canal";
 import { TEXTO_PADRAO_DA_CONFIRMACAO } from "@/lib/integracoes/azuz-flow-confirmacao-texto";
+import { JANELA_PADRAO, minutosDoRelogio, type JanelaDeEnvio } from "@/lib/integracoes/azuz-flow-janela";
 
 /**
  * As opções do AZUZ Flow por empresa.
@@ -28,6 +29,27 @@ export type ConfigDoFlow = {
     ativa: boolean;
     /** O que a pessoa recebe. Vazio vale como "use o padrão". */
     texto: string;
+    /**
+     * "Pausar confirmações do Flow": o freio de mão.
+     *
+     * Separado do liga/desliga porque são gestos diferentes. Desligar é "não quero isso"; pausar é
+     * "pare AGORA e me deixe pensar", sem perder o texto nem a configuração. Quem percebe que algo
+     * saiu errado precisa de um botão que para tudo num clique e não apaga nada.
+     */
+    pausada: boolean;
+    /** De quando a quando pode sair, no horário de Brasília. */
+    janela: JanelaDeEnvio;
+    /**
+     * Quantas PRIMEIRAS mensagens por dia, no canal.
+     *
+     * 30 é conservador de propósito e não vem de documentação — não existe documentação pro canal
+     * não oficial. O risco real é o número ser bloqueado, e quem paga é o cliente.
+     */
+    tetoDiario: number;
+    /** Quantas confirmações o MESMO número pode receber em 24h. */
+    tetoPorNumero: number;
+    /** Quantas falhas seguidas pausam o canal sozinho. */
+    falhasParaPausar: number;
   };
 };
 
@@ -45,7 +67,15 @@ export const CONFIG_PADRAO: ConfigDoFlow = {
    * falham em silêncio. Quem quer o QR escolhe, depois de conferir as automações.
    */
   canal: "oficial",
-  confirmacao: { ativa: false, texto: TEXTO_PADRAO_DA_CONFIRMACAO },
+  confirmacao: {
+    ativa: false,
+    texto: TEXTO_PADRAO_DA_CONFIRMACAO,
+    pausada: false,
+    janela: JANELA_PADRAO,
+    tetoDiario: 30,
+    tetoPorNumero: 3,
+    falhasParaPausar: 5,
+  },
 };
 
 /**
@@ -75,8 +105,36 @@ export function lerConfigDoFlow(dados: unknown): ConfigDoFlow {
       // Texto vazio vale como padrão. Alguém que apagou tudo no campo não quis mandar mensagem em
       // branco — e mensagem em branco é o que aconteceria.
       texto: texto || CONFIG_PADRAO.confirmacao.texto,
+      // Pausa é o contrário: o valor inseguro é continuar mandando. Qualquer coisa que não seja
+      // `false` explícito mantém pausado.
+      pausada: confirmacao.pausada === true,
+      janela: lerJanela(confirmacao.janela),
+      tetoDiario: numeroEntre(confirmacao.tetoDiario, 1, 500, CONFIG_PADRAO.confirmacao.tetoDiario),
+      tetoPorNumero: numeroEntre(confirmacao.tetoPorNumero, 1, 20, CONFIG_PADRAO.confirmacao.tetoPorNumero),
+      falhasParaPausar: numeroEntre(confirmacao.falhasParaPausar, 1, 50, CONFIG_PADRAO.confirmacao.falhasParaPausar),
     },
   };
+}
+
+/** Número dentro de limites, ou o padrão. Teto absurdo guardado por engano não pode virar mil
+ *  mensagens num dia: o limite aqui é a última defesa antes do número do cliente. */
+function numeroEntre(valor: unknown, minimo: number, maximo: number, padrao: number): number {
+  const n = typeof valor === "number" ? valor : Number(valor);
+  if (!Number.isFinite(n)) return padrao;
+  return Math.min(maximo, Math.max(minimo, Math.round(n)));
+}
+
+/** A janela guardada, com o padrão quando ela não faz sentido. Fim antes do início é descartado
+ *  inteiro: uma janela invertida nunca abre, e a fila ficaria parada sem ninguém entender por quê. */
+function lerJanela(valor: unknown): JanelaDeEnvio {
+  if (typeof valor !== "object" || valor === null) return JANELA_PADRAO;
+  const bruto = valor as Record<string, unknown>;
+  const inicio = typeof bruto.inicio === "string" ? bruto.inicio : "";
+  const fim = typeof bruto.fim === "string" ? bruto.fim : "";
+  const minutosInicio = minutosDoRelogio(inicio);
+  const minutosFim = minutosDoRelogio(fim);
+  if (minutosInicio === null || minutosFim === null || minutosFim <= minutosInicio) return JANELA_PADRAO;
+  return { inicio, fim };
 }
 
 /**
@@ -101,10 +159,22 @@ export async function configDoFlow(workspaceId: string): Promise<ConfigDoFlow> {
   }
 }
 
+/**
+ * O que uma tela pode mandar mudar.
+ *
+ * `confirmacao` é PARCIAL de propósito, e o tipo diz isso em vez de a rota mentir com um `as`:
+ * salvar só o liga/desliga é o caso normal, e exigir o objeto inteiro obrigaria a tela a reenviar
+ * o texto e os tetos a cada clique — qualquer um deles desatualizado sobrescreveria o que outra
+ * pessoa acabou de salvar.
+ */
+export type MudancasDoFlow = Partial<Omit<ConfigDoFlow, "confirmacao">> & {
+  confirmacao?: Partial<ConfigDoFlow["confirmacao"]>;
+};
+
 /** Grava o que mudou, preservando o resto. Devolve como ficou. */
 export async function salvarConfigDoFlow(
   workspaceId: string,
-  mudancas: Partial<ConfigDoFlow>,
+  mudancas: MudancasDoFlow,
 ): Promise<ConfigDoFlow> {
   const atual = await configDoFlow(workspaceId);
   /*

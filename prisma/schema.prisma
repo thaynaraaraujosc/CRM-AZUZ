@@ -1765,7 +1765,11 @@ model ConfirmacaoDeReuniao {
 
   /// A trava. Ver o comentário do modelo.
   @@unique([workspaceId, telefone, inicio])
-  /// O que o cron varre: o que está na fila e já pode sair.
+  /// O que o cron varre, e ele varre SEM workspaceId: uma batida olha a fila do CRM inteiro. Um
+  /// índice começando por `workspaceId` não serve pra essa consulta — o banco ignoraria o índice e
+  /// leria a tabela toda a cada minuto.
+  @@index([situacao, enviarApos])
+  /// O teto do dia por empresa, e a lista da tela.
   @@index([workspaceId, situacao, enviarApos])
   /// O teto por número nas últimas 24h.
   @@index([workspaceId, telefone, criadoEm])

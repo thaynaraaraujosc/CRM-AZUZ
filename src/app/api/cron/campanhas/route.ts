@@ -16,6 +16,7 @@ import { conciliarAssinaturasPendentes } from "@/lib/assinatura/conciliar-penden
 import { prisma } from "@/lib/prisma";
 import { devolverConversoesDeTodosOsWorkspaces } from "@/lib/rastreio/devolver-conversao";
 import { renovarTokensDoInstagram } from "@/lib/integracoes/renovar-tokens";
+import { processarConfirmacoesDeReuniao } from "@/lib/integracoes/azuz-flow-confirmacao-envio";
 import { processarMensagemRecebida } from "@/app/api/webhooks/evolution/route";
 
 /**
@@ -86,6 +87,23 @@ export async function GET(request: Request) {
   const diarios = await rodarGatilhosDiarios().catch((erro) => {
     console.error("[cron] falha nos gatilhos diários do funil:", erro);
     return { gatilhos: 0, leads: 0 };
+  });
+
+  /*
+   * A fila das confirmações de reunião do Flow.
+   *
+   * Em TODA batida, de propósito: é uma fila com hora marcada. Cada linha tem um `enviarApos`
+   * sorteado com variação, e o que faz o gotejamento acontecer é o cron encontrar a linha vencida
+   * no minuto dela. Pendurar isto num minuto fixo da hora transformaria "mandar espaçado" em
+   * "mandar tudo junto uma vez por hora", que é exatamente o que o espaçamento existe pra evitar.
+   *
+   * Com a confirmação desligada (o padrão) a fila está vazia, e a rodada é uma consulta por índice
+   * que volta sem nada. Ver `azuz-flow-confirmacao-envio.ts`: o limite de quantas saem por rodada
+   * é o ritmo do canal, não este limite daqui.
+   */
+  const confirmacoes = await processarConfirmacoesDeReuniao().catch((erro) => {
+    console.error("[cron] falha ao processar confirmações de reunião:", erro);
+    return { enviadas: 0, recusadas: 0, adiadas: 0 };
   });
 
   // Mensagem gravada que não aparece na conversa: o CRM conserta sozinho, sem botão em lugar
@@ -238,5 +256,5 @@ export async function GET(request: Request) {
         })
       : { workspaces: 0, chats: 0 };
 
-  return NextResponse.json({ ok: true, ...resultado, automacoes, porTempo, diarios, orfas, historico, nomes, reconciliacao, canalQrCode, donos, grupos, espelhamentosIniciados, assinaturas, conversoes, tokensInstagram });
+  return NextResponse.json({ ok: true, ...resultado, automacoes, porTempo, diarios, confirmacoes, orfas, historico, nomes, reconciliacao, canalQrCode, donos, grupos, espelhamentosIniciados, assinaturas, conversoes, tokensInstagram });
 }

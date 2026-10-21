@@ -10,7 +10,7 @@ function ctx(mudancas: Partial<ContextoDaConfirmacao> = {}): ContextoDaConfirmac
     inicio: new Date("2026-10-20T17:30:00.000Z"),
     consentiu: true,
     telefone: "5562999990001",
-    conversa: { nome: "Ana Souza", canal: "WhatsApp" },
+    conversa: { nome: "Ana Souza", canal: "WhatsApp", contaCanal: "whatsapp_nao_oficial:5562988887777" },
     agora: AGORA,
     ...mudancas,
   };
@@ -69,8 +69,28 @@ describe("o que impede o envio, e precisa ser dito", () => {
   it("conversa de outro canal diz QUAL canal", () => {
     // Mandar por WhatsApp criaria uma segunda frente com a mesma pessoa, pelo número que pode ser
     // bloqueado, sem ela ter pedido.
-    const r = decidirConfirmacao(ctx({ conversa: { nome: "Ana", canal: "Instagram" } }));
+    const r = decidirConfirmacao(ctx({ conversa: { nome: "Ana", canal: "Instagram", contaCanal: "meta_instagram:1" } }));
     expect(r.acao === "nao_enviar" && r.motivo).toContain("atendido por Instagram");
+  });
+
+  it("conversa do WhatsApp oficial: texto livre não passa pela regra da Meta", () => {
+    /*
+     * As duas conversas têm `canal: "WhatsApp"`. O que as separa é o DONO, e é por isso que ele
+     * chega até aqui: pelo oficial, a primeira mensagem pra quem nunca escreveu vai por modelo
+     * aprovado, e a confirmação é texto livre escrito pela agência.
+     */
+    const r = decidirConfirmacao(
+      ctx({ conversa: { nome: "Ana", canal: "WhatsApp", contaCanal: "meta_whatsapp:111" } }),
+    );
+    expect(r.acao === "nao_enviar" && r.motivo).toContain("modelo aprovado pela Meta");
+  });
+
+  it("conversa sem dono registrado não é tratada como oficial", () => {
+    // Conversa antiga, de antes da coluna existir: todas vieram do QR Code. Tratá-la como oficial
+    // calaria a confirmação de quem já é atendido pelo único canal que pode mandá-la.
+    expect(decidirConfirmacao(ctx({ conversa: { nome: "Ana", canal: "WhatsApp", contaCanal: null } }))).toEqual({
+      acao: "enfileirar",
+    });
   });
 
   it("reunião que já começou", () => {

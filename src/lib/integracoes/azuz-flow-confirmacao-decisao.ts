@@ -27,8 +27,13 @@ export type ContextoDaConfirmacao = {
   consentiu: boolean;
   /** Telefone normalizado. `null` quando o lead não trouxe WhatsApp utilizável. */
   telefone: string | null;
-  /** A conversa onde a mensagem sairia. `null` quando o lead ficou sem conversa. */
-  conversa: { nome: string; canal: string } | null;
+  /**
+   * A conversa onde a mensagem sairia. `null` quando o lead ficou sem conversa.
+   *
+   * `contaCanal` é a CONEXÃO dona dela (`<provedor>:<número>`), e não é detalhe: é o que separa uma
+   * conversa do QR Code de uma do WhatsApp oficial. As duas têm `canal: "WhatsApp"`.
+   */
+  conversa: { nome: string; canal: string; contaCanal: string | null } | null;
   agora: Date;
 };
 
@@ -77,6 +82,29 @@ export function decidirConfirmacao(ctx: ContextoDaConfirmacao): DecisaoDaConfirm
     return {
       acao: "nao_enviar",
       motivo: `Confirmação não enviada: este contato é atendido por ${ctx.conversa.canal}.`,
+    };
+  }
+
+  /*
+   * CONVERSA DO WHATSAPP OFICIAL: a confirmação não sai por lá.
+   *
+   * Não é uma limitação do CRM, é a regra da Meta: a primeira mensagem pra quem nunca escreveu tem
+   * que ir por MODELO APROVADO, e a confirmação é texto livre escrito pela agência. Enfileirar
+   * mesmo assim produziria o pior resultado possível — a linha ficaria na fila parecendo resolvida,
+   * o envio bateria na recusa da Meta, e o disjuntor acabaria pausando um canal que não tem defeito
+   * nenhum.
+   *
+   * Dizer em voz alta em vez de calar: a empresa LIGOU a confirmação, e tem que saber que, pelo
+   * canal que ela escolheu, ela não sai.
+   *
+   * O prefixo está escrito à mão (é `CANAL_OFICIAL` de `conta-canal.ts`) porque aquele módulo
+   * importa o Prisma, e este aqui é puro de propósito — provável sem banco, sem rede e sem relógio.
+   */
+  if (ctx.conversa.contaCanal?.startsWith("meta_whatsapp:")) {
+    return {
+      acao: "nao_enviar",
+      motivo:
+        "Confirmação não enviada: pelo WhatsApp oficial a primeira mensagem precisa ser um modelo aprovado pela Meta. A confirmação sai pelo canal QR Code.",
     };
   }
 
