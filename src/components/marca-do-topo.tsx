@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-import { carregarLogoDaEmpresa, useLogoDaEmpresa } from "@/lib/logo-da-empresa";
+import { carregarIdentidadeDaEmpresa, useIdentidadeDaEmpresa } from "@/lib/empresa/identidade";
 
 /**
  * A marca no topo do menu: o quadradinho da agência e o nome do produto ao lado.
@@ -16,12 +16,12 @@ import { carregarLogoDaEmpresa, useLogoDaEmpresa } from "@/lib/logo-da-empresa";
  * lugar do nome do sistema.
  */
 export function MarcaDoTopo({ mostrarNome = true }: { mostrarNome?: boolean }) {
-  const { logo, carregado } = useLogoDaEmpresa();
+  const { logo, carregado } = useIdentidadeDaEmpresa();
 
   useEffect(() => {
     // Uma leitura por sessão de navegador: o estado é compartilhado, então o segundo componente a
     // montar encontra `carregado` e não pede de novo.
-    if (!carregado) void carregarLogoDaEmpresa();
+    if (!carregado) void carregarIdentidadeDaEmpresa();
   }, [carregado]);
 
   return (

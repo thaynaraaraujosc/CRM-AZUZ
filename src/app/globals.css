@@ -14404,9 +14404,17 @@ button.camp-row:hover {
  * que já existe.
  */
 .config-layout {
-  --cfg-azul-raso: var(--blue-soft-2);
-  --cfg-azul-raso-forte: var(--blue-soft);
-  --cfg-azul-traco: color-mix(in srgb, var(--blue) 35%, transparent);
+  /*
+   * O AZULZINHO É UM AZUL DE VERDADE, e isto é correção de uma tentativa minha que não pegou.
+   *
+   * Antes estes tons saíam de `--blue-soft`/`--blue-soft-2`, que são tints do navy da marca
+   * (#002037) — e tint de navy escuro dá cinza-azulado quase branco. Na tela não lia como azul,
+   * lia como "mais um cinza". Estes três vêm do mesmo lugar que o AZUZ FLOW usa nas Configurações
+   * dele: claro o bastante pra texto escuro ficar legível em cima, azul o bastante pra se ver.
+   */
+  --cfg-azul-raso: #e3f0f9;
+  --cfg-azul-raso-forte: #cfe5f4;
+  --cfg-azul-traco: #7fb9da;
   --cfg-botao: var(--surface-elevated);
   --cfg-sombra: 0 1px 2px rgba(0, 32, 55, 0.05), 0 2px 6px rgba(0, 32, 55, 0.04);
   display: grid;
@@ -14796,12 +14804,33 @@ button.camp-row:hover {
   margin-top: var(--space-1);
 }
 
-/* O cartão da confirmação: borda e respiro, sem sombra. Ele já está DENTRO de um bloco branco —
-   uma segunda sombra aqui empilharia duas camadas de profundidade na mesma superfície. */
+/* O cartão da confirmação: AZUL CLARO, pra destacar do bloco branco em volta.
+   Sem sombra — ele já está dentro de um bloco que tem a dele, e duas camadas de profundidade na
+   mesma superfície é o que faz uma tela parecer remendada. Quem destaca aqui é a cor. */
 .flow-cartao {
-  border: 1px solid var(--line);
+  border: 1px solid var(--cfg-azul-traco);
   border-radius: var(--radius-lg);
+  background: var(--cfg-azul-raso);
   padding: var(--space-2) 0;
+}
+
+/* O interruptor desligado tem o trilho em `--line-soft`, que sobre o azul claro quase some: o
+   controle mais importante do cartão virava um risco apagado. Branco com contorno azul ele
+   continua lendo como desligado e continua lendo como botão. */
+.flow-cartao .toggle:not(.on) {
+  background: var(--surface-elevated);
+  box-shadow: inset 0 0 0 1px var(--cfg-azul-traco);
+}
+
+/* Dentro do cartão azul, a pílula da variável fica BRANCA: `--blue-soft` é quase a mesma
+   luminosidade do fundo novo, e pílula sobre fundo da mesma cor vira borrão. */
+.flow-cartao .flow-var code {
+  background: var(--surface-elevated);
+}
+
+.flow-cartao .flow-var:hover {
+  background: color-mix(in srgb, var(--surface-elevated) 55%, transparent);
+  border-color: var(--cfg-azul-traco);
 }
 
 /* Linha de interruptor: o que ele faz à esquerda, o controle à direita. */

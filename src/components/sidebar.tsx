@@ -14,6 +14,7 @@ import {
 } from "react";
 
 import { MarcaDoTopo } from "@/components/marca-do-topo";
+import { publicarNomeDaEmpresa, useIdentidadeDaEmpresa } from "@/lib/empresa/identidade";
 import { useEquipe } from "@/lib/equipe-context";
 import { useFunis } from "@/lib/funis-context";
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
@@ -159,11 +160,21 @@ export function Sidebar() {
   const [nomeEmpresa, setNomeEmpresa] = useState("");
   const [nomeEmpresaSincronizado, setNomeEmpresaSincronizado] = useState<string | null>(null);
   const [salvandoNome, setSalvandoNome] = useState(false);
-  // Sincroniza com a sessão assim que ela carregar. "ajustar estado durante a renderização" (não
-  // num useEffect) porque só precisa rodar uma vez, quando o nome do workspace muda de verdade.
-  if (sessao?.user?.workspaceNome && sessao.user.workspaceNome !== nomeEmpresaSincronizado) {
-    setNomeEmpresaSincronizado(sessao.user.workspaceNome);
-    setNomeEmpresa(sessao.user.workspaceNome);
+  /*
+   * O NOME VEM DO ESTADO COMPARTILHADO, com a sessão como reserva.
+   *
+   * O token da sessão é tirado no LOGIN e não muda sozinho: enquanto o menu lia só dele, trocar o
+   * nome em Configurações › Dados da empresa gravava a coluna e o menu seguia com o nome antigo
+   * até a pessoa sair e entrar de novo. A sessão continua valendo no primeiro render, antes de a
+   * leitura do workspace chegar — assim o menu nunca abre vazio.
+   */
+  const identidade = useIdentidadeDaEmpresa();
+  const nomeDeVerdade = identidade.nome ?? sessao?.user?.workspaceNome ?? "";
+  // "Ajustar estado durante a renderização" (não num useEffect) porque só precisa rodar quando o
+  // nome muda de verdade. Padrão recomendado pelo React pra sincronizar com um valor de fora.
+  if (nomeDeVerdade && nomeDeVerdade !== nomeEmpresaSincronizado) {
+    setNomeEmpresaSincronizado(nomeDeVerdade);
+    setNomeEmpresa(nomeDeVerdade);
   }
   const [workspaceAnchorRect, setWorkspaceAnchorRect] = useState<AnchorRect | null>(null);
   const { ref: workspacePopRef, posicao: workspacePos } = useFloatingPosition(workspaceAnchorRect, workspaceAberto, 8, () => setWorkspaceAberto(false));
@@ -183,6 +194,8 @@ export function Sidebar() {
       .then((r) => {
         if (!r.ok) throw new Error();
         setNomeEmpresaSincronizado(nome);
+        // Avisa o resto do app (Configurações lê do mesmo lugar), só depois do `ok` da rota.
+        publicarNomeDaEmpresa(nome);
       })
       .catch((erro) => console.error("Falha ao atualizar nome do workspace:", erro))
       .finally(() => setSalvandoNome(false));

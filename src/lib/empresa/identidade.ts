@@ -5,26 +5,28 @@ import { useSyncExternalStore } from "react";
 import { prepararLogoDaEmpresa } from "@/lib/imagens/preparar-logo";
 
 /**
- * A LOGO DA AGÊNCIA NO TOPO DO MENU.
+ * A IDENTIDADE DA AGÊNCIA — a logo e o nome do espaço de trabalho — em UM estado compartilhado.
  *
- * O ESTADO É UM SÓ, e esse é o ponto: o menu lateral e a tela de Configurações leem do mesmo
- * lugar. Trocar a logo em Configurações atualiza o menu na hora, sem recarregar a página — e sem
- * o menu precisar saber que existe uma tela de Configurações.
+ * O NOME ESTÁ AQUI por causa de um defeito real: ele também mora no token da SESSÃO
+ * (`sessao.user.workspaceNome`), e token de sessão é tirado no login e não muda sozinho. Trocar o
+ * nome em Configurações gravava a coluna e o menu continuava mostrando o nome antigo — até a
+ * pessoa sair e entrar de novo. Parecia que não tinha salvado.
  *
- * O NOME DO PRODUTO CONTINUA AO LADO, com ou sem logo. A agência põe a marca dela no quadradinho;
- * o nome do sistema não é o espaço dela.
+ * Com um estado compartilhado, quem grava PUBLICA, e quem mostra lê daqui com a sessão como
+ * reserva. O menu atualiza na hora, sem recarregar a página e sem precisar saber que existe uma
+ * tela de Configurações.
  *
  * Por que `useSyncExternalStore` e não um Context: o menu é montado uma vez, no layout, e envolve o
- * app inteiro. Um Provider novo em volta de tudo pra carregar uma imagem obrigaria toda a árvore a
- * renderizar de novo a cada troca.
+ * app inteiro. Um Provider novo em volta de tudo obrigaria a árvore inteira a renderizar de novo a
+ * cada troca de logo.
  */
 
-type Estado = { logo: string | null; carregado: boolean };
+type Estado = { logo: string | null; nome: string | null; carregado: boolean };
 
-let estado: Estado = { logo: null, carregado: false };
+let estado: Estado = { logo: null, nome: null, carregado: false };
 /** O estado do servidor, imutável: o `useSyncExternalStore` exige o mesmo objeto a cada chamada,
  *  senão o React entra em laço de render durante a hidratação. */
-const NO_SERVIDOR: Estado = { logo: null, carregado: false };
+const NO_SERVIDOR: Estado = { logo: null, nome: null, carregado: false };
 const ouvintes = new Set<() => void>();
 
 function publicar(novo: Estado) {
@@ -37,7 +39,7 @@ function assinar(ouvinte: () => void): () => void {
   return () => ouvintes.delete(ouvinte);
 }
 
-export function useLogoDaEmpresa(): Estado {
+export function useIdentidadeDaEmpresa(): Estado {
   return useSyncExternalStore(
     assinar,
     () => estado,
@@ -45,14 +47,26 @@ export function useLogoDaEmpresa(): Estado {
   );
 }
 
-/** Lê a logo de quem está logado. Falhar aqui não derruba nada: o menu segue com a marca padrão. */
-export function carregarLogoDaEmpresa(): Promise<void> {
+/** Lê a identidade de quem está logado. Falhar aqui não derruba nada: o menu segue com a marca
+ *  padrão e com o nome que veio na sessão. */
+export function carregarIdentidadeDaEmpresa(): Promise<void> {
   return fetch("/api/workspace", { cache: "no-store" })
-    .then((r) => (r.ok ? (r.json() as Promise<{ logo?: string | null }>) : null))
+    .then((r) => (r.ok ? (r.json() as Promise<{ logo?: string | null; nome?: string }>) : null))
     .then((corpo) => {
-      if (corpo) publicar({ logo: corpo.logo ?? null, carregado: true });
+      if (corpo) publicar({ logo: corpo.logo ?? null, nome: corpo.nome ?? null, carregado: true });
     })
     .catch(() => undefined);
+}
+
+/**
+ * Avisa que o nome mudou. Chamado por QUEM GRAVOU, nos dois lugares que editam o nome (o menu e
+ * Configurações › Dados da empresa), logo depois de o servidor confirmar.
+ *
+ * Não é um "set" otimista: só vem depois do `ok` da rota. Publicar antes faria o menu mostrar um
+ * nome que o banco recusou.
+ */
+export function publicarNomeDaEmpresa(nome: string): void {
+  publicar({ ...estado, nome, carregado: true });
 }
 
 async function gravar(logo: string | null): Promise<string | null> {
@@ -62,7 +76,7 @@ async function gravar(logo: string | null): Promise<string | null> {
     body: JSON.stringify({ logo }),
   }).catch(() => null);
   if (resposta?.ok) {
-    publicar({ logo, carregado: true });
+    publicar({ ...estado, logo, carregado: true });
     return null;
   }
   const corpo = (await resposta?.json().catch(() => null)) as { erro?: string } | null;
