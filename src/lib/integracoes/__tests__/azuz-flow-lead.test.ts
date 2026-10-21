@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { decidirConsentimento, receberLeadDoFlow, type DependenciasDoFlow, type ResultadoDoLead } from "../azuz-flow-lead";
 import { validarPayloadDoFlow, type LeadDoFlow } from "../azuz-flow-payload";
+import { CONFIG_PADRAO, type ConfigDoFlow } from "../azuz-flow-config";
 import { dataIsoEmBrasilia, horaEmBrasilia } from "@/lib/agenda/fuso";
 
 /**
@@ -53,6 +54,7 @@ function fazerDeps(ajustes: Partial<DependenciasDoFlow> = {}) {
     nomeDaEmpresa: vi.fn(async () => "Azuz Digital"),
     enfileirarConfirmacao: vi.fn(async () => ({ situacao: "enfileirada" as const })),
     anotarNaConversa: vi.fn(async () => {}),
+    atrasoDoEnvio: vi.fn(() => 0),
     conversaDoContato: vi.fn(async () => null),
     garantirConversa: vi.fn(async () => {
       ordem.push("garantirConversa");
@@ -93,9 +95,10 @@ beforeEach(() => vi.clearAllMocks());
 
 /** A configuração da empresa nos testes: canal automático e confirmação DESLIGADA, que é o padrão
  *  de produção. Os testes da confirmação ligam explicitamente — e isso é parte do que eles provam. */
-const CONFIG_DE_TESTE = {
-  canal: "automatico" as const,
-  confirmacao: { ativa: false, texto: "Oi, {{primeiroNome}}! {{data}} às {{hora}}.\n{{link}}" },
+const CONFIG_DE_TESTE: ConfigDoFlow = {
+  ...CONFIG_PADRAO,
+  canal: "automatico",
+  confirmacao: { ...CONFIG_PADRAO.confirmacao, texto: "Oi, {{primeiroNome}}! {{data}} às {{hora}}.\n{{link}}" },
 };
 
 describe("receberLeadDoFlow", () => {
@@ -220,7 +223,7 @@ describe("receberLeadDoFlow", () => {
      */
     const { deps } = fazerDeps({
       conexoesDeWhatsapp: vi.fn(async () => ({ oficial: null, qrcode: "5562999990001" })),
-      conversaDoContato: vi.fn(async () => ({ id: "conversa-que-ja-existia", canal: "WhatsApp" })),
+      conversaDoContato: vi.fn(async () => ({ id: "conversa-que-ja-existia", canal: "WhatsApp", contaCanal: "whatsapp_nao_oficial:5562988887777" })),
     });
     const r = await receberLeadDoFlow({ workspaceId: "w1", lead: lead(), deps });
 
@@ -271,7 +274,7 @@ describe("receberLeadDoFlow", () => {
     // lá, e a conversa não muda de dono. O que fazer com a confirmação é decidido depois.
     const { deps } = fazerDeps({
       conexoesDeWhatsapp: vi.fn(async () => ({ oficial: null, qrcode: "5562999990001" })),
-      conversaDoContato: vi.fn(async () => ({ id: "conversa-do-direct", canal: "Instagram" })),
+      conversaDoContato: vi.fn(async () => ({ id: "conversa-do-direct", canal: "Instagram", contaCanal: "meta_instagram:1" })),
     });
     const r = await receberLeadDoFlow({ workspaceId: "w1", lead: lead(), deps });
 
@@ -415,8 +418,17 @@ describe("a reunião do Flow", () => {
  */
 describe("a confirmação de reunião", () => {
   const REUNIAO = { inicio: "2099-10-20T17:30:00.000Z", fim: null, link: "https://meet.google.com/x" };
+  /*
+   * LIGADA inclui a conexão do QR CODE, e isso não é detalhe de arranjo.
+   *
+   * A confirmação é texto livre, e texto livre só sai pelo QR: pelo oficial a primeira mensagem
+   * pra quem nunca escreveu tem que ser modelo aprovado pela Meta. O padrão deste arquivo é só o
+   * oficial conectado, então sem isto cada teste daqui estaria exercitando o caminho em que a
+   * confirmação é recusada — e passando por engano.
+   */
   const LIGADA = {
     config: vi.fn(async () => ({ ...CONFIG_DE_TESTE, confirmacao: { ...CONFIG_DE_TESTE.confirmacao, ativa: true } })),
+    conexoesDeWhatsapp: vi.fn(async () => ({ oficial: null, qrcode: "5562988887777" })),
   };
 
   it("desligada, não enfileira nem avisa nada", async () => {
@@ -473,7 +485,7 @@ describe("a confirmação de reunião", () => {
   it("contato atendido por outro canal não recebe pelo WhatsApp, e isso é dito", async () => {
     const { deps } = fazerDeps({
       ...LIGADA,
-      conversaDoContato: vi.fn(async () => ({ id: "conversa-do-direct", canal: "Instagram" })),
+      conversaDoContato: vi.fn(async () => ({ id: "conversa-do-direct", canal: "Instagram", contaCanal: "meta_instagram:1" })),
     });
     const r = await receberLeadDoFlow({ workspaceId: "w1", lead: lead({ reuniao: REUNIAO }), deps });
 
@@ -506,6 +518,25 @@ describe("a confirmação de reunião", () => {
     expect(r.ok).toBe(true);
     expect(r.contatoId).toBeTruthy();
     expect(r.avisos.join(" ")).toContain("não pôde ser agendada");
+  });
+
+  it("conversa do WhatsApp OFICIAL não recebe texto livre, e isso é dito", async () => {
+    /*
+     * A regra é da Meta, não do CRM: primeira mensagem pra quem nunca escreveu vai por modelo
+     * aprovado. Enfileirar aqui daria o pior resultado — a linha na fila parecendo resolvida, a
+     * Meta recusando o envio, e o disjuntor pausando um canal que não tem defeito nenhum.
+     */
+    const { deps } = fazerDeps({
+      config: vi.fn(async () => ({ ...CONFIG_DE_TESTE, confirmacao: { ...CONFIG_DE_TESTE.confirmacao, ativa: true } })),
+      conexoesDeWhatsapp: vi.fn(async () => ({ oficial: "111", qrcode: null })),
+    });
+    const r = await receberLeadDoFlow({ workspaceId: "w1", lead: lead({ reuniao: REUNIAO }), deps });
+
+    expect(deps.enfileirarConfirmacao).not.toHaveBeenCalled();
+    expect(r.avisos.join(" ")).toContain("modelo aprovado pela Meta");
+    expect(deps.anotarNaConversa).toHaveBeenCalledWith(
+      expect.objectContaining({ marca: "recusa", texto: expect.stringContaining("modelo aprovado") }),
+    );
   });
 
   it("lead sem reunião não gera registro nenhum", async () => {

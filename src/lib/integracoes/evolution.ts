@@ -228,6 +228,45 @@ export function desconectarWhatsAppNaoOficial(workspaceId: string) {
 
 /** Manda uma mensagem de texto pelo número conectado desse workspace. Usado quando o atendente
  * responde pela tela de Conversas num contato que chegou pelo WhatsApp não oficial. */
+/**
+ * Este número TEM WhatsApp?
+ *
+ * Vale a chamada porque o formulário é público e qualquer um digita qualquer coisa. Mandar pra
+ * número que não existe é o jeito mais rápido de uma conta não oficial ser sinalizada: a plataforma
+ * lê uma sequência de envios recusados exatamente como lê um robô varrendo números.
+ *
+ * TRÊS RESPOSTAS, não duas, e a terceira é a que importa: `null` é "não deu pra saber". Tratar
+ * "não deu pra saber" como "não tem" marcaria número de gente de verdade como inexistente a cada
+ * oscilação da Evolution. Quem chama decide — e, pra proteger o número, decide não enviar e
+ * registrar o motivo, em vez de arriscar.
+ *
+ * A resposta é lida com tolerância de formato de propósito: este endpoint mudou de forma entre
+ * versões da Evolution, e um campo com outro nome não pode virar "este número não existe".
+ */
+export async function numeroTemWhatsapp(workspaceId: string, numero: string): Promise<boolean | null> {
+  const digitos = numero.replace(/\D/g, "");
+  if (!digitos) return null;
+
+  try {
+    const dados = await chamarEvolution(`/chat/whatsappNumbers/${nomeInstancia(workspaceId)}`, "POST", {
+      numbers: [digitos],
+    });
+    const lista = Array.isArray(dados) ? dados : Array.isArray(dados?.data) ? dados.data : null;
+    if (!lista?.length) return null;
+
+    const item = lista[0] as Record<string, unknown>;
+    // `exists` é o nome documentado; `numberExists` aparece em versões mais antigas. Qualquer outro
+    // formato vira `null`, nunca `false`.
+    for (const chave of ["exists", "numberExists"]) {
+      if (typeof item[chave] === "boolean") return item[chave] as boolean;
+    }
+    return null;
+  } catch (erro) {
+    console.error("[evolution] não deu pra conferir se o número tem WhatsApp:", erro);
+    return null;
+  }
+}
+
 export function enviarMensagemWhatsAppNaoOficial(workspaceId: string, numero: string, texto: string) {
   return chamarEvolution(`/message/sendText/${nomeInstancia(workspaceId)}`, "POST", { number: numero, text: texto });
 }

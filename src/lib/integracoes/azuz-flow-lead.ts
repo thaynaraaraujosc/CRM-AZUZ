@@ -3,13 +3,28 @@ import { aoCriarContato } from "@/lib/automacoes/gatilhos-crm";
 import { dispararAutomacoesDoCrm } from "@/lib/automation-flow/disparar-no-servidor";
 import { encontrarContatoPorTelefone } from "@/lib/contatos/upsert";
 import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
-import { entrarNaPrimeiraEtapaComoNovoLead, subirCardParaOTopo } from "@/lib/funis/upsert";
-import { escolherCanalDoFlow, type ConexoesDoWorkspace } from "@/lib/integracoes/azuz-flow-canal";
-import { configDoFlow, type ConfigDoFlow } from "@/lib/integracoes/azuz-flow-config";
+import {
+  entrarNaPrimeiraEtapaComoNovoLead,
+  subirCardParaOTopo,
+} from "@/lib/funis/upsert";
+import {
+  escolherCanalDoFlow,
+  type ConexoesDoWorkspace,
+} from "@/lib/integracoes/azuz-flow-canal";
+import {
+  configDoFlow,
+  type ConfigDoFlow,
+} from "@/lib/integracoes/azuz-flow-config";
 import { decidirConfirmacao } from "@/lib/integracoes/azuz-flow-confirmacao-decisao";
+import { quandoEnviar } from "@/lib/integracoes/azuz-flow-janela";
 import { montarTextoDaConfirmacao } from "@/lib/integracoes/azuz-flow-confirmacao-texto";
-import { anotarNaConversa, enfileirarConfirmacao, type ResultadoDaFila } from "@/lib/integracoes/azuz-flow-confirmacao-fila";
+import {
+  anotarNaConversa,
+  enfileirarConfirmacao,
+  type ResultadoDaFila,
+} from "@/lib/integracoes/azuz-flow-confirmacao-fila";
 import { conexoesDeWhatsappDoWorkspace } from "@/lib/integracoes/azuz-flow-conexoes";
+import { intervaloEntreEnvios } from "@/lib/campanhas/ritmo";
 import { anotarNaLinhaDoTempo } from "@/lib/integracoes/instagram-eventos";
 import { slugId } from "@/lib/ids";
 import { normalizarTelefoneParaComparacao } from "@/lib/telefone";
@@ -46,15 +61,27 @@ export type DependenciasDoFlow = {
     resultado: ResultadoDoLead;
   }) => Promise<void>;
 
-  acharContatoPorTelefone: (telefone: string) => Promise<{ id: string; nome: string } | null>;
-  acharContatoPorEmail: (email: string) => Promise<{ id: string; nome: string } | null>;
+  acharContatoPorTelefone: (
+    telefone: string,
+  ) => Promise<{ id: string; nome: string } | null>;
+  acharContatoPorEmail: (
+    email: string,
+  ) => Promise<{ id: string; nome: string } | null>;
   nomeOcupado: (nome: string) => Promise<boolean>;
   lerContato: (nome: string) => Promise<Record<string, unknown> | null>;
 
-  criarContato: (dados: Record<string, unknown> & { nome: string }) => Promise<{ id: string; nome: string }>;
-  atualizarContato: (nome: string, dados: Record<string, unknown>) => Promise<void>;
+  criarContato: (
+    dados: Record<string, unknown> & { nome: string },
+  ) => Promise<{ id: string; nome: string }>;
+  atualizarContato: (
+    nome: string,
+    dados: Record<string, unknown>,
+  ) => Promise<void>;
 
-  anotarNaLinhaDoTempo: (params: { contatoNome: string; descricao: string }) => Promise<void>;
+  anotarNaLinhaDoTempo: (params: {
+    contatoNome: string;
+    descricao: string;
+  }) => Promise<void>;
 
   /** Idempotente por definição: repetir a mesma entrega não cria um segundo compromisso. */
   garantirCompromisso: (params: {
@@ -83,7 +110,16 @@ export type DependenciasDoFlow = {
     contatoNome: string;
     conversaNome: string | null;
     texto: string;
+    enviarApos: Date;
   }) => Promise<ResultadoDaFila>;
+  /**
+   * O atraso aleatório antes do envio, em milissegundos.
+   *
+   * Entra por dependência, e não é sorteado dentro da regra, porque função que sorteia não se
+   * testa. Quem decide o valor é `intervaloEntreEnvios` em `ritmo.ts`, onde a variação do canal
+   * não oficial já estava escrita com o porquê ao lado.
+   */
+  atrasoDoEnvio: () => number;
   /** Escreve o que aconteceu com a confirmação dentro da conversa, como bolha de sistema. */
   anotarNaConversa: (params: {
     conversaNome: string;
@@ -101,7 +137,9 @@ export type DependenciasDoFlow = {
    * ganha dono). Aqui isso seria um estrago: alguém que já fala com a empresa pelo Instagram ou
    * pelo número oficial preencheria um formulário e veria a conversa mudar de canal embaixo dela.
    */
-  conversaDoContato: (nome: string) => Promise<{ id: string; canal: string } | null>;
+  conversaDoContato: (
+    nome: string,
+  ) => Promise<{ id: string; canal: string; contaCanal: string | null } | null>;
   garantirConversa: (params: {
     nome: string;
     telefone: string;
@@ -116,8 +154,14 @@ export type DependenciasDoFlow = {
   }) => Promise<{ funil: string; etapa: string } | null>;
   subirCard: (contatoNome: string) => Promise<void>;
 
-  avisarContatoCriado: (params: { contatoNome: string; contatoId: string }) => void;
-  dispararAutomacoes: (params: { contatoNome: string; chaveEvento: string }) => Promise<void>;
+  avisarContatoCriado: (params: {
+    contatoNome: string;
+    contatoId: string;
+  }) => void;
+  dispararAutomacoes: (params: {
+    contatoNome: string;
+    chaveEvento: string;
+  }) => Promise<void>;
 };
 
 /**
@@ -141,7 +185,9 @@ export function etiquetaDoFormulario(formularioNome: string): string {
 
 function etiquetasAtuais(contato: Record<string, unknown> | null): string[] {
   const valor = contato?.etiquetas;
-  return Array.isArray(valor) ? valor.filter((e): e is string => typeof e === "string") : [];
+  return Array.isArray(valor)
+    ? valor.filter((e): e is string => typeof e === "string")
+    : [];
 }
 
 /**
@@ -198,8 +244,10 @@ export async function receberLeadDoFlow(params: {
   }> {
     // 2. Achar a pessoa: telefone primeiro (é a chave mais confiável), e-mail depois.
     let existente: { id: string; nome: string } | null = null;
-    if (lead.whatsapp) existente = await deps.acharContatoPorTelefone(lead.whatsapp);
-    if (!existente && lead.email) existente = await deps.acharContatoPorEmail(lead.email);
+    if (lead.whatsapp)
+      existente = await deps.acharContatoPorTelefone(lead.whatsapp);
+    if (!existente && lead.email)
+      existente = await deps.acharContatoPorEmail(lead.email);
 
     /*
      * O NOME, quando o contato é novo.
@@ -209,8 +257,10 @@ export async function receberLeadDoFlow(params: {
      * OUTRA pessoa, acrescenta o sufixo do formulário. Feio, e muito melhor do que perder um
      * cliente dentro do cadastro de outro.
      */
-    const comFormulario = `${lead.nomeDoContato} (${lead.formularioNome})`.slice(0, 120);
-    const comEntrega = `${lead.nomeDoContato} (${lead.respostaId.slice(-6)})`.slice(0, 120);
+    const comFormulario =
+      `${lead.nomeDoContato} (${lead.formularioNome})`.slice(0, 120);
+    const comEntrega =
+      `${lead.nomeDoContato} (${lead.respostaId.slice(-6)})`.slice(0, 120);
 
     let nomeDoContato = existente?.nome ?? lead.nomeDoContato;
     if (!existente && (await deps.nomeOcupado(nomeDoContato))) {
@@ -230,14 +280,19 @@ export async function receberLeadDoFlow(params: {
       );
     }
 
-    const contatoAtual = existente ? await deps.lerContato(nomeDoContato) : null;
+    const contatoAtual = existente
+      ? await deps.lerContato(nomeDoContato)
+      : null;
     const etiquetas = new Set(etiquetasAtuais(contatoAtual));
     etiquetas.add(etiquetaDoFormulario(lead.formularioNome));
     if (lead.consentimentoWhatsApp) etiquetas.add("WhatsApp: consentiu");
 
     const consentimento = decidirConsentimento({
       novo: !existente,
-      jaGravado: contatoAtual?.consentimentoWhatsApp as boolean | null | undefined,
+      jaGravado: contatoAtual?.consentimentoWhatsApp as
+        | boolean
+        | null
+        | undefined,
       aceitou: lead.consentimentoWhatsApp,
       texto: lead.consentimentoTexto,
       em: lead.consentimentoEm ?? lead.recebidaEm ?? new Date(),
@@ -248,7 +303,10 @@ export async function receberLeadDoFlow(params: {
     //    verdade sobre quem já é cliente, e um formulário preenchido às pressas não pode
     //    sobrescrever o telefone que a equipe confirmou por telefone.
     if (existente) {
-      const completar: Record<string, unknown> = { etiquetas: [...etiquetas], ...consentimento };
+      const completar: Record<string, unknown> = {
+        etiquetas: [...etiquetas],
+        ...consentimento,
+      };
       for (const [campo, valor] of camposDoLead(lead)) {
         if (valor && !contatoAtual?.[campo]) completar[campo] = valor;
       }
@@ -263,7 +321,9 @@ export async function receberLeadDoFlow(params: {
         criadoVia: "azuz-flow",
         etapa: "Novo",
         etiquetas: [...etiquetas],
-        ...Object.fromEntries(camposDoLead(lead).filter(([, valor]) => Boolean(valor))),
+        ...Object.fromEntries(
+          camposDoLead(lead).filter(([, valor]) => Boolean(valor)),
+        ),
         ...consentimento,
       });
       return { contatoId: novo.id, nomeDoContato, criado: true };
@@ -284,7 +344,9 @@ export async function receberLeadDoFlow(params: {
 
   // 4. Linha do tempo: o que a pessoa respondeu, por extenso. É o que o vendedor lê antes de falar
   //    com ela, e é a única cópia dessas respostas dentro do CRM.
-  const corpo = lead.respostas.map((r) => `${r.pergunta}: ${r.resposta}`).join(" · ");
+  const corpo = lead.respostas
+    .map((r) => `${r.pergunta}: ${r.resposta}`)
+    .join(" · ");
   await deps
     .anotarNaLinhaDoTempo({
       contatoNome: nomeDoContato,
@@ -316,8 +378,13 @@ export async function receberLeadDoFlow(params: {
         reuniao: lead.reuniao,
       });
     } catch (erro) {
-      avisos.push("A reunião não pôde ser gravada na Agenda; o lead entrou sem compromisso.");
-      console.error("[azuz-flow] compromisso não gravado:", { contatoId, erro });
+      avisos.push(
+        "A reunião não pôde ser gravada na Agenda; o lead entrou sem compromisso.",
+      );
+      console.error("[azuz-flow] compromisso não gravado:", {
+        contatoId,
+        erro,
+      });
     }
   }
 
@@ -331,12 +398,18 @@ export async function receberLeadDoFlow(params: {
    * `escolherCanalDoFlow`.
    */
   const config = await deps.config();
-  const escolha = escolherCanalDoFlow(config.canal, conexoes, lead.canalWhatsApp);
+  const escolha = escolherCanalDoFlow(
+    config.canal,
+    conexoes,
+    lead.canalWhatsApp,
+  );
   const contaCanal = escolha.contaCanal;
 
   let conversaId: string | null = null;
   /** O canal da conversa onde a confirmação sairia. `null` quando não há conversa. */
   let canalDaConversa: string | null = null;
+  /** A CONEXÃO dona dela. Separa "WhatsApp pelo QR" de "WhatsApp oficial", que têm o mesmo canal. */
+  let donoDaConversa: string | null = null;
 
   if (lead.whatsapp) {
     /*
@@ -360,6 +433,9 @@ export async function receberLeadDoFlow(params: {
       // Conversa nova nasce de WhatsApp; a que já existia pode ser de qualquer canal. Quem decide o
       // que fazer com isso é `decidirConfirmacao`, pra a frase existir num lugar só.
       canalDaConversa = jaExiste?.canal ?? "WhatsApp";
+      // E de QUEM ela é. A conversa que já existia mantém o dono dela (o upsert recebeu `null`); a
+      // nova nasce com o `contaCanal` que a escolha de canal produziu.
+      donoDaConversa = jaExiste?.contaCanal ?? contaCanal;
     } else if (escolha.aviso) {
       avisos.push(escolha.aviso);
     }
@@ -383,7 +459,10 @@ export async function receberLeadDoFlow(params: {
       inicio: lead.reuniao.inicio,
       consentiu: lead.consentimentoWhatsApp,
       telefone: lead.whatsapp,
-      conversa: conversaId && canalDaConversa ? { nome: nomeDoContato, canal: canalDaConversa } : null,
+      conversa:
+        conversaId && canalDaConversa
+          ? { nome: nomeDoContato, canal: canalDaConversa, contaCanal: donoDaConversa }
+          : null,
       agora: new Date(),
     });
 
@@ -400,36 +479,65 @@ export async function receberLeadDoFlow(params: {
         });
       }
     } else if (decisao.acao === "enfileirar" && lead.whatsapp) {
-      const texto = montarTextoDaConfirmacao(config.confirmacao.texto, {
-        primeiroNome: lead.nome ?? nomeDoContato,
-        inicio: lead.reuniao.inicio,
-        link: lead.reuniao.link,
-        empresa: await deps.nomeDaEmpresa(),
-      });
-      const resultado = await deps.enfileirarConfirmacao({
-        telefone: lead.whatsapp,
-        inicio: lead.reuniao.inicio,
-        contatoNome: nomeDoContato,
-        conversaNome: nomeDoContato,
-        texto,
+      /*
+       * QUANDO ela pode sair — e isto pode virar uma recusa.
+       *
+       * Fora da janela, a fila espera abrir. Mas quando a janela só abriria depois do início da
+       * reunião, não existe hora boa: enfileirar seria prometer uma mensagem que chegaria depois
+       * de a pessoa já ter entrado na reunião, e ficaria na fila parecendo resolvido.
+       */
+      const quando = quandoEnviar({
+        agora: new Date(),
+        janela: config.confirmacao.janela,
+        inicioDaReuniao: lead.reuniao.inicio,
+        atrasoMs: deps.atrasoDoEnvio(),
       });
 
-      if (resultado.situacao === "falhou") {
-        avisos.push(resultado.aviso);
-      } else if (resultado.situacao === "enfileirada") {
-        const frase = "Confirmação de reunião na fila para envio.";
-        avisos.push(frase);
-        await deps.anotarNaConversa({
-          conversaNome: nomeDoContato,
-          contaCanal,
-          marca: "fila",
+      if (!quando.pode) {
+        avisos.push(quando.motivo);
+        if (conversaId) {
+          await deps.anotarNaConversa({
+            conversaNome: nomeDoContato,
+            contaCanal,
+            marca: "recusa",
+            telefone: lead.whatsapp,
+            inicio: lead.reuniao.inicio,
+            texto: quando.motivo,
+          });
+        }
+      } else {
+        const texto = montarTextoDaConfirmacao(config.confirmacao.texto, {
+          primeiroNome: lead.nome ?? nomeDoContato,
+          inicio: lead.reuniao.inicio,
+          link: lead.reuniao.link,
+          empresa: await deps.nomeDaEmpresa(),
+        });
+        const resultado = await deps.enfileirarConfirmacao({
           telefone: lead.whatsapp,
           inicio: lead.reuniao.inicio,
-          texto: frase,
+          contatoNome: nomeDoContato,
+          conversaNome: nomeDoContato,
+          texto,
+          enviarApos: quando.enviarApos,
         });
+
+        if (resultado.situacao === "falhou") {
+          avisos.push(resultado.aviso);
+        } else if (resultado.situacao === "enfileirada") {
+          const frase = "Confirmação de reunião na fila para envio.";
+          avisos.push(frase);
+          await deps.anotarNaConversa({
+            conversaNome: nomeDoContato,
+            contaCanal,
+            marca: "fila",
+            telefone: lead.whatsapp,
+            inicio: lead.reuniao.inicio,
+            texto: frase,
+          });
+        }
+        // `ja_existia` é silêncio de propósito: é a entrega repetida do Flow, ou a mesma pessoa
+        // preenchendo o formulário de novo com a mesma reunião. Nada aconteceu de novo pra contar.
       }
-      // `ja_existia` é silêncio de propósito: é a entrega repetida do Flow, ou a mesma pessoa
-      // preenchendo o formulário de novo com a mesma reunião. Nada aconteceu de novo pra contar.
     }
   }
 
@@ -439,7 +547,10 @@ export async function receberLeadDoFlow(params: {
   if (await deps.temCardNoFunil(nomeDoContato)) {
     await deps.subirCard(nomeDoContato);
   } else {
-    etapa = await deps.entrarNoFunil({ contatoNome: nomeDoContato, contaCanal });
+    etapa = await deps.entrarNoFunil({
+      contatoNome: nomeDoContato,
+      contaCanal,
+    });
   }
 
   const resultado: ResultadoDoLead = {
@@ -464,7 +575,12 @@ export async function receberLeadDoFlow(params: {
    *    como qualquer repetição. Devolver 500 faria o Flow repetir uma entrega que já deu certo.
    */
   try {
-    await deps.gravarEntrega({ chave: lead.respostaId, contatoId, conversaId, resultado });
+    await deps.gravarEntrega({
+      chave: lead.respostaId,
+      contatoId,
+      conversaId,
+      resultado,
+    });
   } catch (erro) {
     if (!ehChaveDuplicada(erro)) throw erro;
     const guardado = await deps.acharEntregaAnterior(lead.respostaId);
@@ -475,10 +591,19 @@ export async function receberLeadDoFlow(params: {
 
   // 9. Por último, com tudo gravado. Falha aqui não derruba a resposta: o lead já está no CRM, e
   //    devolver erro faria o Flow repetir uma entrega que deu certo.
-  if (criado) deps.avisarContatoCriado({ contatoNome: nomeDoContato, contatoId });
+  if (criado)
+    deps.avisarContatoCriado({ contatoNome: nomeDoContato, contatoId });
   await deps
-    .dispararAutomacoes({ contatoNome: nomeDoContato, chaveEvento: `flow:${lead.respostaId}` })
-    .catch((erro) => console.error("[azuz-flow] automações falharam depois do lead gravado:", erro));
+    .dispararAutomacoes({
+      contatoNome: nomeDoContato,
+      chaveEvento: `flow:${lead.respostaId}`,
+    })
+    .catch((erro) =>
+      console.error(
+        "[azuz-flow] automações falharam depois do lead gravado:",
+        erro,
+      ),
+    );
 
   return resultado;
 }
@@ -533,7 +658,11 @@ export function dependenciasReais(workspaceId: string): DependenciasDoFlow {
     async acharEntregaAnterior(chave) {
       const linha = await prisma.leadRecebido.findUnique({
         where: {
-          workspaceId_origem_chaveExterna: { workspaceId, origem: ORIGEM_FLOW, chaveExterna: chave },
+          workspaceId_origem_chaveExterna: {
+            workspaceId,
+            origem: ORIGEM_FLOW,
+            chaveExterna: chave,
+          },
         },
         select: { resultado: true },
       });
@@ -600,7 +729,10 @@ export function dependenciasReais(workspaceId: string): DependenciasDoFlow {
       return { id: criado.id, nome: criado.nome };
     },
     async atualizarContato(nome, dados) {
-      await prisma.contato.update({ where: { workspaceId_nome: { workspaceId, nome } }, data: dados });
+      await prisma.contato.update({
+        where: { workspaceId_nome: { workspaceId, nome } },
+        data: dados,
+      });
     },
 
     async anotarNaLinhaDoTempo({ contatoNome, descricao }) {
@@ -624,8 +756,17 @@ export function dependenciasReais(workspaceId: string): DependenciasDoFlow {
      * O `slugId` entra porque o `respostaId` vem de fora e pode ter caractere que não se quer numa
      * chave primária. O corte em 180 respeita o varchar(191) que o Prisma usa pra `String @id`.
      */
-    async garantirCompromisso({ chaveDaEntrega, contatoId, contatoNome, formularioNome, reuniao }) {
-      const id = `flow-reuniao-${workspaceId}-${slugId(chaveDaEntrega)}`.slice(0, 180);
+    async garantirCompromisso({
+      chaveDaEntrega,
+      contatoId,
+      contatoNome,
+      formularioNome,
+      reuniao,
+    }) {
+      const id = `flow-reuniao-${workspaceId}-${slugId(chaveDaEntrega)}`.slice(
+        0,
+        180,
+      );
       try {
         await prisma.compromisso.create({
           data: {
@@ -662,12 +803,14 @@ export function dependenciasReais(workspaceId: string): DependenciasDoFlow {
       // bastante. Derrubar a confirmação por causa disso seria desproporcional.
       return workspace?.nome?.trim() || "nossa equipe";
     },
-    enfileirarConfirmacao: (params) => enfileirarConfirmacao({ workspaceId, enviarApos: new Date(), ...params }),
+    enfileirarConfirmacao: (params) =>
+      enfileirarConfirmacao({ workspaceId, ...params }),
+    atrasoDoEnvio: () => intervaloEntreEnvios("whatsapp_nao_oficial"),
     anotarNaConversa: (params) => anotarNaConversa({ workspaceId, ...params }),
     async conversaDoContato(nome) {
       return prisma.conversa.findUnique({
         where: { workspaceId_nome: { workspaceId, nome } },
-        select: { id: true, canal: true },
+        select: { id: true, canal: true, contaCanal: true },
       });
     },
     async garantirConversa({ nome, telefone, contatoId, contaCanal }) {

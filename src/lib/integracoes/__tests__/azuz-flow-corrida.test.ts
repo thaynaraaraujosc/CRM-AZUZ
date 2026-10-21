@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { receberLeadDoFlow, type DependenciasDoFlow, type ResultadoDoLead } from "../azuz-flow-lead";
 import { validarPayloadDoFlow, type LeadDoFlow } from "../azuz-flow-payload";
+import { CONFIG_PADRAO } from "../azuz-flow-config";
 import { dataIsoEmBrasilia, horaEmBrasilia } from "@/lib/agenda/fuso";
 import { chaveDeContato } from "@/lib/contatos/chave-nome";
 import { idDeCardSemChave, idDoCard } from "@/lib/funis/id-do-card";
@@ -81,10 +82,11 @@ function bancoDeMentira() {
         }
       },
       conexoesDeWhatsapp: async () => ({ oficial: "111", qrcode: null }),
-      config: async () => ({ canal: "automatico" as const, confirmacao: { ativa: false, texto: "" } }),
+      config: async () => CONFIG_PADRAO,
       nomeDaEmpresa: async () => "Azuz Digital",
       enfileirarConfirmacao: async () => ({ situacao: "enfileirada" as const }),
       anotarNaConversa: async () => {},
+      atrasoDoEnvio: () => 0,
       conversaDoContato: async () => null,
       garantirConversa: async () => ({ id: "conv" }),
       temCardNoFunil: async (contatoNome) =>
