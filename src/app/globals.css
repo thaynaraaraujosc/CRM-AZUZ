@@ -14706,6 +14706,104 @@ button.camp-row:hover {
    espaçamento, não de brilho. Nenhuma cor nova, nenhum gradiente, nenhum vidro — só os tokens que
    já existem, então o tema escuro vem junto sem uma linha a mais. */
 
+/*
+ * A CONEXÃO: rótulo à esquerda, valor à direita, numa coluna alinhada.
+ *
+ * Eram três campos empilhados com molduras de alturas diferentes e os botões da chave no fim do
+ * cartão, longe da chave que eles mexem. Numa lista de propriedades o olho desce por uma coluna só
+ * e cada ação fica ao lado do que ela altera.
+ */
+.flow-topo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.flow-linha {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.flow-rotulo-micro {
+  font-size: var(--texto-xs);
+  font-weight: var(--fw-semibold);
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: var(--track-wide);
+  line-height: var(--lh-tight);
+}
+
+.flow-valor {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.flow-valor .hint {
+  padding: 0;
+}
+
+.flow-texto {
+  font-size: 13px;
+  color: var(--ink);
+}
+
+/* O endereço e a chave: texto de máquina, tratado como tal. Num campo de formulário eles pareciam
+   editáveis — e nenhum dos dois é. */
+.flow-chave {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--blue);
+  background: var(--blue-soft);
+  border-radius: var(--radius-sm);
+  padding: 5px 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.flow-chave-inteira {
+  white-space: normal;
+  word-break: break-all;
+  flex: 1 1 260px;
+}
+
+.flow-select {
+  max-width: 340px;
+  width: 100%;
+}
+
+/* O aviso de exceção: uma faixa discreta, não um cartão dentro do cartão. */
+.flow-aviso {
+  margin-bottom: var(--space-4);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--warning-soft);
+}
+.flow-aviso p {
+  margin: 0;
+  font-size: var(--fs-secondary);
+  color: var(--ink);
+  line-height: var(--lh-base);
+}
+.flow-aviso p + p {
+  margin-top: var(--space-1);
+}
+
+/* O cartão da confirmação: borda e respiro, sem sombra. Ele já está DENTRO de um bloco branco —
+   uma segunda sombra aqui empilharia duas camadas de profundidade na mesma superfície. */
+.flow-cartao {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: var(--space-2) 0;
+}
+
 /* Linha de interruptor: o que ele faz à esquerda, o controle à direita. */
 .flow-interruptor {
   display: flex;
@@ -14715,10 +14813,13 @@ button.camp-row:hover {
   padding: var(--space-4);
 }
 
+/* SEM RÉGUA ENTRE AS PARTES. Com borda em cima de cada bloco, o cartão virava uma pilha de
+   faixas atravessadas por linhas, e a linha competia com o micro-rótulo que já diz onde cada
+   parte começa. Quem separa aqui é o espaço e a hierarquia do texto. */
 .flow-interruptor + .flow-bloco,
 .flow-bloco + .flow-interruptor,
 .flow-bloco + .flow-bloco {
-  border-top: 1px solid var(--line-soft);
+  padding-top: var(--space-2);
 }
 
 .flow-interruptor .flow-rotulo {
@@ -14833,17 +14934,18 @@ button.camp-row:hover {
 /* Largura fixa e modesta: um campo de hora esticado na largura do cartão não fica mais fácil de
    usar, fica só grande. `flex-basis` pequeno com `wrap` faz a linha quebrar sozinha no celular. */
 .flow-campo {
-  flex: 0 1 168px;
+  flex: 0 1 128px;
 }
 
 .flow-campo label {
   display: block;
   font-size: var(--texto-xs);
   font-weight: var(--fw-semibold);
-  color: var(--text-muted);
+  color: var(--text-faint);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin-bottom: var(--space-2);
+  letter-spacing: var(--track-wide);
+  margin-bottom: 6px;
+  white-space: nowrap;
 }
 
 .flow-campo .input {
@@ -14871,9 +14973,7 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  margin-top: var(--space-3);
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--line-soft);
+  margin-top: var(--space-4);
   animation: flow-salvar-entra var(--transition-base);
 }
 
@@ -17969,7 +18069,7 @@ table.tbl .name-cell .r {
 
 .form-cor-codigo {
   width: 104px;
-  font-family: var(--mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-family: var(--mono);
   font-size: 12px;
   text-transform: lowercase;
 }
