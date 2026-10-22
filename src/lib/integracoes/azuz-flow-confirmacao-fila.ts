@@ -22,10 +22,13 @@ function idDaConfirmacao(workspaceId: string, telefone: string, inicio: Date): s
 }
 
 export type ResultadoDaFila =
-  | { situacao: "enfileirada" }
+  /** `id` vai junto nos dois casos de sucesso: é por ele que a ENTREGA guarda qual confirmação
+   *  produziu, e é isso que permite ao Flow perguntar depois o que aconteceu com aquela resposta. */
+  | { situacao: "enfileirada"; id: string }
   /** Já havia uma confirmação pra este número neste horário. Repetição do Flow, ou formulário
-   *  preenchido de novo com a mesma reunião. Não é erro. */
-  | { situacao: "ja_existia" }
+   *  preenchido de novo com a mesma reunião. Não é erro — e o `id` é o MESMO, porque ele é
+   *  derivado do telefone e do horário, não da entrega. */
+  | { situacao: "ja_existia"; id: string }
   | { situacao: "falhou"; aviso: string };
 
 /**
@@ -49,11 +52,14 @@ export async function enfileirarConfirmacao(params: {
   /** O texto já montado, guardado porque "o que foi que o CRM mandou" é a primeira pergunta
    *  quando algo dá errado — e o modelo pode ter mudado desde então. */
   texto: string;
+  /** A entrega do Flow que trouxe esta reunião. Guardada pra ele poder perguntar depois. */
+  respostaId?: string | null;
 }): Promise<ResultadoDaFila> {
+  const id = idDaConfirmacao(params.workspaceId, params.telefone, params.inicio);
   try {
     await prisma.confirmacaoDeReuniao.create({
       data: {
-        id: idDaConfirmacao(params.workspaceId, params.telefone, params.inicio),
+        id,
         workspaceId: params.workspaceId,
         telefone: params.telefone,
         inicio: params.inicio,
@@ -62,11 +68,14 @@ export async function enfileirarConfirmacao(params: {
         situacao: "na_fila",
         enviarApos: params.enviarApos,
         texto: params.texto,
+        respostaId: params.respostaId ?? null,
       },
     });
-    return { situacao: "enfileirada" };
+    return { situacao: "enfileirada", id };
   } catch (erro) {
-    if (ehChaveDuplicada(erro)) return { situacao: "ja_existia" };
+    // O id é derivado do telefone e do horário, então a linha que já existe é ESTA mesma — não
+    // precisa de consulta pra saber qual é.
+    if (ehChaveDuplicada(erro)) return { situacao: "ja_existia", id };
     console.error("[azuz-flow] confirmação não foi pra fila:", erro);
     return {
       situacao: "falhou",

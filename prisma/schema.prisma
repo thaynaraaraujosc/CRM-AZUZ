@@ -1718,6 +1718,18 @@ model LeadRecebido {
   contatoId  String?
   conversaId String?
 
+  /// A confirmação de reunião que ESTA entrega produziu — ou a que já existia.
+  ///
+  /// É o que faz a pergunta do Flow funcionar quando a mesma pessoa preenche o formulário duas
+  /// vezes para a mesma reunião: a segunda entrega tem `respostaId` novo e NÃO cria confirmação
+  /// nova (a trava de telefone + início recusa, e isso é o certo — ninguém deve receber a mesma
+  /// confirmação duas vezes). Sem esta coluna, perguntar pelo segundo id não acharia nada, e a
+  /// tela do Flow continuaria mostrando "na fila" pra sempre.
+  ///
+  /// Aqui porque esta tabela JÁ tem uma linha por entrega, com chave única por `chaveExterna`
+  /// (que é o `respostaId`). É a ligação na tabela a que ela pertence, sem tabela nova.
+  confirmacaoId String?
+
   /// A resposta devolvida na primeira vez. Ver o comentário do modelo.
   resultado Json
 
@@ -1786,11 +1798,24 @@ model ConfirmacaoDeReuniao {
 
   tentativas Int @default(0)
 
+  /// A entrega do Flow que CRIOU esta confirmação (`origem.respostaId`).
+  ///
+  /// Serve pro Flow perguntar depois o que aconteceu com o lead que ele mandou: a tela de Respostas
+  /// dele mostrava "na fila para envio" parada pra sempre, porque a mensagem sai minutos depois e
+  /// ninguém avisava o outro lado.
+  ///
+  /// Só a PRIMEIRA entrega fica aqui. Quando a mesma pessoa preenche de novo com a mesma reunião, a
+  /// trava abaixo recusa uma segunda confirmação — e aí a ligação entre a resposta nova e esta
+  /// linha mora em `LeadRecebido.confirmacaoId`, que tem uma linha por entrega.
+  respostaId String?
+
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 
   /// A trava. Ver o comentário do modelo.
   @@unique([workspaceId, telefone, inicio])
+  /// A pergunta do Flow: "o que aconteceu com esta resposta?"
+  @@index([workspaceId, respostaId])
   /// O que o cron varre, e ele varre SEM workspaceId: uma batida olha a fila do CRM inteiro. Um
   /// índice começando por `workspaceId` não serve pra essa consulta — o banco ignoraria o índice e
   /// leria a tabela toda a cada minuto.

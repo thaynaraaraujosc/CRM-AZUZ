@@ -84,7 +84,7 @@ function bancoDeMentira() {
       conexoesDeWhatsapp: async () => ({ oficial: "111", qrcode: null }),
       config: async () => CONFIG_PADRAO,
       nomeDaEmpresa: async () => "Azuz Digital",
-      enfileirarConfirmacao: async () => ({ situacao: "enfileirada" as const }),
+      enfileirarConfirmacao: async () => ({ situacao: "enfileirada" as const, id: "conf-1" }),
       anotarNaConversa: async () => {},
       atrasoDoEnvio: () => 0,
       conversaDoContato: async () => null,

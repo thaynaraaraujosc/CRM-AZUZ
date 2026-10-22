@@ -69,12 +69,15 @@ describe("rotas que dispensam sessão", () => {
     }
   });
 
-  it("abre as duas rotas que o AZUZ Flow chama, e só elas", () => {
+  it("abre as rotas que o AZUZ Flow chama, e só elas", () => {
     // Quem chama é o servidor do Flow, sem navegador nem sessão. Sem isto o proxy devolve 307 pro
     // /login, o Flow recebe a página de login com status de sucesso e dá a entrega por feita: o
     // lead some sem erro em lugar nenhum.
     expect(ehRotaPublica("/api/integracoes/azuz-flow/leads")).toBe(true);
     expect(ehRotaPublica("/api/integracoes/azuz-flow/ping")).toBe(true);
+    // A lista é por CAMINHO, não por prefixo: cada rota nova do Flow precisa entrar aqui à mão, e
+    // é este teste que faz o esquecimento aparecer em vez de virar um 307 silencioso.
+    expect(ehRotaPublica("/api/integracoes/azuz-flow/confirmacoes")).toBe(true);
 
     // A gestão da chave é da TELA, com sessão de administrador. Abrir junto deixaria qualquer um
     // gerar uma chave de integração da empresa dos outros.
