@@ -16476,6 +16476,13 @@ button.camp-row:hover {
 
 /* Dias das pontas dos meses vizinhos: continuam clicáveis, só ficam apagados pra a grade do mês
    atual ser lida primeiro. */
+/* Dia anterior ao mínimo (campo "Agendar reunião"): apagado e sem resposta ao clique. Sem isto o
+   botão desabilitado continuaria com a cara de clicável, e a pessoa tentaria. */
+.seletor-data-dia:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
 .seletor-data-dia.fora {
   color: var(--text-faint);
 }

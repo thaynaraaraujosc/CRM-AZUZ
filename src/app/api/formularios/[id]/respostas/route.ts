@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 
 import type { RespostaFormulario } from "@/lib/formularios-context";
 import { prisma } from "@/lib/prisma";
+import { confirmarReuniaoDoFormulario } from "@/lib/formularios/confirmacao-do-formulario";
+import { lerLeadDaResposta } from "@/lib/formularios/lead-da-resposta";
 import {
   POLITICAS,
   TAMANHO_MAXIMO,
@@ -43,7 +45,13 @@ export async function POST(request: Request, ctx: RouteContext<"/api/formularios
   if (!limite.permitido) return respostaDeLimiteExcedido(limite.esperarSegundos);
 
   const { id } = await ctx.params;
-  const formulario = await prisma.formulario.findUnique({ where: { id }, select: { workspaceId: true } });
+  // `paginas` e `nome` vêm junto: é no SERVIDOR que a resposta vira reunião e confirmação, lendo o
+  // mapeamento que já está gravado. Fazer isso no navegador de quem responde é o que hoje faz o
+  // contato e o card dependerem da aba ficar aberta.
+  const formulario = await prisma.formulario.findUnique({
+    where: { id },
+    select: { workspaceId: true, nome: true, paginas: true },
+  });
   if (!formulario) return NextResponse.json({ erro: "Formulário não encontrado" }, { status: 404 });
 
   const { valores, contatoNome } = (await request.json()) as {
@@ -61,6 +69,24 @@ export async function POST(request: Request, ctx: RouteContext<"/api/formularios
       valores,
     },
   });
+
+  /*
+   * A REUNIÃO E A CONFIRMAÇÃO.
+   *
+   * Vem ANTES dos gatilhos de propósito: a conversa precisa existir quando uma automação de
+   * "formulário preenchido" tentar responder a essa pessoa. Sem conversa o envio falha com
+   * "conversa sem destinatário", que foi o mesmo defeito que o lead do Flow teve.
+   *
+   * Falha aqui não derruba a resposta: quem preencheu já viu "enviado", e devolver erro faria o
+   * formulário parecer quebrado por causa de uma mensagem que é consequência, não o pedido.
+   */
+  const lead = lerLeadDaResposta(formulario.paginas, valores);
+  await confirmarReuniaoDoFormulario({
+    workspaceId: formulario.workspaceId,
+    formularioNome: formulario.nome,
+    respostaId: linha.id,
+    lead,
+  }).catch((erro) => console.error("[formularios] falha ao confirmar a reunião:", erro));
 
   // O gatilho "formulário preenchido" acontece aqui, no servidor. Antes ele só existia na tela de
   // pré-visualização do formulário: uma resposta de verdade, vinda do link público, não disparava

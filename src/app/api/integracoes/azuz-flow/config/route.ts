@@ -77,6 +77,9 @@ export async function PUT(request: Request) {
         falhasParaPausar?: unknown;
       };
       religar?: unknown;
+      /** O texto da confirmação do formulário DO CRM. Separado por origem, a pedido: cada uma fala
+       *  com as palavras da agência pra aquele público. As proteções seguem compartilhadas. */
+      formulario?: { confirmacao?: { ativa?: unknown; texto?: unknown } };
     };
 
     const mudancas: MudancasDoFlow = {};
@@ -169,6 +172,27 @@ export async function PUT(request: Request) {
       }
 
       if (Object.keys(confirmacao).length) mudancas.confirmacao = confirmacao;
+    }
+
+    if (corpo.formulario?.confirmacao !== undefined) {
+      const bruto = corpo.formulario.confirmacao;
+      const confirmacao: { ativa?: boolean; texto?: string } = {};
+      if (bruto.ativa !== undefined) {
+        if (typeof bruto.ativa !== "boolean") {
+          return NextResponse.json({ erro: "O liga/desliga da confirmação precisa ser true ou false." }, { status: 400 });
+        }
+        confirmacao.ativa = bruto.ativa;
+      }
+      if (bruto.texto !== undefined) {
+        if (typeof bruto.texto !== "string") {
+          return NextResponse.json({ erro: "O texto da confirmação precisa ser texto." }, { status: 400 });
+        }
+        if (bruto.texto.length > 2000) {
+          return NextResponse.json({ erro: "O texto da confirmação passou de 2000 caracteres." }, { status: 400 });
+        }
+        confirmacao.texto = bruto.texto;
+      }
+      if (Object.keys(confirmacao).length) mudancas.formulario = { confirmacao };
     }
 
     if (!Object.keys(mudancas).length) {
