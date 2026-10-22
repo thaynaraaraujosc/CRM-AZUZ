@@ -166,11 +166,15 @@ async function main() {
   const { salvarConfigDoFlow } = await import("../src/lib/integracoes/azuz-flow-config");
   const { processarConfirmacoesDeReuniao } = await import("../src/lib/integracoes/azuz-flow-confirmacao-envio");
   const { religarDisjuntor, lerDisjuntor } = await import("../src/lib/integracoes/azuz-flow-disjuntor");
+  const { situacaoDasConfirmacoes } = await import("../src/lib/integracoes/azuz-flow-confirmacoes-consulta");
   const { encriptar } = await import("../src/lib/integracoes/crypto");
 
   const workspaceId = await montarWorkspace();
 
   /** Daqui a três dias, 14:30 em Brasília (17:30 UTC). */
+  /** Um texto simples pro cenário que não está provando o texto. */
+  const TEXTO_DE_TESTE = "Oi, {{primeiroNome}}! Reunião em {{dataCurta}} às {{hora}}.";
+
   const REUNIAO_FUTURA = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
   REUNIAO_FUTURA.setUTCHours(17, 30, 0, 0);
 
@@ -453,6 +457,34 @@ async function main() {
       `a data tinha que ser ${esperado} (Brasília), veio "${fila[0]?.texto}"`,
     );
     conferir((fila[0]?.texto ?? "").includes("23:30"), `a hora tinha que ser 23:30, veio "${fila[0]?.texto}"`);
+    // ---------------------------------------------------------------- (x)
+    await zerar(workspaceId);
+    cenarioAtual = "(x) a pergunta do Flow sobre o que aconteceu";
+    await salvarConfigDoFlow(workspaceId, { confirmacao: { texto: TEXTO_DE_TESTE } });
+
+    await entregar("resp-x1");
+    // A MESMA pessoa preenchendo de novo, mesma reunião: entrega nova, confirmação nenhuma —
+    // a trava de telefone + início recusa, e isso é o certo.
+    await entregar("resp-x2");
+    conferir((await filaDo(workspaceId)).length === 1, "uma confirmação só pras duas entregas");
+
+    const perguntado = await situacaoDasConfirmacoes(workspaceId, ["resp-x1", "resp-x2", "resp-que-nao-existe"]);
+    conferir(perguntado["resp-x1"]?.situacao === "na_fila", `resp-x1 devia estar na fila, veio "${perguntado["resp-x1"]?.situacao}"`);
+    conferir(
+      perguntado["resp-x2"]?.situacao === "na_fila",
+      "a SEGUNDA entrega precisa achar a confirmação que já existia — sem isso o Flow mostra 'na fila' pra sempre",
+    );
+    conferir(!("resp-que-nao-existe" in perguntado), "id desconhecido fica de fora, e isso não é erro");
+
+    // Depois de sair, a pergunta devolve "enviada" e a hora: é o que destrava a tela do Flow.
+    await prisma.confirmacaoDeReuniao.updateMany({ where: { workspaceId }, data: { enviarApos: new Date(Date.now() - 1000) } });
+    const ex = envio();
+    await processarConfirmacoesDeReuniao(30, ex.deps);
+
+    const depois = await situacaoDasConfirmacoes(workspaceId, ["resp-x1", "resp-x2"]);
+    conferir(depois["resp-x1"]?.situacao === "enviada", `depois do envio devia ser "enviada", veio "${depois["resp-x1"]?.situacao}"`);
+    conferir(Boolean(depois["resp-x1"]?.enviadaEm), "a hora do envio precisa voltar");
+    conferir(depois["resp-x2"]?.situacao === "enviada", "as duas entregas respondem a mesma coisa: é a mesma confirmação");
   } finally {
     await limpar(workspaceId).catch((erro) => console.error("não deu pra limpar tudo:", erro));
     await prisma.$disconnect().catch(() => {});
@@ -464,7 +496,7 @@ async function main() {
     process.exit(1);
   }
 
-  console.log("\nOs nove cenários passaram contra banco de verdade. Nenhuma mensagem saiu pra ninguém.");
+  console.log("\nOs dez cenários passaram contra banco de verdade. Nenhuma mensagem saiu pra ninguém.");
 }
 
 main().catch(async (erro) => {

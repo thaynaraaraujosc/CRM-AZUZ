@@ -52,7 +52,7 @@ function fazerDeps(ajustes: Partial<DependenciasDoFlow> = {}) {
     conexoesDeWhatsapp: vi.fn(async () => ({ oficial: "111", qrcode: null })),
     config: vi.fn(async () => CONFIG_DE_TESTE),
     nomeDaEmpresa: vi.fn(async () => "Azuz Digital"),
-    enfileirarConfirmacao: vi.fn(async () => ({ situacao: "enfileirada" as const })),
+    enfileirarConfirmacao: vi.fn(async () => ({ situacao: "enfileirada" as const, id: "conf-1" })),
     anotarNaConversa: vi.fn(async () => {}),
     atrasoDoEnvio: vi.fn(() => 0),
     conversaDoContato: vi.fn(async () => null),
@@ -498,7 +498,7 @@ describe("a confirmação de reunião", () => {
     // uma segunda frase na tela nem uma segunda bolha na conversa.
     const { deps } = fazerDeps({
       ...LIGADA,
-      enfileirarConfirmacao: vi.fn(async () => ({ situacao: "ja_existia" as const })),
+      enfileirarConfirmacao: vi.fn(async () => ({ situacao: "ja_existia" as const, id: "conf-1" })),
     });
     const r = await receberLeadDoFlow({ workspaceId: "w1", lead: lead({ reuniao: REUNIAO }), deps });
 

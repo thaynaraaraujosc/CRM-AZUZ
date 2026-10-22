@@ -58,6 +58,9 @@ export type DependenciasDoFlow = {
     chave: string;
     contatoId: string | null;
     conversaId: string | null;
+    /** A confirmação que esta entrega produziu — ou a que já existia. É por aqui que o Flow
+     *  pergunta depois o que aconteceu com a resposta dele. */
+    confirmacaoId: string | null;
     resultado: ResultadoDoLead;
   }) => Promise<void>;
 
@@ -111,6 +114,7 @@ export type DependenciasDoFlow = {
     conversaNome: string | null;
     texto: string;
     enviarApos: Date;
+    respostaId?: string | null;
   }) => Promise<ResultadoDaFila>;
   /**
    * O atraso aleatório antes do envio, em milissegundos.
@@ -405,6 +409,8 @@ export async function receberLeadDoFlow(params: {
   );
   const contaCanal = escolha.contaCanal;
 
+  /** A confirmação desta entrega, pra ligar `LeadRecebido` a ela no passo 8. */
+  let confirmacaoId: string | null = null;
   let conversaId: string | null = null;
   /** O canal da conversa onde a confirmação sairia. `null` quando não há conversa. */
   let canalDaConversa: string | null = null;
@@ -540,7 +546,12 @@ export async function receberLeadDoFlow(params: {
           conversaNome: nomeDoContato,
           texto,
           enviarApos: quando.enviarApos,
+          respostaId: lead.respostaId,
         });
+
+        // Vale também pro `ja_existia`: a entrega nova aponta pra MESMA confirmação, e é isso que
+        // faz a pergunta do Flow pelo id novo achar a situação da linha que já estava lá.
+        if (resultado.situacao !== "falhou") confirmacaoId = resultado.id;
 
         if (resultado.situacao === "falhou") {
           avisos.push(resultado.aviso);
@@ -600,6 +611,7 @@ export async function receberLeadDoFlow(params: {
       chave: lead.respostaId,
       contatoId,
       conversaId,
+      confirmacaoId,
       resultado,
     });
   } catch (erro) {
@@ -689,7 +701,7 @@ export function dependenciasReais(workspaceId: string): DependenciasDoFlow {
       });
       return (linha?.resultado as ResultadoDoLead | undefined) ?? null;
     },
-    async gravarEntrega({ chave, contatoId, conversaId, resultado }) {
+    async gravarEntrega({ chave, contatoId, conversaId, confirmacaoId, resultado }) {
       await prisma.leadRecebido.create({
         data: {
           workspaceId,
@@ -697,6 +709,7 @@ export function dependenciasReais(workspaceId: string): DependenciasDoFlow {
           chaveExterna: chave,
           contatoId,
           conversaId,
+          confirmacaoId,
           resultado: resultado as unknown as object,
         },
       });

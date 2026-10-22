@@ -66,6 +66,9 @@ const PREFIXOS_PUBLICOS = [
    */
   "/api/integracoes/azuz-flow/leads",
   "/api/integracoes/azuz-flow/ping",
+  // A pergunta do Flow sobre o que aconteceu com os leads que ele mandou. Mesma defesa das duas de
+  // cima: a lista é por CAMINHO, então uma rota nova precisa entrar aqui ou vira 307 pro /login.
+  "/api/integracoes/azuz-flow/confirmacoes",
 
   // O link rastreado que fica no botão de WhatsApp do site do cliente. Quem clica nele é um
   // visitante do site de outra empresa: não tem conta no CRM, nunca vai ter, e exigir sessão
