@@ -51,6 +51,21 @@ export type ConfigDoFlow = {
     /** Quantas falhas seguidas pausam o canal sozinho. */
     falhasParaPausar: number;
   };
+  /**
+   * O FORMULÁRIO DO PRÓPRIO CRM, que nem todo cliente troca pelo AZUZ Flow.
+   *
+   * Só o TEXTO é separado, e foi escolha da agência: cada origem fala com quem preencheu com as
+   * palavras dela. As PROTEÇÕES acima continuam valendo para as duas — janela, tetos, pausa e
+   * disjuntor existem pra proteger o NÚMERO, não a origem do lead, e dois conjuntos protegeriam
+   * pela metade.
+   */
+  formulario: {
+    confirmacao: {
+      /** Nasce desligada, pela mesma razão da outra: ligar faz o CRM mandar mensagem sozinho. */
+      ativa: boolean;
+      texto: string;
+    };
+  };
 };
 
 export const CONFIG_PADRAO: ConfigDoFlow = {
@@ -76,6 +91,7 @@ export const CONFIG_PADRAO: ConfigDoFlow = {
     tetoPorNumero: 3,
     falhasParaPausar: 5,
   },
+  formulario: { confirmacao: { ativa: false, texto: TEXTO_PADRAO_DA_CONFIRMACAO } },
 };
 
 /**
@@ -112,6 +128,24 @@ export function lerConfigDoFlow(dados: unknown): ConfigDoFlow {
       tetoDiario: numeroEntre(confirmacao.tetoDiario, 1, 500, CONFIG_PADRAO.confirmacao.tetoDiario),
       tetoPorNumero: numeroEntre(confirmacao.tetoPorNumero, 1, 20, CONFIG_PADRAO.confirmacao.tetoPorNumero),
       falhasParaPausar: numeroEntre(confirmacao.falhasParaPausar, 1, 50, CONFIG_PADRAO.confirmacao.falhasParaPausar),
+    },
+    formulario: lerFormulario(bruto.formulario),
+  };
+}
+
+/** O bloco do formulário do CRM, com a mesma desconfiança do resto: veio do banco, pode ter
+ *  qualquer forma. */
+function lerFormulario(dados: unknown): ConfigDoFlow["formulario"] {
+  const bruto = (typeof dados === "object" && dados !== null ? dados : {}) as Record<string, unknown>;
+  const confirmacao = (typeof bruto.confirmacao === "object" && bruto.confirmacao !== null
+    ? bruto.confirmacao
+    : {}) as Record<string, unknown>;
+  const texto = typeof confirmacao.texto === "string" ? confirmacao.texto.trim() : "";
+  return {
+    confirmacao: {
+      // `=== true` e não "truthy": ligar por acidente aqui é mandar mensagem pra gente de verdade.
+      ativa: confirmacao.ativa === true,
+      texto: texto || CONFIG_PADRAO.formulario.confirmacao.texto,
     },
   };
 }
@@ -167,8 +201,9 @@ export async function configDoFlow(workspaceId: string): Promise<ConfigDoFlow> {
  * o texto e os tetos a cada clique — qualquer um deles desatualizado sobrescreveria o que outra
  * pessoa acabou de salvar.
  */
-export type MudancasDoFlow = Partial<Omit<ConfigDoFlow, "confirmacao">> & {
+export type MudancasDoFlow = Partial<Omit<ConfigDoFlow, "confirmacao" | "formulario">> & {
   confirmacao?: Partial<ConfigDoFlow["confirmacao"]>;
+  formulario?: { confirmacao?: Partial<ConfigDoFlow["formulario"]["confirmacao"]> };
 };
 
 /** Grava o que mudou, preservando o resto. Devolve como ficou. */
@@ -187,6 +222,9 @@ export async function salvarConfigDoFlow(
     ...atual,
     ...mudancas,
     confirmacao: { ...atual.confirmacao, ...(mudancas.confirmacao ?? {}) },
+    formulario: {
+      confirmacao: { ...atual.formulario.confirmacao, ...(mudancas.formulario?.confirmacao ?? {}) },
+    },
   };
   await prisma.preferencia.upsert({
     where: { workspaceId_chave: { workspaceId, chave: CHAVE } },

@@ -70,6 +70,7 @@ export function SeletorDeData({
   disabled,
   className,
   curto,
+  minimo,
 }: {
   /** `YYYY-MM-DD`, o mesmo formato do `<input type="date">` que este componente substitui. */
   valor?: string;
@@ -79,6 +80,13 @@ export function SeletorDeData({
   className?: string;
   /** Data por extenso não cabe em campos estreitos lado a lado (De/Até): mostra 30/09/2026. */
   curto?: boolean;
+  /**
+   * A primeira data escolhível (`YYYY-MM-DD`). Dia anterior fica apagado e não responde ao clique.
+   *
+   * Existe pro campo "Agendar reunião": deixar alguém marcar uma reunião pra ontem é deixar o
+   * formulário aceitar o que o CRM depois vai recusar em silêncio.
+   */
+  minimo?: string;
 }) {
   const { t: traduzir } = useIdioma();
   const [aberto, setAberto] = useState(false);
@@ -198,10 +206,15 @@ export function SeletorDeData({
             {dias.map((dia) => {
               const deOutroMes = dia.getMonth() !== mesVisivel.getMonth();
               const ehSelecionada = selecionada ? mesmoDia(dia, selecionada) : false;
+              // Comparação por TEXTO ISO: `new Date("2026-10-22")` é meia-noite UTC, que em
+              // Brasília é 21h do dia anterior — comparar instantes faria o dia de hoje aparecer
+              // bloqueado durante a tarde inteira.
+              const cedoDemais = minimo ? paraIso(dia) < minimo : false;
               return (
                 <button
                   key={dia.toISOString()}
                   type="button"
+                  disabled={cedoDemais}
                   className={[
                     "seletor-data-dia",
                     deOutroMes ? "fora" : "",
@@ -211,6 +224,7 @@ export function SeletorDeData({
                     .filter(Boolean)
                     .join(" ")}
                   onClick={() => {
+                    if (cedoDemais) return;
                     onChange(paraIso(dia));
                     setAberto(false);
                   }}

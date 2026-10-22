@@ -30,6 +30,8 @@ export type TipoCampoFormulario =
   | "hora"
   | "data_hora"
   | "periodo"
+  /** "Agendar reunião": data + hora que viram compromisso na agenda e confirmação no WhatsApp. */
+  | "agendamento"
   // escolha
   | "lista_suspensa"
   | "opcao_unica"
@@ -77,6 +79,14 @@ export const TIPOS_CAMPO_FORMULARIO: {
   { tipo: "hora", label: "Hora", categoria: "data" },
   { tipo: "data_hora", label: "Data e hora", categoria: "data" },
   { tipo: "periodo", label: "Período", categoria: "data" },
+  /*
+   * AGENDAR REUNIÃO não é "data e hora" com outro nome.
+   *
+   * O tipo é que diz ao CRM que aquilo é uma REUNIÃO: com ele, a resposta vira compromisso na
+   * Agenda e dispara a confirmação por WhatsApp. Um campo "Data e hora" genérico pode ser a data
+   * de nascimento, a data da obra, o prazo — e nenhuma delas deve virar reunião nem gerar mensagem.
+   */
+  { tipo: "agendamento", label: "Agendar reunião", categoria: "data" },
   { tipo: "lista_suspensa", label: "Lista suspensa", categoria: "escolha" },
   { tipo: "opcao_unica", label: "Múltipla escolha (uma opção)", categoria: "escolha" },
   { tipo: "checkbox", label: "Caixas de seleção", categoria: "escolha" },
@@ -142,6 +152,14 @@ export const CAMPOS_CRM_MAPEAVEIS: { campo: string; label: string }[] = [
   { campo: "estado", label: "Estado" },
   { campo: "pais", label: "País" },
   { campo: "endereco", label: "Endereço" },
+  /*
+   * O CONSENTIMENTO DE WHATSAPP, marcado numa caixa do formulário.
+   *
+   * Sem ele nenhuma mensagem automática sai pra quem respondeu — e essa severidade é de propósito:
+   * esta mensagem parte do CRM pra quem NUNCA escreveu, por um número que pode ser bloqueado por
+   * denúncia. Pra iniciar conversa, "não se sabe" vale como não.
+   */
+  { campo: "consentimentoWhatsApp", label: "Consentimento de WhatsApp" },
 ];
 
 export type OperadorLogica = "igual" | "diferente" | "contem" | "preenchido" | "vazio";

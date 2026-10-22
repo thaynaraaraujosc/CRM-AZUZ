@@ -249,6 +249,12 @@ function CampoCep({
   );
 }
 
+/** De meia em meia hora, das 6h às 22h: a faixa em que alguém marca uma reunião de trabalho. */
+const HORARIOS_DE_MEIA_EM_MEIA = Array.from({ length: (22 - 6) * 2 + 1 }, (_, i) => {
+  const minutos = 6 * 60 + i * 30;
+  return `${String(Math.floor(minutos / 60)).padStart(2, "0")}:${String(minutos % 60).padStart(2, "0")}`;
+});
+
 export function CampoResposta({
   pergunta,
   interativo = false,
@@ -364,6 +370,45 @@ export function CampoResposta({
           {...props}
         />
       );
+    /*
+     * AGENDAR REUNIÃO: a data e a hora, lado a lado.
+     *
+     * Dois controles e não um `datetime-local`, por duas razões práticas: o campo nativo tem
+     * aparência diferente em cada navegador (e no Safari do iPhone vira uma roleta minúscula), e a
+     * hora precisa andar de meia em meia hora — ninguém marca reunião às 14h07.
+     *
+     * O valor guardado é o mesmo formato do `datetime-local` ("AAAA-MM-DDTHH:MM"), que é o que o
+     * servidor sabe ler.
+     */
+    case "agendamento": {
+      const [diaEscolhido, horaEscolhida] = valor ? valor.split("T") : ["", ""];
+      const hoje = new Date().toISOString().slice(0, 10);
+      return (
+        <div className="filters-row" style={{ margin: 0 }}>
+          <SeletorDeData
+            valor={interativo ? diaEscolhido : ""}
+            onChange={(iso) => onMudarValor?.(`${iso}T${horaEscolhida}`)}
+            disabled={disabled}
+            minimo={hoje}
+            curto
+          />
+          <select
+            className="input form-resposta-campo"
+            style={{ maxWidth: 140 }}
+            disabled={disabled}
+            value={interativo ? horaEscolhida : ""}
+            onChange={(e) => onMudarValor?.(`${diaEscolhido}T${e.target.value}`)}
+          >
+            <option value="">{traduzir("Horário")}</option>
+            {HORARIOS_DE_MEIA_EM_MEIA.map((h) => (
+              <option key={h} value={h}>
+                {h}
+              </option>
+            ))}
+          </select>
+        </div>
+      );
+    }
     case "periodo": {
       const [de, ate] = valor ? valor.split("|") : ["", ""];
       return (
