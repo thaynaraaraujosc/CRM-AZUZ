@@ -89,7 +89,14 @@ type RespostaQrCode = {
   avisoWebhook?: string;
 };
 
-const EVENTOS_WEBHOOK = ["QRCODE_UPDATED", "CONNECTION_UPDATE", "MESSAGES_UPSERT"];
+/**
+ * Os eventos que esta instância precisa mandar.
+ *
+ * `MESSAGES_UPDATE` é o aviso de "entregue" e "lido". Sem ele na lista, toda mensagem enviada pelo
+ * QR Code fica com um tique só pra sempre — e a falta não dá erro em lugar nenhum: a Evolution
+ * simplesmente não chama.
+ */
+export const EVENTOS_WEBHOOK = ["QRCODE_UPDATED", "CONNECTION_UPDATE", "MESSAGES_UPSERT", "MESSAGES_UPDATE"];
 
 /** Registra (ou atualiza) o webhook da instância numa chamada própria, separada da criação:
  * várias versões/instalações da Evolution ignoram silenciosamente o campo `webhook` passado dentro
@@ -267,8 +274,52 @@ export async function numeroTemWhatsapp(workspaceId: string, numero: string): Pr
   }
 }
 
-export function enviarMensagemWhatsAppNaoOficial(workspaceId: string, numero: string, texto: string) {
-  return chamarEvolution(`/message/sendText/${nomeInstancia(workspaceId)}`, "POST", { number: numero, text: texto });
+/**
+ * Manda um texto pelo QR Code. Devolve o ID DA MENSAGEM, que a Evolution gera no envio.
+ *
+ * O id é o que liga esta mensagem ao aviso de "entregue" e "lido" que chega depois por
+ * `messages.update`. Ele sempre existiu na resposta e estava sendo jogado fora — havia até um
+ * comentário meu dizendo que o QR Code "não tem id equivalente", o que era simplesmente falso. Sem
+ * guardá-lo, a mensagem enviada pelo CRM ficava com um tique só, pra sempre.
+ *
+ * SEM PRÉVIA DE LINK. Um link de reunião virava um cartão enorme do Google Meet, com imagem e
+ * descrição em inglês, empurrando o texto da mensagem pra baixo da dobra. Quem recebe vê a
+ * propaganda do Meet antes de ver o que a agência escreveu.
+ *
+ * `linkPreview` é o nome do campo na Evolution v2. Numa instância que não o conheça, a chamada é
+ * REFEITA sem ele: é melhor a prévia voltar do que a mensagem não sair.
+ */
+export async function enviarMensagemWhatsAppNaoOficial(
+  workspaceId: string,
+  numero: string,
+  texto: string,
+): Promise<string | null> {
+  const caminho = `/message/sendText/${nomeInstancia(workspaceId)}`;
+  const corpo = { number: numero, text: texto };
+
+  let resposta: unknown;
+  try {
+    resposta = await chamarEvolution(caminho, "POST", { ...corpo, linkPreview: false });
+  } catch (erro) {
+    // Só a recusa do CAMPO justifica repetir. Erro de conexão, número inválido ou instância fora
+    // voltariam igual na segunda tentativa, e repetir seria mandar a mesma mensagem duas vezes.
+    if (!ehRecusaDeCampo(erro)) throw erro;
+    console.warn("[evolution] esta instância não aceita `linkPreview`; mandando com a prévia.");
+    resposta = await chamarEvolution(caminho, "POST", corpo);
+  }
+  return idDaMensagem(resposta);
+}
+
+/** A Evolution respondeu 400 por causa do corpo? É o que distingue "campo desconhecido" de "deu
+ *  ruim no envio" — e só o primeiro vale uma segunda tentativa. */
+function ehRecusaDeCampo(erro: unknown): boolean {
+  return erro instanceof Error && /respondeu 4\d\d /.test(erro.message);
+}
+
+/** O `key.id` que a Evolution devolve no envio, em qualquer dos formatos que ela já usou. */
+function idDaMensagem(resposta: unknown): string | null {
+  const dados = resposta as { key?: { id?: string }; data?: { key?: { id?: string } } } | null;
+  return dados?.key?.id ?? dados?.data?.key?.id ?? null;
 }
 
 /**

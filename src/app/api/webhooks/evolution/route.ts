@@ -145,6 +145,39 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true });
   }
 
+  /*
+   * OS TIQUINHOS DO QR CODE: "entregue" e "lido".
+   *
+   * O CRM já desenhava esses estados — a tela, o ícone e a coluna existem desde o canal oficial —
+   * mas no QR Code nada os preenchia: toda mensagem enviada ficava com um tique só, pra sempre.
+   * Quem atende não tinha como saber se a mensagem tinha chegado no aparelho da pessoa.
+   *
+   * O aviso chega aqui com o id da mensagem e o estado do Baileys. Dois caminhos pra casar, e os
+   * dois são necessários: `wamid` acha o que o CRM mandou (o id que a Evolution devolveu no envio)
+   * e `id` acha o que foi mandado do CELULAR e espelhado, que é gravado com o próprio id do
+   * WhatsApp.
+   *
+   * SÓ ATUALIZA O QUE JÁ EXISTE. Aviso de mensagem desconhecida é ruído, não vira registro novo.
+   */
+  if (evento === "messages.update") {
+    for (const item of Array.isArray(payload.data) ? payload.data : [payload.data]) {
+      const atualizacao = item as { keyId?: string; key?: { id?: string }; status?: string } | undefined;
+      const id = atualizacao?.keyId ?? atualizacao?.key?.id;
+      const status = statusDoBaileys(atualizacao?.status);
+      if (!id || !status) continue;
+
+      const porWamid = await prisma.mensagemExtra
+        .updateMany({ where: { workspaceId, wamid: id }, data: { status } })
+        .catch(() => ({ count: 0 }));
+      if (porWamid.count === 0) {
+        await prisma.mensagemExtra
+          .updateMany({ where: { workspaceId, id, tipo: "out" }, data: { status } })
+          .catch(() => undefined);
+      }
+    }
+    return NextResponse.json({ ok: true });
+  }
+
   if (evento === "messages.upsert") {
     // Processar ou descartar, e por quê: ver `decidirSobreLote`. Em resumo, o `type` do evento
     // deixou de ser motivo de descarte (no Baileys, "append" é como chega mensagem de GRUPO, não
@@ -577,4 +610,34 @@ function identificadoresDoRemetente(key: { participant?: string; participantAlt?
     remetenteId: principal.split("@")[0],
     ...(outro ? { remetenteIdAlt: outro.split("@")[0] } : {}),
   };
+}
+
+/**
+ * O estado que o Baileys manda, traduzido pro vocabulário da tela.
+ *
+ * Ele vem como nome ("DELIVERY_ACK") ou como número (3), conforme a versão — e nos dois casos o
+ * CRM guarda em português, porque é o que `StatusMensagemIcone` sabe desenhar. Gravar o nome cru
+ * foi o que já quebrou a tela de Conversas inteira uma vez no canal oficial: um status fora do
+ * vocabulário derrubava a renderização.
+ *
+ * O que NÃO está aqui é de propósito. `PENDING` e `SERVER_ACK` não rebaixam uma mensagem que já
+ * está "enviada", e `ERROR` do Baileys é ambíguo demais pra virar "não enviada" na cara de quem
+ * atende: o aviso chega sem motivo, e uma bolha vermelha sem explicação é pior do que um tique a
+ * menos.
+ */
+export function statusDoBaileys(bruto: string | number | undefined): string | null {
+  const chave = typeof bruto === "number" ? String(bruto) : (bruto ?? "").toUpperCase();
+  switch (chave) {
+    case "DELIVERY_ACK":
+    case "3":
+      return "entregue";
+    case "READ":
+    case "4":
+      return "lido";
+    case "PLAYED":
+    case "5":
+      return "reproduzido";
+    default:
+      return null;
+  }
 }

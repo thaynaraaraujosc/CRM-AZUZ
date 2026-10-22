@@ -34,6 +34,10 @@ export async function enviarTextoPeloCanal(params: {
    * No Instagram ele existe e é o MESMO id que volta no eco do webhook — é o que faz a mensagem
    * enviada pelo CRM não entrar de novo como se fosse uma segunda. Eu tinha anotado aqui que o
    * Instagram não tinha id; tinha, e era só não estar sendo lido.
+   *
+   * O MESMO ERRO ESTAVA ESCRITO AQUI SOBRE O QR CODE ("nulo no QR Code, que não tem id
+   * equivalente"). Também tinha: a Evolution devolve o `key.id` no envio, e é ele que liga a
+   * mensagem ao "entregue"/"lido" que chega depois.
    */
   wamid?: string | null;
 }> {
@@ -90,8 +94,10 @@ export async function enviarTextoPeloCanal(params: {
     // WhatsApp: a conversa pertence à conexão por onde ela veio (ver `contaCanal`). QR Code e API
     // oficial são serviços diferentes: mandar pelo errado dá erro ou vai pro número errado.
     if (conversa.contaCanal?.startsWith("whatsapp_nao_oficial:") || conversa.contaCanal?.startsWith("whatsapp_baileys:")) {
-      await enviarMensagemWhatsAppNaoOficial(workspaceId, conversa.contato, texto);
-      return { enviado: true };
+      // O id volta junto: é por ele que `messages.update` acha esta bolha depois pra dizer
+      // "entregue" e "lido". O QR Code sempre devolveu esse id; o CRM é que o jogava fora.
+      const id = await enviarMensagemWhatsAppNaoOficial(workspaceId, conversa.contato, texto);
+      return { enviado: true, wamid: id };
     }
 
     /*
@@ -109,8 +115,8 @@ export async function enviarTextoPeloCanal(params: {
      * Só quando o QR está LIGADO: com ele fora e o oficial de pé, a saída é o caminho de baixo.
      */
     if (!conversa.contaCanal && (await qrCodeConectado(workspaceId))) {
-      await enviarMensagemWhatsAppNaoOficial(workspaceId, conversa.contato, texto);
-      return { enviado: true };
+      const id = await enviarMensagemWhatsAppNaoOficial(workspaceId, conversa.contato, texto);
+      return { enviado: true, wamid: id };
     }
 
     const conta = await contaConectada(workspaceId);

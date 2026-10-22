@@ -84,6 +84,14 @@ vi.mock("../azuz-flow-confirmacao-fila", () => ({
   },
 }));
 
+/** As mensagens que entraram NA CONVERSA — o texto que o cliente recebeu, não um aviso sobre ele. */
+const naConversa: { texto: string; wamid?: string | null }[] = [];
+vi.mock("@/lib/conversas/registrar-saida", () => ({
+  registrarMensagemEnviada: async (p: { texto: string; wamid?: string | null }) => {
+    naConversa.push(p);
+  },
+}));
+
 let pausadoEm: string | null = null;
 const falhasRegistradas: string[] = [];
 let sucessos = 0;
@@ -133,6 +141,7 @@ beforeEach(() => {
   atualizacoes.length = 0;
   enviados.length = 0;
   bolhas.length = 0;
+  naConversa.length = 0;
   falhasRegistradas.length = 0;
   sucessos = 0;
   pausadoEm = null;
@@ -151,7 +160,17 @@ describe("o caminho que funciona", () => {
     expect(r).toEqual({ enviadas: 1, recusadas: 0, adiadas: 0 });
     expect(enviados).toEqual([{ workspaceId: "w1", conversaNome: "Ana Souza", texto: "Oi, Ana! Sua reunião está confirmada." }]);
     expect(atualizacoes[0].data.situacao).toBe("enviada");
-    expect(bolhas[0].texto).toBe("Confirmação de reunião enviada.");
+    /*
+     * O TEXTO QUE SAIU entra na conversa, não um aviso sobre ele.
+     *
+     * Antes a conversa ficava com duas bolhas de sistema ("na fila", "enviada") e NENHUMA
+     * mensagem: o CRM mandava um WhatsApp em nome da agência e não guardava o que tinha escrito.
+     */
+    expect(naConversa).toEqual([
+      { workspaceId: "w1", contatoNome: "Ana Souza", texto: "Oi, Ana! Sua reunião está confirmada.", wamid: undefined, origem: "confirmacao-do-flow" },
+    ]);
+    // E nenhuma bolha de sistema a mais: a mensagem com hora e tiquinho já diz que foi enviada.
+    expect(bolhas).toHaveLength(0);
     // Envio bom zera o contador de falhas seguidas do disjuntor.
     expect(sucessos).toBe(1);
   });
