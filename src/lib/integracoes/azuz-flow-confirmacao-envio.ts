@@ -3,6 +3,7 @@ import { RITMO } from "@/lib/campanhas/ritmo";
 import { enviarTextoPeloCanal } from "@/lib/conversas/enviar-pelo-canal";
 import { numeroTemWhatsapp } from "@/lib/integracoes/evolution";
 import { anotarNaConversa } from "@/lib/integracoes/azuz-flow-confirmacao-fila";
+import { registrarMensagemEnviada } from "@/lib/conversas/registrar-saida";
 import { configDoFlow } from "@/lib/integracoes/azuz-flow-config";
 import { lerDisjuntor, registrarFalha, registrarSucesso } from "@/lib/integracoes/azuz-flow-disjuntor";
 
@@ -36,7 +37,7 @@ export type DependenciasDoEnvio = {
     workspaceId: string;
     conversaNome: string;
     texto: string;
-  }) => Promise<{ enviado: boolean; motivo?: string }>;
+  }) => Promise<{ enviado: boolean; motivo?: string; wamid?: string | null }>;
 };
 
 const ENVIO_REAL: DependenciasDoEnvio = {
@@ -176,14 +177,24 @@ async function tratarUma(
       where: { id: linha.id },
       data: { situacao: "enviada", enviadaEm: new Date(), motivo: null },
     });
-    await anotarNaConversa({
+    /*
+     * A MENSAGEM ENTRA NA CONVERSA, com o texto que saiu.
+     *
+     * Sem isto, o CRM mandava um WhatsApp pro cliente e não guardava nada do que mandou: a
+     * conversa mostrava duas bolhas de sistema ("na fila", "enviada") e nenhuma mensagem. Quem
+     * abria a tela não tinha como ler o que o CRM escreveu em nome da agência — nem com que
+     * palavras, nem a que horas.
+     *
+     * E some a bolha de sistema "Confirmação de reunião enviada.": a mensagem aparecendo ali, com
+     * hora e tiquinho, JÁ diz que foi enviada — e diz melhor, porque o tiquinho continua a
+     * história até "entregue" e "lido". Duas linhas pro mesmo fato é uma a mais.
+     */
+    await registrarMensagemEnviada({
       workspaceId: linha.workspaceId,
-      conversaNome: linha.conversaNome,
-      contaCanal: linha.canal,
-      marca: "enviada",
-      telefone: linha.telefone,
-      inicio: linha.inicio,
-      texto: "Confirmação de reunião enviada.",
+      contatoNome: linha.conversaNome,
+      texto: linha.texto ?? "",
+      wamid: envio.wamid,
+      origem: "confirmacao-do-flow",
     });
     await registrarSucesso(linha.workspaceId);
     return "enviadas";

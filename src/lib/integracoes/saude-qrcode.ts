@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import {
+  EVENTOS_WEBHOOK,
   aplicarAjustesDaInstancia,
   buscarNumeroConectado,
   buscarWebhookRegistrado,
@@ -102,15 +103,28 @@ export async function conferirCanalQrCode(
     buscarWebhookRegistrado(workspaceId).catch(() => null),
   ]);
 
-  // Compara só o caminho, sem a query string: o token é derivado da chave da Evolution e não deve
-  // sair daqui em nenhuma resposta nem em nenhum log.
-  const certo = webhook?.ativo === true && semToken(webhook.url) === semToken(esperado);
+  /*
+   * Compara só o caminho, sem a query string: o token é derivado da chave da Evolution e não deve
+   * sair daqui em nenhuma resposta nem em nenhum log.
+   *
+   * E COMPARA A LISTA DE EVENTOS, não só o endereço. Uma instância registrada antes de um evento
+   * novo existir fica com a lista velha pra sempre: o endereço está certo, então nada aqui achava
+   * que havia o que consertar, e a Evolution simplesmente nunca chamava aquele evento. Foi o que
+   * aconteceu com `MESSAGES_UPDATE` (os tiquinhos de entregue e lido).
+   */
+  const eventosRegistrados = (webhook?.eventos ?? []).map((e) => e.toUpperCase());
+  const faltamEventos = EVENTOS_WEBHOOK.some((e) => !eventosRegistrados.includes(e));
+  const certo = webhook?.ativo === true && semToken(webhook.url) === semToken(esperado) && !faltamEventos;
 
   let reparado = false;
   if (!certo && opcoes.reparar && integracao?.status === "conectado") {
     await reconfigurarWebhook(workspaceId).catch(() => {});
     const conferido = await buscarWebhookRegistrado(workspaceId).catch(() => null);
-    reparado = conferido?.ativo === true && semToken(conferido.url) === semToken(esperado);
+    const eventosDepois = (conferido?.eventos ?? []).map((e) => e.toUpperCase());
+    reparado =
+      conferido?.ativo === true &&
+      semToken(conferido.url) === semToken(esperado) &&
+      EVENTOS_WEBHOOK.every((e) => eventosDepois.includes(e));
   }
 
   /*
