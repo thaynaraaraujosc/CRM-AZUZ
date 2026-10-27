@@ -199,6 +199,11 @@ export type Contato = {
   fotoUrl?: string;
   etiquetas?: string[];
   favorito?: boolean;
+  /** Como o registro nasceu: "manual", "whatsapp", "instagram", "azuz-flow". */
+  criadoVia?: string;
+  /** Quando alguém da equipe salvou esta pessoa de propósito. Nulo = nasceu sozinho de uma
+   *  mensagem. É o que decide quem aparece na tela de Contatos (ver `contatos/salvos.ts`). */
+  salvoEm?: string | null;
 };
 
 export const contatos: Contato[] = [
@@ -300,11 +305,17 @@ export const contatos: Contato[] = [
   },
 ];
 
+/**
+ * Os recortes da tela de Contatos.
+ *
+ * Instagram e TikTok saíram: a tela passou a mostrar só quem a equipe guardou de propósito (ver
+ * `contatos/salvos.ts`), e ninguém guarda um `@usuario` que mandou uma mensagem — essas conversas
+ * se atendem no Instagram e no funil, que é onde elas vivem. Com o recorte vazio, o chip era um
+ * caminho que só levava a "nenhum contato".
+ */
 export const filtrosContatos = [
   "Todos",
   "WhatsApp",
-  "Instagram",
-  "TikTok",
   "Salvo manualmente",
 ];
 

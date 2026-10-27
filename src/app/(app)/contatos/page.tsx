@@ -18,6 +18,8 @@ import { gerarLinhaDoTempo } from "@/lib/timeline";
 import { rotuloDeAtividade } from "@/lib/funis/atividade";
 import { VAZIO, ehVazio } from "@/lib/vazio";
 import { ORDENS, ordenarContatos, origemNoFiltro, type OrdemContatos } from "@/lib/contatos/ordenacao";
+import { contatoFoiSalvo } from "@/lib/contatos/salvos";
+import { formatarTelefoneParaExibicao } from "@/lib/telefone";
 import { useIdioma } from "@/lib/idioma-context";
 
 const CANAIS_PREFERIDOS = ["WhatsApp", "Instagram"] as const;
@@ -228,6 +230,19 @@ function ContatosPageInner() {
     const digitos = termo.replace(/\D/g, "");
 
     const filtrados = contatos.filter((c) => {
+      /**
+       * CONTATOS É O QUE A EQUIPE GUARDOU DE PROPÓSITO.
+       *
+       * A tela mostrava todo registro de contato, e a maioria nasce sozinha quando chega uma
+       * mensagem: eram 191 linhas, quase todas um `@usuario` ou um número solto, sem nome e sem
+       * nada que permitisse reconhecer a pessoa. Agenda em que não se reconhece ninguém não é
+       * agenda.
+       *
+       * Quem ainda não foi salvo continua inteiro em Conversas, no WhatsApp, no Instagram e no
+       * funil — que é onde se atende. O registro automático segue existindo e segue ligando
+       * conversa, card e automação à mesma pessoa; ele só deixa de se apresentar como contato.
+       */
+      if (!contatoFoiSalvo(c)) return false;
       if (!(filtroOrigem === "Todos" || origemNoFiltro(c.origem) === filtroOrigem)) return false;
       if (!termo) return true;
 
@@ -508,12 +523,11 @@ function ContatosPageInner() {
           <section className="open-conv contato-painel" role="dialog" aria-label={`Contato ${contato.nome}`}>
             <div className="open-conv-h">
               <div className="avatar">{contato.initials}</div>
+              {/* Só o nome. "Salvo manualmente · última interação 03/09" dizia duas coisas que
+                  ninguém abre um contato pra ler: a origem já está na lista, e a data da última
+                  conversa está na linha do tempo logo abaixo. */}
               <div>
                 <p className="n">{contato.nome}</p>
-                <p className="s">
-                  {contato.origem} · última interação{" "}
-                  {rotuloDeAtividade(atividadePorNome.get(contato.nome) ?? contato.criadoEm).toLowerCase()}
-                </p>
               </div>
               <div className="filters-row" style={{ margin: "0 0 0 auto" }}>
                 {contato.whatsapp ? (
@@ -652,7 +666,13 @@ function ContatosPageInner() {
                 </div>
                 <div className="field">
                   <label>{traduzir("Número do WhatsApp")}</label>
-                  <div className="input">{contato.whatsapp || "-"}</div>
+                  {/* Formatado, e não os dígitos crus: "41984877482" não se lê nem se confere, e
+                      cliente de fora do Brasil aparecia como uma sequência de doze dígitos sem um
+                      espaço. `formatarTelefoneParaExibicao` devolve null no que não é telefone, e
+                      aí o valor aparece como está em vez de virar um número inventado. */}
+                  <div className="input">
+                    {(contato.whatsapp && formatarTelefoneParaExibicao(contato.whatsapp)) || contato.whatsapp || "-"}
+                  </div>
                 </div>
                 <div className="field">
                   <label>{traduzir("Data de aniversário")}</label>

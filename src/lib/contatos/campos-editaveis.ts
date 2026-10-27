@@ -44,6 +44,12 @@ export const CAMPOS_CONTATO_EDITAVEIS = [
   "etiquetas",
   "favorito",
   "criadoVia",
+  /**
+   * `salvoEm` entra na lista porque as rotas COM SESSÃO precisam gravá-lo — é o que põe a pessoa
+   * na tela de Contatos. Não é um campo que o navegador escolha sozinho: quem o manda é a própria
+   * rota, depois de conferir a sessão. A rota pública do formulário nunca o inclui.
+   */
+  "salvoEm",
 ] as const;
 
 /** Filtra o corpo recebido, deixando passar só o que está na lista. */

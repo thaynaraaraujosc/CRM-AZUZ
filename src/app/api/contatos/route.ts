@@ -63,7 +63,7 @@ export async function POST(request: Request) {
       where: { id: duplicataPorTelefone.id },
       // Lista fechada: espalhar o corpo deixava o navegador gravar `workspaceId` e mover o
       // contato pra outra empresa. Ver `campos-editaveis.ts`.
-      data: somenteCamposDeContato(dados),
+      data: { ...somenteCamposDeContato(dados), salvoEm: duplicataPorTelefone.salvoEm ?? new Date() },
     });
     // Este caminho escreve direto, sem passar por `upsertContato`: então o disparo precisa estar
     // aqui também, senão uma edição que cai na mesclagem por telefone não acionaria nada.
@@ -74,6 +74,21 @@ export async function POST(request: Request) {
   // Os gatilhos ("lead criado", "etiqueta adicionada"…) são disparados DENTRO de `upsertContato`,
   // não aqui: é por lá que passa também o contato criado pelo webhook, e ter o disparo nos dois
   // lugares faria a automação rodar duas vezes pra quem vem por esta rota.
-  const linha = await upsertContato({ workspaceId, nome, dados, origemPadrao });
+  /**
+   * SALVO DE PROPÓSITO, e é isto que faz o contato aparecer na tela de Contatos.
+   *
+   * Marcado AQUI e não dentro de `upsertContato`: aquela função também atende a rota pública do
+   * formulário e os webhooks, que criam contato sem ninguém da equipe ter pedido. Esta rota exige
+   * sessão — passar por ela é alguém clicando em salvar.
+   *
+   * `salvoEm` já preenchido não é sobrescrito: a data é quando a pessoa entrou pra agenda, e
+   * editar um telefone anos depois não muda isso.
+   */
+  const linha = await upsertContato({
+    workspaceId,
+    nome,
+    dados: { ...dados, salvoEm: (jaExistePorNome?.salvoEm ?? new Date()).toISOString() },
+    origemPadrao,
+  });
   return NextResponse.json(paraContato(linha), { status: jaExistePorNome ? 200 : 201 });
 }

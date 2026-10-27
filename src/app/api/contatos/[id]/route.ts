@@ -31,7 +31,17 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/contatos/[
     where: { id, workspaceId: sessao.user.workspaceId },
     // Lista fechada de campos: espalhar o corpo direto deixava o navegador gravar `workspaceId`
     // (mover o contato pra outra empresa), `id` e `criadoEm`. Ver `campos-editaveis.ts`.
-    data: somenteCamposDeContato(dados),
+    data: {
+      ...somenteCamposDeContato(dados),
+      /**
+       * EDITAR É SALVAR. Quem abriu um número que chegou sozinho, escreveu o nome da pessoa e
+       * gravou, guardou aquele contato de propósito — e é isso que o põe na tela de Contatos.
+       *
+       * A data não é sobrescrita: ela diz quando a pessoa entrou pra agenda, e corrigir um
+       * telefone meses depois não muda isso.
+       */
+      salvoEm: antes?.salvoEm ?? new Date(),
+    },
   });
   if (count === 0) return NextResponse.json({ erro: "Contato não encontrado" }, { status: 404 });
 

@@ -21624,18 +21624,26 @@ td.trafego-col-crm:first-of-type {
   animation: contato-veu-entra 0.16s ease-out;
 }
 
+/**
+ * JANELA NO MEIO DA TELA, e não mais uma faixa colada na direita.
+ *
+ * A faixa ia do topo ao rodapé e tinha 460px: um contato com cinco campos preenchidos deixava
+ * dois terços de branco, e a linha do tempo no fim ficava longe de tudo. Uma janela centralizada
+ * tem a altura do conteúdo, para de crescer quando o conteúdo acaba, e o olho não precisa
+ * atravessar a tela pra ir do nome aos dados.
+ */
 .contato-painel {
   position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: min(460px, 100vw);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(620px, calc(100vw - var(--space-6) * 2));
+  max-height: min(84vh, 860px);
   margin-top: 0;
-  border: none;
-  border-left: 1px solid var(--line);
-  border-radius: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
   background: var(--surface-elevated);
-  box-shadow: -12px 0 32px rgba(11, 21, 51, 0.18);
+  box-shadow: var(--shadow-lg);
   overflow-y: auto;
   overscroll-behavior: contain;
   z-index: 61;
@@ -21644,10 +21652,49 @@ td.trafego-col-crm:first-of-type {
 
 /* O cabeçalho acompanha a rolagem: com a ficha aberta e rolada, o nome de quem se está lendo e o
    botão de fechar saíam da tela. */
+/* O cabeçalho gruda no topo ao rolar: com a janela rolando por dentro, o nome e os botões saíam
+   de vista justo quando se rola pra achar um campo. */
 .contato-painel .open-conv-h {
   position: sticky;
   top: 0;
   z-index: 1;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  background: var(--surface-elevated);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+/* O "Editar" ficava branco sobre branco: `.btn.ghost` nesta janela herdava o fundo claro e a cor
+   do texto do cabeçalho escuro de onde a classe veio. Aqui os dois são ditos. */
+.contato-painel .open-conv-h .btn.ghost {
+  background: var(--navy-raised);
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+.contato-painel .open-conv-h .btn.ghost:hover {
+  background: var(--navy-raised-2);
+}
+
+/* O corpo da janela tem o mesmo respiro lateral do cabeçalho: sem isto os campos encostavam na
+   borda de um lado e sobrava margem do outro, e era isso que deixava a ficha torta. */
+.contato-painel > *:not(.open-conv-h) {
+  padding-inline: var(--space-5);
+}
+
+.contato-painel .panel-h.divided {
+  margin-top: var(--space-4);
+}
+
+/* A linha do tempo dentro da janela: o `padding-bottom` de 28px entre itens foi desenhado pra uma
+   página inteira. Numa ficha com dois ou três acontecimentos, ele espalhava três linhas por meia
+   tela e fazia a lista parecer vazia. */
+.contato-painel .timeline-item {
+  padding-bottom: var(--space-4);
+}
+
+.contato-painel .timeline-item:last-child {
+  padding-bottom: var(--space-5);
 }
 
 @keyframes contato-veu-entra {
@@ -21655,8 +21702,10 @@ td.trafego-col-crm:first-of-type {
   to { opacity: 1; }
 }
 @keyframes contato-painel-entra {
-  from { transform: translateX(16px); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.98);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
