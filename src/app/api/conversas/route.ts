@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { normalizarTelefoneParaComparacao } from "@/lib/telefone";
 import { contasCanalVisiveis, filtroContaCanal, provedoresConectados } from "@/lib/integracoes/conta-canal";
 import { cabecalhosComEtag, clienteJaTem, montarEtag, naoModificado } from "@/lib/conversas/assinatura";
 
@@ -126,8 +127,25 @@ export async function POST(request: Request) {
     return NextResponse.json({ erro: "nome e contato são obrigatórios" }, { status: 400 });
   }
 
+  /**
+   * O NÚMERO É GUARDADO NA FORMA CANÔNICA (DDI + DDD + 9), e não como foi digitado.
+   *
+   * Contato salvo à mão quase sempre vem sem o 55: a pessoa digita "(41) 98487-7482", que é como
+   * se escreve telefone no Brasil. Mandando assim pro WhatsApp, o envio não acha destinatário
+   * nenhum — e o erro aparece só na hora de mandar, depois de escrever a mensagem.
+   *
+   * Vale também pra DEDUPLICAR: a mesma pessoa salva com e sem DDI caía em duas conversas, cada
+   * uma com metade do histórico.
+   *
+   * Só pro WhatsApp. No Instagram o `contato` é o IGSID, um identificador — passá-lo por um
+   * normalizador de telefone o estragaria.
+   */
+  const ehWhatsApp = (canal ?? "WhatsApp") === "WhatsApp";
+  const normalizado = ehWhatsApp ? normalizarTelefoneParaComparacao(contato) : "";
+  const contatoFinal = normalizado.length >= 12 ? normalizado : contato.trim();
+
   const existente = await prisma.conversa.findFirst({
-    where: { workspaceId: sessao.user.workspaceId, contato: contato.trim(), ehGrupo: false },
+    where: { workspaceId: sessao.user.workspaceId, contato: contatoFinal, ehGrupo: false },
   });
   if (existente) return NextResponse.json(existente);
 
@@ -148,7 +166,7 @@ export async function POST(request: Request) {
       nome: nome.trim(),
       initials: iniciais,
       canal: canal ?? "WhatsApp",
-      contato: contato.trim(),
+      contato: contatoFinal,
     },
   });
   return NextResponse.json(criada);
