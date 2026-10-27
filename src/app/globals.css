@@ -21652,8 +21652,21 @@ td.trafego-col-crm:first-of-type {
 
 /* O cabeçalho acompanha a rolagem: com a ficha aberta e rolada, o nome de quem se está lendo e o
    botão de fechar saíam da tela. */
-/* O cabeçalho gruda no topo ao rolar: com a janela rolando por dentro, o nome e os botões saíam
-   de vista justo quando se rola pra achar um campo. */
+/**
+ * O CABEÇALHO DA FICHA É CLARO, E POR ISSO DESFAZ A INVERSÃO.
+ *
+ * `.open-conv-h` foi desenhado como faixa MARINHO e inverte o conjunto inteiro de tokens pra
+ * branco (`--ink: #fff`, `--navy-raised`, `--line`…). Clarear só o fundo, como eu tinha feito,
+ * deixa todos esses brancos sobre branco: o "Editar" sumia por completo, e "corrigir só o botão"
+ * não resolvia porque o `var(--ink)` dele também era branco.
+ *
+ * Então a correção é a mesma que `.wa-main > .open-conv-h` já fazia pela mesma razão: o fundo
+ * clareia E os tokens voltam ao normal, de uma vez. Nome, avatar e botões leem a tinta da marca
+ * de novo, sem precisar desfazer um a um.
+ *
+ * Gruda no topo ao rolar porque a janela rola por dentro, e o nome e os botões saíam de vista
+ * justo quando se rola pra achar um campo.
+ */
 .contato-painel .open-conv-h {
   position: sticky;
   top: 0;
@@ -21662,18 +21675,41 @@ td.trafego-col-crm:first-of-type {
   padding: var(--space-4) var(--space-5);
   background: var(--surface-elevated);
   border-bottom: 1px solid var(--line-soft);
+
+  --ink: #002037;
+  --ink-nome: #002037;
+  --text-muted: rgba(0, 32, 55, 0.72);
+  --text-faint: rgba(0, 32, 55, 0.58);
+  --line: rgba(0, 32, 55, 0.12);
+  --line-soft: rgba(0, 32, 55, 0.07);
+  --line-strong: rgba(0, 32, 55, 0.22);
+  --surface-active: rgba(0, 32, 55, 0.08);
+  --navy: rgba(0, 32, 55, 0.08);
+  --navy-raised: rgba(0, 32, 55, 0.06);
+  --surface-elevated: #ffffff;
+  --navy-raised-2: rgba(0, 32, 55, 0.08);
+  --gray-100: rgba(0, 32, 55, 0.06);
+  --blue: #002037;
+  --blue-soft: rgba(0, 32, 55, 0.1);
+  --blue-soft-2: rgba(0, 32, 55, 0.06);
+  color: #002037;
 }
 
-/* O "Editar" ficava branco sobre branco: `.btn.ghost` nesta janela herdava o fundo claro e a cor
-   do texto do cabeçalho escuro de onde a classe veio. Aqui os dois são ditos. */
+/* O avatar tinha fundo translúcido branco, que sobre branco não existe. */
+.contato-painel .open-conv-h .avatar {
+  background: rgba(0, 32, 55, 0.1);
+  color: #002037;
+}
+
+/* O "Editar": superfície e contorno ditos, pra ele parecer botão em repouso e não texto solto. */
 .contato-painel .open-conv-h .btn.ghost {
-  background: var(--navy-raised);
-  border-color: var(--line);
-  color: var(--ink);
+  background: rgba(0, 32, 55, 0.06);
+  border-color: rgba(0, 32, 55, 0.14);
+  color: #002037;
 }
 
 .contato-painel .open-conv-h .btn.ghost:hover {
-  background: var(--navy-raised-2);
+  background: rgba(0, 32, 55, 0.1);
 }
 
 /* O corpo da janela tem o mesmo respiro lateral do cabeçalho: sem isto os campos encostavam na

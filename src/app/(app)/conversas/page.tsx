@@ -612,8 +612,23 @@ function ConversasPageInner() {
     if (desta.length > 0) {
       const nomeContato = searchParams.get("contato");
       const encontrada = nomeContato ? desta.find((c) => c.nome === nomeContato) : null;
-      setSelectedId((encontrada ?? desta[0]).id);
-      setSelectedIdInicializado(true);
+      /**
+       * PEDIU UMA PESSOA E ELA NÃO TEM CONVERSA: não abre a de outra.
+       *
+       * Caía em `desta[0]`, a primeira da lista. Quem clicava em "Enviar WhatsApp" na ficha de um
+       * contato recém-salvo — que por definição ainda não tem conversa — aterrissava no chat de
+       * OUTRA pessoa, com o campo de escrever pronto. É o tipo de erro que se descobre depois de
+       * mandar a mensagem.
+       *
+       * Aqui não escolhe nada; quem abre a conversa é o efeito logo abaixo, que cria a conversa
+       * com essa pessoa.
+       */
+      if (nomeContato && !encontrada) {
+        setSelectedIdInicializado(true);
+      } else {
+        setSelectedId((encontrada ?? desta[0]).id);
+        setSelectedIdInicializado(true);
+      }
     }
   }
   const [infoAberto, setInfoAberto] = useState(false);
@@ -913,6 +928,9 @@ function ConversasPageInner() {
     });
 
   const [iniciandoConversa, setIniciandoConversa] = useState<string | null>(null);
+  /** Já tentamos atender o `?contato=` desta visita? Sem isto, a criação da conversa mudaria a
+   *  lista, o efeito rodaria de novo e criaria outra. */
+  const contatoDaUrlAtendido = useRef(false);
 
   /**
    * Contatos que dá pra chamar e que ainda não têm conversa aberta.
@@ -944,6 +962,45 @@ function ConversasPageInner() {
       setIniciandoConversa(null);
     }
   }
+
+  /**
+   * "ENVIAR WHATSAPP" NA FICHA DO CONTATO ABRE A CONVERSA — criando-a quando ainda não existe.
+   *
+   * Um contato salvo à mão não tem conversa nenhuma: ninguém escreveu ainda. A tela recebia o
+   * `?contato=` da ficha, não achava nada e abria a primeira conversa da lista — outra pessoa.
+   *
+   * Pelo WhatsApp do QR Code não há nada impedindo: dá pra escrever pra qualquer número, sem
+   * janela de 24h e sem modelo aprovado. A conversa é criada vazia e fica pronta pra escrever.
+   *
+   * Pelo WhatsApp OFICIAL a conversa também abre, mas a primeira mensagem para quem nunca
+   * escreveu precisa ser um modelo aprovado pela Meta — e quem diz isso é a tela de envio, onde a
+   * pessoa está olhando na hora de mandar, não aqui.
+   */
+  useEffect(() => {
+    if (contatoDaUrlAtendido.current || carregandoConversas) return;
+    const nomeContato = searchParams.get("contato");
+    if (!nomeContato) return;
+
+    const jaExiste = conversas.find((c) => c.nome === nomeContato && c.canal !== "Instagram");
+    if (jaExiste) {
+      contatoDaUrlAtendido.current = true;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- abre a conversa pedida na URL uma vez só; a trava do `ref` impede que isto realimente o próprio efeito.
+      setSelectedId(jaExiste.id);
+      return;
+    }
+
+    const contato = contatos.find((c) => c.nome === nomeContato);
+    if (!contato?.whatsapp) {
+      // Sem número não há o que abrir. Marca como atendido pra não ficar tentando a cada render.
+      contatoDaUrlAtendido.current = true;
+      return;
+    }
+    contatoDaUrlAtendido.current = true;
+    void iniciarConversaCom({ id: contato.id, nome: contato.nome, whatsapp: contato.whatsapp });
+    // `iniciarConversaCom` e `conversas` mudam a cada render/busca; a trava do `ref` é o que
+    // garante uma tentativa só, então não entram nas dependências.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [carregandoConversas, searchParams, contatos]);
 
   /** Quando a última mensagem dessa conversa chegou (ou saiu). Zero quando ainda não há nenhuma.
    * Conversa sem mensagem vai pro fim, não pro topo. */
