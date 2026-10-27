@@ -263,19 +263,17 @@ export function gerarLinhaDoTempo(
 
   eventos.sort((a, b) => a.minutosAtras - b.minutosAtras);
 
-  // Primeiro registro do contato: sempre o evento mais antigo da timeline,
-  // já que não existe (ainda) um timestamp real de criação no modelo de dados.
-  eventos.push({
-    id: `${contatoId}-criado`,
-    contatoId,
-    tipo: "contato_criado",
-    titulo: "Contato registrado no CRM",
-    descricao: `Origem: ${contato.origem}`,
-    quando: "-",
-    minutosAtras: SEM_DATA + 1,
-    origem: contato.origem,
-  });
-
+  /**
+   * O "Contato registrado no CRM" SAIU da linha do tempo.
+   *
+   * Ele era sempre o último item, sempre com a data "-" (não há instante real de criação no
+   * modelo), e dizia duas coisas que a tela já diz: que a pessoa é um contato — ela está aberta
+   * numa tela de contato — e a origem, que está na lista e na ficha. Numa linha do tempo com dois
+   * ou três acontecimentos de verdade, esse item ocupava um terço do espaço pra não informar nada.
+   *
+   * O que a linha do tempo mostra agora é só o que ACONTECEU: conversa, mensagem, movimentação no
+   * funil. Contato sem nada ainda mostra o vazio, que é a informação honesta.
+   */
   return eventos;
 }
 

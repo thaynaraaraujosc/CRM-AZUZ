@@ -11,6 +11,7 @@ import {
   type Contato,
 } from "@/lib/data";
 import { useContatos } from "@/lib/contatos-context";
+import { contatoFoiSalvo } from "@/lib/contatos/salvos";
 import { useConversas } from "@/lib/conversas-context";
 import { useMensagensExtra } from "@/lib/mensagens-extra-context";
 import { useEquipe } from "@/lib/equipe-context";
@@ -83,7 +84,19 @@ function JornadaClientePageInner() {
   const searchParams = useSearchParams();
   const { data: sessao } = useSession();
   const nomeUsuario = sessao?.user?.name ?? "";
-  const { contatos, alternarFavorito } = useContatos();
+  const { contatos: todosOsContatos, alternarFavorito } = useContatos();
+
+  /**
+   * A JORNADA É DE CLIENTE, NÃO DE QUEM MANDOU UMA MENSAGEM.
+   *
+   * Um `@usuario` que respondeu um story não tem jornada: tem uma conversa, e conversa se lê em
+   * Conversas. Aqui entrava como "contato" e enchia a tela de linhas sem empresa, sem etapa e sem
+   * negócio — a tela existe pra responder "o que já aconteceu com este cliente", e com 191 linhas
+   * dessas ela não respondia nada.
+   *
+   * Mesma regra da tela de Contatos, no mesmo lugar: quem a equipe guardou de propósito.
+   */
+  const contatos = useMemo(() => todosOsContatos.filter(contatoFoiSalvo), [todosOsContatos]);
   const { conversas } = useConversas();
   const { mensagensExtraPorContato } = useMensagensExtra();
   const { funis } = useFunis();
@@ -396,7 +409,6 @@ function JornadaClientePageInner() {
           <div className="topbar-title-row">
             <h2>{traduzir("Jornada do cliente")}</h2>
           </div>
-          <p className="sub">{traduzir("A jornada completa de um contato. Desde a primeira entrada até a última interação")}</p>
         </div>
       </div>
 

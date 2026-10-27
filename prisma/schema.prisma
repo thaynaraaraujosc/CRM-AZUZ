@@ -106,6 +106,20 @@ model Contato {
   // nenhum comportamento.
   criadoVia String @default("manual")
 
+  /// QUANDO ALGUÉM DA EQUIPE SALVOU ESTA PESSOA DE PROPÓSITO.
+  ///
+  /// Nulo é o normal: a maioria dos contatos nasce sozinha quando chega uma mensagem, e existe pra
+  /// ligar conversa, card do funil e automação à mesma pessoa. Isso é trabalho de bastidor — e era
+  /// isso que enchia a tela de Contatos de número solto, sem nome, que ninguém reconhecia.
+  ///
+  /// A tela de Contatos passa a mostrar só quem foi salvo de propósito. O registro automático
+  /// continua existindo e continua fazendo o que fazia; ele só deixa de se apresentar como se
+  /// fosse uma agenda de contatos.
+  ///
+  /// É uma DATA e não um booleano porque "quando passou a ser cliente nosso" é a pergunta que
+  /// vem logo depois, e um `true` não responde.
+  salvoEm DateTime?
+
   conversas          Conversa[]
   execucoesAutomacao ExecucaoAutomacao[]
 

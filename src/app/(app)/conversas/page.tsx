@@ -790,6 +790,7 @@ function ConversasPageInner() {
     cargo?: string;
     fotoUrl?: string;
   } | null>(null);
+  const [salvandoContato, setSalvandoContato] = useState(false);
   const [infoWidth, setInfoWidth] = useState(320);
   const [sincronizando, setSincronizando] = useState(false);
 
@@ -2966,6 +2967,36 @@ function ConversasPageInner() {
       setContatosSelecionadosPicker([criado]);
       setContatoPickerEtapa("previa");
       setContatoPickerAba("crm");
+    }
+  }
+
+  /**
+   * Guarda esta pessoa na agenda do CRM. `salvarDadosContato` passa pela rota com sessão, e é ela
+   * que marca o `salvoEm` — o campo que decide quem aparece em Contatos.
+   *
+   * Manda os dados que a conversa já tem. Nome e telefone bastam pra pessoa deixar de ser um
+   * número solto na lista, que é o problema que isto resolve.
+   */
+  async function salvarNosContatos(contato: {
+    nome: string;
+    whatsapp?: string;
+    email?: string;
+    empresa?: string;
+    cargo?: string;
+    fotoUrl?: string;
+  }) {
+    setSalvandoContato(true);
+    try {
+      salvarDadosContato(contato.nome, {
+        whatsapp: contato.whatsapp,
+        email: contato.email,
+        empresa: contato.empresa,
+        cargo: contato.cargo,
+        fotoUrl: contato.fotoUrl,
+      });
+      avisarAutomacao(traduzir("Salvo nos contatos."));
+    } finally {
+      setSalvandoContato(false);
     }
   }
 
@@ -7136,13 +7167,33 @@ function ConversasPageInner() {
                   </span>
                 </a>
               ) : null}
+              {/*
+                * SALVAR NA AGENDA DO CRM.
+                *
+                * A tela de Contatos passou a mostrar só quem a equipe guardou de propósito (ver
+                * `contatos/salvos.ts`), e sem este botão não haveria por onde guardar: o registro
+                * de quem escreveu nasce sozinho, no bastidor, e nunca passa por uma tela.
+                *
+                * É diferente do "Baixar cartão" logo abaixo, que manda o contato pra agenda do
+                * CELULAR. Este fica no CRM, e é o que a equipe inteira enxerga.
+                */}
+              <button
+                type="button"
+                className="btn primary block mb14"
+                onClick={() => salvarNosContatos(contatoDetalheAberto)}
+                disabled={salvandoContato}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
+              >
+                <IconSalvar width={13} height={13} />{" "}
+                {salvandoContato ? traduzir("Salvando…") : traduzir("Salvar nos contatos")}
+              </button>
               <button
                 type="button"
                 className="btn ghost block"
                 onClick={() => salvarContatoVcf(contatoDetalheAberto)}
                 style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
               >
-                <IconSalvar width={13} height={13} /> {traduzir("Salvar contato")}
+                <IconSalvar width={13} height={13} /> {traduzir("Baixar cartão (.vcf)")}
               </button>
             </div>
           ) : null}
