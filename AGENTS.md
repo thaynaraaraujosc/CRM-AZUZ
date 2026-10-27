@@ -48,6 +48,9 @@ exatamente o que vinha acontecendo.
 - Só leve para a `main` quando a **entrega estiver fechada e verificada** (tsc, testes e build
   passando). Uma entrega pode conter vários commits.
 - Alvo: de 1 a 3 builds por dia, não de 20 a 70.
+- **Publique sem perguntar** (decidido em 27/10/2026). A entrega fechada e verificada vai para a
+  `main` sozinha: não pare para pedir autorização. A barra continua sendo tsc, testes e build
+  passando — o que saiu foi o pedido de permissão, não a verificação.
 
 O custo aceito dessa escolha: uma correção pode levar algumas horas até estar no ar. Foi uma
 decisão consciente, não um descuido — não "otimize" voltando a publicar por commit.

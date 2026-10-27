@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import "./globals.css";
+/* DEPOIS do globals, e isso importa: as regras daqui têm a mesma força de algumas de lá
+   (`:root[data-theme="dark"] .input` e `:root .painel-formularios .input` valem 3 classes cada), e
+   num empate quem vence é a última do arquivo. */
+import "./formularios-painel.css";
 import { IdiomaProvider } from "@/lib/idioma-context";
 
 const SCRIPT_TEMA_INICIAL = `

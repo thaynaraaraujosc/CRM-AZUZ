@@ -1,0 +1,777 @@
+/* O VISUAL DO AZUZ FORMULÁRIOS, NA TELA DE FORMULÁRIOS DO CRM.
+ *
+ * De onde veio: `src/app/formularios-painel.css` do AZUZ Flow, que por sua vez veio do AZUZ
+ * Formulários. É o desenho que a Thaynara já aprovou e usa todo dia — o pedido foi "deixa idêntico
+ * ao Flow", e a identidade que ela vê no Flow mora aqui, não no globals.
+ *
+ * O QUE ESTA FOLHA FAZ: redefine os TOKENS dentro de `.painel-formularios` — a raiz da tela de
+ * Formulários — então botão, campo, cartão e o construtor inteiro mudam juntos, sem reescrever
+ * componente por componente.
+ *
+ * POR QUE UMA CLASSE E NÃO O `.shell`: o `.shell` embrulha Conversas, Funil, Agenda, Campanhas e o
+ * resto. Pintar por ele repintaria o CRM inteiro de azul claro, e a identidade do CRM é o marinho.
+ * Aqui é uma tela só, com um desenho próprio, do mesmo jeito que é no Flow.
+ *
+ * ESTE PAINEL É CLARO NOS DOIS TEMAS, de propósito, como no Flow: é uma tela de montagem, e o
+ * formulário que está sendo montado é claro. Alternar o tema do CRM não deve trocar a cor do papel
+ * em que se desenha.
+ *
+ * A PÁGINA PÚBLICA (`/f/<id>`) E A PRÉVIA ficam de fora: são a cara do cliente, não a nossa, e quem
+ * manda nelas é o tema que a empresa escolhe na aba Design.
+ *
+ * Regras que apontam pra classe que o CRM ainda não tem (os três números, o cartão de Anúncios,
+ * os cartões da lista) ficam inertes até a tela ganhar aquele pedaço. Vieram juntas de propósito:
+ * separar o desenho da montagem é como as duas divergem na primeira correção feita só de um lado.
+ */
+
+.painel-formularios {
+  /* Azul de ação. Sai do azul-violeta do Flow (#2e6bff) e vai pro nosso, mais claro e mais frio. */
+  --blue: #1878c8;
+  --blue-strong: #1568b0;
+  --blue-soft: rgba(24, 120, 200, 0.12);
+  --blue-soft-2: rgba(24, 120, 200, 0.06);
+
+  /* O FLOW escreve com `--acento` o que o AZUZ Formulários escreve com `--blue`: aba escolhida,
+     selo "Publicado", campo selecionado, anel de foco. Apontar os dois pro mesmo azul faz a tela
+     inteira seguir junto, em vez de ficar metade azul e metade dourada. */
+  --acento: #1878c8;
+  /* Este painel é branco nos DOIS temas, então o azul do link é sempre o escuro (ver
+     `--link-escrito` no globals). Sem isto, no tema escuro ele herdaria o azul-claro e sumiria. */
+  --link-escrito: #1368bd;
+  --acento-forte: #1568b0;
+  --acento-suave: rgba(24, 120, 200, 0.12);
+  --acento-suave-2: rgba(24, 120, 200, 0.06);
+
+  /* Botão principal deixa de ser quase-preto e passa a ser azul, como no Asaas. */
+  --acao: #1878c8;
+  --acao-hover: #1568b0;
+  --acao-active: #12598f;
+  --acao-texto: #ffffff;
+
+  /* Piso e superfícies (refeitos em 29/09/2026, a pedido da Thaynara: "deixa a cor mais dura,
+     sem transparência, e tira esses traçados").
+     São três tons sólidos, e só três: piso azul-acinzentado, caixa branca por cima, e o azul
+     claro pras caixas que precisam se destacar. Nada de cor com transparência: cor translúcida
+     muda conforme o que está atrás, então a mesma caixa aparecia num tom no piso branco e noutro
+     em cima de outra caixa. Nada de contorno: quem separa uma caixa da outra é a diferença de
+     cor, que agora existe de verdade. */
+  --piso: #e8eef5;
+  /* O FUNDO DA PÁGINA, mais claro que o piso (2026-10-21, a pedido da Thaynara: "mais puxado pro branquinho, pra destacar os botões
+     que são azul claro"). Só o que pinta a PÁGINA usa este tom (a área de conteúdo e as duas faixas do topo); `--piso` continua
+     sendo o degrau dos campos, selos e colunas, que precisam ficar mais escuros que a caixa branca em que estão. */
+  --piso-pagina: #f4f7fb;
+  --caixa: #ffffff;
+  --caixa-azul: #dbe9f8;
+  --caixa-azul-forte: #c7dcf2;
+
+  /* O dourado da marca (#D2A366) diluído em dois tons sólidos, pro cartão de Anúncios. Pedido da
+     Thaynara em 29/09/2026: aquele cartão é o que dá sentido ao produto (é onde o formulário se
+     liga à campanha), e merece a segunda cor da marca em vez de mais um azul. Sólido, não
+     transparente, pelo mesmo motivo de todo o resto da folha. */
+  --caixa-dourada: #f7edde;
+  --caixa-dourada-forte: #ecd9bc;
+
+  --canvas: var(--piso);
+  --navy: var(--caixa);
+  --navy-raised: #f2f6fb;
+  --navy-raised-2: var(--piso);
+  --navy-deep: var(--piso);
+  --surface-elevated: var(--caixa);
+
+  /* Linhas e texto em cima do navy da marca, não do azul-marinho do Flow. */
+  --line: rgba(0, 32, 55, 0.1);
+  --line-soft: rgba(0, 32, 55, 0.06);
+  --line-strong: rgba(0, 32, 55, 0.16);
+  --ink: #002037;
+  --ink-nome: #002037;
+  --text-muted: rgba(0, 32, 55, 0.62);
+  --text-faint: rgba(0, 32, 55, 0.48);
+
+  /* Cantos mais redondos e sombras mais leves: é o que dá a leitura de "moderno" antes de qualquer
+     outra coisa. */
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --shadow-xs: 0 1px 2px rgba(0, 32, 55, 0.04);
+  --shadow-sm: 0 1px 2px rgba(0, 32, 55, 0.05);
+  --shadow-md: 0 1px 2px rgba(0, 32, 55, 0.04), 0 10px 24px -18px rgba(0, 32, 55, 0.35);
+  --shadow-lg: 0 2px 6px rgba(0, 32, 55, 0.05), 0 28px 60px -34px rgba(0, 32, 55, 0.45);
+  --shadow-hover: 0 2px 6px rgba(0, 32, 55, 0.06), 0 16px 32px -22px rgba(0, 32, 55, 0.4);
+
+  /* A fonte da marca, a mesma do site e das telas de acesso. */
+  --pilha-sistema: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+:root .painel-formularios .content {
+  padding: 28px 36px 40px;
+  background: var(--piso-pagina);
+}
+
+/* O PISO VAI EM CADA FILHO DIRETO DA TELA, e não na raiz: `.painel-formularios` é `display: contents`
+   (ver globals.css), não desenha caixa nenhuma e portanto não pinta fundo. Sem isto, a faixa do
+   título e a barra do construtor ficavam com o marinho do `.main` por baixo — e o título, que é
+   marinho, sumia dentro dele. Os tokens funcionam mesmo assim: variável atravessa `contents`. */
+:root .painel-formularios .topbar,
+:root .painel-formularios .form-builder-topbar {
+  background: var(--piso-pagina);
+}
+
+:root .painel-formularios .topbar {
+  padding: 26px 36px 22px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+:root .painel-formularios .topbar h2 {
+  font-size: 27px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+:root .painel-formularios .topbar .sub {
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* ---------------- Botões ---------------- */
+:root .painel-formularios .btn {
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+:root .painel-formularios .btn.primary {
+  box-shadow: none;
+}
+
+:root .painel-formularios .btn.primary:hover {
+  box-shadow: none;
+}
+
+/* Secundário: branco com contorno, como os botões de apoio do Asaas. */
+:root .painel-formularios .btn.ghost {
+  background: #ffffff;
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+:root .painel-formularios .btn.ghost:hover {
+  background: var(--navy-raised);
+  border-color: var(--line-strong);
+}
+
+/* Os botões azuis do topo do construtor: mesmos cantos do resto. */
+:root .painel-formularios .form-builder-acao {
+  border-radius: 12px;
+}
+
+/* ---------------- Cartões e listas ---------------- */ /* Branco sólido, sem contorno. O que separa do piso é a cor, não o fio. */
+:root .painel-formularios .card {
+  border-radius: 18px;
+  border: 0;
+  background: var(--caixa);
+  box-shadow: 0 1px 2px rgba(0, 32, 55, 0.04), 0 10px 26px -22px rgba(0, 32, 55, 0.3);
+}
+
+:root .painel-formularios .int-row {
+  border-radius: 14px;
+  padding: 16px 18px;
+  transition: background 0.18s ease;
+}
+
+:root .painel-formularios .int-row:hover {
+  background: var(--blue-soft-2);
+}
+
+:root .painel-formularios .int-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+:root .painel-formularios .int-sub {
+  color: var(--text-muted);
+}
+
+/* ---------------- Campos ---------------- */
+:root .painel-formularios .input, :root .painel-formularios select.input, :root .painel-formularios textarea.input {
+  border-radius: 12px;
+  border-color: var(--line);
+  background: #ffffff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+:root .painel-formularios .input:focus, :root .painel-formularios select.input:focus, :root .painel-formularios textarea.input:focus {
+  border-color: var(--blue);
+  /* O anel de foco é o sinal mais barato de interface moderna, e ajuda quem navega pelo teclado. */
+  box-shadow: 0 0 0 3px var(--blue-soft);
+  outline: none;
+}
+
+:root .painel-formularios .field label {
+  color: var(--text-faint);
+  letter-spacing: 0.08em;
+}
+
+/* ---------------- Selos ---------------- */
+:root .painel-formularios .pill {
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--navy-raised-2);
+  border-color: transparent;
+  color: var(--text-muted);
+}
+
+/* Publicado, em dia, ativo: verde discreto, como o "Ativado" do Asaas. */
+:root .painel-formularios .pill.on {
+  background: rgba(18, 128, 92, 0.12);
+  border-color: transparent;
+  color: #0f6b4e;
+}
+
+/* Hierarquia no topo do construtor. Eram quatro botões azuis cheios, todos gritando igual. Só a ação principal (publicar ou despublicar, o último) fica cheia; o resto vira contorno, como no Asaas. */
+:root .painel-formularios .form-builder-topbar-acoes .form-builder-acao {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  box-shadow: none;
+}
+
+:root .painel-formularios .form-builder-topbar-acoes .form-builder-acao:hover {
+  background: var(--navy-raised);
+  border-color: var(--line-strong);
+}
+
+:root .painel-formularios .form-builder-topbar-acoes .form-builder-acao:last-child {
+  background: var(--acao);
+  border-color: var(--acao);
+  color: var(--acao-texto);
+}
+
+:root .painel-formularios .form-builder-topbar-acoes .form-builder-acao:last-child:hover {
+  background: var(--acao-hover);
+  border-color: var(--acao-hover);
+}
+
+/* Sem a coluna de páginas, o quadro do construtor vira duas colunas: o formulário e o painel de configuração do campo. */
+:root .painel-formularios .form-builder-4areas.sem-paginas {
+  grid-template-columns: 1fr 320px;
+}
+
+/* ---------------- Atalho pras respostas na lista ---------------- */ /* O azul-marinho da marca, cheio, com o texto branco: é a única coisa clicável de dentro do cartão, e precisa parecer. */
+:root .painel-formularios .form-cartao-respostas {
+  margin-left: auto;
+  margin-right: 12px;
+  padding: 9px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: #002037;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.18s ease, transform 0.18s ease;
+}
+
+:root .painel-formularios .form-cartao-respostas:hover {
+  background: #01304f;
+}
+
+:root .painel-formularios .form-cartao-respostas:active {
+  transform: translateY(1px);
+}
+
+/* O selo perde o `margin-left: auto` que o empurrava: agora quem empurra é o botão. */
+:root .painel-formularios .form-cartao .form-cartao-selo {
+  margin-left: 0;
+}
+
+:root .painel-formularios .form-builder-design .fchip:hover:not(.active) {
+  background: var(--caixa-azul-forte);
+  color: var(--ink);
+}
+
+/* As abas da prévia ("Formulário" / "Mensagem final") entram junto: elas ficam fora do
+   `.form-builder-design` e, sem isto, apareciam douradas no meio de uma tela azul. */
+:root .painel-formularios .form-design-previa .fchip.active,
+:root .painel-formularios .form-builder-design .fchip.active {
+  background: var(--acao);
+  border-color: var(--acao);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+:root .painel-formularios .form-builder-design .filters-row {
+  gap: 8px;
+}
+
+/* ---------------- Cartões do Design ---------------- */
+:root .painel-formularios .form-builder-design .card {
+  padding: 22px;
+  border: 0;
+  box-shadow: 0 1px 2px rgba(0, 32, 55, 0.04);
+}
+
+/* O primeiro cartão (Configurações do formulário) é o que ela apontou: fundo no azul claro, com os campos brancos por cima, igual às telas de conta e assinatura. */
+:root .painel-formularios .form-builder-design .cartao-configuracoes {
+  background: var(--caixa-azul);
+}
+
+:root .painel-formularios .form-builder-design .cartao-configuracoes .input {
+  background: var(--caixa);
+}
+
+:root .painel-formularios .form-builder-design .card .panel-h {
+  padding: 0;
+  margin-bottom: 16px;
+  border-bottom: none;
+}
+
+:root .painel-formularios .form-builder-design .card .panel-h h4 {
+  font-size: 17px;
+  letter-spacing: -0.015em;
+}
+
+:root .painel-formularios .form-builder-design .field {
+  padding: 0;
+  border-bottom: none;
+  margin-bottom: 18px;
+}
+
+:root .painel-formularios .form-builder-design .field:last-child {
+  margin-bottom: 0;
+}
+
+:root .painel-formularios .form-builder-design .hint {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* ---------------- Logo, banner e imagem de fundo ---------------- Três retângulos de azul claro, lado a lado, com um relevo de baixo pra parecerem apertáveis. Não são botões de verdade: o que clica é o "Enviar arquivo" de dentro. O relevo está aqui pra dizer "são três coisas do mesmo tipo", que foi o pedido. */
+:root .painel-formularios .imagens-do-formulario {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+:root .painel-formularios .imagens-do-formulario > .field {
+  margin: 0;
+  padding: 16px;
+  border-radius: 14px;
+  background: var(--caixa-azul);
+  box-shadow: 0 2px 0 #b9d3ee;
+  transition: background 0.18s ease;
+}
+
+:root .painel-formularios .imagens-do-formulario > .field:hover {
+  background: var(--caixa-azul-forte);
+}
+
+:root .painel-formularios .imagens-do-formulario > .field > label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #14405f;
+  margin-bottom: 12px;
+}
+
+:root .painel-formularios .imagens-do-formulario .form-design-logo {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+:root .painel-formularios .imagens-do-formulario .form-design-logo-vazia {
+  justify-content: center;
+  border: 0;
+  background: var(--caixa);
+  color: var(--text-muted);
+}
+
+:root .painel-formularios .imagens-do-formulario .form-design-logo-previa {
+  align-self: center;
+}
+
+:root .painel-formularios .imagens-do-formulario .form-design-logo-acoes .btn {
+  flex: 1;
+  justify-content: center;
+  padding: 9px 12px;
+  font-size: 12.5px;
+}
+
+/* Cada id de anúncio é um bloco branco com o selo de ligado/desligado no canto. * * `.form-builder-design` no seletor não é enfeite: sem ele esta regra perde pra * `.form-builder-design .field { padding: 0 }
+
+/* ---------------- Os números do formulário ---------------- Visualizações e respostas, no topo da aba Respostas: quem chegou e quem respondeu. Dois blocos lado a lado, com largura máxima pra não virarem duas faixas enormes numa tela grande. */
+:root .painel-formularios .numeros-do-formulario {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 300px));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+:root .painel-formularios .numero-do-formulario {
+  padding: 18px 20px;
+  border-radius: 14px;
+  background: var(--caixa-azul);
+  border: 0;
+}
+
+:root .painel-formularios .numero-rotulo {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+:root .painel-formularios .numero-valor {
+  margin: 8px 0 0;
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--ink);
+}
+
+:root .painel-formularios .numero-nota {
+  margin: 8px 0 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+/* ---------------- Lista de formulários ---------------- */ /* Cada formulário é uma caixa branca no piso cinza, sem contorno. */
+:root .painel-formularios .lista-cartoes .int-row.form-cartao {
+  background: var(--caixa);
+  border: 0;
+  border-radius: 14px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 2px rgba(0, 32, 55, 0.05);
+}
+
+:root .painel-formularios .lista-cartoes .int-row.form-cartao:hover {
+  background: var(--caixa);
+  box-shadow: 0 2px 6px rgba(0, 32, 55, 0.08);
+}
+
+/* O atalho de criar formulário acompanha, em azul claro sólido. */
+:root .painel-formularios .content > div > .int-row:not(.form-cartao) {
+  background: var(--caixa-azul);
+  border: 0;
+  border-radius: 14px;
+}
+
+/* ---------------- Construtor ---------------- */ /* O quadro deixa de ser uma moldura com fio: o piso aparece entre as duas colunas. O `:not([data-theme="dark"])` repete o do arquivo original de propósito: lá a regra que pinta o construtor de branco carrega esse mesmo peso, e sem ele as duas empatariam. */
+:root:not([data-theme="dark"]) .painel-formularios .form-builder-4areas {
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+  background: transparent;
+  gap: 16px;
+}
+
+/* A área onde o formulário é montado é o piso; a folha é que é branca. */
+:root:not([data-theme="dark"]) .painel-formularios .form-builder-canvas {
+  background: transparent;
+  padding: 0;
+}
+
+/* A folha do formulário: branco duro, sem contorno. É o papel em cima da mesa. */
+:root:not([data-theme="dark"]) .painel-formularios .form-canvas-folha {
+  background: var(--caixa);
+  border: 0;
+  border-radius: 18px;
+  box-shadow: 0 1px 2px rgba(0, 32, 55, 0.05), 0 10px 26px -22px rgba(0, 32, 55, 0.3);
+}
+
+/* O painel de configuração do campo, à direita, é outra caixa branca. */
+:root .painel-formularios .form-builder-painel-direito {
+  background: var(--caixa);
+  border: 0;
+  border-radius: 18px;
+  box-shadow: 0 1px 2px rgba(0, 32, 55, 0.05);
+}
+
+/* Aba Design: as duas colunas (edição e prévia) também respiram no piso. */
+:root .painel-formularios .form-design-colunas {
+  gap: 16px;
+}
+
+/* ---------------- A interrogação com a explicação ---------------- Substitui os parágrafos cinzas que ficavam embaixo de cada par de botões da aba Design. O balão abre no ponteiro e TAMBÉM no foco do teclado, senão a explicação some pra quem não usa mouse. */
+:root .painel-formularios .dica {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  margin-left: 6px;
+  border-radius: 999px;
+  background: var(--caixa-azul-forte);
+  color: #14405f;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: 0;
+  cursor: help;
+  vertical-align: middle;
+  position: relative;
+}
+
+:root .painel-formularios .dica:focus-visible {
+  outline: 2px solid var(--acao);
+  outline-offset: 2px;
+}
+
+:root .painel-formularios .dica::after {
+  content: attr(data-dica);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  width: max-content;
+  max-width: 260px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #002037;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.45;
+  letter-spacing: 0;
+  text-transform: none;
+  text-align: left;
+  white-space: normal;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.14s ease;
+  pointer-events: none;
+}
+
+:root .painel-formularios .dica:hover::after, :root .painel-formularios .dica:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ---------------- Prévia: escolher a tela e andar pelas perguntas ---------------- */
+:root .painel-formularios .previa-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+/* As setas ficam DENTRO do cartão da prévia, embaixo da pergunta: é ali que a pessoa está olhando. Fora dele pareceriam paginação da tela do construtor, não do formulário. */
+:root .painel-formularios .previa-setas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+:root .painel-formularios .previa-setas button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--caixa-azul);
+  color: #14405f;
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+:root .painel-formularios .previa-setas button:hover:not(:disabled) {
+  background: var(--caixa-azul-forte);
+}
+
+:root .painel-formularios .previa-setas button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* ---------------- Aviso de gravação ---------------- Discreto quando está tudo certo, vermelho quando não está. Fica ao lado do nome do formulário, que é onde os olhos estão quando se digita. */
+:root .painel-formularios .aviso-gravacao {
+  flex: none;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--caixa-azul);
+  color: #14405f;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+:root .painel-formularios .aviso-gravacao.erro {
+  background: #fde8e8;
+  color: #9b1c1c;
+  font-weight: 600;
+}
+
+/* ---------------- Botão Salvar ---------------- Apagado quando não há nada pra salvar (aí ele é só o aviso "Salvo"), aceso quando há, e vermelho quando a última gravação falhou. Uma coisa só no lugar de um botão mais um aviso dizendo o mesmo. */
+:root .painel-formularios .btn-salvar {
+  flex: none;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--caixa-azul);
+  color: #14405f;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: default;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+:root .painel-formularios .btn-salvar.aceso {
+  background: #002037;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+:root .painel-formularios .btn-salvar.aceso:hover {
+  background: #01304f;
+}
+
+:root .painel-formularios .btn-salvar:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+/* ---------------- Falha ao carregar a lista ---------------- Não é a mesma coisa que conta vazia, e não pode parecer. */
+:root .painel-formularios .cabecalho-da-lista {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+:root .painel-formularios .botao-recarregar {
+  padding: 7px 14px;
+  font-size: 12.5px;
+}
+
+:root .painel-formularios .aviso-carga {
+  padding: 24px 26px;
+  background: #fdf3f3;
+}
+
+:root .painel-formularios .aviso-carga-titulo {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #9b1c1c;
+}
+
+:root .painel-formularios .aviso-carga-motivo {
+  margin: 8px 0 16px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+/* ---------------- O cartão de Anúncios ----------------
+   Trazido junto com o pixel e a tag (2026-09-30). O dourado da marca em vez de mais um azul:
+   é o cartão que liga o formulário à campanha, e merece a segunda cor. */
+/* ---------------- Botõezinhos de escolha ---------------- Os `.fchip` do Design (como mostrar, numeração, layout, largura) eram texto cinza sem contorno: não dava pra saber que eram clicáveis nem quantas opções existiam. Viram pastilhas de azul claro, e a escolhida fica no azul cheio. */ :root .painel-formularios .form-builder-design .fchip, :root .painel-formularios .form-builder-anuncios .fchip {
+  padding: 9px 16px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: var(--caixa-azul);
+  color: #14405f;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* ---------------- Anúncios ---------------- É a aba que justifica o produto, e estava com o mesmo peso de qualquer campo. O pixel do Meta ganha um bloco próprio, com fundo, porque é o que a maioria vai preencher; a tag do Google fica logo abaixo, no mesmo formato, e o texto explicativo recua pra cinza. */ :root .painel-formularios .cartao-anuncios {
+  background: var(--caixa-dourada);
+}
+
+:root .painel-formularios .cartao-anuncios > .hint:first-of-type {
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--caixa-dourada-forte);
+  color: #6b4a1c;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Dentro do cartão dourado, o bloco de cada id continua branco: é onde se digita. */ :root .painel-formularios .cartao-anuncios .campo-de-rastreio {
+  background: var(--caixa);
+}
+
+/* Precisa vencer a regra geral do campo da aba Design, que tem uma classe a mais: sem isto o
+   bloco de cada id fica sem respiro nenhum e o campo encosta nas duas bordas. Empate de
+   especificidade é decidido pela ordem; derrota, não. */
+:root .painel-formularios .form-builder-design .field.campo-de-rastreio {
+  padding: 16px 18px 18px;
+  border-radius: 14px;
+  background: var(--caixa);
+  border: 0;
+  margin-bottom: 12px;
+}
+
+:root .painel-formularios .form-builder-design .field.campo-de-rastreio:last-child {
+  margin-bottom: 0;
+}
+
+/* O campo de colar o id é curto por natureza (16 números), então não precisa da altura de uma caixa de texto: encolhe e o bloco inteiro fica mais leve. */ :root .painel-formularios .campo-de-rastreio .input {
+  min-height: 40px;
+  padding: 9px 12px;
+  font-size: 13.5px;
+}
+
+:root .painel-formularios .campo-de-rastreio .input::placeholder {
+  font-size: 13px;
+}
+
+:root .painel-formularios .campo-de-rastreio-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+:root .painel-formularios .campo-de-rastreio-topo label {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink);
+}
+
+:root .painel-formularios .campo-de-rastreio .hint {
+  margin-top: 8px;
+  font-size: 12.5px;
+}
+
+/* O AVISO DO CRM E A LINHA DO WHATSAPP na lista de respostas (2026-10-21): `.int-sub` (acima) pintava tudo no cinza do texto de apoio, e o
+   âmbar de `.crm-aviso` do globals.css perdia pra ele. Um aviso cinza lê como legenda, e é justamente o que a agência precisa ver. */
+:root .painel-formularios .int-sub.crm-aviso,
+:root .painel-formularios .hint.crm-aviso {
+  color: var(--warning);
+}
+:root .painel-formularios .int-sub.crm-ok,
+:root .painel-formularios .hint.crm-ok {
+  color: var(--success);
+}

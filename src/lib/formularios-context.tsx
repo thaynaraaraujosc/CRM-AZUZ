@@ -1,5 +1,6 @@
 "use client";
 
+import { MODELOS_DE_FORMULARIO, perguntasDoModelo } from "@/lib/formularios/modelos";
 import {
   createContext,
   useContext,
@@ -626,6 +627,7 @@ export function migrarFormulario(bruto: unknown): Formulario {
 type FormulariosContextValue = {
   formularios: Formulario[];
   criarFormulario: () => string;
+  criarFormularioDeModelo: (modeloId: string) => string;
   duplicarFormulario: (id: string) => string;
   atualizarFormulario: (id: string, patch: Partial<Formulario>) => void;
   excluirFormulario: (id: string) => void;
@@ -708,6 +710,33 @@ export function FormulariosProvider({ children }: { children: ReactNode }) {
 
   function criarFormulario() {
     const novo = formularioNovo();
+    setFormularios((prev) => [...prev, novo]);
+    criarRemoto(novo);
+    return novo.id;
+  }
+
+  /**
+   * Um formulário novo a partir de um modelo. NASCE RASCUNHO, como qualquer outro: quase sempre se
+   * troca uma ou duas perguntas antes, e publicar sozinho entregaria ao cliente uma pergunta que
+   * ninguém leu.
+   *
+   * Modelo que não existe mais (id antigo num link, por exemplo) cai no formulário em branco, e
+   * não em erro: a pessoa clicou em "criar", e criar é o que tem que acontecer.
+   */
+  function criarFormularioDeModelo(modeloId: string) {
+    const modelo = MODELOS_DE_FORMULARIO.find((m) => m.id === modeloId);
+    if (!modelo) return criarFormulario();
+    const base = formularioNovo();
+    const novo: Formulario = {
+      ...base,
+      nome: modelo.nome,
+      descricao: modelo.descricao,
+      // Uma página só: o que seria página do modelo vira título de seção dentro dela.
+      paginas: [
+        { id: idUnico("pagina"), titulo: "Página 1", perguntas: perguntasDoModelo(modelo, () => idUnico("campo")) },
+      ],
+      paginaFinal: { mensagem: modelo.mensagemFinal, redirecionarAutomaticamente: false },
+    };
     setFormularios((prev) => [...prev, novo]);
     criarRemoto(novo);
     return novo.id;
@@ -923,6 +952,7 @@ export function FormulariosProvider({ children }: { children: ReactNode }) {
       value={{
         formularios,
         criarFormulario,
+        criarFormularioDeModelo,
         duplicarFormulario,
         atualizarFormulario,
         excluirFormulario,
