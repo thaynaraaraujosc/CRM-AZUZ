@@ -5,8 +5,10 @@ import { createPortal } from "react-dom";
 
 import { useFunis } from "@/lib/funis-context";
 import { useEquipe } from "@/lib/equipe-context";
-import { IconAnexo, IconCadeado, IconClose, IconEdit, IconGlobo, IconOlho, IconOlhoFechado } from "@/components/icons";
+import { IconAnexo, IconCadeado, IconClose, IconEdit, IconGlobo, IconOlho, IconOlhoFechado, IconCheck } from "@/components/icons";
 import {
+  textoDoBotaoDaCapa,
+  mostraCapa,
   numeraPerguntas,
   CAMPOS_CRM_MAPEAVEIS,
   CATEGORIAS_CAMPO,
@@ -33,6 +35,7 @@ import { AGENDA_PADRAO } from "@/lib/formularios/agendamento";
 import { MODELOS_DE_FORMULARIO } from "@/lib/formularios/modelos";
 import { nomeDoArquivo, respostasEmCsv } from "@/lib/formularios/planilha";
 import { escolhasMarcadas } from "@/lib/formularios/escolhas";
+import { pixelMetaValido, tagGoogleValida } from "@/lib/formularios/rastreamento";
 import { dataCurta, dataIsoEmBrasilia, horaEmBrasilia } from "@/lib/agenda/fuso";
 import { useIdioma } from "@/lib/idioma-context";
 
@@ -1588,9 +1591,35 @@ function PreviaDesign({ formulario }: { formulario: Formulario }) {
   const primeira = formulario.paginas[0];
   const perguntas = primeira?.perguntas ?? [];
 
+  // TRÊS TELAS, e não só o formulário. A capa é a primeira coisa que o cliente vê e a mensagem
+  // final é a última; conferir só o meio deixava as duas pontas sem conferência nenhuma — e é
+  // justamente aqui que se confere antes de publicar.
+  const temCapa = mostraCapa(formulario.capa);
+  const [tela, setTela] = useState<"capa" | "formulario" | "final">("formulario");
+  const telaAtual = tela === "capa" && !temCapa ? "formulario" : tela;
+
   return (
     <aside className="form-design-previa" aria-label={traduzir("Prévia do formulário")}>
-      <p className="form-painel-secao-h">{traduzir("Prévia")}</p>
+      <div className="previa-cabecalho">
+        <p className="form-painel-secao-h" style={{ margin: 0 }}>{traduzir("Prévia")}</p>
+        <div className="filters-row" style={{ margin: 0 }}>
+          {temCapa ? (
+            <button type="button" className={`fchip${telaAtual === "capa" ? " active" : ""}`} onClick={() => setTela("capa")}>
+              {traduzir("Capa")}
+            </button>
+          ) : null}
+          <button type="button" className={`fchip${telaAtual === "formulario" ? " active" : ""}`} onClick={() => setTela("formulario")}>
+            {traduzir("Formulário")}
+          </button>
+          <button type="button" className={`fchip${telaAtual === "final" ? " active" : ""}`} onClick={() => setTela("final")}>
+            {traduzir("Mensagem final")}
+          </button>
+        </div>
+      </div>
+
+      {telaAtual === "final" ? <PreviaMensagemFinal formulario={formulario} traduzir={traduzir} /> : null}
+      {telaAtual === "capa" ? <PreviaDaCapa formulario={formulario} traduzir={traduzir} /> : null}
+      <div hidden={telaAtual !== "formulario"}>
       {/* A moldura repete o `.form-public-page` da tela real: o cartão flutua sobre o fundo da
           página, e é esse contraste que dá a leitura de "página", não de "caixa". */}
       <div className="form-design-previa-moldura">
@@ -1661,7 +1690,88 @@ function PreviaDesign({ formulario }: { formulario: Formulario }) {
           Mostrando a primeira de {formulario.paginas.length} páginas. A aparência é a mesma em todas.
         </p>
       ) : null}
+      </div>
     </aside>
+  );
+}
+
+/**
+ * A CAPA, do jeito que o cliente vê. Mesmo cartão e mesmo tema da tela real (`classesDoCartao`,
+ * `estiloDoCartao`): uma prévia desenhada por outro caminho passa a mentir na primeira divergência
+ * entre os dois códigos, e aí é pior que não ter prévia.
+ */
+function PreviaDaCapa({ formulario, traduzir }: { formulario: Formulario; traduzir: (t: string) => string }) {
+  const tema = formulario.tema;
+  return (
+    <div className="form-design-previa-moldura">
+      <div className={classesDoCartao(tema)} style={estiloDoCartao(tema)}>
+        {tema.logoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- URL livre informada pelo usuário
+          <img src={tema.logoUrl} alt="" className="form-public-logo" />
+        ) : null}
+        {tema.bannerUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- URL livre informada pelo usuário
+          <img src={tema.bannerUrl} alt="" className="form-public-banner" style={estiloDoBanner(tema)} />
+        ) : null}
+        <div className="form-public-capa">
+          <h2>{(formulario.capa?.titulo ?? "").trim() || formulario.nome || traduzir("Formulário sem título")}</h2>
+          {(formulario.capa?.texto ?? "").trim() ? (
+            <p className="form-public-capa-texto">{formulario.capa?.texto}</p>
+          ) : null}
+          {/* Inerte por `pointer-events`, e não por `disabled`: `.btn:disabled` aplica meia
+              opacidade, e a prévia precisa mostrar a cor EXATA que foi escolhida. */}
+          <span className="btn block" style={{ background: tema.corBotao, color: "#fff", pointerEvents: "none" }}>
+            {textoDoBotaoDaCapa(formulario.capa)}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * A MENSAGEM FINAL, com as cores de verdade. A prévia desenhava o fundo fixo e "Continuar"
+ * cravado: quem trocava a cor do botão não via nada mudar aqui, que é onde se confere.
+ *
+ * A nota embaixo diz o que acontece DEPOIS, conforme o redirecionamento esteja vazio, preenchido
+ * ou automático — é a parte que não dá pra ver olhando a tela.
+ */
+function PreviaMensagemFinal({ formulario, traduzir }: { formulario: Formulario; traduzir: (t: string) => string }) {
+  const redireciona = formulario.paginaFinal.urlRedirecionamento;
+  const automatico = redireciona && formulario.paginaFinal.redirecionarAutomaticamente;
+  const tema = formulario.tema;
+
+  return (
+    <>
+      <div className="form-design-previa-moldura">
+        <div
+          className={`form-public-page form-public-final${tema.temaEscuro ? " tema-escuro" : ""}`}
+          style={{ ...estiloDoCartao(tema), minHeight: 0, padding: "48px 24px" }}
+        >
+          <div className="form-public-obrigado">
+            <span className="form-obrigado-selo" aria-hidden="true" style={{ background: tema.corBotao }}>
+              <IconCheck width={26} height={26} />
+            </span>
+            <h2>{formulario.paginaFinal.mensagem || MENSAGEM_FINAL_PADRAO}</h2>
+            {redireciona ? (
+              <span
+                className="btn form-obrigado-botao"
+                style={{ background: tema.corBotao, borderColor: tema.corBotao, pointerEvents: "none" }}
+              >
+                {traduzir("Continuar")}
+              </span>
+            ) : null}
+          </div>
+        </div>
+      </div>
+      <p className="hint form-design-previa-nota">
+        {automatico
+          ? traduzir("Esta tela aparece por um instante e a pessoa é levada sozinha pro endereço de redirecionamento.")
+          : redireciona
+            ? traduzir("A pessoa vê esta tela e decide se clica em “Continuar”.")
+            : traduzir("A pessoa vê esta tela e fica nela. Pra levar pro WhatsApp, preencha a URL de redirecionamento acima.")}
+      </p>
+    </>
   );
 }
 
@@ -2063,41 +2173,48 @@ function PainelDesign({
           </select>
         </div>
 
-        {/*
-          * MEDIÇÃO DE ANÚNCIO.
-          *
-          * Sem isto, a campanha só sabe que alguém ABRIU a página; ela não sabe quem respondeu, e é
-          * justamente o lead que o Meta e o Google usam pra procurar mais gente parecida. O evento
-          * só dispara em formulário publicado: um rascunho sendo testado não pode sujar a audiência.
-          *
-          * Os dois ficam dentro de `integracoes`, que nunca sai pela rota pública. É a página do
-          * formulário que lê do banco, no servidor, e manda pro navegador só esses identificadores.
-          */}
-        <div className="field">
-          <label htmlFor="pixel-meta">{traduzir("Pixel da Meta")}</label>
-          <input
-            id="pixel-meta"
-            className="input"
-            style={{ width: "100%" }}
-            placeholder={traduzir("Só os números, ex.: 1234567890")}
-            value={formulario.integracoes?.pixelMeta ?? ""}
-            onChange={(e) => atualizarIntegracoes({ pixelMeta: e.target.value.trim() || undefined })}
-          />
+      </div>
+
+      {/*
+        * ANÚNCIOS, EM CARTÃO PRÓPRIO E NA SEGUNDA COR DA MARCA.
+        *
+        * Estava solto no fim de "Integrações", com o mesmo peso do funil e do responsável — e não
+        * é a mesma coisa: funil é pra onde a resposta vai dentro do CRM, isto é o que liga o
+        * formulário à campanha que paga por ele.
+        *
+        * Sem o pixel e a tag, a campanha só sabe que alguém ABRIU a página; ela não sabe quem
+        * respondeu, e é justamente o lead que o Meta e o Google usam pra procurar mais gente
+        * parecida. O evento só dispara em formulário publicado: rascunho sendo testado não pode
+        * sujar a audiência.
+        *
+        * Os dois ficam dentro de `integracoes`, que nunca sai pela rota pública. É a página do
+        * formulário que lê do banco, no servidor, e manda pro navegador só esses identificadores.
+        */}
+      <div className="card cartao-anuncios" style={{ padding: 17 }}>
+        <div className="panel-h" style={{ padding: 0, marginBottom: 12 }}>
+          <h4>{traduzir("Anúncios")}</h4>
         </div>
-        <div className="field">
-          <label htmlFor="tag-google">{traduzir("Tag do Google")}</label>
-          <input
-            id="tag-google"
-            className="input"
-            style={{ width: "100%" }}
-            placeholder="G-XXXXXXX, AW-123456789 ou AW-123456789/AbC-D_e"
-            value={formulario.integracoes?.tagGoogle ?? ""}
-            onChange={(e) => atualizarIntegracoes({ tagGoogle: e.target.value.trim() || undefined })}
-          />
-          <p className="hint" style={{ marginTop: 6 }}>
-            {traduzir("Com o rótulo depois da barra, a resposta conta como conversão no Google Ads.")}
-          </p>
-        </div>
+        <p className="hint" style={{ marginTop: 0 }}>
+          {traduzir("Cole os ids da conta de anúncios da empresa. Quem enviar o formulário é marcado como Lead, e a campanha aprende a buscar gente parecida.")}
+        </p>
+        <CampoDeRastreio
+          rotulo={traduzir("Pixel do Meta")}
+          exemplo="Ex.: 1234567890123456"
+          ajuda={traduzir("Gerenciador de Eventos do Meta, em Fontes de dados. São só números.")}
+          valor={formulario.integracoes?.pixelMeta ?? ""}
+          valido={(v) => pixelMetaValido(v) !== null}
+          aoMudar={(v) => atualizarIntegracoes({ pixelMeta: v || undefined })}
+          traduzir={traduzir}
+        />
+        <CampoDeRastreio
+          rotulo={traduzir("Tag do Google")}
+          exemplo="Ex.: G-ABC123 ou AW-123456789/AbCdEf"
+          ajuda={traduzir("Do Google Analytics (G-…) ou a conversão do Google Ads (AW-…/rótulo).")}
+          valor={formulario.integracoes?.tagGoogle ?? ""}
+          valido={(v) => tagGoogleValida(v) !== null}
+          aoMudar={(v) => atualizarIntegracoes({ tagGoogle: v || undefined })}
+          traduzir={traduzir}
+        />
       </div>
 
       <div className="card" style={{ padding: 17 }}>
@@ -2408,6 +2525,56 @@ function RespostasPorPergunta({
           </div>
         );
       })}
+    </div>
+  );
+}
+
+/**
+ * UM ID DE RASTREIO, com o selo dizendo se está valendo.
+ *
+ * O SELO EXISTE PORQUE O CAMPO MENTIA EM SILÊNCIO: id colado com um espaço junto, ou com texto
+ * em volta, ficava gravado e não valia nada — a campanha seguia cega e ninguém via por quê. Agora
+ * a tela diz "Ligado" só quando o id passa pela mesma conferência que a página pública faz
+ * (`formularios/rastreamento.ts`), e avisa na hora quando não passa.
+ */
+function CampoDeRastreio({
+  rotulo,
+  exemplo,
+  ajuda,
+  valor,
+  valido,
+  aoMudar,
+  traduzir,
+}: {
+  rotulo: string;
+  exemplo: string;
+  ajuda: string;
+  valor: string;
+  valido: (valor: string) => boolean;
+  aoMudar: (valor: string) => void;
+  traduzir: (texto: string) => string;
+}) {
+  const invalido = valor.trim() !== "" && !valido(valor);
+  const ligado = valor.trim() !== "" && !invalido;
+  return (
+    <div className="field campo-de-rastreio">
+      <div className="campo-de-rastreio-topo">
+        <label>{rotulo}</label>
+        <span className={`pill${ligado ? " on" : ""}`}>{ligado ? traduzir("Ligado") : traduzir("Desligado")}</span>
+      </div>
+      <input
+        className="input"
+        style={{ width: "100%" }}
+        value={valor}
+        placeholder={exemplo}
+        onChange={(e) => aoMudar(e.target.value.trim())}
+        aria-invalid={invalido}
+      />
+      <p className={invalido ? "auth-erro" : "hint"} style={{ marginTop: 6 }}>
+        {invalido
+          ? traduzir("Isso não parece um id. Confira se colou só o código, sem espaço nem texto junto.")
+          : ajuda}
+      </p>
     </div>
   );
 }

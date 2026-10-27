@@ -141,6 +141,15 @@ type PayloadInstagram = {
       };
       /** Curtida (ou descurtida) numa mensagem que já existe. Evento próprio, não vem dentro de
        * `message`. `mid` aponta pra mensagem reagida; `action` diz se foi curtir ou desfazer. */
+      /**
+       * LEITURA. Chega pelo campo `messaging_seen`.
+       *
+       * A documentação da Meta descreve este evento como "o DESTINATÁRIO leu a mensagem", pensando
+       * no cliente lendo o que a empresa mandou. Não há tabela publicada de remetente/destinatário
+       * pro caso inverso — a conta da empresa lendo pelo app do Instagram —, então o tratamento
+       * aqui confere QUEM leu antes de fazer qualquer coisa, em vez de supor.
+       */
+      read?: { mid?: string };
       reaction?: {
         mid?: string;
         action?: "react" | "unreact";
@@ -340,6 +349,46 @@ export async function POST(request: Request) {
       const ehEcoDeReacao = Boolean(reacao) && evento.sender?.id === entry.id;
       const instagramContaId =
         mensagem?.is_echo || ehEcoDeReacao ? evento.sender?.id : evento.recipient?.id;
+      /**
+       * LER NO APP DO INSTAGRAM TIRA O "NÃO LIDAS" AQUI.
+       *
+       * Só quando quem leu foi a PRÓPRIA conta conectada (`sender` é a conta do webhook). O mesmo
+       * evento também chega quando o CLIENTE lê o que a empresa mandou, e tratar os dois igual
+       * limparia o contador de uma conversa que ninguém da equipe abriu — exatamente o engano que
+       * esta tela precisa parar de cometer, só que ao contrário.
+       *
+       * REGISTRA O QUE CHEGOU: a forma deste evento no caso "empresa leu" não está documentada, e
+       * é no log de produção que dá pra ver se ele chega mesmo, e com quais ids.
+       */
+      if (evento.read) {
+        const quemLeu = evento.sender?.id;
+        const doOutroLado = evento.recipient?.id;
+        const aContaLeu = quemLeu === entry.id;
+        console.log(
+          `[instagram] leitura: sender=${quemLeu} recipient=${doOutroLado} conta=${entry.id} ` +
+            `${aContaLeu ? "(a conta leu: zerando não lidas)" : "(o cliente leu: nada a fazer)"}`,
+        );
+        if (aContaLeu && doOutroLado) {
+          // `metadados` é Json: não dá pra filtrar no `where` de forma portável, então filtra em
+          // memória, igual ao resto deste arquivo. A chave é `instagramContaId`, a mesma que o
+          // restante do webhook usa — outro nome aqui faria a leitura nunca achar a conexão.
+          const conectadas = await prisma.integracao.findMany({
+            where: { provedor: "meta_instagram", status: "conectado" },
+            select: { workspaceId: true, metadados: true },
+          });
+          const daConta = conectadas.find(
+            (i) => (i.metadados as { instagramContaId?: string } | null)?.instagramContaId === quemLeu,
+          );
+          if (daConta) {
+            await prisma.conversa.updateMany({
+              where: { workspaceId: daConta.workspaceId, contato: doOutroLado, canal: "Instagram" },
+              data: { naoLidas: 0 },
+            });
+          }
+        }
+        continue;
+      }
+
       if (!instagramContaId || (!mensagem && !reacao)) continue;
 
       // `metadados` é Json: não dá pra filtrar direto no `where` de forma portável, filtra em
@@ -954,6 +1003,26 @@ export async function POST(request: Request) {
         contarComoNaoLida: !ehEco,
         contaCanal: contaCanalDaConexao(CANAL_INSTAGRAM, instagramContaId),
       });
+
+      /**
+       * RESPONDER PELO APP DO INSTAGRAM ZERA O "NÃO LIDAS" AQUI.
+       *
+       * O defeito: a conversa era aberta e respondida no app do Instagram, e no CRM continuava com
+       * o numerozinho de não lida. Quem usa os dois lados — que é o normal — via uma lista cheia de
+       * conversas marcadas como novas sendo que todas já tinham sido atendidas, e aí o contador
+       * deixa de querer dizer alguma coisa.
+       *
+       * O eco é a prova mais forte que existe de leitura: ninguém responde o que não leu. Não
+       * depende de assinatura nova nem de reconectar a conta — o `message_echoes` já chega.
+       *
+       * Ler no app SEM responder é outro caso, e depende do `messaging_seen` (ver `CAMPOS_WEBHOOK`).
+       */
+      if (ehEco) {
+        await prisma.conversa.updateMany({
+          where: { workspaceId: integracaoDaConta.workspaceId, nome: chaveContato, canal: "Instagram" },
+          data: { naoLidas: 0 },
+        });
+      }
 
       // Automação só dispara em mensagem RECEBIDA. Num eco (mensagem que a própria conta mandou,
       // inclusive a resposta automática que acabou de sair daqui) o fluxo dispararia de novo, e a
