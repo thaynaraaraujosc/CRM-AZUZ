@@ -931,6 +931,34 @@ function ConversasPageInner() {
   /** Já tentamos atender o `?contato=` desta visita? Sem isto, a criação da conversa mudaria a
    *  lista, o efeito rodaria de novo e criaria outra. */
   const contatoDaUrlAtendido = useRef(false);
+  /**
+   * O canal escolhido pra uma conversa que ainda não tem dono, quando os DOIS WhatsApp estão
+   * conectados. Padrão no QR Code: é o que não tem janela de 24h nem modelo aprovado no caminho,
+   * e é o que o servidor já assumia pra conversa sem dono.
+   */
+  const [canalEscolhido, setCanalEscolhido] = useState<"whatsapp_nao_oficial" | "whatsapp_oficial">(
+    "whatsapp_nao_oficial",
+  );
+  /** Quais canais de WhatsApp estão conectados agora. Só com os DOIS a escolha faz sentido: com um
+   *  só, não há o que perguntar. */
+  const [canaisWhats, setCanaisWhats] = useState<{ oficial: boolean; qr: boolean }>({ oficial: false, qr: false });
+
+  useEffect(() => {
+    let vivo = true;
+    void fetch("/api/canais")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("falhou"))))
+      .then((lista: { canal: string; conectado: boolean }[]) => {
+        if (!vivo) return;
+        setCanaisWhats({
+          oficial: lista.some((c) => c.canal === "whatsapp_oficial" && c.conectado),
+          qr: lista.some((c) => c.canal === "whatsapp_nao_oficial" && c.conectado),
+        });
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, []);
 
   /**
    * Contatos que dá pra chamar e que ainda não têm conversa aberta.
@@ -2139,12 +2167,34 @@ function ConversasPageInner() {
    * existir. Usado tanto pra decidir pra onde a resposta do atendente deve sair (`aberta.nome`)
    * quanto pra filtrar a lista de conversas pela integração realmente conectada (ver
    * `conversasFiltradas`): nesse segundo uso, olha qualquer contato, não só o aberto no momento. */
+  /**
+   * POR ONDE ESTA CONVERSA FALA.
+   *
+   * A regra continua sendo a mesma: vale o canal da última mensagem que teve canal — a conversa
+   * pertence à conexão por onde ela veio, e mandar pela outra dá erro ou escreve do número errado.
+   *
+   * O QUE MUDOU É A CONVERSA SEM HISTÓRICO. Ela devolvia `false`, ou seja, API OFICIAL — e conversa
+   * recém-criada (a que nasce ao salvar um contato e clicar em "Enviar WhatsApp") não tem mensagem
+   * nenhuma. O CRM escolhia o canal mais restrito sozinho, e a pessoa caía na tela de modelo
+   * aprovado sem ter pedido nada.
+   *
+   * Agora, sem histórico, vale o que estiver escolhido em `canalEscolhido` — e o padrão dele é o
+   * QR Code, que é o que o SERVIDOR já fazia pra conversa sem dono (ver `enviar-pelo-canal.ts`).
+   * Os dois lados estavam discordando.
+   */
   function conversaUsaWhatsappNaoOficial(nomeContato: string): boolean {
     const extras = mensagensExtraPorContato[nomeContato] ?? [];
     for (let i = extras.length - 1; i >= 0; i--) {
       if (extras[i].canal) return extras[i].canal === "whatsapp_nao_oficial";
     }
-    return false;
+    return canalEscolhido === "whatsapp_nao_oficial";
+  }
+
+  /** A conversa ainda não tem dono: nenhuma mensagem dela passou por um canal. É só nesse caso
+   *  que dá pra escolher — depois da primeira, quem manda é o histórico. */
+  function conversaSemDono(nomeContato: string): boolean {
+    const extras = mensagensExtraPorContato[nomeContato] ?? [];
+    return !extras.some((m) => m.canal);
   }
 
   function contatoUsaWhatsappNaoOficial(): boolean {
@@ -4713,6 +4763,41 @@ function ConversasPageInner() {
                       <button type="button" className="link" onClick={() => setAudioPermissaoErro(null)}>
                         {traduzir("Dispensar")}
                       </button>
+                    </div>
+                  ) : null}
+                  {/*
+                    * POR ONDE VAI SAIR, quando há mais de um caminho.
+                    *
+                    * Só aparece com os DOIS WhatsApp conectados E na conversa que ainda não tem
+                    * dono. Depois da primeira mensagem, quem manda é o histórico: a conversa
+                    * pertence à conexão por onde ela veio, e trocar no meio escreveria do outro
+                    * número, como se fosse outra empresa.
+                    *
+                    * Existe porque o CRM escolhia sozinho — e escolhia o oficial, que é o mais
+                    * restrito: a pessoa caía na tela de modelo aprovado sem ter pedido isso.
+                    */}
+                  {canaisWhats.oficial && canaisWhats.qr && aberta.canal === "WhatsApp" && conversaSemDono(aberta.nome) ? (
+                    <div className="chat-canal-escolha">
+                      <span className="chat-canal-rotulo">{traduzir("Enviar por")}</span>
+                      <button
+                        type="button"
+                        className={`fchip${canalEscolhido === "whatsapp_nao_oficial" ? " active" : ""}`}
+                        onClick={() => setCanalEscolhido("whatsapp_nao_oficial")}
+                      >
+                        {traduzir("WhatsApp (QR Code)")}
+                      </button>
+                      <button
+                        type="button"
+                        className={`fchip${canalEscolhido === "whatsapp_oficial" ? " active" : ""}`}
+                        onClick={() => setCanalEscolhido("whatsapp_oficial")}
+                      >
+                        {traduzir("API Oficial")}
+                      </button>
+                      {canalEscolhido === "whatsapp_oficial" ? (
+                        <span className="chat-canal-aviso">
+                          {traduzir("Pelo oficial, a primeira mensagem precisa ser um modelo aprovado.")}
+                        </span>
+                      ) : null}
                     </div>
                   ) : null}
                   {respondendoMensagem ? (

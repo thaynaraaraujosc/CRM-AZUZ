@@ -23,10 +23,24 @@ export async function GET() {
 
   await sincronizarTemplatesMeta(workspaceId);
 
-  const templates = await prisma.whatsappTemplate.findMany({
-    where: { workspaceId },
-    orderBy: { nome: "asc" },
-  });
+  /**
+   * SÓ OS MODELOS DA CONTA QUE VAI ENVIAR.
+   *
+   * O espelho guarda o `wabaId` de quando o modelo foi sincronizado. Trocando de conta do WhatsApp
+   * Business, os modelos da conta antiga continuavam na lista — e são justamente os que a Meta
+   * recusa com `(#132001) Template name does not exist in the translation`, que do lado de cá não
+   * quer dizer nada.
+   *
+   * Sem conta conectada a lista sai vazia: oferecer modelo quando não há por onde mandar é um
+   * caminho que termina em erro.
+   */
+  const conta = await contaConectada(workspaceId);
+  const templates = conta?.wabaId
+    ? await prisma.whatsappTemplate.findMany({
+        where: { workspaceId, wabaId: conta.wabaId },
+        orderBy: { nome: "asc" },
+      })
+    : [];
   return NextResponse.json(templates);
 }
 

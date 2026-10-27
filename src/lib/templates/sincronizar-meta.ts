@@ -62,7 +62,8 @@ export async function sincronizarTemplatesMeta(workspaceId: string): Promise<voi
         `/${conta.wabaId}/message_templates?fields=id,name,language,category,status,components&limit=100`,
         conta.accessToken,
       );
-      for (const t of resposta.data ?? []) {
+      const vindosDaMeta = resposta.data ?? [];
+      for (const t of vindosDaMeta) {
         await prisma.whatsappTemplate.upsert({
           where: { workspaceId_metaId: { workspaceId, metaId: t.id } },
           create: {
@@ -84,6 +85,39 @@ export async function sincronizarTemplatesMeta(workspaceId: string): Promise<voi
             componentes: (t.components ?? []) as never,
           },
         });
+      }
+
+      /**
+       * O QUE SUMIU DA META TAMBÉM SOME DAQUI.
+       *
+       * A sincronização só fazia upsert: modelo apagado na Meta, ou de uma conta que não é mais a
+       * conectada, ficava no espelho pra sempre. A tela "Iniciar conversa com um modelo" o
+       * oferecia, a pessoa escolhia, escrevia, mandava — e a Meta respondia
+       * `(#132001) Template name does not exist in the translation`, que não quer dizer nada pra
+       * quem está do lado de cá.
+       *
+       * SÓ APAGA DEPOIS DE A META RESPONDER, e só o que é DESTA conta. Apagar num erro de rede
+       * esvaziaria a lista inteira por causa de uma falha passageira, e aí a pessoa não teria como
+       * falar com ninguém. Por isso isto está DENTRO do `try`, depois do `for`.
+       *
+       * Espelho de outra WABA (a empresa trocou de conta) não é apagado aqui, porque não foi esta
+       * resposta que provou que ele sumiu — quem o esconde é o filtro da listagem.
+       */
+      const idsVivos = new Set(vindosDaMeta.map((t) => t.id));
+      const desatualizados = await prisma.whatsappTemplate.findMany({
+        where: { workspaceId, wabaId: conta.wabaId },
+        select: { id: true, metaId: true, nome: true },
+      });
+      const sumidos = desatualizados.filter((e) => !idsVivos.has(e.metaId));
+      if (sumidos.length > 0) {
+        console.log(`[templates] ${sumidos.length} modelo(s) não existem mais na Meta: ${sumidos.map((s) => s.nome).join(", ")}`);
+        // O Template do CRM que apontava pro espelho perde o vínculo, mas não some: ele pode ter
+        // histórico de campanha, e apagar levaria junto o registro do que já foi enviado.
+        await prisma.template.updateMany({
+          where: { workspaceId, whatsappTemplateId: { in: sumidos.map((s) => s.id) } },
+          data: { whatsappTemplateId: null, status: "rascunho" },
+        });
+        await prisma.whatsappTemplate.deleteMany({ where: { id: { in: sumidos.map((s) => s.id) } } });
       }
     } catch (erro) {
       console.error("[templates] falha ao sincronizar com a Graph:", erro instanceof Error ? erro.message : erro);
