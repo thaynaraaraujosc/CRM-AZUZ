@@ -6,6 +6,7 @@ import { decriptar } from "@/lib/integracoes/crypto";
 import { META_GRAPH_URL, normalizarNumeroBrasileiro, validarAssinaturaWebhook } from "@/lib/integracoes/meta";
 import { resolverPessoaDoTelefone } from "@/lib/conversas/identidade";
 import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
+import { motivoDaFalha, prazoDe, PRAZO_CONSULTA_MS, PRAZO_DOWNLOAD_MS } from "@/lib/integracoes/prazo";
 import { CANAL_OFICIAL, contaCanalDaConexao } from "@/lib/integracoes/conta-canal";
 import { criarContatoPeloWhatsAppSeNaoExistir } from "@/lib/contatos/upsert";
 import { aplicarOrigemPelaMensagem, aplicarOrigemPelaReferenciaDaMeta } from "@/lib/rastreio/aplicar";
@@ -145,20 +146,26 @@ const RÓTULO_POR_TIPO: Record<string, string> = {
  */
 async function baixarMidia(mediaId: string, accessToken: string): Promise<{ dataUrl: string; tamanho: number } | null> {
   try {
+    // Os dois passos com prazo: sem ele, uma Graph API lenta pendurava o recebimento da mensagem
+    // até a função ser morta, e aí a mensagem não era gravada de jeito nenhum. Ver `prazo.ts`.
     const infoResposta = await fetch(`${META_GRAPH_URL}/${mediaId}`, {
       headers: { authorization: `Bearer ${accessToken}` },
+      signal: prazoDe(PRAZO_CONSULTA_MS),
     });
     if (!infoResposta.ok) return null;
     const info = (await infoResposta.json()) as { url?: string; mime_type?: string };
     if (!info.url) return null;
 
-    const arquivoResposta = await fetch(info.url, { headers: { authorization: `Bearer ${accessToken}` } });
+    const arquivoResposta = await fetch(info.url, {
+      headers: { authorization: `Bearer ${accessToken}` },
+      signal: prazoDe(PRAZO_DOWNLOAD_MS),
+    });
     if (!arquivoResposta.ok) return null;
     const bytes = Buffer.from(await arquivoResposta.arrayBuffer());
     const mimeType = info.mime_type ?? arquivoResposta.headers.get("content-type") ?? "application/octet-stream";
     return { dataUrl: `data:${mimeType};base64,${bytes.toString("base64")}`, tamanho: bytes.length };
   } catch (erro) {
-    console.error("Falha ao baixar mídia do WhatsApp:", erro);
+    console.error("Falha ao baixar mídia do WhatsApp:", motivoDaFalha(erro, PRAZO_DOWNLOAD_MS));
     return null;
   }
 }
@@ -287,6 +294,17 @@ async function atualizarMetadados(integracaoId: string, novos: Record<string, un
  * usando o nome do perfil do WhatsApp. Não fica mais "órfão" até alguém salvar manualmente.
  */
 export async function POST(request: Request) {
+  /*
+   * A HORA EM QUE O WEBHOOK BATEU AQUI, lida uma vez, antes de qualquer trabalho.
+   *
+   * É o que separa "a Meta demorou pra entregar" de "o CRM demorou pra gravar" — duas causas com
+   * consertos opostos, e até aqui indistinguíveis, porque o único carimbo gravado vinha do
+   * aparelho de quem escreveu. Ver `src/lib/conversas/tempo-de-chegada.ts`.
+   *
+   * Lida AGORA e não no insert: lida depois, ela já carregaria o tempo do nosso próprio
+   * processamento, e a conta mediria zero por construção.
+   */
+  const chegouEm = new Date();
   const payloadCru = await request.text();
   const assinatura = request.headers.get("x-hub-signature-256");
   if (!validarAssinaturaWebhook(payloadCru, assinatura)) {
@@ -516,6 +534,9 @@ export async function POST(request: Request) {
               timeZone: "America/Sao_Paulo",
             }),
             criadoEm: new Date(Number(mensagem.timestamp) * 1000),
+            // Ver `tempo-de-chegada.ts`: é o que permite medir a demora sem depender do relógio
+            // do celular de quem mandou.
+            recebidoEm: chegouEm,
             // Anexo vai pro R2 e a mensagem guarda só a referência (ver `armazenamento/midia.ts`).
             extras: temMidiaBaixada
               ? await guardarMidiasDosExtras(extras, integracao.workspaceId)
@@ -525,6 +546,10 @@ export async function POST(request: Request) {
             // zerar ao desconectar e voltar ao reconectar.
             canal: CANAL_OFICIAL,
             contaCanal: contaCanalDaConexao(CANAL_OFICIAL, phoneNumberId),
+            // POR ÚLTIMO, e isto não é estilo: propriedade de objeto é avaliada em ordem, e o
+            // `await` do upload pro R2 está no `extras` acima. Lido antes dele, o carimbo deixaria
+            // o upload de fora justamente da medição que existe pra encontrá-lo.
+            gravadoEm: new Date(),
           },
         });
 

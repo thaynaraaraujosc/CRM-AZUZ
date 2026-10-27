@@ -3,6 +3,7 @@
 import { Toggle } from "@/components/ui";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 import { useIntegracaoMeta } from "./useIntegracaoMeta";
+import { TempoDeChegada } from "./TempoDeChegada";
 import { IconAlerta } from "@/components/icons";
 import { useIdioma } from "@/lib/idioma-context";
 
@@ -124,6 +125,15 @@ export function InstagramSecao() {
             funil comercial: o funil é do WhatsApp. O acompanhamento do Instagram fica em Instagram
             e em Automações &gt; Instagram.
           </p>
+
+          {/*
+            * Quanto tempo o Direct leva da mão de quem escreveu até esta tela, medido.
+            *
+            * O Instagram tem mais o que medir do que o WhatsApp: este webhook faz até cinco
+            * chamadas à Meta (perfil, @ pela lista de conversas, foto, dados extras, capa da mídia)
+            * ANTES de gravar a mensagem, e todas elas entram na espera de quem está atendendo.
+            */}
+          <TempoDeChegada canal="Instagram" />
         </div>
       ) : null}
     </div>

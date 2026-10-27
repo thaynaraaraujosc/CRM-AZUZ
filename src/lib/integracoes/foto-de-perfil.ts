@@ -16,6 +16,8 @@
  */
 
 /** Teto do que vale guardar embutido. Acima disso não é foto de perfil. */
+import { motivoDaFalha, prazoDe, PRAZO_DOWNLOAD_MS } from "@/lib/integracoes/prazo";
+
 const TETO_BYTES = 2 * 1024 * 1024;
 
 /**
@@ -36,14 +38,16 @@ export function precisaBaixarFoto(guardada: string | null | undefined): boolean 
  *  (perfil sem foto, endereço já expirado), não é erro que mereça derrubar o recebimento. */
 export async function baixarFotoDePerfil(url: string): Promise<string | null> {
   try {
-    const resposta = await fetch(url);
+    // Prazo: o CDN da Meta às vezes aceita a conexão e não responde. Sem isto, o recebimento da
+    // mensagem ficava pendurado aqui até a função ser morta. Ver `prazo.ts`.
+    const resposta = await fetch(url, { signal: prazoDe(PRAZO_DOWNLOAD_MS) });
     if (!resposta.ok) return null;
     const bytes = Buffer.from(await resposta.arrayBuffer());
     if (bytes.length > TETO_BYTES) return null;
     const mimeType = resposta.headers.get("content-type") ?? "image/jpeg";
     return `data:${mimeType};base64,${bytes.toString("base64")}`;
   } catch (erro) {
-    console.error("[foto-de-perfil] falha ao baixar:", erro instanceof Error ? erro.message : erro);
+    console.error("[foto-de-perfil] falha ao baixar:", motivoDaFalha(erro, PRAZO_DOWNLOAD_MS));
     return null;
   }
 }

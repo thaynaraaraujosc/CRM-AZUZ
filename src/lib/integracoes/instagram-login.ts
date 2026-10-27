@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { baixarFotoDePerfil } from "@/lib/integracoes/foto-de-perfil";
+import { prazoDe, PRAZO_CONSULTA_MS } from "@/lib/integracoes/prazo";
 
 /**
  * "API do Instagram com Login do Instagram". Fluxo de OAuth separado do Login do Facebook usado
@@ -330,6 +331,9 @@ export async function buscarPerfilDeQuemMandou(
       //
       // A lição vale pra toda a Graph: campo inexistente não é ignorado, ele invalida a requisição.
       `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/${remetenteId}?fields=username,name,profile_pic&access_token=${accessToken}`,
+      // Com prazo: isto roda ANTES de a mensagem ser gravada, na primeira mensagem de cada pessoa.
+      // Pendurado aqui, nem a mensagem chegava. Ver `prazo.ts`.
+      { signal: prazoDe(PRAZO_CONSULTA_MS) },
     );
     const dados = (await resposta.json()) as {
       username?: string;
@@ -496,6 +500,7 @@ export async function buscarDadosExtrasDoPerfil(
   try {
     const resposta = await fetch(
       `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/${remetenteId}?fields=${campos}&access_token=${accessToken}`,
+      { signal: prazoDe(PRAZO_CONSULTA_MS) },
     );
     const dados = (await resposta.json()) as {
       follower_count?: number;
@@ -536,6 +541,7 @@ export async function buscarPerfilNasConversas(
   try {
     const resposta = await fetch(
       `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/me/conversations?fields=participants&access_token=${accessToken}`,
+      { signal: prazoDe(PRAZO_CONSULTA_MS) },
     );
     const dados = (await resposta.json()) as {
       data?: { participants?: { data?: { id?: string; username?: string; name?: string; profile_pic?: string }[] } }[];
@@ -588,6 +594,7 @@ export async function buscarCapaDaMidia(accessToken: string, midiaId: string): P
       // endereço real da publicação no Instagram, e não a URL temporária do CDN. Uma chamada só
       // resolve capa e link.
       `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/${midiaId}?fields=thumbnail_url,media_url,media_type,permalink&access_token=${accessToken}`,
+      { signal: prazoDe(PRAZO_CONSULTA_MS) },
     );
     const dados = (await resposta.json()) as {
       thumbnail_url?: string;

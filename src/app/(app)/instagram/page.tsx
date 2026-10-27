@@ -156,13 +156,21 @@ export default function InstagramConversasPage() {
    *
    * 1. **Só com a aba visível.** Aba de fundo não é lida por ninguém, e uma aba esquecida aberta
    *    a noite toda seria a maior fonte de batida inútil que existe.
-   * 2. **O mesmo ritmo das outras telas** (`INTERVALO_POLLING_MS`, 10s). Ritmos diferentes fariam
-   *    a lista de conversas e as mensagens discordarem por alguns segundos.
+   * 2. **O mesmo ritmo das outras telas** (`INTERVALO_POLLING_MS`). Ritmos diferentes fariam a
+   *    lista de conversas e as mensagens discordarem por alguns segundos.
    * 3. **Com `If-None-Match`.** É o que transforma a batida num `304` de corpo vazio quando nada
    *    mudou, que é o caso quase sempre.
    *
-   * E uma batida imediata ao voltar pra aba, pra quem volta do Instagram não esperar 10 segundos
-   * pra ver o que chegou.
+   * E uma batida imediata ao voltar, pra quem volta do app do Instagram não esperar o ciclo
+   * inteiro pra ver o que chegou.
+   *
+   * `focus` ALÉM DE `visibilitychange`, e esta tela estava sem ele.
+   *
+   * Trocar de JANELA não dispara `visibilitychange` em todo navegador — e alternar entre o CRM e o
+   * Instagram é exatamente isso. Pior: o navegador ESTRANGULA `setInterval` em aba de fundo, e
+   * chega a parar de vez. Então a espera de quem voltava não era de segundos, podia ser de
+   * minutos, e a única saída era recarregar a página. Os dois contexts de Conversas já ouviam os
+   * dois eventos; esta tela, que é a do Instagram, ouvia só um.
    */
   useEffect(() => {
     function atualizar() {
@@ -173,9 +181,11 @@ export default function InstagramConversasPage() {
 
     const intervalo = setInterval(atualizar, INTERVALO_POLLING_MS);
     document.addEventListener("visibilitychange", atualizar);
+    window.addEventListener("focus", atualizar);
     return () => {
       clearInterval(intervalo);
       document.removeEventListener("visibilitychange", atualizar);
+      window.removeEventListener("focus", atualizar);
     };
   }, [carregarConversas, carregarMensagens]);
 

@@ -95,6 +95,11 @@ async function registrarDescartePelaInstancia(request: Request, motivo: string, 
 }
 
 export async function POST(request: Request) {
+  /*
+   * A HORA EM QUE O WEBHOOK BATEU AQUI, lida uma vez, antes de qualquer trabalho. É o que separa
+   * "a Evolution demorou pra entregar" de "o CRM demorou pra gravar". Ver `tempo-de-chegada.ts`.
+   */
+  const chegouEm = new Date();
   const token = new URL(request.url).searchParams.get("token");
   if (!validarTokenWebhook(token)) {
     return NextResponse.json({ erro: "Token inválido" }, { status: 401 });
@@ -202,7 +207,7 @@ export async function POST(request: Request) {
      */
     for (const item of decisao.mensagens) {
       try {
-        await processarMensagemRecebida(workspaceId, item);
+        await processarMensagemRecebida(workspaceId, item, { chegouEm });
       } catch (erro) {
         const motivo = erro instanceof Error ? erro.message : String(erro);
         console.error("[webhook evolution] falha ao processar uma mensagem do lote:", erro);
@@ -226,7 +231,19 @@ const IDADE_MAXIMA_MENSAGEM_AO_VIVO_MS = 2 * 60 * 1000;
 export async function processarMensagemRecebida(
   workspaceId: string,
   item: unknown,
-  opcoes: { permitirHistorico?: boolean } = {},
+  opcoes: {
+    permitirHistorico?: boolean;
+    /**
+     * A hora em que o webhook bateu no CRM, lida pelo handler antes de qualquer trabalho. Ver
+     * `src/lib/conversas/tempo-de-chegada.ts`.
+     *
+     * OPCIONAL de propósito: a sincronização de histórico também chama esta função, e lá as
+     * mensagens são antigas. Gravar o carimbo ali diria que uma mensagem de três semanas atrás
+     * levou três semanas pra chegar, e um punhado dessas destrói a medição. Sem o carimbo, a linha
+     * simplesmente não entra na conta.
+     */
+    chegouEm?: Date;
+  } = {},
 ) {
   const data = item as {
     key?: {
@@ -443,6 +460,10 @@ export async function processarMensagemRecebida(
         timeZone: FUSO_BRASILIA,
       }),
       criadoEm: new Date(timestampMs),
+      // Ver `tempo-de-chegada.ts`. Ausente quando a chamada vem da sincronização de histórico, que
+      // não deve entrar na medição.
+      recebidoEm: opcoes.chegouEm ?? null,
+      gravadoEm: opcoes.chegouEm ? new Date() : null,
       canal: CANAL_NAO_OFICIAL,
       contaCanal,
       extras: {

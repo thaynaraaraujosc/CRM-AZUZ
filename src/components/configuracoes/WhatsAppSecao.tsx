@@ -8,6 +8,8 @@ import { LimparDadosWhatsApp } from "./LimparDadosWhatsApp";
 import { LimparDemonstracao } from "./LimparDemonstracao";
 import { EmbeddedSignupWhatsApp } from "./EmbeddedSignupWhatsApp";
 import { ImportarConversas } from "./ImportarConversas";
+import { SaudeQrCode } from "./SaudeQrCode";
+import { TempoDeChegada } from "./TempoDeChegada";
 import { useSession } from "next-auth/react";
 
 import { useIntegracaoNaoOficial } from "./useIntegracaoNaoOficial";
@@ -126,12 +128,27 @@ export function WhatsAppSecao() {
             {metaConectada && integracao?.metadados ? (
               <SaudeConexaoOficial metadados={integracao.metadados as Record<string, unknown>} />
             ) : null}
+            {/*
+              * POR QUE A MENSAGEM NÃO CHEGOU — e o conserto, quando dá pra consertar sozinho.
+              *
+              * Este painel existia e tinha deixado de ser renderizado: saiu junto com a
+              * `IntegracoesSecao` numa limpeza das Configurações em 13/10/2026, e a categoria
+              * WhatsApp, que herdou o resto, não o levou. O efeito foi exatamente o sintoma que ele
+              * existe pra explicar: "chega mensagem no celular e não chega no CRM" voltou a não ter
+              * onde ser olhado, e a única resposta disponível virou adivinhar.
+              *
+              * Só a conexão por QR Code: a janela de 24 horas e o registro de webhook que ele
+              * confere são do Baileys. No canal oficial não existe o que ele mede.
+              */}
+            {!metaConectada ? <SaudeQrCode /> : null}
             {!metaConectada && naoOficial.estado?.metadados?.historico ? (
               <ImportarConversas
                 historico={naoOficial.estado.metadados.historico}
                 aoMudar={naoOficial.aplicarHistorico}
               />
             ) : null}
+            {/* Quanto tempo a mensagem leva da mão de quem escreveu até esta tela, medido. */}
+            <TempoDeChegada canal="WhatsApp" />
             {/* Só na conexão oficial: modelo aprovado é coisa da Cloud API. No QR Code não existe
                 janela de 24 horas nem modelo, então a escolha não teria o que fazer. */}
             {metaConectada ? <ModeloDeRetomada /> : null}

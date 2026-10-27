@@ -771,6 +771,26 @@ model MensagemExtra {
   ///
   /// Nulo em mensagem recebida (ali o próprio id JÁ é o wamid) e em canal que não devolve id.
   wamid        String?   @db.VarChar(191)
+  /// QUANDO O WEBHOOK CHEGOU AQUI. Relógio nosso, não do remetente.
+  ///
+  /// `criadoEm` é o carimbo que o provedor manda, e ele vem do APARELHO de quem escreveu: serve
+  /// pra ordenar a conversa, não pra medir tempo, porque o relógio do celular alheio pode estar
+  /// adiantado ou atrasado em segundos. Comparar `criadoEm` com qualquer coisa nossa mistura dois
+  /// relógios diferentes.
+  ///
+  /// Com este carimbo dá pra separar as duas pernas da demora, que têm consertos opostos:
+  /// `recebidoEm - criadoEm` é o transporte (Meta/Evolution, fora do nosso alcance) e
+  /// `gravadoEm - recebidoEm` é o nosso processamento — os dois do mesmo relógio, esse sim
+  /// confiável. Sem os dois, "a mensagem demora pra aparecer" não tem como sair de palpite.
+  ///
+  /// Nulo nas linhas anteriores a esta coluna e em mensagem que o próprio CRM enviou.
+  recebidoEm   DateTime?
+  /// QUANDO A MENSAGEM FICOU GRAVADA, logo antes do insert.
+  ///
+  /// `atualizadoEm` não serve pra isso: uma reação ou uma mudança de status reescreve a linha e
+  /// empurra aquele carimbo pra frente, o que transformaria uma mensagem gravada em 300 ms numa
+  /// medição de horas. Este fica parado.
+  gravadoEm    DateTime?
   /// Carimbo da última escrita nesta linha. Existe pra a tela poder perguntar "mudou alguma coisa?"
   /// com uma consulta barata (um MAX indexado) em vez de baixar o histórico inteiro a cada 5s.
   ///

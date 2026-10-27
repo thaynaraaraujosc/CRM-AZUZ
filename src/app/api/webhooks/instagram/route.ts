@@ -33,6 +33,7 @@ import {
   buscarPerfilNasConversas,
 } from "@/lib/integracoes/instagram-login";
 import { criteriosDeEcoDoCrm } from "@/lib/social/eco-do-direct";
+import { motivoDaFalha, prazoDe, PRAZO_DOWNLOAD_MS } from "@/lib/integracoes/prazo";
 
 /**
  * GET: handshake de verificação que a Meta faz uma vez, ao cadastrar a URL do webhook no painel
@@ -209,8 +210,15 @@ async function extrasDeAnexoInstagram(
     // O CDN de mídia do Instagram (`lookaside.fbsbx.com/ig_messaging_cdn/...`) EXIGE o token: sem
     // ele a resposta é uma página HTML de erro com status 200. Foi o que virou aqueles cards
     // "html · 669 KB" e o que fez a miniatura nunca aparecer.
+    //
+    // E COM PRAZO. Era aqui que a miniatura "aparecia, sumia, voltava e sumia de novo": sem prazo,
+    // um CDN que aceita a conexão e não responde pendurava o handler inteiro até a função ser
+    // morta — e a mensagem nem chegava a ser gravada, porque o `create` vem depois daqui. Ver
+    // `prazo.ts`. Com prazo, cai no `catch` abaixo e a bolha nasce com o rótulo em texto, que é o
+    // que este `try` sempre quis fazer e não conseguia.
     const resposta = await fetch(url, {
       headers: accessToken ? { authorization: `Bearer ${accessToken}` } : {},
+      signal: prazoDe(PRAZO_DOWNLOAD_MS),
     });
     if (!resposta.ok) {
       console.log("[webhook instagram] anexo recusado pelo CDN:", resposta.status);
@@ -267,7 +275,7 @@ async function extrasDeAnexoInstagram(
     }
     return {};
   } catch (erro) {
-    console.error("[webhook instagram] Falha ao baixar anexo:", erro);
+    console.error("[webhook instagram] Falha ao baixar anexo:", motivoDaFalha(erro, PRAZO_DOWNLOAD_MS));
     return {};
   }
 }
@@ -304,6 +312,18 @@ async function integracaoDaContaInstagram(instagramContaId: string) {
 }
 
 export async function POST(request: Request) {
+  /*
+   * A HORA EM QUE O WEBHOOK BATEU AQUI, lida uma vez, antes de qualquer trabalho.
+   *
+   * É o que separa "a Meta demorou pra entregar" de "o CRM demorou pra gravar" — duas causas com
+   * consertos opostos, e até aqui indistinguíveis, porque o único carimbo gravado vinha do
+   * aparelho de quem escreveu. Ver `src/lib/conversas/tempo-de-chegada.ts`.
+   *
+   * Isto importa mais aqui do que no WhatsApp: este handler faz até cinco chamadas à Meta (perfil,
+   * @ pela lista de conversas, foto, dados extras, capa da mídia) ANTES de gravar a mensagem, e
+   * cada uma entra na espera de quem está olhando a tela.
+   */
+  const chegouEm = new Date();
   const payloadCru = await request.text();
   const assinatura = request.headers.get("x-hub-signature-256");
   // Segredo do app do Instagram, não o do app principal. Ver `validarAssinaturaWebhook`. Cai no
@@ -665,20 +685,38 @@ export async function POST(request: Request) {
           Date.now() - contato.igPerfilAtualizado.getTime() > 24 * 60 * 60 * 1000;
         if (contato?.id && remetenteId && perfilVelho && tokenDaConta) {
           const extras = await buscarDadosExtrasDoPerfil(tokenDaConta, remetenteId).catch(() => null);
-          if (extras) {
-            await prisma.contato
-              .update({
-                where: { id: contato.id },
-                data: {
-                  igSeguidores: extras.seguidores,
-                  igVerificado: extras.verificado,
-                  igSegueVoce: extras.segueVoce,
-                  igVoceSegue: extras.voceSegue,
-                  igPerfilAtualizado: new Date(),
-                },
-              })
-              .catch(() => {});
-          }
+          /*
+           * O CARIMBO É GRAVADO MESMO QUANDO A BUSCA FALHA, e isto conserta uma chamada à Meta
+           * que se repetia em TODA mensagem.
+           *
+           * `perfilVelho` é calculado a partir de `igPerfilAtualizado`. Gravando o carimbo só no
+           * sucesso, um perfil cuja busca falha sempre — e ela falha de forma permanente com
+           * frequência: conta sem permissão pra `follower_count`, perfil pessoal, usuário que
+           * bloqueou — ficava eternamente "velho". Resultado: uma ida à Graph API antes de gravar
+           * CADA mensagem daquela pessoa, para sempre, pra receber o mesmo erro. Era a chamada
+           * externa mais repetida de todo o caminho de recebimento, e inteiramente inútil.
+           *
+           * O que isto custa: uma falha passageira só é tentada de novo em 24 horas, e até lá a
+           * contagem de seguidores daquele contato fica sem preencher. É o lado certo da troca —
+           * esse número é enfeite, e quem paga pela tentativa é quem está esperando a mensagem
+           * aparecer na tela.
+           */
+          await prisma.contato
+            .update({
+              where: { id: contato.id },
+              data: {
+                ...(extras
+                  ? {
+                      igSeguidores: extras.seguidores,
+                      igVerificado: extras.verificado,
+                      igSegueVoce: extras.segueVoce,
+                      igVoceSegue: extras.voceSegue,
+                    }
+                  : {}),
+                igPerfilAtualizado: new Date(),
+              },
+            })
+            .catch(() => {});
         }
 
         if (contato?.id && fotoUrl) {
@@ -979,12 +1017,19 @@ export async function POST(request: Request) {
             timeZone: "America/Sao_Paulo",
           }),
           criadoEm,
+          // Ver `tempo-de-chegada.ts`: é o que permite medir a demora sem depender do relógio do
+          // aparelho de quem mandou.
+          recebidoEm: chegouEm,
           canal: CANAL_INSTAGRAM,
           contaCanal: contaCanalDaConexao(CANAL_INSTAGRAM, instagramContaId),
           // Anexo vai pro R2 e a mensagem guarda só a referência (ver `armazenamento/midia.ts`).
           extras: Object.keys(extrasComLegenda).length
             ? ((await guardarMidiasDosExtras(extrasComLegenda, integracaoDaConta.workspaceId)) as object)
             : undefined,
+          // POR ÚLTIMO, e isto não é estilo: propriedade de objeto é avaliada em ordem, e o
+          // `await` do upload pro R2 está no `extras` logo acima. Lido antes dele, o carimbo
+          // deixaria o upload de fora justamente da medição que existe pra encontrá-lo.
+          gravadoEm: new Date(),
         },
       });
 
