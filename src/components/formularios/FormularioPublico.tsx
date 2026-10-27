@@ -6,10 +6,12 @@ import {
   MENSAGEM_FINAL_PADRAO,
   TIPOS_LAYOUT,
   condicaoBate,
+  mostraCapa,
   mostraNome,
   mostraPaginas,
   mostraTitulo,
   numeraPerguntas,
+  textoDoBotaoDaCapa,
   umaPerguntaPorVez,
   migrarFormulario,
   type Formulario,
@@ -19,7 +21,8 @@ import {
 } from "@/lib/formularios-context";
 import { PerguntaVisualizacao } from "@/components/campo-resposta";
 import { FormularioUmaPorVez } from "@/components/formularios/formulario-uma-por-vez";
-import { erroDaPergunta } from "@/lib/formularios/passo-a-passo";
+import { TextoComLinks } from "@/components/formularios/TextoComLinks";
+import { erroDaPergunta, tituloAutomatico } from "@/lib/formularios/passo-a-passo";
 import type { Rastreamento } from "@/lib/formularios/rastreamento";
 import { valoresDoEndereco } from "@/lib/formularios/preencher-endereco";
 import type { EnderecoDoCep } from "@/lib/formularios/documentos";
@@ -292,6 +295,9 @@ export function FormularioPublico({
   const [paginaIndice, setPaginaIndice] = useState(0);
   const [erros, setErros] = useState<Record<string, string>>({});
   const [enviado, setEnviado] = useState(false);
+  /** A capa já saiu da frente? Só vale pra esta visita: recarregar a página mostra a capa de novo,
+   *  que é o certo — ela é a apresentação, não um aviso que se dispensa uma vez. */
+  const [comecou, setComecou] = useState(false);
   /* As marcas do anúncio, capturadas uma vez logo depois de montar.
      Num ref, e não num estado, porque elas nunca mudam e nada na tela depende delas: guardar num
      estado provocaria uma renderização a mais sem nenhum efeito visível. A escrita fica no efeito
@@ -496,6 +502,44 @@ export function FormularioPublico({
     );
   }
 
+  /**
+   * A CAPA DE APRESENTAÇÃO: título, texto e o botão de começar, antes da primeira pergunta.
+   *
+   * MESMO CARTÃO, MESMO TEMA do formulário: a capa é a primeira tela daquele formulário, não uma
+   * página à parte — se mudasse de cara no clique de "Começar", pareceria que a pessoa tinha ido
+   * parar em outro lugar. Logo e banner aparecem aqui também, pelo mesmo motivo.
+   */
+  if (mostraCapa(formulario.capa) && !comecou) {
+    return (
+      <div className="form-public-page" style={estiloPagina}>
+        <div className={classesDoCartao(tema)} style={estiloDoCartao(tema)}>
+          {tema.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- URL livre informada pelo usuário
+            <img src={tema.logoUrl} alt="Logo" className="form-public-logo" />
+          ) : null}
+          {tema.bannerUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- URL livre informada pelo usuário
+            <img src={tema.bannerUrl} alt="" className="form-public-banner" style={estiloDoBanner(tema)} />
+          ) : null}
+          <div className="form-public-capa">
+            <h2>{(formulario.capa.titulo ?? "").trim() || formulario.nome}</h2>
+            {(formulario.capa.texto ?? "").trim() ? (
+              <TextoComLinks className="form-public-capa-texto" texto={formulario.capa.texto ?? ""} />
+            ) : null}
+            <button
+              type="button"
+              className="btn block"
+              style={{ background: tema.corBotao, color: "#fff" }}
+              onClick={() => setComecou(true)}
+            >
+              {textoDoBotaoDaCapa(formulario.capa)}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="form-public-page" style={estiloPagina}>
       <div className={classesDoCartao(tema)} style={estiloDoCartao(tema)}>
@@ -529,7 +573,9 @@ export function FormularioPublico({
             Página {paginaIndice + 1} de {paginasAtivas.length}
           </p>
         ) : null}
-        {pagina?.titulo && mostraTitulo(tema) ? <h4 style={{ margin: "6px 0 10px" }}>{pagina.titulo}</h4> : null}
+        {pagina?.titulo && !tituloAutomatico(pagina.titulo) && mostraTitulo(tema) ? (
+          <h4 style={{ margin: "6px 0 10px" }}>{pagina.titulo}</h4>
+        ) : null}
         {pagina?.descricao ? <p className="hint" style={{ marginBottom: 10 }}>{pagina.descricao}</p> : null}
 
         {/* Formulário publicado sem nenhuma pergunta visível mostrava título e botão "Enviar", e

@@ -1591,6 +1591,70 @@ function PainelDesign({
             onChange={(e) => onAtualizar({ descricao: e.target.value })}
           />
         </div>
+        {/* A CAPA DE APRESENTAÇÃO fica junto da descrição e da mensagem final porque são as três
+            coisas que o formulário DIZ — o resto do cartão é aparência. */}
+        <div className="field">
+          <label>{traduzir("Capa de apresentação")}</label>
+          <div className="filters-row" style={{ margin: 0 }}>
+            <button
+              type="button"
+              className={`fchip${formulario.capa?.ativa ? " active" : ""}`}
+              onClick={() => onAtualizar({ capa: { ...formulario.capa, ativa: true } })}
+            >
+              {traduzir("Mostrar")}
+            </button>
+            <button
+              type="button"
+              className={`fchip${!formulario.capa?.ativa ? " active" : ""}`}
+              onClick={() => onAtualizar({ capa: { ...formulario.capa, ativa: false } })}
+            >
+              {traduzir("Não mostrar")}
+            </button>
+          </div>
+          <p className="hint">
+            {traduzir("A tela que aparece antes da primeira pergunta, dizendo pra que serve o formulário.")}
+          </p>
+        </div>
+        {formulario.capa?.ativa ? (
+          <div className="capa-do-formulario">
+            <div className="field">
+              <label>{traduzir("Título da capa")}</label>
+              <input
+                className="input"
+                style={{ width: "100%" }}
+                value={formulario.capa.titulo ?? ""}
+                onChange={(e) => onAtualizar({ capa: { ...formulario.capa, titulo: e.target.value } })}
+                placeholder={formulario.nome || "Ex.: Vamos começar"}
+              />
+            </div>
+            <div className="field">
+              <label>{traduzir("Texto da capa")}</label>
+              <textarea
+                className="input"
+                style={{ width: "100%", minHeight: 90, resize: "vertical" }}
+                value={formulario.capa.texto ?? ""}
+                onChange={(e) => onAtualizar({ capa: { ...formulario.capa, texto: e.target.value } })}
+                placeholder="Ex.: São 8 perguntas e leva uns 2 minutos. Com elas a gente já chega na conversa sabendo o que você precisa."
+              />
+            </div>
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label>{traduzir("Texto do botão")}</label>
+              <input
+                className="input"
+                style={{ width: "100%" }}
+                value={formulario.capa.textoDoBotao ?? ""}
+                onChange={(e) => onAtualizar({ capa: { ...formulario.capa, textoDoBotao: e.target.value } })}
+                placeholder="Começar"
+              />
+            </div>
+            {/* A capa só aparece com título OU texto: um botão "Começar" sozinho é um clique a
+                mais que não diz nada, e ligar sem escrever seria um engano silencioso. */}
+            {!((formulario.capa.titulo ?? "").trim() || (formulario.capa.texto ?? "").trim()) ? (
+              <p className="hint">{traduzir("Escreva um título ou um texto — sem isso a capa não aparece.")}</p>
+            ) : null}
+          </div>
+        ) : null}
+
         <div className="field">
           <label>{traduzir("Mensagem de sucesso")}</label>
           <textarea

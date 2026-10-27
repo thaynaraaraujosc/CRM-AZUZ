@@ -11,7 +11,7 @@ import {
   type Formulario,
   type PerguntaFormulario,
 } from "@/lib/formularios-context";
-import { erroDaPergunta, passosDoFormulario, type PassoDoFormulario } from "@/lib/formularios/passo-a-passo";
+import { erroDaPergunta, passosDoFormulario, type PassoDoFormulario, tituloAutomatico } from "@/lib/formularios/passo-a-passo";
 import { useIdioma } from "@/lib/idioma-context";
 
 type OpcaoNome = { id: string; nome: string };
@@ -182,7 +182,7 @@ function CabecalhoDoPasso({ passo, mostrarTitulo }: { passo: PassoDoFormulario; 
   if (!passo.comecaPagina) return null;
   return (
     <>
-      {passo.pagina.titulo && mostrarTitulo ? (
+      {passo.pagina.titulo && !tituloAutomatico(passo.pagina.titulo) && mostrarTitulo ? (
         <h4 style={{ margin: "6px 0 10px" }}>{passo.pagina.titulo}</h4>
       ) : null}
       {passo.pagina.descricao ? (
