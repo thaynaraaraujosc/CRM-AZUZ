@@ -900,6 +900,41 @@ function ConversasPageInner() {
     return false;
   }
 
+  /**
+   * QUANDO CADA CONVERSA TEVE ATIVIDADE, calculado UMA VEZ.
+   *
+   * O custo que isto corta: esta conta era feita DENTRO do comparador da ordenação, e lá ela
+   * rodava O(n log n) vezes por render. Cada chamada varria todas as mensagens daquela conversa
+   * de trás pra frente e, não achando, fazia `conversas.find` — uma varredura linear da lista
+   * inteira. Com 150 conversas de 200 mensagens dá cerca de 370 mil operações, e a tela refaz
+   * tudo a cada batida do polling (5s) e a cada tecla digitada na busca ou no campo de escrever.
+   *
+   * Era essa a lentidão ao trocar de conversa e de aba. Agora é um mapa montado uma vez, e só
+   * refeito quando as mensagens ou as conversas mudam de verdade: a ordenação passa a consultar,
+   * não a calcular.
+   */
+  const ultimaAtividadePorNome = useMemo(() => {
+    const mapa = new Map<string, number>();
+    for (const [nomeContato, mensagens] of Object.entries(mensagensExtraPorContato)) {
+      for (let i = mensagens.length - 1; i >= 0; i--) {
+        const quando = mensagens[i].criadoEm;
+        if (quando) {
+          mapa.set(nomeContato, quando);
+          break;
+        }
+      }
+    }
+    // Sem mensagem CARREGADA ainda, vale o que o servidor disse sobre a última mensagem. Devolver
+    // zero aqui jogava pro fim da lista toda conversa cujas mensagens ainda não tinham chegado ao
+    // navegador, e o que estava embaixo dependia da ordem em que as buscas terminaram.
+    for (const c of conversas) {
+      if (mapa.has(c.nome)) continue;
+      const doServidor = c.ultimaMensagemEm ?? c.atualizadoEm;
+      mapa.set(c.nome, doServidor ? new Date(doServidor).getTime() : 0);
+    }
+    return mapa;
+  }, [mensagensExtraPorContato, conversas]);
+
   const conversasFiltradas = conversas
     .filter((c) => {
       if (conversaEscondidaPeloWhatsapp(c)) return false;
@@ -1031,40 +1066,6 @@ function ConversasPageInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [carregandoConversas, searchParams, contatos]);
 
-  /**
-   * QUANDO CADA CONVERSA TEVE ATIVIDADE, calculado UMA VEZ.
-   *
-   * O custo que isto corta: esta conta era feita DENTRO do comparador da ordenação, e lá ela
-   * rodava O(n log n) vezes por render. Cada chamada varria todas as mensagens daquela conversa
-   * de trás pra frente e, não achando, fazia `conversas.find` — uma varredura linear da lista
-   * inteira. Com 150 conversas de 200 mensagens dá cerca de 370 mil operações, e a tela refaz
-   * tudo a cada batida do polling (5s) e a cada tecla digitada na busca ou no campo de escrever.
-   *
-   * Era essa a lentidão ao trocar de conversa e de aba. Agora é um mapa montado uma vez, e só
-   * refeito quando as mensagens ou as conversas mudam de verdade: a ordenação passa a consultar,
-   * não a calcular.
-   */
-  const ultimaAtividadePorNome = useMemo(() => {
-    const mapa = new Map<string, number>();
-    for (const [nomeContato, mensagens] of Object.entries(mensagensExtraPorContato)) {
-      for (let i = mensagens.length - 1; i >= 0; i--) {
-        const quando = mensagens[i].criadoEm;
-        if (quando) {
-          mapa.set(nomeContato, quando);
-          break;
-        }
-      }
-    }
-    // Sem mensagem CARREGADA ainda, vale o que o servidor disse sobre a última mensagem. Devolver
-    // zero aqui jogava pro fim da lista toda conversa cujas mensagens ainda não tinham chegado ao
-    // navegador, e o que estava embaixo dependia da ordem em que as buscas terminaram.
-    for (const c of conversas) {
-      if (mapa.has(c.nome)) continue;
-      const doServidor = c.ultimaMensagemEm ?? c.atualizadoEm;
-      mapa.set(c.nome, doServidor ? new Date(doServidor).getTime() : 0);
-    }
-    return mapa;
-  }, [mensagensExtraPorContato, conversas]);
 
   /** Quando a última mensagem dessa conversa chegou (ou saiu). Zero quando ainda não há nenhuma.
    * Conversa sem mensagem vai pro fim, não pro topo. */
