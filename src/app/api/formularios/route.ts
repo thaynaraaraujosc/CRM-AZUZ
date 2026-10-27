@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 
 function paraFormulario(linha: {
   paginas: unknown;
+  capa?: unknown;
   paginaFinal: unknown;
   tema: unknown;
   integracoes: unknown;
@@ -15,6 +16,7 @@ function paraFormulario(linha: {
   return {
     ...linha,
     paginas: linha.paginas as Formulario["paginas"],
+    capa: (linha.capa as Formulario["capa"] | null) ?? {},
     paginaFinal: linha.paginaFinal as Formulario["paginaFinal"],
     tema: linha.tema as Formulario["tema"],
     integracoes: (linha.integracoes as Formulario["integracoes"]) ?? undefined,
@@ -49,6 +51,7 @@ export async function POST(request: Request) {
       descricao: dados.descricao,
       status: dados.status,
       paginas: dados.paginas,
+      capa: dados.capa ?? undefined,
       paginaFinal: dados.paginaFinal,
       tema: dados.tema,
       senha: dados.senha,

@@ -12,6 +12,10 @@ import { montarTextoDaConfirmacao } from "@/lib/integracoes/azuz-flow-confirmaca
 import { quandoEnviar } from "@/lib/integracoes/azuz-flow-janela";
 import { intervaloEntreEnvios } from "@/lib/campanhas/ritmo";
 import type { LeadDaResposta } from "@/lib/formularios/lead-da-resposta";
+import type { Formulario } from "@/lib/formularios-context";
+import { horarioValido } from "@/lib/formularios/agendamento";
+import { agendaDoFormulario, ocupadosDoWorkspace } from "@/lib/formularios/agendamento-servidor";
+import { hojeEmBrasilia, somarDias } from "@/lib/agenda/fuso";
 
 /**
  * O formulário DO CRM fazendo o que o formulário do AZUZ Flow já fazia: virar reunião na agenda e
@@ -36,26 +40,57 @@ export async function confirmarReuniaoDoFormulario(params: {
   workspaceId: string;
   formularioNome: string;
   respostaId: string;
+  /** As páginas do formulário, pra achar a configuração da agenda do campo "Agendar reunião". */
+  paginas: Formulario["paginas"];
   lead: LeadDaResposta;
 }): Promise<void> {
   const { workspaceId, lead } = params;
-  if (!lead.reuniao || !lead.whatsapp || !lead.nome) return;
+  if (!lead.reuniao || !lead.nome) return;
 
-  const config = await configDoFlow(workspaceId);
-  const confirmacao = config.formulario.confirmacao;
-  // Desligada é silêncio: a empresa escolheu não mandar, e isso não é uma falha pra registrar em
-  // cada resposta.
-  if (!confirmacao.ativa) return;
-
-  const conexoes = await conexoesDeWhatsappDoWorkspace(workspaceId);
-  const escolha = escolherCanalDoFlow(config.canal, conexoes);
+  /**
+   * O HORÁRIO AINDA ESTÁ LIVRE?
+   *
+   * Conferido DE NOVO aqui, e não só quando a lista foi montada na tela: entre a pessoa escolher
+   * e apertar enviar pode passar meia hora, e nesse tempo outra pessoa marca o mesmo horário.
+   * Sem esta segunda conferência, duas pessoas ficam esperando na mesma chamada e ninguém
+   * descobre até a hora.
+   */
+  if (!(await aindaEstaLivre(params))) {
+    console.error(
+      `[formularios] horário já ocupado quando a resposta ${params.respostaId} chegou; a reunião não foi marcada.`,
+    );
+    return;
+  }
 
   const contato = await prisma.contato.findFirst({
     where: { workspaceId, nome: lead.nome },
     select: { id: true, nome: true },
   });
 
+  /**
+   * A REUNIÃO ENTRA NA AGENDA MESMO COM A CONFIRMAÇÃO DESLIGADA, e isso é deliberado.
+   *
+   * Antes o compromisso era criado depois do `if (!confirmacao.ativa) return`, então desligar a
+   * mensagem automática desligava junto a marcação. Com os horários vindo da agenda, isso virou
+   * defeito: sem compromisso, a vaga continua livre, e a próxima pessoa que abrir o formulário
+   * recebe exatamente o mesmo horário.
+   *
+   * São duas coisas diferentes. "Não quero mandar mensagem sozinha" não é "não quero a reunião na
+   * minha agenda".
+   */
   await garantirCompromisso({ ...params, contatoId: contato?.id ?? null });
+
+  // Daqui pra baixo é só a confirmação por WhatsApp, que precisa de número e de a empresa ter
+  // ligado o aviso. Desligada é silêncio: foi uma escolha, não uma falha pra registrar em cada
+  // resposta.
+  if (!lead.whatsapp) return;
+
+  const config = await configDoFlow(workspaceId);
+  const confirmacao = config.formulario.confirmacao;
+  if (!confirmacao.ativa) return;
+
+  const conexoes = await conexoesDeWhatsappDoWorkspace(workspaceId);
+  const escolha = escolherCanalDoFlow(config.canal, conexoes);
 
   // A conversa só nasce quando há canal. Sem ela não há por onde mandar — e `decidirConfirmacao`
   // diz isso com todas as letras, em vez de o lead sumir em silêncio.
@@ -208,4 +243,31 @@ async function garantirCompromisso(params: {
       console.error("[formularios] não deu pra criar o compromisso da reunião:", erro);
     }
   }
+}
+
+/**
+ * O horário escolhido continua livre na agenda do workspace?
+ *
+ * SEM CAMPO DE AGENDAMENTO NO FORMULÁRIO, nada a conferir: a reunião veio de um campo de data
+ * comum, que nunca ofereceu horário nenhum, e recusá-la aqui tiraria um comportamento que já
+ * existia.
+ */
+async function aindaEstaLivre(params: {
+  workspaceId: string;
+  paginas: Formulario["paginas"];
+  lead: LeadDaResposta;
+}): Promise<boolean> {
+  const config = agendaDoFormulario({ paginas: params.paginas });
+  if (!config || !params.lead.reuniao) return true;
+
+  const agora = new Date();
+  const hoje = hojeEmBrasilia(agora);
+  const ocupados = await ocupadosDoWorkspace({
+    workspaceId: params.workspaceId,
+    deDia: hoje,
+    ateDia: somarDias(hoje, config.janelaDias + 1),
+    duracaoPadrao: config.duracao,
+  });
+
+  return horarioValido({ config, ocupados, inicio: params.lead.reuniao.toISOString(), agora }).ok;
 }

@@ -51,6 +51,25 @@ describe("a hora é de Brasília", () => {
     expect(lerInstanteEmBrasilia("2026-10-23T23:30")?.toISOString()).toBe("2026-10-24T02:30:00.000Z");
   });
 
+  /*
+   * O campo "Agendar reunião" passou a gravar o INSTANTE, com fuso, porque agora é o servidor que
+   * escolhe os horários e ele já sabe qual instante cada vaga é.
+   *
+   * O risco de ler isso errado: "2026-10-23T19:00:00.000Z" casa com o padrão do formato antigo,
+   * que é hora de Brasília sem fuso. Tratado assim, uma reunião das 16h seria marcada pras 19h —
+   * três horas de diferença, descobertas pelo cliente sozinho na chamada.
+   */
+  it("instante com fuso é lido como está, e não como hora de Brasília", () => {
+    expect(lerInstanteEmBrasilia("2026-10-23T19:00:00.000Z")?.toISOString()).toBe("2026-10-23T19:00:00.000Z");
+    expect(lerInstanteEmBrasilia("2026-10-23T16:00:00-03:00")?.toISOString()).toBe("2026-10-23T19:00:00.000Z");
+  });
+
+  it("os dois formatos convivem: resposta antiga continua sendo lida certo", () => {
+    const antigo = lerInstanteEmBrasilia("2026-10-23T16:00");
+    const novo = lerInstanteEmBrasilia("2026-10-23T19:00:00.000Z");
+    expect(antigo?.toISOString()).toBe(novo?.toISOString());
+  });
+
   it("o que não tem forma de data e hora não vira nada", () => {
     expect(lerInstanteEmBrasilia("")).toBeNull();
     expect(lerInstanteEmBrasilia("23/10/2026")).toBeNull();

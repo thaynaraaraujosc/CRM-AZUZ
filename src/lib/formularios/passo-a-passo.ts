@@ -13,6 +13,20 @@ import { cepValido, cnpjValido, cpfValido, emailValido, telefoneValido } from "@
  * igual e pra serem testadas sem navegador.
  */
 
+/**
+ * Título que o próprio produto deu, e que portanto não diz nada a quem responde.
+ *
+ * Toda página nasce chamada "Página 1", e esse nome serve pra quem MONTA se achar na lista do
+ * construtor. Imprimi-lo como cabeçalho em cima da primeira pergunta põe uma linha de ruído na
+ * tela do cliente, dizendo algo que ele não perguntou e que o "Página 1 de 2" logo acima já diz.
+ *
+ * Quem escreveu um título de verdade continua vendo o dele: a regra só pega "Página" seguida de
+ * número, que é exatamente o que o construtor gera sozinho.
+ */
+export function tituloAutomatico(titulo: string | undefined): boolean {
+  return /^\s*p[áa]gina\s*\d*\s*$/i.test(titulo ?? "");
+}
+
 /** Campos de uma página que devem aparecer, respeitando `oculta` e `logica` (mostrar_se/ocultar_se). */
 export function perguntasVisiveis(pagina: PaginaFormulario, valores: Record<string, string>): PerguntaFormulario[] {
   return pagina.perguntas.filter((p) => {

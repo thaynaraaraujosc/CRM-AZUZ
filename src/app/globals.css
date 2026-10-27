@@ -9016,6 +9016,18 @@ button.camp-row:hover {
 
 /* ---------------- Formulário: página pública ---------------- */
 
+/**
+ * A PÁGINA PÚBLICA NÃO SEGUE O TEMA DE QUEM ABRE.
+ *
+ * O DEFEITO: as cores daqui vinham dos tokens do produto, e esses tokens viram escuro quando o
+ * `data-theme="dark"` está no `<html>`. Quem abre o CRM no tema escuro e clica em
+ * "Pré-visualizar" via o formulário inteiro invertido, com o "Voltar" branco sobre branco —
+ * ilegível. É a tela que o cliente da agência vê, e ela estava quebrada pra metade dos aparelhos.
+ *
+ * Quem manda nas cores aqui é o tema que a EMPRESA escolheu no construtor: claro por padrão,
+ * escuro quando ela marca `temaEscuro` (daí `.form-public-card.tema-escuro` mais abaixo). O
+ * `color-scheme: light` também volta os campos nativos (data, lista) ao desenho claro.
+ */
 .form-public-page {
   min-height: 100vh;
   display: flex;
@@ -9023,6 +9035,73 @@ button.camp-row:hover {
   justify-content: center;
   padding: var(--space-6) var(--space-6);
   background: var(--navy-raised);
+
+  color-scheme: light;
+  --ink: #0b1533;
+  --ink-nome: #0b1533;
+  --text-muted: rgba(11, 21, 51, 0.64);
+  --text-faint: rgba(11, 21, 51, 0.52);
+  --line: rgba(11, 21, 51, 0.12);
+  --line-soft: rgba(11, 21, 51, 0.07);
+  --line-strong: rgba(11, 21, 51, 0.2);
+  --navy: #ffffff;
+  --navy-raised: #eef1f6;
+  --navy-raised-2: #e4e8f0;
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+
+  /* As sombras do produto são mais fechadas e escuras, desenhadas pra um painel denso. No cartão
+     solto no meio da tela elas marcam demais; estas são mais abertas e mais leves. */
+  --shadow-xs: 0 1px 2px rgba(0, 32, 55, 0.05);
+  --shadow-lg: 0 2px 6px rgba(0, 32, 55, 0.06), 0 24px 56px rgba(0, 32, 55, 0.12);
+
+  /* O texto solto da página (fora do cartão, que tem a cor dele) também para de seguir o tema. */
+  color: var(--ink);
+}
+
+/*
+ * Os controles da página pública não herdam o acabamento das telas de trabalho.
+ *
+ * Os tokens claros acima resolvem a cor, mas duas regras do produto escrevem a superfície à mão e
+ * passam por cima deles: `:root[data-theme="dark"] .input` (campo branco aceso) e `.btn.ghost`
+ * (cinza `#f1f2f5`). Aqui o campo volta a ser a mesma superfície do cartão e o botão secundário
+ * volta a ser branco, que é como a tela foi desenhada.
+ *
+ * Só a superfície: a borda já vem certa de `--line`, e mexer nela aqui apagaria o anel de foco
+ * de `.form-resposta-campo:focus`, que tem a mesma força deste seletor.
+ */
+.form-public-page .form-resposta-campo,
+.form-public-page .input,
+/* `:root[data-theme="dark"] .input` vale 3 classes e passaria por cima da linha acima, que vale
+   2. A repetição qualificada é o que empata e vence pela ordem do arquivo. */
+:root[data-theme="dark"] .form-public-page .form-resposta-campo,
+:root[data-theme="dark"] .form-public-page .input {
+  background: var(--navy-raised);
+}
+
+/*
+ * Os botões da página pública são mais altos que os do painel.
+ *
+ * `9px` de altura interna é a densidade de uma tela de trabalho, onde há dezenas de botões e cada
+ * pixel conta. Aqui há um ou dois, são o fim da tarefa, e o alvo é um dedo em celular: 12px dá os
+ * 40px de altura que a tela foi desenhada pra ter.
+ *
+ * A superfície e o contorno saem do botão base pelo mesmo motivo: no painel o botão precisa se
+ * destacar do fundo cheio; dentro do cartão ele é o único elemento clicável da linha. Quem
+ * precisa de superfície (`.ghost`) pede logo abaixo, e o botão de avançar traz a cor do tema por
+ * estilo embutido.
+ */
+.form-public-page .btn {
+  padding: var(--space-3) var(--space-4);
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.form-public-page .btn.ghost {
+  background: var(--surface-elevated);
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-xs);
 }
 
 .form-public-card {
@@ -9145,6 +9224,230 @@ button.camp-row:hover {
   /* `dvh` e não `vh`: no celular a barra do navegador entra e sai, e com `vh` o conteúdo
      centralizado fica deslocado justamente enquanto a barra está visível. */
   min-height: 100dvh;
+}
+
+/*
+ * O CAMPO QUE MARCA A REUNIÃO: a fita de dias e, abaixo dela, as horas daquele dia.
+ *
+ * A fita rola na horizontal em vez de quebrar em linhas. Um mês de dias quebrado em quatro linhas
+ * vira um calendário, e calendário dentro de formulário faz a pessoa procurar o mês antes de
+ * achar o dia — quando só há oito dias com horário livre, mostrá-los em fila é mais curto que
+ * qualquer calendário.
+ */
+.form-agenda {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.form-agenda-dias {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  padding-bottom: var(--space-1);
+  /* Sem isto o último dia encosta na borda do cartão e parece cortado mesmo quando é o último. */
+  scroll-padding-inline: var(--space-2);
+}
+
+.form-agenda-dia {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  min-width: 56px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-elevated);
+  color: var(--ink);
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.form-agenda-dia:hover:not(:disabled) {
+  border-color: var(--line-strong);
+}
+
+.form-agenda-dia.ativo {
+  border-color: currentColor;
+  background: var(--navy-raised-2);
+}
+
+.form-agenda-semana {
+  font-size: var(--fs-micro);
+  text-transform: uppercase;
+  letter-spacing: var(--track-wide);
+  color: var(--text-muted);
+}
+
+.form-agenda-numero {
+  font-size: 17px;
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.form-agenda-mes {
+  font-size: var(--fs-micro);
+  color: var(--text-muted);
+}
+
+/* As horas em grade, e não em fila: elas são todas do mesmo tamanho e a leitura em coluna deixa
+   claro quanto o dia tem de manhã e quanto tem de tarde. */
+.form-agenda-horas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: var(--space-2);
+}
+
+.form-agenda-hora {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-elevated);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--fs-body);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.form-agenda-hora:hover:not(:disabled) {
+  border-color: var(--line-strong);
+}
+
+/* Escolhido fica CHEIO, não só com borda: numa grade de doze horários iguais, uma borda a mais
+   não responde "qual eu marquei?" de relance. */
+.form-agenda-hora.ativo {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--surface-elevated);
+}
+
+.form-agenda-dia:disabled,
+.form-agenda-hora:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/*
+ * O MESMO CAMPO, do lado de quem MONTA: os sete dias em lista, com as vagas de cada um.
+ *
+ * Denso de propósito, ao contrário da versão pública: aqui é painel de trabalho, e a pessoa está
+ * conferindo sete linhas de uma vez pra decidir o que abre e o que fecha.
+ */
+.form-agenda-grade {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.form-agenda-linha {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: 5px 7px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+}
+
+.form-agenda-nome {
+  flex: 0 0 56px;
+  padding-top: 4px;
+  font-size: 12px;
+  font-weight: var(--fw-medium);
+  color: var(--ink);
+}
+
+.form-agenda-vagas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.form-agenda-vazio {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.form-agenda-vaga {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 7px;
+  border: 1px solid color-mix(in srgb, var(--blue) 35%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--blue) 10%, transparent);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.form-agenda-vaga:hover {
+  border-color: var(--blue);
+}
+
+.form-agenda-vaga span {
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1;
+}
+
+.form-agenda-nova {
+  width: 78px;
+  min-height: 26px;
+  padding: 2px 5px;
+  font-size: 12px;
+}
+
+.form-agenda-add {
+  padding: 3px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--blue);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.form-agenda-add:disabled {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+/* A CAPA. Centralizada porque não é formulário: é uma frase e um convite, e frase centrada com
+   medida curta lê como apresentação, não como campo a preencher. */
+.form-public-capa {
+  padding: var(--space-4) 0 var(--space-2);
+  text-align: center;
+}
+.form-public-capa h2 {
+  margin: 0 0 var(--space-3);
+  text-wrap: balance;
+}
+.form-public-capa-texto {
+  margin: 0 auto var(--space-5);
+  max-width: 46ch;
+  line-height: var(--lh-base);
+  /* A empresa escreve em parágrafos no campo de texto; sem isto tudo vira uma linha só. */
+  white-space: pre-line;
+  opacity: 0.86;
+}
+
+/* Os campos da capa dentro do construtor, recuados pra se lerem como parte do interruptor de
+   cima, e não como três perguntas soltas no meio do painel. */
+.capa-do-formulario {
+  margin: 0 0 var(--space-3);
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--line);
 }
 
 .form-public-obrigado {

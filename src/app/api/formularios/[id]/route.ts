@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 
 function paraFormulario(linha: {
   paginas: unknown;
+  capa?: unknown;
   paginaFinal: unknown;
   tema: unknown;
   integracoes: unknown;
@@ -17,6 +18,7 @@ function paraFormulario(linha: {
     paginas: linha.paginas as Formulario["paginas"],
     paginaFinal: linha.paginaFinal as Formulario["paginaFinal"],
     tema: linha.tema as Formulario["tema"],
+    capa: (linha.capa as Formulario["capa"] | null) ?? {},
     integracoes: (linha.integracoes as Formulario["integracoes"]) ?? undefined,
     versoes: linha.versoes as Formulario["versoes"],
   } as Formulario;
@@ -47,6 +49,9 @@ export async function GET(_request: Request, ctx: RouteContext<"/api/formularios
     descricao: publico.descricao,
     status: publico.status,
     paginas: publico.paginas,
+    // A capa é parte do que a tela pública desenha: sem ela aqui, ligar a capa no construtor não
+    // mudaria nada no link, e o defeito só apareceria pra quem recebeu o formulário.
+    capa: publico.capa,
     paginaFinal: publico.paginaFinal,
     tema: publico.tema,
     // Necessário pra tela pública resolver as demais rotas públicas a partir daqui.

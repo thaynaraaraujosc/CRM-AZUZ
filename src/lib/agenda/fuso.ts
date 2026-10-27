@@ -88,3 +88,44 @@ export function dataCurta(dataIso: string): string {
 export function hojeEmBrasilia(agora: Date = new Date()): string {
   return dataIsoEmBrasilia(agora);
 }
+
+/**
+ * O deslocamento de Brasília, escrito como o ISO espera.
+ *
+ * FIXO, e isso é uma escolha. O Brasil não tem horário de verão desde 2019, então `-03:00` vale
+ * o ano inteiro. Se um dia voltar, este é o lugar que muda — e não as dez contas espalhadas que
+ * teriam escrito "-03:00" na mão.
+ */
+export const DESLOCAMENTO_DE_BRASILIA = "-03:00";
+
+/** "2026-10-20" + "14:30" → o instante UTC correspondente, em ISO. */
+export function isoDeBrasilia(dataIso: string, hora: string): string {
+  return new Date(`${dataIso}T${hora}:00${DESLOCAMENTO_DE_BRASILIA}`).toISOString();
+}
+
+/**
+ * "YYYY-MM-DD" + N dias, andando pelo CALENDÁRIO e não pelo relógio.
+ *
+ * Somar 24h ao instante erra sempre que o dia não tem 24h — e, mesmo sem horário de verão, somar
+ * em UTC a partir de uma data lida como meia-noite já escorrega de dia. Aqui a conta é feita em
+ * UTC sobre o meio-dia, que é o ponto do dia que nenhum fuso do Brasil empurra pra outra data.
+ */
+export function somarDias(dataIso: string, dias: number): string {
+  const instante = instanteDoDia(dataIso);
+  if (!instante) return dataIso;
+  const somado = new Date(instante.getTime() + dias * 24 * 60 * 60 * 1000);
+  return `${somado.getUTCFullYear()}-${String(somado.getUTCMonth() + 1).padStart(2, "0")}-${String(somado.getUTCDate()).padStart(2, "0")}`;
+}
+
+/** "2026-10-22" formatado como a tela pedir ("qui", "22", "out"). Data inválida devolve "". */
+export function formatarDia(dataIso: string, opcoes: Intl.DateTimeFormatOptions): string {
+  const instante = instanteDoDia(dataIso);
+  if (!instante) return "";
+  return new Intl.DateTimeFormat("pt-BR", { timeZone: FUSO_BRASILIA, ...opcoes }).format(instante);
+}
+
+/** O dia da semana de "YYYY-MM-DD" no calendário de Brasília: 0 = domingo … 6 = sábado. */
+export function diaDaSemanaEmBrasilia(dataIso: string): number | null {
+  const instante = instanteDoDia(dataIso);
+  return instante ? instante.getUTCDay() : null;
+}

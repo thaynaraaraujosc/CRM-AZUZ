@@ -207,6 +207,16 @@ export type PerguntaFormulario = {
   /** Campo do Contato que essa resposta preenche de verdade. Undefined = campo novo, não mapeado. */
   mapeamentoCrm?: string;
   logica?: LogicaCampo;
+  /** Só pro campo "agendamento": os horários que a empresa libera em cada dia da semana, a
+   *  duração da reunião, até onde dá pra marcar e a antecedência mínima. Ver
+   *  `formularios/agendamento.ts`; o que não vier cai no padrão. */
+  agenda?: {
+    /** "1" (segunda) → ["09:00", "17:00"]. Dia que não está aqui é dia fechado. */
+    horarios?: Record<string, string[]>;
+    duracao?: number;
+    janelaDias?: number;
+    antecedenciaHoras?: number;
+  };
   /** Aparência individual: sem valor definido, cada propriedade cai no visual padrão do tema do formulário. */
   estilo?: {
     corFundo?: string;
@@ -326,6 +336,17 @@ export function numeraPerguntas(tema: Pick<TemaFormulario, "numerarPerguntas">):
   return tema.numerarPerguntas !== false;
 }
 
+/** O formulário abre com a capa de apresentação? Só quando ligaram E escreveram algo: uma capa
+ *  em branco com um botão "Começar" é um clique a mais que não diz nada. */
+export function mostraCapa(capa: Formulario["capa"] | undefined): boolean {
+  return Boolean(capa?.ativa && ((capa.titulo ?? "").trim() || (capa.texto ?? "").trim()));
+}
+
+/** O que o botão da capa diz. */
+export function textoDoBotaoDaCapa(capa: Formulario["capa"] | undefined): string {
+  return (capa?.textoDoBotao ?? "").trim() || "Começar";
+}
+
 /** Uma pergunta por vez? Só quando foi escolhido: o padrão é a página inteira. */
 export function umaPerguntaPorVez(tema: Pick<TemaFormulario, "exibicao">): boolean {
   return tema.exibicao === "uma-por-vez";
@@ -351,6 +372,24 @@ export type Formulario = {
   descricao: string;
   status: StatusFormulario;
   paginas: PaginaFormulario[];
+  /**
+   * A CAPA DE APRESENTAÇÃO: a tela que quem responde vê ANTES da primeira pergunta, com um
+   * título, um texto dizendo pra que serve aquele formulário e um botão de começar.
+   *
+   * Por que vale a pena: um formulário de vinte perguntas que abre direto no "Qual é o seu nome?"
+   * não diz quanto tempo vai levar nem por que está sendo pedido — e quem não sabe isso fecha a
+   * aba. A capa é onde a empresa combina isso antes de pedir qualquer coisa.
+   *
+   * DESLIGADA POR PADRÃO (`ativa !== true`): formulário que já existe não ganha uma tela a mais
+   * sem ninguém pedir, e um pedido de uma pergunta só não precisa de capa.
+   */
+  capa: {
+    ativa?: boolean;
+    titulo?: string;
+    texto?: string;
+    /** O que o botão diz. Vazio cai em "Começar". */
+    textoDoBotao?: string;
+  };
   paginaFinal: {
     mensagem: string;
     urlRedirecionamento?: string;
@@ -423,6 +462,7 @@ function formularioNovo(): Formulario {
     descricao: "",
     status: "rascunho",
     paginas: [paginaVazia("Página 1")],
+    capa: {},
     paginaFinal: { mensagem: MENSAGEM_FINAL_PADRAO, redirecionarAutomaticamente: false },
     tema: temaVazio(),
     senha: "",
@@ -537,6 +577,8 @@ export function migrarFormulario(bruto: unknown): Formulario {
       ...base,
       ...(f as unknown as Formulario),
       tema: { ...base.tema, ...(f.tema as Partial<TemaFormulario> | undefined) },
+      // Formulário gravado antes da capa não tem o campo: entra vazio, e vazio não mostra nada.
+      capa: { ...(f.capa as Formulario["capa"] | undefined) },
       paginaFinal: { ...base.paginaFinal, ...(f.paginaFinal as Partial<Formulario["paginaFinal"]> | undefined) },
       integracoes: { ...base.integracoes, ...(f.integracoes as Formulario["integracoes"] | undefined) },
       versoes: Array.isArray(f.versoes) ? (f.versoes as VersaoFormulario[]) : [],
@@ -562,6 +604,7 @@ export function migrarFormulario(bruto: unknown): Formulario {
     descricao: (f.descricao as string) ?? "",
     status: "rascunho",
     paginas: [{ id: idUnico("pagina"), titulo: "Página 1", perguntas }],
+    capa: {},
     paginaFinal: {
       mensagem: (f.mensagemFinal as string) ?? MENSAGEM_FINAL_PADRAO,
       urlRedirecionamento: (f.urlRedirecionamento as string) || undefined,

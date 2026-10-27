@@ -28,6 +28,7 @@ import { Modal, Topbar } from "@/components/ui";
 import { PerguntaVisualizacao } from "@/components/campo-resposta";
 import { classesDoCartao, estiloDoBanner, estiloDoCartao } from "@/components/formularios/FormularioPublico";
 import { LogicaCanvas } from "@/components/formularios/LogicaCanvas";
+import { AGENDA_PADRAO } from "@/lib/formularios/agendamento";
 import { useIdioma } from "@/lib/idioma-context";
 
 type AbaBuilder = "editar" | "design" | "respostas";
@@ -1029,6 +1030,12 @@ function PainelCampo({
         </SecaoPainel>
       ) : null}
 
+      {pergunta.tipo === "agendamento" ? (
+        <SecaoPainel titulo={traduzir("Quando vocês atendem")}>
+          <PainelDaAgenda agenda={pergunta.agenda ?? {}} onAtualizar={(agenda) => onAtualizar({ agenda })} />
+        </SecaoPainel>
+      ) : null}
+
       {!ehLayout ? (
         <>
           {comMinMax || comMascara || comRegex ? (
@@ -1591,6 +1598,70 @@ function PainelDesign({
             onChange={(e) => onAtualizar({ descricao: e.target.value })}
           />
         </div>
+        {/* A CAPA DE APRESENTAÇÃO fica junto da descrição e da mensagem final porque são as três
+            coisas que o formulário DIZ — o resto do cartão é aparência. */}
+        <div className="field">
+          <label>{traduzir("Capa de apresentação")}</label>
+          <div className="filters-row" style={{ margin: 0 }}>
+            <button
+              type="button"
+              className={`fchip${formulario.capa?.ativa ? " active" : ""}`}
+              onClick={() => onAtualizar({ capa: { ...formulario.capa, ativa: true } })}
+            >
+              {traduzir("Mostrar")}
+            </button>
+            <button
+              type="button"
+              className={`fchip${!formulario.capa?.ativa ? " active" : ""}`}
+              onClick={() => onAtualizar({ capa: { ...formulario.capa, ativa: false } })}
+            >
+              {traduzir("Não mostrar")}
+            </button>
+          </div>
+          <p className="hint">
+            {traduzir("A tela que aparece antes da primeira pergunta, dizendo pra que serve o formulário.")}
+          </p>
+        </div>
+        {formulario.capa?.ativa ? (
+          <div className="capa-do-formulario">
+            <div className="field">
+              <label>{traduzir("Título da capa")}</label>
+              <input
+                className="input"
+                style={{ width: "100%" }}
+                value={formulario.capa.titulo ?? ""}
+                onChange={(e) => onAtualizar({ capa: { ...formulario.capa, titulo: e.target.value } })}
+                placeholder={formulario.nome || "Ex.: Vamos começar"}
+              />
+            </div>
+            <div className="field">
+              <label>{traduzir("Texto da capa")}</label>
+              <textarea
+                className="input"
+                style={{ width: "100%", minHeight: 90, resize: "vertical" }}
+                value={formulario.capa.texto ?? ""}
+                onChange={(e) => onAtualizar({ capa: { ...formulario.capa, texto: e.target.value } })}
+                placeholder="Ex.: São 8 perguntas e leva uns 2 minutos. Com elas a gente já chega na conversa sabendo o que você precisa."
+              />
+            </div>
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label>{traduzir("Texto do botão")}</label>
+              <input
+                className="input"
+                style={{ width: "100%" }}
+                value={formulario.capa.textoDoBotao ?? ""}
+                onChange={(e) => onAtualizar({ capa: { ...formulario.capa, textoDoBotao: e.target.value } })}
+                placeholder="Começar"
+              />
+            </div>
+            {/* A capa só aparece com título OU texto: um botão "Começar" sozinho é um clique a
+                mais que não diz nada, e ligar sem escrever seria um engano silencioso. */}
+            {!((formulario.capa.titulo ?? "").trim() || (formulario.capa.texto ?? "").trim()) ? (
+              <p className="hint">{traduzir("Escreva um título ou um texto — sem isso a capa não aparece.")}</p>
+            ) : null}
+          </div>
+        ) : null}
+
         <div className="field">
           <label>{traduzir("Mensagem de sucesso")}</label>
           <textarea
@@ -1932,5 +2003,154 @@ function PainelDesign({
 
       <PreviaDesign formulario={formulario} />
     </div>
+  );
+}
+
+/**
+ * O QUE A EMPRESA LIBERA PRA QUEM MARCA.
+ *
+ * UM A UM, OS HORÁRIOS DE CADA DIA, e não uma faixa ("das 9 às 18") fatiada em meias horas. A
+ * agenda de quem atende não é um bloco vazio: são as brechas entre os compromissos que já
+ * existem. A faixa abria dezoito vagas num dia em que havia duas.
+ *
+ * OS SETE DIAS FICAM À VISTA, inclusive os vazios: um dia sem horário é um dia fechado, e isso se
+ * lê de relance. Um interruptor "dias da semana" separado da lista de horários seria a mesma
+ * informação dita duas vezes, e as duas podendo se contradizer.
+ */
+const DIAS_DA_SEMANA = [
+  { n: 0, nome: "Domingo" },
+  { n: 1, nome: "Segunda" },
+  { n: 2, nome: "Terça" },
+  { n: 3, nome: "Quarta" },
+  { n: 4, nome: "Quinta" },
+  { n: 5, nome: "Sexta" },
+  { n: 6, nome: "Sábado" },
+];
+
+function PainelDaAgenda({
+  agenda,
+  onAtualizar,
+}: {
+  agenda: NonNullable<PerguntaFormulario["agenda"]>;
+  onAtualizar: (agenda: NonNullable<PerguntaFormulario["agenda"]>) => void;
+}) {
+  const horarios = agenda.horarios ?? AGENDA_PADRAO.horarios;
+  // O que está sendo digitado em cada linha, antes de virar horário. Fica aqui e não no campo
+  // salvo: hora pela metade ("1" de "14:00") não pode chegar ao formulário publicado.
+  const [rascunho, setRascunho] = useState<Record<string, string>>({});
+
+  /** Grava a lista de um dia, já sem repetido e em ordem. Dia que fica sem horário SAI do objeto:
+   *  é assim que "dia fechado" se escreve, e deixar `[]` guardado confundiria a leitura. */
+  function trocarDia(dia: number, horas: string[]) {
+    const limpo = [...new Set(horas)].sort();
+    const novo = { ...horarios };
+    if (limpo.length > 0) novo[String(dia)] = limpo;
+    else delete novo[String(dia)];
+    onAtualizar({ ...agenda, horarios: novo });
+  }
+
+  function incluir(dia: number, doDia: string[]) {
+    const hora = rascunho[String(dia)];
+    if (!hora) return;
+    trocarDia(dia, [...doDia, hora]);
+    setRascunho({ ...rascunho, [String(dia)]: "" });
+  }
+
+  return (
+    <>
+      <div className="field">
+        <label>Horários de cada dia</label>
+        <div className="form-agenda-grade">
+          {DIAS_DA_SEMANA.map((d) => {
+            const doDia = horarios[String(d.n)] ?? [];
+            return (
+              <div key={d.n} className="form-agenda-linha">
+                <span className="form-agenda-nome">{d.nome}</span>
+                <div className="form-agenda-vagas">
+                  {doDia.length === 0 ? <span className="form-agenda-vazio">Fechado</span> : null}
+                  {doDia.map((h) => (
+                    <button
+                      key={h}
+                      type="button"
+                      className="form-agenda-vaga"
+                      title={`Tirar ${h} de ${d.nome.toLowerCase()}`}
+                      onClick={() => trocarDia(d.n, doDia.filter((x) => x !== h))}
+                    >
+                      {h}
+                      <span aria-hidden="true">×</span>
+                    </button>
+                  ))}
+                  <input
+                    className="input form-agenda-nova"
+                    type="time"
+                    aria-label={`Novo horário na ${d.nome.toLowerCase()}`}
+                    value={rascunho[String(d.n)] ?? ""}
+                    onChange={(e) => setRascunho({ ...rascunho, [String(d.n)]: e.target.value })}
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter") return;
+                      // Enter não pode enviar o formulário de trás: aqui ele só inclui o horário.
+                      e.preventDefault();
+                      incluir(d.n, doDia);
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="form-agenda-add"
+                    disabled={!rascunho[String(d.n)]}
+                    onClick={() => incluir(d.n, doDia)}
+                  >
+                    Incluir
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <p className="hint">
+          Cada horário é uma vaga. Quando alguém marca, ela some da lista de quem responder depois —
+          e some também quando o horário já está ocupado na Agenda.
+        </p>
+      </div>
+
+      <div className="filters-row">
+        <div className="field" style={{ flex: 1 }}>
+          <label>Duração (min)</label>
+          <input
+            className="input"
+            style={{ width: "100%" }}
+            type="number"
+            min={10}
+            max={240}
+            value={agenda.duracao ?? AGENDA_PADRAO.duracao}
+            onChange={(e) => onAtualizar({ ...agenda, duracao: Number(e.target.value) })}
+          />
+        </div>
+        <div className="field" style={{ flex: 1 }}>
+          <label>Antecedência (h)</label>
+          <input
+            className="input"
+            style={{ width: "100%" }}
+            type="number"
+            min={0}
+            max={720}
+            value={agenda.antecedenciaHoras ?? AGENDA_PADRAO.antecedenciaHoras}
+            onChange={(e) => onAtualizar({ ...agenda, antecedenciaHoras: Number(e.target.value) })}
+          />
+        </div>
+      </div>
+
+      <div className="field">
+        <label>Pode marcar até quantos dias à frente</label>
+        <input
+          className="input"
+          style={{ width: "100%" }}
+          type="number"
+          min={1}
+          max={180}
+          value={agenda.janelaDias ?? AGENDA_PADRAO.janelaDias}
+          onChange={(e) => onAtualizar({ ...agenda, janelaDias: Number(e.target.value) })}
+        />
+      </div>
+    </>
   );
 }

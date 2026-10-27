@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import type { RespostaFormulario } from "@/lib/formularios-context";
+import type { Formulario, RespostaFormulario } from "@/lib/formularios-context";
 import { prisma } from "@/lib/prisma";
 import { confirmarReuniaoDoFormulario } from "@/lib/formularios/confirmacao-do-formulario";
 import { lerLeadDaResposta } from "@/lib/formularios/lead-da-resposta";
@@ -85,6 +85,7 @@ export async function POST(request: Request, ctx: RouteContext<"/api/formularios
     workspaceId: formulario.workspaceId,
     formularioNome: formulario.nome,
     respostaId: linha.id,
+    paginas: formulario.paginas as Formulario["paginas"],
     lead,
   }).catch((erro) => console.error("[formularios] falha ao confirmar a reunião:", erro));
 
