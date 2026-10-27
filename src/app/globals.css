@@ -8274,6 +8274,143 @@ button.camp-row:hover {
   box-shadow: 0 0 0 2px var(--blue-soft);
 }
 
+/* ---------------- Respostas lidas por pergunta ---------------- */
+
+.resp-por-pergunta {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.resp-pergunta-card {
+  padding: 16px 18px;
+}
+.resp-pergunta-topo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.resp-pergunta-topo h4 {
+  margin: 0;
+  font-size: var(--fs-card-title);
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
+}
+.resp-pergunta-topo .hint {
+  margin: 0;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.resp-contagem {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.resp-contagem-linha {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 110px 76px;
+  align-items: center;
+  gap: 10px;
+}
+.resp-contagem-rotulo {
+  font-size: var(--fs-body);
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.resp-contagem-barra {
+  height: 7px;
+  border-radius: 999px;
+  background: var(--gray-100);
+  overflow: hidden;
+}
+.resp-contagem-barra > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--blue);
+}
+.resp-contagem-numero {
+  font-size: var(--fs-caption);
+  color: var(--text-muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.resp-contagem-base {
+  margin: 2px 0 0;
+}
+.resp-falas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.resp-falas > li {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-elevated);
+}
+.resp-fala-texto {
+  margin: 0 0 4px;
+  font-size: var(--fs-body);
+  color: var(--ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.resp-fala-quem {
+  font-size: var(--fs-caption);
+}
+
+/* A GALERIA DE MODELOS. Cartão em grade, que se adapta à largura: numa tela estreita os quatro
+   viram dois, e não quatro apertados com o texto quebrado em cinco linhas. */
+.form-modelos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(212px, 1fr));
+  gap: var(--space-3);
+}
+
+.form-modelo-card {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--line-soft);
+  background: var(--surface-elevated);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    background var(--transition-fast);
+}
+
+.form-modelo-card:hover {
+  border-color: var(--blue);
+  background: var(--blue-soft-2);
+}
+
+.form-modelo-nome {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: var(--fw-bold);
+}
+
+.form-modelo-quando {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.form-modelo-conta {
+  margin-top: 2px;
+  color: var(--text-faint);
+  font-size: 11.5px;
+}
+
 .form-scratch-card {
   display: flex;
   align-items: center;
@@ -9016,6 +9153,13 @@ button.camp-row:hover {
     width: 100%;
     justify-content: flex-start;
   }
+}
+
+/* A raiz da tela de Formulários. Não desenha nada: existe só pra carregar os tokens da
+   `formularios-painel.css`, e `contents` a tira do caminho do layout (variável atravessa
+   `contents`, caixa não). */
+.painel-formularios {
+  display: contents;
 }
 
 /* ---------------- Formulário: página pública ---------------- */

@@ -11,6 +11,7 @@ import {
 } from "@/lib/formularios/documentos";
 import { IconAnexo, IconClose, IconDoc, IconImage, IconMic, IconStar, IconVideoCam } from "@/components/icons";
 import { CampoDeAgendamento } from "@/components/formularios/campo-de-agendamento";
+import { escolhasMarcadas } from "@/lib/formularios/escolhas";
 import { SeletorDeData } from "@/components/seletor-de-data";
 import { AreaDeUpload } from "@/components/area-de-upload";
 import { useIdioma } from "@/lib/idioma-context";
@@ -568,7 +569,9 @@ export function CampoResposta({
         </label>
       );
     case "multipla_escolha": {
-      const selecionadas = valor ? valor.split(",") : [];
+      // `escolhasMarcadas` e não `split(",")`: a OPÇÃO pode ter vírgula dentro dela, e aí a caixa
+      // era marcada e voltava desmarcada no mesmo instante. Ver `lib/formularios/escolhas.ts`.
+      const selecionadas = escolhasMarcadas(valor, pergunta.opcoes ?? []);
       return (
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           {(pergunta.opcoes ?? []).map((op, i) => (

@@ -7,6 +7,7 @@ import { useFunis } from "@/lib/funis-context";
 import { useEquipe } from "@/lib/equipe-context";
 import { IconAnexo, IconCadeado, IconClose, IconEdit, IconGlobo, IconOlho, IconOlhoFechado } from "@/components/icons";
 import {
+  numeraPerguntas,
   CAMPOS_CRM_MAPEAVEIS,
   CATEGORIAS_CAMPO,
   CORES_TEMA_FORMULARIO,
@@ -29,7 +30,28 @@ import { PerguntaVisualizacao } from "@/components/campo-resposta";
 import { classesDoCartao, estiloDoBanner, estiloDoCartao } from "@/components/formularios/FormularioPublico";
 import { LogicaCanvas } from "@/components/formularios/LogicaCanvas";
 import { AGENDA_PADRAO } from "@/lib/formularios/agendamento";
+import { MODELOS_DE_FORMULARIO } from "@/lib/formularios/modelos";
+import { nomeDoArquivo, respostasEmCsv } from "@/lib/formularios/planilha";
+import { escolhasMarcadas } from "@/lib/formularios/escolhas";
+import { dataCurta, dataIsoEmBrasilia, horaEmBrasilia } from "@/lib/agenda/fuso";
 import { useIdioma } from "@/lib/idioma-context";
+
+/**
+ * A planilha das respostas. CSV com `;`, BOM e aspas: é o que o Excel em português abre sem pedir
+ * nada. A conversão em si é pura e tem teste; aqui só mora o download.
+ */
+function baixarPlanilha(formulario: Formulario, respostas: RespostaFormulario[]) {
+  const csv = respostasEmCsv(formulario, respostas, (iso) => {
+    const quando = new Date(iso);
+    return `${dataCurta(dataIsoEmBrasilia(quando))} ${horaEmBrasilia(quando)}`;
+  });
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = nomeDoArquivo(formulario.nome);
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 type AbaBuilder = "editar" | "design" | "respostas";
 type Dispositivo = "desktop" | "tablet" | "celular";
@@ -77,6 +99,7 @@ export default function FormulariosPage() {
   const {
     formularios,
     criarFormulario,
+    criarFormularioDeModelo,
     duplicarFormulario,
     atualizarFormulario,
     excluirFormulario,
@@ -97,6 +120,8 @@ export default function FormulariosPage() {
 
   const [formularioAbertoId, setFormularioAbertoId] = useState<string | null>(null);
   const [abaBuilder, setAbaBuilder] = useState<AbaBuilder>("editar");
+  /** Duas leituras da mesma coisa: por quem respondeu, ou por pergunta. */
+  const [vistaDasRespostas, setVistaDasRespostas] = useState<"pessoa" | "pergunta">("pessoa");
   const [paginaAtivaId, setPaginaAtivaId] = useState<string | null>(null);
   const [campoSelecionadoId, setCampoSelecionadoId] = useState<string | null>(null);
 
@@ -159,6 +184,10 @@ export default function FormulariosPage() {
   function abrirNovoFormulario() {
     const id = criarFormulario();
     abrirFormulario(id);
+  }
+
+  function abrirDeModelo(modeloId: string) {
+    abrirFormulario(criarFormularioDeModelo(modeloId));
   }
 
   function voltarParaLista() {
@@ -238,7 +267,7 @@ export default function FormulariosPage() {
   }
 
   return (
-    <>
+    <div className="painel-formularios">
       {!formularioAberto ? (
         <>
           <Topbar title={traduzir("Formulários")} sub={`${formularios.length} formulário(s) criado(s)`} />
@@ -253,6 +282,29 @@ export default function FormulariosPage() {
               </span>
             </button>
 
+            {/* OS MODELOS. Ficam quietos até alguém escolher: criar quatro formulários na conta
+                de uma empresa sem ela pedir é encher a tela dela. O que nasce daqui é um
+                formulário comum, em rascunho, que se edita e se apaga como qualquer outro. */}
+            <p className="int-group-h" style={{ marginTop: 22 }}>
+              {traduzir("Começar de um modelo")}
+            </p>
+            <div className="form-modelos">
+              {MODELOS_DE_FORMULARIO.map((modelo) => (
+                <button
+                  key={modelo.id}
+                  type="button"
+                  className="form-modelo-card"
+                  onClick={() => abrirDeModelo(modelo.id)}
+                >
+                  <span className="form-modelo-nome">{modelo.nome}</span>
+                  <span className="form-modelo-quando">{modelo.quando}</span>
+                  <span className="form-modelo-conta">
+                    {modelo.secoes.reduce((soma, s) => soma + s.campos.length, 0)} {traduzir("perguntas")}
+                  </span>
+                </button>
+              ))}
+            </div>
+
             <p className="int-group-h" style={{ marginTop: 22 }}>
               {traduzir("Seus formulários")}
             </p>
@@ -262,58 +314,59 @@ export default function FormulariosPage() {
               </div>
             ) : (
               <div className="lista-cartoes">
-                {formularios.map((f) => {
-                  const totalPerguntas = f.paginas.reduce(
-                    (soma, p) => soma + p.perguntas.filter((q) => !TIPOS_LAYOUT.includes(q.tipo)).length,
-                    0,
-                  );
-                  return (
-                    <div className="int-row" key={f.id} style={{ cursor: "pointer" }} onClick={() => abrirFormulario(f.id)}>
-                      <div className="int-body">
-                        <p className="int-title">
-                          {f.nome}
-                          <span className={`pill${f.status === "publicado" ? " on" : ""}`} style={{ marginLeft: 8 }}>
-                            {f.status === "publicado" ? traduzir("Publicado") : traduzir("Rascunho")}
-                          </span>
-                        </p>
-                        <p className="int-sub">
-                          {[
-                            traduzir(f.paginas.length === 1 ? "{n} página" : "{n} páginas", {
-                              n: f.paginas.length,
-                            }),
-                            traduzir(totalPerguntas === 1 ? "{n} pergunta" : "{n} perguntas", {
-                              n: totalPerguntas,
-                            }),
-                            traduzir(
-                              respostasDoFormulario(f.id).length === 1 ? "{n} resposta" : "{n} respostas",
-                              { n: respostasDoFormulario(f.id).length },
-                            ),
-                          ].join(" · ")}
-                        </p>
-                      </div>
-                      <span
-                        role="button"
-                        tabIndex={0}
-                        aria-label={`Excluir formulário ${f.nome}`}
-                        title={traduzir("Excluir formulário")}
-                        style={{ cursor: "pointer", color: "var(--text-faint)" }}
-                        onClick={(e) => {
+                {/* SÓ O NOME, GRANDE, e o selo no canto. As contas de página, pergunta e resposta
+                    ocupavam a linha sem ajudar a achar o formulário — e é achar o formulário que
+                    se faz nesta tela. As respostas têm aba própria, com atalho aqui do lado. */}
+                {formularios.map((f) => (
+                  <div
+                    className="int-row form-cartao"
+                    key={f.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => abrirFormulario(f.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") abrirFormulario(f.id);
+                    }}
+                  >
+                    <p className="form-cartao-titulo">{f.nome}</p>
+                    {/* Atalho direto pras respostas: antes era abrir o formulário e procurar a
+                        aba — dois cliques e uma tela de construtor no caminho de quem só quer ver
+                        quem chegou hoje. */}
+                    <button
+                      type="button"
+                      className="form-cartao-respostas"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        abrirFormulario(f.id, "respostas");
+                      }}
+                    >
+                      {traduzir("Ver respostas")}
+                    </button>
+                    <span className={`pill form-cartao-selo${f.status === "publicado" ? " on" : ""}`}>
+                      {f.status === "publicado" ? traduzir("Publicado") : traduzir("Rascunho")}
+                    </span>
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      className="form-cartao-excluir"
+                      aria-label={`Excluir formulário ${f.nome}`}
+                      title={traduzir("Excluir formulário")}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        pedirExclusao(f.id, f.nome);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
                           e.stopPropagation();
                           pedirExclusao(f.id, f.nome);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            pedirExclusao(f.id, f.nome);
-                          }
-                        }}
-                      >
-                        <IconClose width={11} height={11} />
-                      </span>
-                    </div>
-                  );
-                })}
+                        }
+                      }}
+                    >
+                      <IconClose width={12} height={12} />
+                    </span>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -480,20 +533,92 @@ export default function FormulariosPage() {
                   </div>
                 </>
               ) : (
-                <div className="card">
-                  {respostas.length === 0 ? (
-                    <p className="hint" style={{ padding: 24, textAlign: "center" }}>{traduzir("Nenhuma resposta ainda. Publique o formulário e compartilhe o link: as respostas caem aqui.")}</p>
-                  ) : (
-                    respostas.map((r) => (
-                      <div className="int-row" key={r.id} style={{ cursor: "pointer" }} onClick={() => setRespostaAbertaId(r.id)}>
-                        <div className="int-body">
-                          <p className="int-title">{nomeResposta(formularioAberto, r)} respondeu o formulário</p>
-                          <p className="int-sub">{new Date(r.criadoEm).toLocaleString("pt-BR")}</p>
-                        </div>
+                <>
+                  {/* OS NÚMEROS DO FORMULÁRIO, em CONTA e não em porcentagem: taxa calculada em
+                      cima de dezenas de visitas oscila demais pra significar alguma coisa, e quem
+                      olha interpreta o ruído como queda. */}
+                  <div className="numeros-do-formulario">
+                    <div className="numero-do-formulario">
+                      <p className="numero-rotulo">{traduzir("Respostas")}</p>
+                      <p className="numero-valor">{respostas.length.toLocaleString("pt-BR")}</p>
+                      <p className="numero-nota">{traduzir("Quem preencheu e enviou")}</p>
+                    </div>
+                    <div className="numero-do-formulario">
+                      <p className="numero-rotulo">{traduzir("Última resposta")}</p>
+                      <p className="numero-valor numero-valor-data">
+                        {respostas[0] ? dataCurta(dataIsoEmBrasilia(new Date(respostas[0].criadoEm))) : "—"}
+                      </p>
+                      <p className="numero-nota">
+                        {respostas[0]
+                          ? horaEmBrasilia(new Date(respostas[0].criadoEm))
+                          : traduzir("Nenhuma ainda")}
+                      </p>
+                    </div>
+                  </div>
+
+                  {respostas.length > 0 ? (
+                    <div className="filters-row" style={{ margin: "0 0 12px" }}>
+                      {/* DUAS LEITURAS DA MESMA COISA: "por pessoa" responde "o que o fulano
+                          respondeu"; "por pergunta" responde "o que TODO MUNDO respondeu nesta
+                          pergunta", que é como se lê pesquisa. Abrir cinco respostas pra comparar
+                          uma pergunta era o único caminho. */}
+                      <button
+                        type="button"
+                        className={`fchip${vistaDasRespostas === "pessoa" ? " active" : ""}`}
+                        onClick={() => setVistaDasRespostas("pessoa")}
+                      >
+                        {traduzir("Por pessoa")}
+                      </button>
+                      <button
+                        type="button"
+                        className={`fchip${vistaDasRespostas === "pergunta" ? " active" : ""}`}
+                        onClick={() => setVistaDasRespostas("pergunta")}
+                      >
+                        {traduzir("Por pergunta")}
+                      </button>
+                      <div style={{ marginLeft: "auto" }}>
+                        <button type="button" className="btn ghost" onClick={() => baixarPlanilha(formularioAberto, respostas)}>
+                          {traduzir("Baixar planilha")}
+                        </button>
                       </div>
-                    ))
+                    </div>
+                  ) : null}
+
+                  {respostas.length === 0 ? (
+                    <div className="card">
+                      <p className="hint" style={{ padding: 24, textAlign: "center" }}>{traduzir("Nenhuma resposta ainda. Publique o formulário e compartilhe o link: as respostas caem aqui.")}</p>
+                    </div>
+                  ) : vistaDasRespostas === "pergunta" ? (
+                    <RespostasPorPergunta
+                      formulario={formularioAberto}
+                      respostas={respostas}
+                      onAbrirResposta={(id: string) => setRespostaAbertaId(id)}
+                      traduzir={traduzir}
+                    />
+                  ) : (
+                    <div className="lista-cartoes lista-respostas">
+                      {respostas.map((r) => (
+                        <div
+                          className="int-row form-resposta-linha"
+                          key={r.id}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => setRespostaAbertaId(r.id)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") setRespostaAbertaId(r.id);
+                          }}
+                        >
+                          <div className="int-body">
+                            <p className="int-title">{nomeResposta(formularioAberto, r)} {traduzir("respondeu o formulário")}</p>
+                            <p className="int-sub">
+                              {dataCurta(dataIsoEmBrasilia(new Date(r.criadoEm)))}, {horaEmBrasilia(new Date(r.criadoEm))}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   )}
-                </div>
+                </>
               )
             ) : abaBuilder === "design" ? (
               <PainelDesign
@@ -816,7 +941,7 @@ export default function FormulariosPage() {
           ))}
         </div>
       ) : null}
-    </>
+    </div>
   );
 }
 
@@ -2152,5 +2277,137 @@ function PainelDaAgenda({
         />
       </div>
     </>
+  );
+}
+
+/**
+ * AS RESPOSTAS LIDAS POR PERGUNTA.
+ *
+ * Uma pergunta por cartão, com o que cada pessoa escreveu embaixo. Onde há opções, a contagem vem
+ * primeiro — é o que responde "o que a maioria marcou aqui" sem ler resposta por resposta.
+ *
+ * A CONTA É HONESTA: a base dita na tela é QUEM RESPONDEU AQUELA PERGUNTA, não quantas pessoas
+ * enviaram o formulário. Pergunta opcional que metade pulou daria porcentagem inflada se a base
+ * fosse o total, e ninguém veria por quê.
+ *
+ * A fala continua INTEIRA: a lista mostra o texto como a pessoa escreveu, sem corte nem resumo.
+ */
+function RespostasPorPergunta({
+  formulario,
+  respostas,
+  onAbrirResposta,
+  traduzir,
+}: {
+  formulario: Formulario;
+  respostas: RespostaFormulario[];
+  onAbrirResposta: (id: string) => void;
+  traduzir: (texto: string) => string;
+}) {
+  const perguntas = perguntasNumeradas(formulario).filter(({ pergunta }) => !TIPOS_LAYOUT.includes(pergunta.tipo));
+
+  if (perguntas.length === 0) {
+    return (
+      <div className="card">
+        <p className="hint" style={{ padding: 24, textAlign: "center" }}>
+          {traduzir("Este formulário não tem perguntas.")}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="resp-por-pergunta">
+      {perguntas.map(({ pergunta, numero }) => {
+        const ehUpload = TIPOS_UPLOAD.includes(pergunta.tipo);
+        const ehConsentimento = pergunta.mapeamentoCrm === "consentimentoWhatsApp";
+        const comOpcoes =
+          pergunta.tipo === "lista_suspensa" ||
+          pergunta.tipo === "opcao_unica" ||
+          pergunta.tipo === "multipla_escolha";
+
+        const preenchidas = respostas.filter((r) => (r.valores[pergunta.id] ?? "").trim() !== "");
+        const opcoes = pergunta.opcoes ?? [];
+        // Quem marcou cada opção, pela MESMA leitura que a tela de responder usa — sem ela, opção
+        // com vírgula dentro ("redes sociais, site e tráfego pago") contaria como duas.
+        const contagem = comOpcoes
+          ? opcoes.map((op) => ({
+              opcao: op,
+              quantas: preenchidas.filter((r) => escolhasMarcadas(r.valores[pergunta.id] ?? "", opcoes).includes(op)).length,
+            }))
+          : [];
+        const maior = contagem.reduce((max, c) => Math.max(max, c.quantas), 0);
+
+        return (
+          <div className="card resp-pergunta-card" key={pergunta.id}>
+            <div className="resp-pergunta-topo">
+              <h4>
+                {numeraPerguntas(formulario.tema) && numero > 0 ? `${numero}. ` : ""}
+                {pergunta.rotulo || traduzir("Pergunta sem título")}
+              </h4>
+              <span className="hint">
+                {preenchidas.length} {traduzir("de")} {respostas.length}{" "}
+                {ehConsentimento
+                  ? preenchidas.length === 1
+                    ? traduzir("aceitou")
+                    : traduzir("aceitaram")
+                  : preenchidas.length === 1
+                    ? traduzir("respondeu")
+                    : traduzir("responderam")}
+              </span>
+            </div>
+
+            {comOpcoes && opcoes.length > 0 ? (
+              <div className="resp-contagem">
+                {contagem.map((c) => (
+                  <div className="resp-contagem-linha" key={c.opcao}>
+                    <span className="resp-contagem-rotulo">{c.opcao}</span>
+                    <span className="resp-contagem-barra">
+                      <span style={{ width: `${maior > 0 ? (c.quantas / maior) * 100 : 0}%` }} />
+                    </span>
+                    <span className="resp-contagem-numero">
+                      {c.quantas}
+                      {preenchidas.length > 0 ? ` · ${Math.round((c.quantas / preenchidas.length) * 100)}%` : ""}
+                    </span>
+                  </div>
+                ))}
+                <p className="hint resp-contagem-base">
+                  {traduzir("Porcentagem sobre as")} {preenchidas.length}{" "}
+                  {preenchidas.length === 1 ? traduzir("pessoa que respondeu") : traduzir("pessoas que responderam")}{" "}
+                  {traduzir("esta pergunta.")}
+                </p>
+              </div>
+            ) : null}
+
+            {preenchidas.length === 0 ? (
+              <p className="hint">{traduzir("Ninguém respondeu esta pergunta ainda.")}</p>
+            ) : (
+              <ul className="resp-falas">
+                {preenchidas.map((r) => {
+                  const valor = r.valores[pergunta.id] ?? "";
+                  const [nomeArquivo, urlArquivo] = ehUpload ? valor.split("|") : [undefined, undefined];
+                  return (
+                    <li key={r.id}>
+                      {ehUpload && urlArquivo ? (
+                        <a href={urlArquivo} download={nomeArquivo} target="_blank" rel="noopener noreferrer" className="link">
+                          <IconAnexo width={13} height={13} /> {nomeArquivo}
+                        </a>
+                      ) : (
+                        <p className="resp-fala-texto">
+                          {ehConsentimento ? traduzir("Aceitou receber mensagens") : valor}
+                        </p>
+                      )}
+                      <button type="button" className="link resp-fala-quem" onClick={() => onAbrirResposta(r.id)}>
+                        {nomeResposta(formulario, r)} · {dataCurta(dataIsoEmBrasilia(new Date(r.criadoEm)))}{" "}
+                        {horaEmBrasilia(new Date(r.criadoEm))}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        );
+      })}
+    </div>
   );
 }
