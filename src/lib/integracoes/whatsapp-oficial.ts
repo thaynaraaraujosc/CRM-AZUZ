@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { explicarErroDoWhatsApp } from "@/lib/integracoes/erro-whatsapp-oficial";
 import { decriptar } from "@/lib/integracoes/crypto";
 import {
   MENSAGEM_POR_CODIGO_META,
@@ -61,7 +62,13 @@ export async function tratarErroEnvio(erro: unknown, integracaoId: string): Prom
       .catch(() => {});
   }
   if (codigoMeta && MENSAGEM_POR_CODIGO_META[codigoMeta]) return MENSAGEM_POR_CODIGO_META[codigoMeta];
-  return erro instanceof Error ? erro.message : "Falha ao enviar mensagem.";
+  /*
+   * Último degrau antes de devolver o texto cru da Meta. `MENSAGEM_POR_CODIGO_META` cobre o que
+   * vem com `codigoMeta` separado; o erro de MODELO costuma chegar só como frase ("(#132001)
+   * Template name does not exist in the translation"), e era ela que aparecia inteira na tela de
+   * quem só queria mandar a primeira mensagem pra um cliente.
+   */
+  return explicarErroDoWhatsApp(erro instanceof Error ? erro.message : "");
 }
 
 /**

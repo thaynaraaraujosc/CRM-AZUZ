@@ -8274,6 +8274,30 @@ button.camp-row:hover {
   box-shadow: 0 0 0 2px var(--blue-soft);
 }
 
+/* A escolha de canal acima do campo de escrever: só aparece quando há de fato o que escolher. */
+.chat-canal-escolha {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.chat-canal-rotulo {
+  font-size: var(--fs-micro);
+  text-transform: uppercase;
+  letter-spacing: var(--track-wide);
+  color: var(--text-muted);
+}
+
+/* O aviso do oficial vem junto da escolha, e não depois do erro: é antes de escrever que ele muda
+   o que a pessoa vai fazer. */
+.chat-canal-aviso {
+  font-size: var(--fs-caption);
+  color: var(--text-muted);
+}
+
 /* ---------------- Respostas lidas por pergunta ---------------- */
 
 .resp-por-pergunta {
