@@ -146,6 +146,7 @@ export function FormularioUmaPorVez({
         {pergunta ? (
           <PerguntaVisualizacao
             pergunta={pergunta}
+            formularioId={formulario.id}
             indice={numeraPerguntas(formulario.tema) ? numero : 0}
             interativo
             valor={valores[pergunta.id] ?? pergunta.valorPadrao ?? ""}

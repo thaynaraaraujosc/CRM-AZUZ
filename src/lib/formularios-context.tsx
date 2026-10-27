@@ -207,6 +207,16 @@ export type PerguntaFormulario = {
   /** Campo do Contato que essa resposta preenche de verdade. Undefined = campo novo, não mapeado. */
   mapeamentoCrm?: string;
   logica?: LogicaCampo;
+  /** Só pro campo "agendamento": os horários que a empresa libera em cada dia da semana, a
+   *  duração da reunião, até onde dá pra marcar e a antecedência mínima. Ver
+   *  `formularios/agendamento.ts`; o que não vier cai no padrão. */
+  agenda?: {
+    /** "1" (segunda) → ["09:00", "17:00"]. Dia que não está aqui é dia fechado. */
+    horarios?: Record<string, string[]>;
+    duracao?: number;
+    janelaDias?: number;
+    antecedenciaHoras?: number;
+  };
   /** Aparência individual: sem valor definido, cada propriedade cai no visual padrão do tema do formulário. */
   estilo?: {
     corFundo?: string;

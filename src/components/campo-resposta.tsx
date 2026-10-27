@@ -10,6 +10,7 @@ import {
   type EnderecoDoCep,
 } from "@/lib/formularios/documentos";
 import { IconAnexo, IconClose, IconDoc, IconImage, IconMic, IconStar, IconVideoCam } from "@/components/icons";
+import { CampoDeAgendamento } from "@/components/formularios/campo-de-agendamento";
 import { SeletorDeData } from "@/components/seletor-de-data";
 import { AreaDeUpload } from "@/components/area-de-upload";
 import { useIdioma } from "@/lib/idioma-context";
@@ -249,14 +250,9 @@ function CampoCep({
   );
 }
 
-/** De meia em meia hora, das 6h às 22h: a faixa em que alguém marca uma reunião de trabalho. */
-const HORARIOS_DE_MEIA_EM_MEIA = Array.from({ length: (22 - 6) * 2 + 1 }, (_, i) => {
-  const minutos = 6 * 60 + i * 30;
-  return `${String(Math.floor(minutos / 60)).padStart(2, "0")}:${String(minutos % 60).padStart(2, "0")}`;
-});
-
 export function CampoResposta({
   pergunta,
+  formularioId,
   interativo = false,
   valor = "",
   onMudarValor,
@@ -265,6 +261,10 @@ export function CampoResposta({
   aoAcharEndereco,
 }: {
   pergunta: PerguntaFormulario;
+  /** O formulário em que este campo está. Só o agendamento precisa: é com ele que a tela busca
+   *  os horários livres. Fora da tela pública (no construtor) não existe, e aí o campo mostra o
+   *  que ele faz em vez de tentar carregar agenda nenhuma. */
+  formularioId?: string;
   interativo?: boolean;
   valor?: string;
   onMudarValor?: (valor: string) => void;
@@ -380,35 +380,29 @@ export function CampoResposta({
      * O valor guardado é o mesmo formato do `datetime-local` ("AAAA-MM-DDTHH:MM"), que é o que o
      * servidor sabe ler.
      */
-    case "agendamento": {
-      const [diaEscolhido, horaEscolhida] = valor ? valor.split("T") : ["", ""];
-      const hoje = new Date().toISOString().slice(0, 10);
-      return (
-        <div className="filters-row" style={{ margin: 0 }}>
-          <SeletorDeData
-            valor={interativo ? diaEscolhido : ""}
-            onChange={(iso) => onMudarValor?.(`${iso}T${horaEscolhida}`)}
-            disabled={disabled}
-            minimo={hoje}
-            curto
-          />
-          <select
-            className="input form-resposta-campo"
-            style={{ maxWidth: 140 }}
-            disabled={disabled}
-            value={interativo ? horaEscolhida : ""}
-            onChange={(e) => onMudarValor?.(`${diaEscolhido}T${e.target.value}`)}
-          >
-            <option value="">{traduzir("Horário")}</option>
-            {HORARIOS_DE_MEIA_EM_MEIA.map((h) => (
-              <option key={h} value={h}>
-                {h}
-              </option>
-            ))}
-          </select>
-        </div>
+    /**
+      * A LISTA DE HORÁRIOS VEM DO SERVIDOR, e não de uma grade fixa de meia em meia hora.
+      *
+      * A primeira versão deste campo oferecia todos os horários do dia, sempre. Marcava por cima
+      * de reunião que já existia e oferecia duas vezes o mesmo horário a duas pessoas — e nenhum
+      * dos dois erros aparece pra quem monta o formulário: aparecem pra dois clientes esperando
+      * na mesma chamada.
+      */
+    case "agendamento":
+      return interativo && formularioId ? (
+        <CampoDeAgendamento
+          formularioId={formularioId}
+          valor={valor}
+          desabilitado={disabled}
+          aoMudar={(v) => onMudarValor?.(v)}
+        />
+      ) : (
+        <p className="hint">
+          {traduzir(
+            "Quem responder escolhe aqui o dia e a hora, dentro do que você liberar. A reunião entra na Agenda e a confirmação sai no WhatsApp.",
+          )}
+        </p>
       );
-    }
     case "periodo": {
       const [de, ate] = valor ? valor.split("|") : ["", ""];
       return (
@@ -705,6 +699,7 @@ export function CampoResposta({
 /** Enunciado numerado + descrição/ajuda + campo de resposta. Usado no construtor, na pré-visualização e na página pública. */
 export function PerguntaVisualizacao({
   pergunta,
+  formularioId,
   indice,
   interativo = false,
   valor,
@@ -715,6 +710,7 @@ export function PerguntaVisualizacao({
   aoAcharEndereco,
 }: {
   pergunta: PerguntaFormulario;
+  formularioId?: string;
   indice: number;
   interativo?: boolean;
   valor?: string;
@@ -761,6 +757,7 @@ export function PerguntaVisualizacao({
       {pergunta.descricao ? <p className="form-pergunta-dica">{pergunta.descricao}</p> : null}
       <CampoResposta
         pergunta={pergunta}
+        formularioId={formularioId}
         interativo={interativo}
         valor={valor}
         onMudarValor={onMudarValor}

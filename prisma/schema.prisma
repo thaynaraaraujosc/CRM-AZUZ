@@ -807,6 +807,9 @@ model Formulario {
   descricao    String?
   status       String
   paginas      Json
+  /** A capa de apresentação: título, texto e texto do botão. Opcional, e nula em todo formulário
+   *  criado antes dela — `migrarFormulario` lê nulo como "sem capa", que é o certo. */
+  capa         Json?
   paginaFinal  Json
   tema         Json
   senha        String?

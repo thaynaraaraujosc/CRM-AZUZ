@@ -39,6 +39,23 @@ describe("rotas que dispensam sessão", () => {
     }
   });
 
+  /*
+   * A tela que o cliente da empresa abre. Ela não tem login, e cada pedaço dela é uma chamada
+   * separada: o formulário, os horários livres, o envio da resposta. Qualquer um desses fora da
+   * lista vira um 307 pro /login que o navegador do cliente engole calado — o formulário abre e
+   * simplesmente não funciona uma parte dele.
+   */
+  it("abre tudo que a tela pública do formulário precisa chamar", () => {
+    for (const rota of [
+      "/api/formularios/form-123",
+      "/api/formularios/form-123/horarios",
+      "/api/formularios/form-123/respostas",
+      "/api/formularios/form-123/contatos",
+    ]) {
+      expect(ehRotaPublica(rota), `${rota} precisa abrir sem login`).toBe(true);
+    }
+  });
+
   it("abre qualquer cron novo que nasça na pasta", () => {
     // O caso do `/api/cron/campanhas`: nasceu depois da lista e ninguém lembrou de incluir. Sendo
     // prefixo, o próximo cron já nasce funcionando.

@@ -73,14 +73,30 @@ export function lerLeadDaResposta(paginas: unknown, valores: Record<string, stri
 }
 
 /**
- * "AAAA-MM-DDTHH:MM" escolhido no formulário → o instante em UTC.
+ * O horário escolhido no formulário → o instante em UTC.
  *
- * O campo não carrega fuso, e quem responde está no Brasil: o CRM inteiro trabalha no horário de
- * Brasília (agenda, disparos, avisos, relatórios). Ler como UTC jogaria toda reunião três horas
- * pra frente — "14:00" viraria 11:00 na agenda.
+ * DOIS FORMATOS, e a diferença entre eles são três horas na agenda de alguém.
+ *
+ * 1. COM FUSO ("...Z" ou "...-03:00"), que é o que o campo "Agendar reunião" grava hoje: o
+ *    instante já está decidido, e a única coisa certa a fazer é ler como está.
+ * 2. SEM FUSO ("AAAA-MM-DDTHH:MM"), como gravava a primeira versão do campo e como ainda está em
+ *    toda resposta já recebida: aí o que a pessoa viu na tela era hora de Brasília, e é assim que
+ *    precisa ser lido. O CRM inteiro trabalha nesse fuso (agenda, disparos, avisos, relatórios).
+ *
+ * Tratar o caso 1 como se fosse o 2 é o erro caro: o prefixo de "2026-10-22T12:00:00.000Z" casa
+ * com o padrão do caso 2, e lê-lo assim marcaria 12h de Brasília uma reunião que é às 9h.
  */
 export function lerInstanteEmBrasilia(valor: string): Date | null {
-  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(valor.trim());
+  const texto = valor.trim();
+  if (!texto) return null;
+
+  const temFuso = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(texto);
+  if (temFuso) {
+    const instante = new Date(texto);
+    return Number.isNaN(instante.getTime()) ? null : instante;
+  }
+
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(texto);
   if (!m) return null;
   const [, ano, mes, dia, hora, minuto] = m;
   // -03:00 fixo: o Brasil não tem horário de verão desde 2019, e inventar uma conversão por data

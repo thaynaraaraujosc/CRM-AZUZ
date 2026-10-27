@@ -9226,6 +9226,203 @@ button.camp-row:hover {
   min-height: 100dvh;
 }
 
+/*
+ * O CAMPO QUE MARCA A REUNIÃO: a fita de dias e, abaixo dela, as horas daquele dia.
+ *
+ * A fita rola na horizontal em vez de quebrar em linhas. Um mês de dias quebrado em quatro linhas
+ * vira um calendário, e calendário dentro de formulário faz a pessoa procurar o mês antes de
+ * achar o dia — quando só há oito dias com horário livre, mostrá-los em fila é mais curto que
+ * qualquer calendário.
+ */
+.form-agenda {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.form-agenda-dias {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  padding-bottom: var(--space-1);
+  /* Sem isto o último dia encosta na borda do cartão e parece cortado mesmo quando é o último. */
+  scroll-padding-inline: var(--space-2);
+}
+
+.form-agenda-dia {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  min-width: 56px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-elevated);
+  color: var(--ink);
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.form-agenda-dia:hover:not(:disabled) {
+  border-color: var(--line-strong);
+}
+
+.form-agenda-dia.ativo {
+  border-color: currentColor;
+  background: var(--navy-raised-2);
+}
+
+.form-agenda-semana {
+  font-size: var(--fs-micro);
+  text-transform: uppercase;
+  letter-spacing: var(--track-wide);
+  color: var(--text-muted);
+}
+
+.form-agenda-numero {
+  font-size: 17px;
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.form-agenda-mes {
+  font-size: var(--fs-micro);
+  color: var(--text-muted);
+}
+
+/* As horas em grade, e não em fila: elas são todas do mesmo tamanho e a leitura em coluna deixa
+   claro quanto o dia tem de manhã e quanto tem de tarde. */
+.form-agenda-horas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: var(--space-2);
+}
+
+.form-agenda-hora {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-elevated);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--fs-body);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.form-agenda-hora:hover:not(:disabled) {
+  border-color: var(--line-strong);
+}
+
+/* Escolhido fica CHEIO, não só com borda: numa grade de doze horários iguais, uma borda a mais
+   não responde "qual eu marquei?" de relance. */
+.form-agenda-hora.ativo {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--surface-elevated);
+}
+
+.form-agenda-dia:disabled,
+.form-agenda-hora:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/*
+ * O MESMO CAMPO, do lado de quem MONTA: os sete dias em lista, com as vagas de cada um.
+ *
+ * Denso de propósito, ao contrário da versão pública: aqui é painel de trabalho, e a pessoa está
+ * conferindo sete linhas de uma vez pra decidir o que abre e o que fecha.
+ */
+.form-agenda-grade {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.form-agenda-linha {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: 5px 7px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+}
+
+.form-agenda-nome {
+  flex: 0 0 56px;
+  padding-top: 4px;
+  font-size: 12px;
+  font-weight: var(--fw-medium);
+  color: var(--ink);
+}
+
+.form-agenda-vagas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.form-agenda-vazio {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.form-agenda-vaga {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 7px;
+  border: 1px solid color-mix(in srgb, var(--blue) 35%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--blue) 10%, transparent);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.form-agenda-vaga:hover {
+  border-color: var(--blue);
+}
+
+.form-agenda-vaga span {
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1;
+}
+
+.form-agenda-nova {
+  width: 78px;
+  min-height: 26px;
+  padding: 2px 5px;
+  font-size: 12px;
+}
+
+.form-agenda-add {
+  padding: 3px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--blue);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.form-agenda-add:disabled {
+  color: var(--text-muted);
+  cursor: default;
+}
+
 /* A CAPA. Centralizada porque não é formulário: é uma frase e um convite, e frase centrada com
    medida curta lê como apresentação, não como campo a preencher. */
 .form-public-capa {

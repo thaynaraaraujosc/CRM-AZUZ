@@ -592,6 +592,7 @@ export function FormularioPublico({
             <div key={pergunta.id} className={pergunta.largura === "metade" ? "form-campo-metade" : "form-campo-total"}>
               <PerguntaVisualizacao
                 pergunta={pergunta}
+                formularioId={formulario.id}
                 indice={numeraPerguntas(tema) ? (numeroDe.get(pergunta.id) ?? 0) : 0}
                 interativo
                 valor={valores[pergunta.id] ?? pergunta.valorPadrao ?? ""}
