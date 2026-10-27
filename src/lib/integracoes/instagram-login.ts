@@ -242,7 +242,13 @@ export async function baixarFotoPerfil(url: string): Promise<string | null> {
  * Então responder pelo celular não aparecia em Conversas, e a thread no CRM ficava só com o lado da
  * cliente. Este era o "não chega em tempo real" relatado.
  */
-const CAMPOS_WEBHOOK = ["messages", "message_echoes", "message_reactions", "comments"];
+/**
+ * `messaging_seen` é o que avisa que uma conversa foi LIDA. Sem ele, abrir a conversa no app do
+ * Instagram não mexia em nada aqui: o CRM seguia mostrando o numerozinho de não lida numa conversa
+ * já atendida, e quem usa os dois lados — que é o normal — acabava com uma lista inteira marcada
+ * como nova. Quem conectou antes disto precisa RECONECTAR pra assinatura ser refeita.
+ */
+const CAMPOS_WEBHOOK = ["messages", "message_echoes", "message_reactions", "comments", "messaging_seen"];
 
 async function postSubscribedApps(accessToken: string, campos: string[]): Promise<string | null> {
   const resposta = await fetch(
@@ -256,22 +262,43 @@ async function postSubscribedApps(accessToken: string, campos: string[]): Promis
   return null;
 }
 
+/**
+ * As tentativas de assinatura, da mais completa pra mais segura.
+ *
+ * UM CAMPO RECUSADO DERRUBA A CHAMADA INTEIRA, e a conta fica sem assinatura nenhuma — pior do que
+ * ficar sem um campo. Por isso a lista cai por etapas.
+ *
+ * A ORDEM IMPORTA, e já importou errado: o recuo era direto pra "sem `message_echoes`". Quando o
+ * campo recusado fosse OUTRO, isso jogava fora justamente o eco (que funciona) e mantinha o campo
+ * problemático — a chamada falhava de novo e a conta ficava sem nada. Agora cada etapa tira o
+ * campo MAIS NOVO, que é o candidato mais provável a ser recusado, e o núcleo que se sabe aceito
+ * (`messages` + `comments`) fica por último.
+ */
+export const TENTATIVAS_DE_ASSINATURA = [
+  CAMPOS_WEBHOOK,
+  CAMPOS_WEBHOOK.filter((c) => c !== "messaging_seen"),
+  CAMPOS_WEBHOOK.filter((c) => c !== "messaging_seen" && c !== "message_reactions"),
+  ["messages", "comments"],
+];
+
 export async function inscreverAppNoInstagram(accessToken: string): Promise<string | null> {
   try {
-    const erro = await postSubscribedApps(accessToken, CAMPOS_WEBHOOK);
-    if (!erro) return null;
-
-    // Um campo recusado derruba a chamada INTEIRA e a conta fica sem assinatura nenhuma. Pior do
-    // que ficar sem um campo. Então, se a lista completa falhar, reassina só com o conjunto que já
-    // se sabe aceito: melhor perder o eco do que perder a caixa de entrada toda.
-    console.error("[instagram] Assinatura completa recusada, tentando sem `message_echoes`:", erro);
-    const semEco = CAMPOS_WEBHOOK.filter((c) => c !== "message_echoes");
-    const erroReserva = await postSubscribedApps(accessToken, semEco);
-    if (erroReserva) {
-      console.error("[instagram] Falha ao inscrever o app nos webhooks da conta:", erroReserva);
-      return erroReserva;
+    let ultimoErro: string | null = null;
+    for (const campos of TENTATIVAS_DE_ASSINATURA) {
+      const erro = await postSubscribedApps(accessToken, campos);
+      if (!erro) {
+        if (ultimoErro) {
+          console.error(`[instagram] Assinatura aceita só com [${campos.join(", ")}]. Recusa anterior: ${ultimoErro}`);
+        }
+        return null;
+      }
+      // Lista repetida (quando o campo retirado já não estava lá) não precisa de outra chamada.
+      if (erro === ultimoErro) continue;
+      ultimoErro = erro;
+      console.error(`[instagram] Assinatura recusada com [${campos.join(", ")}]: ${erro}`);
     }
-    return null;
+    console.error("[instagram] Falha ao inscrever o app nos webhooks da conta:", ultimoErro);
+    return ultimoErro;
   } catch (erro) {
     const mensagem = erro instanceof Error ? erro.message : "Falha desconhecida";
     console.error("[instagram] Falha ao inscrever o app nos webhooks da conta:", mensagem);
