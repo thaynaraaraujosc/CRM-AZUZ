@@ -8713,7 +8713,9 @@ button.camp-row:hover {
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   background: var(--navy-raised);
-  padding: var(--space-5);
+  /* Sem respiro: a prévia é a tela, e o cartão (que agora é a tela inteira) preenche a moldura de
+     ponta a ponta. */
+  padding: 0;
   max-height: 74vh;
   overflow-y: auto;
   display: flex;
@@ -8725,8 +8727,10 @@ button.camp-row:hover {
    prévia mostrar um formulário que não existe em lugar nenhum. */
 .form-design-previa .form-public-card {
   width: 100%;
-  max-width: 560px;
+  max-width: none;
   margin: 0;
+  /* A "tela" da prévia é a moldura, não a janela do navegador: altura de painel, não `100dvh`. */
+  min-height: min(74vh, 640px);
 }
 
 .form-design-previa-nota {
@@ -9104,13 +9108,45 @@ button.camp-row:hover {
   box-shadow: var(--shadow-xs);
 }
 
+/**
+ * A TELA INTEIRA É O FORMULÁRIO, com o Typeform de referência: no lugar de aparecer um cartão, a
+ * tela toda faz parte do formulário — se o fundo escolhido é azul, a tela toda é azul, e não um
+ * quadrado azul no meio de um fundo cinza que ninguém escolheu.
+ *
+ * O próprio `.form-public-card` (que já recebe a cor de fundo por `style`) ocupa a tela toda, sem
+ * canto redondo e sem sombra, e o CONTEÚDO fica numa coluna centralizada: a margem lateral é
+ * calculada (`100% - largura`, dividido por dois), então em tela larga sobra o respiro e no
+ * celular a coluna ocupa tudo menos uma margem mínima. Centralizado também na vertical; se o
+ * conteúdo passar da altura da tela, a página cresce e rola.
+ */
 .form-public-card {
+  --largura-do-conteudo: 560px;
+  box-sizing: border-box;
   width: 100%;
-  max-width: 560px;
-  border-radius: var(--radius-xl);
-  padding: var(--space-6);
-  box-shadow: var(--shadow-lg);
+  max-width: none;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-radius: 0;
+  padding-block: clamp(32px, 8vh, 72px);
+  padding-inline: max(var(--space-5), calc((100% - var(--largura-do-conteudo)) / 2));
+  box-shadow: none;
   color: var(--ink);
+}
+
+/* A página em volta não pinta nem recua: quem pinta é o cartão. Só a tela do "obrigado" (que não
+   tem cartão dentro) segue como era. */
+.form-public-page:has(> .form-public-card) {
+  display: block;
+  padding: 0;
+  background: transparent;
+}
+
+/* O logo é uma imagem solta numa coluna flexível: sem isto ela esticaria até a largura toda e
+   deformaria. */
+.form-public-card .form-public-logo {
+  align-self: flex-start;
 }
 
 /**
@@ -9144,7 +9180,7 @@ button.camp-row:hover {
 }
 
 .form-public-card.tela-cheia {
-  max-width: 100%;
+  --largura-do-conteudo: 960px;
 }
 
 .form-public-logo {
@@ -9511,7 +9547,8 @@ button.camp-row:hover {
   }
 
   .form-public-card {
-    padding: var(--space-5) var(--space-4);
+    padding-block: 28px;
+    padding-inline: var(--space-5);
   }
 
   .form-campo-metade {
@@ -18395,7 +18432,7 @@ table.tbl .name-cell .r {
 /* Na prévia, "Tela cheia" precisa aparecer como tela cheia: sem isto o cartão continuava preso aos
    560px da largura fixa e as duas opções desenhavam igual. */
 .form-design-previa .form-public-card.tela-cheia {
-  max-width: 100%;
+  --largura-do-conteudo: 960px;
 }
 
 /* Linha de escolha de cor: tons prontos, seletor do sistema e o código digitado. */
