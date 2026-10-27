@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Topbar } from "@/components/ui";
+import { BolhaMensagem } from "@/components/conversas/BolhaMensagem";
+import type { ConvMensagem } from "@/lib/data";
 import { IconEnviar, IconSearch } from "@/components/icons";
 import type { ConversaInstagram } from "@/app/api/instagram/conversas/route";
 import type { MensagemInstagram } from "@/app/api/instagram/mensagens/route";
@@ -12,6 +14,35 @@ import { useIdioma } from "@/lib/idioma-context";
 function hora(iso: string | null): string {
   if (!iso) return "";
   return new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
+
+/**
+ * A linha que a rota devolve vira a mensagem que o desenho entende.
+ *
+ * ESTA TELA DESENHAVA SÓ O TEXTO. Era literalmente `<p>{texto || "(anexo)"}</p>`: áudio virava a
+ * palavra "[Áudio]", reel compartilhado virava a frase "Compartilhou um reel", e mensagem sem
+ * texto nenhum virava "(anexo)" — um aviso de que havia um anexo, ao lado de nenhum anexo.
+ *
+ * E o anexo estava lá o tempo todo. O webhook guarda a miniatura, o áudio e o link da publicação
+ * desde sempre; a rota devolve tudo em `extras`. O que faltava era desenhar — e desenhar já existia
+ * pronto em `BolhaMensagem`, que é, nas palavras do próprio arquivo, "o único lugar que decide como
+ * uma mensagem se parece". Esta tela era uma terceira implementação da mesma coisa, e por isso
+ * ficou para trás de todas as melhorias que as outras duas receberam.
+ *
+ * Com o `extras` espalhado por cima, `imagens`, `audio`, `video`, `linkExterno` e o resto caem nos
+ * campos que a bolha já conhece, e a conversa do Direct passa a mostrar o que ela sempre teve.
+ */
+function paraBolha(m: MensagemInstagram): ConvMensagem {
+  return {
+    ...((m.extras ?? {}) as Partial<ConvMensagem>),
+    id: m.id,
+    tipo: m.tipo as ConvMensagem["tipo"],
+    texto: m.texto,
+    hora: m.hora,
+    // A bolha deriva a hora daqui quando tem (ver `hora-da-mensagem.ts`): o campo `hora` é texto
+    // gravado, e texto gravado não sabe o fuso de quem está olhando.
+    criadoEm: m.criadoEm ? Date.parse(m.criadoEm) : undefined,
+  };
 }
 
 function numero(valor: number | null): string {
@@ -333,10 +364,9 @@ export default function InstagramConversasPage() {
                   <p className="hint">{traduzir("Nenhuma mensagem nesta conversa.")}</p>
                 ) : (
                   mensagens.lista.map((m) => (
-                    <div key={m.id} className={`ig-bolha${m.tipo === "out" ? " nossa" : ""}`}>
-                      <p>{m.texto || "(anexo)"}</p>
-                      <span>{m.hora}</span>
-                    </div>
+                    // `mostrarRemetenteGrupo={false}`: o Direct não tem grupo, e a linha de autor
+                    // só faria sentido se tivesse.
+                    <BolhaMensagem key={m.id} msg={paraBolha(m)} chaveDom={m.id} mostrarRemetenteGrupo={false} />
                   ))
                 )}
               </div>

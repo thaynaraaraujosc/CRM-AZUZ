@@ -20971,36 +20971,20 @@ table.tbl .name-cell .r {
   padding: var(--space-4);
 }
 
-.ig-bolha {
+/*
+ * A BOLHA DO DIRECT É A MESMA BOLHA DE TODO O RESTO.
+ *
+ * Havia aqui um `.ig-bolha` próprio — uma terceira linguagem de bolha no produto, ao lado da de
+ * Conversas e da do Funil. Ele desenhava um retângulo com texto dentro e mais nada, e foi por isso
+ * que esta tela nunca mostrou miniatura, áudio nem publicação compartilhada: não era falta de dado,
+ * era falta de desenho. Agora ela usa `BolhaMensagem`, e `.bubble` já traz lado, cor, raio e
+ * sombra, inclusive o `align-self` de cada lado.
+ *
+ * O que sobra é o que é mesmo desta tela: os balões do Direct são um pouco mais estreitos que os do
+ * WhatsApp, porque a coluna do meio divide espaço com a do perfil à direita.
+ */
+.ig-mensagens .bubble {
   max-width: 68%;
-  align-self: flex-start;
-  padding: 8px 12px;
-  border-radius: var(--radius-lg);
-  background: var(--surface-2);
-}
-
-/* A nossa mensagem à direita e em azul: é a convenção de toda conversa, e mudá-la aqui obrigaria a
- * ler quem falou em vez de reconhecer pelo lado. */
-.ig-bolha.nossa {
-  align-self: flex-end;
-  background: var(--blue-soft);
-}
-
-.ig-bolha p {
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.45;
-  color: var(--ink);
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.ig-bolha span {
-  display: block;
-  margin-top: 4px;
-  font-size: 10px;
-  color: var(--text-muted);
-  text-align: right;
 }
 
 .ig-escrever {

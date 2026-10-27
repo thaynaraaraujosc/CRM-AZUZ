@@ -6,6 +6,7 @@ import { enviarTextoPeloCanal } from "@/lib/conversas/enviar-pelo-canal";
 import { dentroDaJanelaDirect } from "@/lib/social/janela-direct";
 import { registrarMensagemEnviada } from "@/lib/conversas/registrar-saida";
 import { cabecalhosComEtag, clienteJaTem, montarEtag, naoModificado } from "@/lib/conversas/assinatura";
+import { trocarMidiaPorLink } from "@/lib/conversas/midia-mensagem";
 
 /** Uma mensagem da conversa, como a tela desenha. */
 export type MensagemInstagram = {
@@ -15,6 +16,10 @@ export type MensagemInstagram = {
   texto: string;
   hora: string;
   criadoEm: string | null;
+  /**
+   * Os campos de anexo da mensagem, com cada arquivo trocado por um LINK (ver
+   * `trocarMidiaPorLink`). Não é o conteúdo.
+   */
   extras: Record<string, unknown> | null;
 };
 
@@ -78,7 +83,24 @@ export async function GET(request: Request) {
         texto: m.texto,
         hora: m.hora,
         criadoEm: m.criadoEm?.toISOString() ?? null,
-        extras: (m.extras as Record<string, unknown> | null) ?? null,
+        /*
+         * O ANEXO SAI DAQUI COMO LINK, NÃO EMBUTIDO — e isto era um defeito dos grandes.
+         *
+         * Esta rota devolvia `extras` cru, e `extras` guarda o anexo de duas formas: o formato
+         * antigo é a data URL (o arquivo inteiro, em base64, dentro do JSON) e o novo é a
+         * referência `r2:<chave>`. As duas estavam erradas aqui, e cada uma do seu jeito:
+         *
+         *   - A data URL fazia cada batida do polling, de 5 em 5 segundos, baixar os anexos das
+         *     300 mensagens da conversa aberta. É o mesmo desperdício que custou $123 num mês na
+         *     tela de Conversas — e o comentário logo acima, nesta mesma função, se preocupa com
+         *     ele enquanto o código fazia exatamente isso.
+         *   - A referência `r2:` não é endereço nenhum: o navegador não tem como carregar. Então
+         *     nem com o anexo em mãos a tela conseguiria desenhá-lo.
+         *
+         * Com o link, o JSON volta a ser pequeno e cada `<img>`/`<audio>` busca o seu arquivo
+         * sozinho, pela rota que já existe e já confere o dono. Ver `midia-mensagem.ts`.
+         */
+        extras: m.extras ? trocarMidiaPorLink(m.extras, m.id) : null,
       }),
     ),
     { headers: cabecalhosComEtag(etag) },
