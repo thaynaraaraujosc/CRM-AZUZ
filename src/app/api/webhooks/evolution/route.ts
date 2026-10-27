@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ehPedidoDeParar, registrarPedidoDeParar } from "@/lib/integracoes/azuz-flow-optout";
 import { validarTokenWebhook, workspaceIdDaInstancia, buscarNumeroConectado, buscarInfoGrupo, buscarFotoPerfil } from "@/lib/integracoes/evolution";
+import { baixarFotoDePerfil, precisaBaixarFoto } from "@/lib/integracoes/foto-de-perfil";
 import { criarContatoPeloWhatsAppSeNaoExistir } from "@/lib/contatos/upsert";
 import { entrarNaPrimeiraEtapaComoNovoLead, subirCardParaOTopo } from "@/lib/funis/upsert";
 import { dispararAutomacoesDeMensagemRecebida } from "@/lib/automation-flow/disparar-no-servidor";
@@ -359,9 +360,27 @@ export async function processarMensagemRecebida(
     fotoUrlExistente = conversaExistente?.fotoUrl ?? null;
   }
 
-  // Busca a foto de perfil só na primeira vez (conversa ainda sem uma). Pedir de novo a cada
-  // mensagem seria uma chamada extra à Evolution toda hora à toa, sem necessidade real.
-  const fotoUrl = fotoUrlExistente ?? (await buscarFotoPerfil(workspaceId, ehGrupo ? remoteJid! : waId).catch(() => null));
+  /**
+   * A FOTO É BAIXADA E GUARDADA, não linkada.
+   *
+   * O endereço que a Evolution devolve (`pps.whatsapp.net/...`) EXPIRA em algumas horas. Guardado
+   * como estava, a imagem parava de carregar e a conversa passava a mostrar o ícone genérico pra
+   * sempre — porque o campo não ficava vazio, então nada tentava buscar de novo. Era por isso que
+   * uns grupos tinham foto e outros não: a diferença era há quanto tempo a conversa tinha sido
+   * vista pela primeira vez.
+   *
+   * `precisaBaixarFoto` também trata como provisório o que JÁ ESTÁ gravado como endereço, e é o
+   * que faz a correção alcançar as conversas que hoje estão quebradas: na próxima mensagem delas,
+   * a foto é baixada e fica.
+   */
+  let fotoUrl = fotoUrlExistente;
+  if (precisaBaixarFoto(fotoUrl)) {
+    const endereco = await buscarFotoPerfil(workspaceId, ehGrupo ? remoteJid! : waId).catch(() => null);
+    const baixada = endereco ? await baixarFotoDePerfil(endereco) : null;
+    // Só substitui quando deu certo: falhando o download, o que já estava lá continua — um link
+    // velho ainda é melhor que nada enquanto não expirou.
+    fotoUrl = baixada ?? fotoUrl;
+  }
 
   // Conexão dona desta mensagem: é o número conectado por QR Code neste workspace. Sem isso, a
   // mensagem fica sem dono e não some da tela quando esse número é desconectado.

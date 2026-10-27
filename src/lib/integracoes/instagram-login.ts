@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { baixarFotoDePerfil } from "@/lib/integracoes/foto-de-perfil";
 
 /**
  * "API do Instagram com Login do Instagram". Fluxo de OAuth separado do Login do Facebook usado
@@ -197,19 +198,18 @@ export async function enviarDirectComRespostasRapidas(
  * conversa sem foto no dia seguinte. Foto de perfil é pequena, então embutir sai barato e resolve
  * de vez. Falha vira `null`, e a tela cai nas iniciais como já fazia.
  */
+/**
+ * A foto de perfil do Instagram, baixada pra guardar.
+ *
+ * Virou um repasse: a implementação mora em `foto-de-perfil.ts`, que o WhatsApp também usa. Eram
+ * duas cópias do mesmo download, e a do WhatsApp nem existia — era lá que o link expirado deixava
+ * a conversa sem foto. Duas cópias divergem na primeira correção feita só de um lado.
+ *
+ * O nome antigo continua exportado porque é o que os webhooks e a importação de histórico já
+ * chamam, em vários lugares.
+ */
 export async function baixarFotoPerfil(url: string): Promise<string | null> {
-  try {
-    const resposta = await fetch(url);
-    if (!resposta.ok) return null;
-    const bytes = Buffer.from(await resposta.arrayBuffer());
-    // Acima disso não é foto de perfil. Não vale embutir no banco.
-    if (bytes.length > 2 * 1024 * 1024) return null;
-    const mimeType = resposta.headers.get("content-type") ?? "image/jpeg";
-    return `data:${mimeType};base64,${bytes.toString("base64")}`;
-  } catch (erro) {
-    console.error("[instagram] Falha ao baixar a foto de perfil:", erro);
-    return null;
-  }
+  return baixarFotoDePerfil(url);
 }
 
 /**
