@@ -585,6 +585,42 @@ export type ConvMensagem = {
    * do nada.
    */
   botoes?: string[];
+  /**
+   * Os botões que vieram NA mensagem RECEBIDA, clicáveis.
+   *
+   * Irmão de `botoes` acima, e separado dele de propósito: aquele é registro do que o CRM MANDOU
+   * (quem escolhe é o contato, no aparelho dele, então clicar aqui não faria nada). Este é o
+   * contrário — uma empresa mandou a pergunta com botões, e quem responde é quem atende. Juntar os
+   * dois num campo só deixaria a tela sem saber quais dos dois pode clicar.
+   *
+   * Ver `src/lib/integracoes/mensagem-de-empresa.ts`: só entra aqui botão que veio de verdade no
+   * payload. "Responda 1 para SIM" digitado no corpo do texto continua sendo texto.
+   */
+  botoesRecebidos?: {
+    rotulo: string;
+    id?: string;
+    /** Botão de link: abre o endereço em vez de responder. */
+    url?: string;
+    /** Botão de ligar. */
+    telefone?: string;
+  }[];
+  /**
+   * Quem mandou é uma CONTA COMERCIAL, e o que se sabe dela.
+   *
+   * No celular, o WhatsApp avisa com todas as letras que a conversa é gerenciada por um serviço da
+   * Meta e desenha o cartão da empresa. No CRM isso sumia: uma oferta automática de uma empresa
+   * chegava com a mesma cara de um cliente escrevendo, e quem atende não tinha como distinguir.
+   *
+   * Só o que o webhook entrega. O cartão do celular (foto, seguidores, categoria, os botões
+   * "Parar" e "Perfil") é montado pelo APP com dados que ele busca à parte, e não chega aqui —
+   * então não é mostrado, em vez de ser preenchido com número inventado.
+   */
+  contaComercial?: {
+    /** O nome como a Meta verificou. Só existe em conta verificada. */
+    nome?: string;
+    /** O formato da mensagem só existe na API de negócios. Ver `mensagem-de-empresa.ts`. */
+    peloFormato?: boolean;
+  };
   /** Uma ou mais imagens reais anexadas. Vira um balão com a imagem de verdade, não só o nome do arquivo. */
   imagens?: AnexoImagem[];
   /** Vídeo real anexado (já cortado/processado, se o usuário editou antes de enviar). */

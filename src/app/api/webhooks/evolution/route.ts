@@ -16,6 +16,7 @@ import { iniciarHistoricoSeNecessario } from "@/lib/integracoes/historico-whatsa
 import { registrarDescarte, registrarMensagemGravada, registrarSinalDeVida } from "@/lib/integracoes/sinal-de-vida";
 import { decidirSobreLote } from "@/lib/integracoes/lote-de-mensagens";
 import { chavesDaMensagem, desembrulharMensagem, extrairTextoDaMensagem } from "@/lib/integracoes/texto-da-mensagem";
+import { botoesDaMensagem, contaComercialDaMensagem } from "@/lib/integracoes/mensagem-de-empresa";
 
 /** Formato de evento que a Evolution API manda pro webhook configurado na instância. Mesmo body
  * pra todo tipo de evento, o que muda é `event` e o formato de `data`. */
@@ -267,6 +268,11 @@ export async function processarMensagemRecebida(
     };
     messageTimestamp?: number;
     pushName?: string;
+    /**
+     * O nome da empresa COMO A META VERIFICOU. Só chega de conta comercial verificada, e é a única
+     * afirmação de identidade no payload que não é inferência nossa. Ver `mensagem-de-empresa.ts`.
+     */
+    verifiedBizName?: string;
   };
 
   const fromMe = data.key?.fromMe === true;
@@ -282,6 +288,10 @@ export async function processarMensagemRecebida(
   // O documento é o único tipo cujos metadados (nome e formato) só existem no evento: a busca da
   // mídia devolve o conteúdo, não o nome do arquivo.
   const documento = (conteudo?.documentMessage ?? {}) as { fileName?: string; mimetype?: string };
+  // Lidos do conteúdo JÁ DESEMBRULHADO: mensagem de empresa dentro de conversa temporária chega
+  // embrulhada igual qualquer outra.
+  const empresa = fromMe ? null : contaComercialDaMensagem(data as Record<string, unknown>, conteudo);
+  const botoesRecebidos = fromMe ? [] : botoesDaMensagem(conteudo);
   const remoteJid = data.key?.remoteJid;
   // Grupo de WhatsApp: a Evolution/Baileys segue a convenção do próprio WhatsApp: `remoteJid`
   // termina em "@g.us" pra grupo (e é o JID do GRUPO, o mesmo pra qualquer participante que
@@ -481,6 +491,16 @@ export async function processarMensagemRecebida(
          * nome, e quem já falou no grupo fica identificado sem depender de a API resolver o LID.
          */
         ...(ehGrupo && !fromMe ? identificadoresDoRemetente(data.key) : {}),
+        /*
+         * QUEM MANDOU É UMA EMPRESA, e os botões que vieram com a mensagem.
+         *
+         * O texto dessas mensagens já era lido (`texto-da-mensagem.ts`); o resto era descartado no
+         * mesmo movimento. O resultado na tela era uma oferta automática com a mesma cara de um
+         * cliente escrevendo, e sem as opções de resposta que o celular mostra. Ver
+         * `mensagem-de-empresa.ts` — nada aqui é inferido do texto, só lido do payload.
+         */
+        ...(empresa ? { contaComercial: empresa } : {}),
+        ...(botoesRecebidos.length ? { botoesRecebidos } : {}),
         // Áudio/imagem recebidos: conteúdo real não veio no payload (base64 desligado de
         // propósito), só esse aviso de que existe. Guarda o suficiente pra buscar sob demanda (ver
         // GET /api/integracoes/whatsapp-nao-oficial/midia): hoje isso acontece automaticamente

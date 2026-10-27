@@ -2355,6 +2355,33 @@ function ConversasPageInner() {
     setRespondendoMensagem(null);
   }
 
+  /**
+   * Clicou num botão que veio NA mensagem recebida (ver `mensagem-de-empresa.ts`).
+   *
+   * MANDA O TEXTO DO BOTÃO, e não uma resposta de botão de verdade. Essa limitação é da conexão,
+   * não uma simplificação: o WhatsApp tem um formato próprio pra "cliquei no botão tal"
+   * (`buttonsResponseMessage`, que carrega o id), e a Evolution não expõe endpoint nenhum pra
+   * mandá-lo — ela manda texto, mídia, áudio e reação. Ver `evolution.ts`.
+   *
+   * Na prática é o que uma pessoa faria: ler "SIM" no botão e digitar SIM. Quase todo fluxo do
+   * outro lado aceita, porque precisa aceitar quem responde digitando. Um robô que case
+   * estritamente pelo id do botão não vai reconhecer — e é por isso que o botão diz, ao passar o
+   * mouse, exatamente o que vai sair daqui. Prometer um clique idêntico ao do celular seria
+   * mentira, e a hora de descobrir seria depois do envio.
+   */
+  function responderComOpcao(botao: { rotulo: string }) {
+    const texto = botao.rotulo.trim();
+    if (!texto) return;
+    const viaBaileys = contatoUsaWhatsappNaoOficial();
+    const idLocal = adicionarMensagem({
+      tipo: "out",
+      texto,
+      hora: horaAgora(),
+      canal: viaBaileys ? "whatsapp_nao_oficial" : undefined,
+    });
+    despacharTexto(texto, undefined, idLocal);
+  }
+
   /* ---------------------------------------------------------------------- */
   /* Imagem: seleção, drag&drop, colar, edição real e envio                */
   /* ---------------------------------------------------------------------- */
@@ -4237,7 +4264,7 @@ function ConversasPageInner() {
                 >
                   <span className="cr1">
                     <span className="avatar">
-                      {c.fotoUrl ? <img src={c.fotoUrl} alt="" className="wa-avatar-foto" /> : iniciaisExibidas(c.nome, c.initials)}
+                      {c.fotoUrl ? <img src={c.fotoUrl} alt="" className="wa-avatar-foto" /> : iniciaisExibidas(c.nome, c.initials, c.canal)}
                       <CanalBadge canal={c.canal as Canal} />
                     </span>
                     <span className="cname">
@@ -4251,7 +4278,7 @@ function ConversasPageInner() {
                           <IconEquipe width={11} height={11} />
                         </span>
                       ) : null}
-                      {nomeExibido(c.nome)}
+                      {nomeExibido(c.nome, c.canal)}
                       {ehFavorita(c) ? (
                         <span className="wa-fav-star">
                           <IconStar width={11} height={11} fill="currentColor" />
@@ -4429,12 +4456,12 @@ function ConversasPageInner() {
               title={aberta.ehGrupo ? traduzir("Ver dados do grupo") : traduzir("Ver mídias e arquivos trocados nessa conversa")}
             >
               <div className="avatar">
-                {aberta.fotoUrl ? <img src={aberta.fotoUrl} alt="" className="wa-avatar-foto" /> : iniciaisExibidas(aberta.nome, aberta.initials)}
+                {aberta.fotoUrl ? <img src={aberta.fotoUrl} alt="" className="wa-avatar-foto" /> : iniciaisExibidas(aberta.nome, aberta.initials, aberta.canal)}
               </div>
               <div>
                 <p className="n">
                   {aberta.ehGrupo ? <IconEquipe width={13} height={13} style={{ marginRight: 4, verticalAlign: -2 }} /> : null}
-                  {nomeExibido(aberta.nome)}
+                  {nomeExibido(aberta.nome, aberta.canal)}
                 </p>
                 <p className="s">
                   {aberta.ehGrupo
@@ -4581,6 +4608,7 @@ function ConversasPageInner() {
                     setContatoDetalhePos(null);
                     setContatoDetalheAberto(contatoCompartilhado);
                   }}
+                  aoResponderOpcao={responderComOpcao}
                   onTentarNovamente={
                     msg.status === "erro" && msg.id ? () => tentarNovamenteMensagem(msg.id!) : undefined
                   }
@@ -7431,8 +7459,8 @@ function ConversasPageInner() {
           {abaInfo === "resumo" ? (
             <>
               <div className="wa-resumo-card">
-                <span className="avatar wa-resumo-avatar">{aberta.fotoUrl ? <img src={aberta.fotoUrl} alt="" className="wa-avatar-foto" /> : iniciaisExibidas(aberta.nome, aberta.initials)}</span>
-                <p className="wa-resumo-nome">{nomeExibido(aberta.nome)}</p>
+                <span className="avatar wa-resumo-avatar">{aberta.fotoUrl ? <img src={aberta.fotoUrl} alt="" className="wa-avatar-foto" /> : iniciaisExibidas(aberta.nome, aberta.initials, aberta.canal)}</span>
+                <p className="wa-resumo-nome">{nomeExibido(aberta.nome, aberta.canal)}</p>
                 {empresaContato ? <p className="wa-resumo-empresa">{empresaContato}</p> : null}
                 <div className="wa-resumo-grid">
                   <span className="wa-resumo-label">

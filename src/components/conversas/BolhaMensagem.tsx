@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { horaDaMensagem } from "@/lib/conversas/hora-da-mensagem";
 import type { ConvMensagem } from "@/lib/data";
 import { AudioBubblePlayer } from "@/components/audio-player";
-import { IconDoc, IconImage, IconLocalizacao, IconVideoCam } from "@/components/icons";
+import { IconDoc, IconEscudo, IconImage, IconLocalizacao, IconVideoCam } from "@/components/icons";
 import { StatusMensagemIcone } from "./StatusMensagem";
 import { corDoAutor } from "@/lib/conversas/cor-do-autor";
 import { traduzirRotuloDoSistema } from "@/lib/conversas/rotulos-do-sistema";
@@ -38,6 +38,7 @@ export function BolhaMensagem({
   aoAbrirImagem,
   aoAbrirContato,
   renderizarTexto,
+  aoResponderOpcao,
 }: {
   msg: ConvMensagem;
   onTentarNovamente?: () => void;
@@ -55,6 +56,14 @@ export function BolhaMensagem({
   aoAbrirContato?: (contato: NonNullable<ConvMensagem["contatoCompartilhado"]>) => void;
   /** Transforma o texto (links clicáveis, "Ler mais"). Padrão: texto puro. */
   renderizarTexto?: (texto: string) => ReactNode;
+  /**
+   * Clicou num botão que veio NA mensagem recebida (ver `msg.botoesRecebidos`).
+   *
+   * Opcional, e sem ela os botões viram etiquetas sem clique em vez de botões mortos: o painel do
+   * Funil mostra a conversa mas não envia nada, e um botão que não faz nada ao ser clicado é pior
+   * do que um botão que nem parece clicável.
+   */
+  aoResponderOpcao?: (botao: NonNullable<ConvMensagem["botoesRecebidos"]>[number]) => void;
 }) {
   const { t: traduzir } = useIdioma();
   const liberada = (tipo: "imagem" | "video" | "documento") =>
@@ -110,6 +119,88 @@ export function BolhaMensagem({
         {msg.remetenteNome}
       </span>
     ) : null;
+
+  /**
+   * QUEM MANDOU É UMA CONTA COMERCIAL.
+   *
+   * No celular o WhatsApp diz isso com todas as letras ("esta empresa usa um serviço seguro da
+   * Meta para gerenciar esta conversa") e desenha o cartão da empresa. No CRM a mesma mensagem
+   * chegava com a cara de um cliente escrevendo — e quem atende decide o tom da resposta por essa
+   * diferença.
+   *
+   * SÓ O QUE VEIO NO PAYLOAD. O nome aparece quando a Meta o verificou; quando não verificou,
+   * sobra a afirmação que o formato da mensagem sustenta sozinho — que ela saiu de um sistema. O
+   * cartão do celular (foto, seguidores, categoria) não chega aqui e por isso não é desenhado:
+   * ver `mensagem-de-empresa.ts`.
+   */
+  const marcaDeEmpresa =
+    msg.tipo === "in" && msg.contaComercial && typeof msg.contaComercial === "object" ? (
+      <span
+        className="wa-marca-empresa"
+        title={traduzir("Mensagem enviada por uma conta comercial pela API de negócios da Meta.")}
+      >
+        <IconEscudo width={11} height={11} aria-hidden="true" />
+        {msg.contaComercial.nome
+          ? `${msg.contaComercial.nome} · ${traduzir("conta comercial verificada")}`
+          : traduzir("Conta comercial · mensagem automática")}
+      </span>
+    ) : null;
+
+  /**
+   * OS BOTÕES QUE VIERAM NA MENSAGEM, pra responder com um clique.
+   *
+   * Diferente de `opcoesEnviadas` logo acima, que é registro do que o CRM MANDOU e por isso não
+   * clica: aqui quem recebeu a pergunta é quem atende, e o clique é a resposta.
+   *
+   * Botão de link e de ligar saem como link de verdade — eles não respondem nada, levam a algum
+   * lugar, e desenhá-los iguais ao de responder faria clicar em "Ver ingresso" parecer que mandou
+   * uma mensagem escrita "Ver ingresso".
+   */
+  const opcoesParaResponder = Array.isArray(msg.botoesRecebidos) && msg.botoesRecebidos.length ? (
+    <div className="wa-bolha-botoes" aria-label={traduzir("Opções de resposta desta mensagem")}>
+      {msg.botoesRecebidos.map((botao, i) => {
+        if (!botao || typeof botao.rotulo !== "string" || !botao.rotulo.trim()) return null;
+        const chave = `${botao.rotulo}-${i}`;
+        if (botao.url) {
+          return (
+            <a className="wa-bolha-botao link" key={chave} href={botao.url} target="_blank" rel="noopener noreferrer">
+              {botao.rotulo}
+            </a>
+          );
+        }
+        if (botao.telefone) {
+          return (
+            <a className="wa-bolha-botao link" key={chave} href={`tel:${botao.telefone}`}>
+              {botao.rotulo}
+            </a>
+          );
+        }
+        // Sem quem receba o clique (o painel do Funil), vira etiqueta: ver `aoResponderOpcao`.
+        if (!aoResponderOpcao) {
+          return (
+            <span className="wa-bolha-opcao" key={chave}>
+              {botao.rotulo}
+            </span>
+          );
+        }
+        return (
+          <button
+            type="button"
+            className="wa-bolha-botao"
+            key={chave}
+            // O QUE VAI SAIR DAQUI, dito antes do clique. O CRM manda o TEXTO do botão, não a
+            // resposta de botão do WhatsApp (a conexão por QR Code não tem como mandá-la). Quase
+            // todo fluxo do outro lado aceita texto, porque precisa aceitar quem digita — mas
+            // quem clica tem o direito de saber o que está mandando. Ver `responderComOpcao`.
+            title={`${traduzir("Responder com")} "${botao.rotulo}"`}
+            onClick={() => aoResponderOpcao(botao)}
+          >
+            {botao.rotulo}
+          </button>
+        );
+      })}
+    </div>
+  ) : null;
 
   /** Hora + tiquinhos, o rodapé que toda bolha tem. */
   const rodape = (
@@ -183,6 +274,7 @@ export function BolhaMensagem({
       <div {...abrir("bubble-localizacao")}>
         {chrome}
         {remetente}
+        {marcaDeEmpresa}
         {citacao}
         <a
           className="bubble-localizacao-link-area"
@@ -210,6 +302,7 @@ export function BolhaMensagem({
             <span className="bubble-localizacao-link">{traduzir("Abrir no mapa →")}</span>
           </div>
         </a>
+        {opcoesParaResponder}
         {rodape}
       </div>
     );
@@ -232,6 +325,7 @@ export function BolhaMensagem({
       <div {...abrir("bubble-contato")}>
         {chrome}
         {remetente}
+        {marcaDeEmpresa}
         {citacao}
         {aoAbrirContato ? (
           <button type="button" className="bubble-contato-area" onClick={() => aoAbrirContato(msg.contatoCompartilhado!)}>
@@ -243,6 +337,7 @@ export function BolhaMensagem({
             {ficha}
           </span>
         )}
+        {opcoesParaResponder}
         {rodape}
       </div>
     );
@@ -254,6 +349,7 @@ export function BolhaMensagem({
       <div {...abrir("bubble-midia")}>
         {chrome}
         {remetente}
+        {marcaDeEmpresa}
         {topoDoShare}
         {liberada("imagem") ? (
           <div className={`bubble-imagens${msg.imagens.length > 1 ? " grade" : ""}`}>
@@ -302,6 +398,7 @@ export function BolhaMensagem({
         {msg.legendaPublicacao ? <p className="bubble-share-legenda">{msg.legendaPublicacao}</p> : null}
         {msg.legenda ? <p className="bubble-legenda">{msg.legenda}</p> : null}
         {botaoExterno}
+        {opcoesParaResponder}
         {rodape}
       </div>
     );
@@ -313,6 +410,7 @@ export function BolhaMensagem({
       <div {...abrir("bubble-midia")}>
         {chrome}
         {remetente}
+        {marcaDeEmpresa}
         {topoDoShare}
         {msg.linkExterno ? (
           // Vídeo que vive no Instagram: o CRM não guarda cópia, então o que existe é a porta pra
@@ -332,6 +430,7 @@ export function BolhaMensagem({
         {msg.legendaPublicacao ? <p className="bubble-share-legenda">{msg.legendaPublicacao}</p> : null}
         {msg.legenda ? <p className="bubble-legenda">{msg.legenda}</p> : null}
         {botaoExterno}
+        {opcoesParaResponder}
         {rodape}
       </div>
     );
@@ -345,8 +444,10 @@ export function BolhaMensagem({
       <div {...abrir("bubble-figurinha")}>
         {chrome}
         {remetente}
+        {marcaDeEmpresa}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="bubble-figurinha-img" src={msg.figurinha.url} alt="Figurinha" />
+        {opcoesParaResponder}
         {rodape}
       </div>
     );
@@ -358,6 +459,7 @@ export function BolhaMensagem({
       <div {...abrir("bubble-documento")}>
         {chrome}
         {remetente}
+        {marcaDeEmpresa}
         <a
           className="bubble-documento-cartao"
           /*
@@ -382,6 +484,7 @@ export function BolhaMensagem({
           </span>
         </a>
         {msg.legenda ? <p className="bubble-legenda">{msg.legenda}</p> : null}
+        {opcoesParaResponder}
         {rodape}
       </div>
     );
@@ -402,6 +505,7 @@ export function BolhaMensagem({
       <div {...abrir("")}>
         {chrome}
         {remetente}
+        {marcaDeEmpresa}
         <span className="wa-carregar-midia">
           <span className="wa-participante-foto-carregando" />
           {rotuloCarregando}
@@ -417,11 +521,13 @@ export function BolhaMensagem({
       <div {...abrir("bubble-audio")}>
         {chrome}
         {remetente}
+        {marcaDeEmpresa}
         <AudioBubblePlayer
           audio={msg.audio}
           tipo={msg.tipo === "in" ? "in" : "out"}
           velocidadeInicial={velocidadeAudio}
         />
+        {opcoesParaResponder}
         {rodape}
       </div>
     );
@@ -432,10 +538,12 @@ export function BolhaMensagem({
     <div {...abrir("")}>
       {chrome}
       {remetente}
+      {marcaDeEmpresa}
       {citacao}
       {texto}
       {opcoesEnviadas}
       {botaoExterno}
+      {opcoesParaResponder}
       {rodape}
     </div>
   );
