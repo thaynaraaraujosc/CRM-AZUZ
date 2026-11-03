@@ -24333,3 +24333,96 @@ td.trafego-col-crm:first-of-type {
   background: color-mix(in srgb, var(--danger) 14%, transparent);
   color: var(--danger);
 }
+
+/*
+ * O PAINEL DO BLOCO, no Social Seller.
+ *
+ * No funil ele abre com as abas "Configurar" e "Problemas", porque lá a lista de pendências é
+ * metade do trabalho. Numa automação de Instagram de seis blocos a aba "Problemas" fica vazia
+ * quase sempre, e duas abas em cima de um formulário de três campos são dois cliques pra decidir
+ * nada. Aqui o painel abre direto no bloco: nome em cima, X no canto, Salvar no rodapé.
+ */
+.flow-config-social {
+  display: flex;
+  flex-direction: column;
+  width: 380px;
+  background: var(--surface);
+}
+
+.cfg-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex: none;
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.cfg-topo h2 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+.cfg-fechar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: var(--radius-2);
+  background: var(--surface-2);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.cfg-fechar:hover {
+  background: var(--surface-active);
+}
+
+.flow-config-social .flow-config-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-4);
+}
+
+.cfg-rodape {
+  display: flex;
+  justify-content: flex-end;
+  flex: none;
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--line-soft);
+}
+
+/* Apagado quando não há nada pendente: um botão sempre aceso que às vezes não faz nada ensina a
+   ignorá-lo, e aí ele deixa de servir quando faz. */
+.cfg-salvar {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: var(--radius-2);
+  background: var(--ss-azul, #2563eb);
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.cfg-salvar:hover:not(:disabled) {
+  background: var(--ss-azul-forte, #1d4ed8);
+}
+
+.cfg-salvar:disabled {
+  background: color-mix(in srgb, var(--ss-azul, #2563eb) 38%, transparent);
+  cursor: not-allowed;
+}

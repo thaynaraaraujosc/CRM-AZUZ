@@ -62,7 +62,8 @@ import { MensagemMidiaForm } from "./forms/MensagemMidiaForm";
 import { MensagemModeloForm } from "./forms/MensagemModeloForm";
 import { MensagemOpcoesForm } from "./forms/MensagemOpcoesForm";
 import { TarefaEventoForm } from "./forms/TarefaEventoForm";
-import { IconAlerta, IconErro } from "@/components/icons";
+import { IconAlerta, IconCheck, IconClose, IconErro } from "@/components/icons";
+import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
 import type { AreaAutomacao } from "@/lib/canais/capacidades";
 import { useIdioma } from "@/lib/idioma-context";
 
@@ -237,6 +238,10 @@ export function ConfigPanel({
   onRemoverOpcaoAresta,
   onTrocarTipo,
   onSelecionarNode,
+  ehSocial,
+  onFechar,
+  onSalvar,
+  temPendencia,
 }: {
   fluxo: FluxoAutomacao;
   selectedNodes: FlowNode[];
@@ -249,14 +254,47 @@ export function ConfigPanel({
   /** Troca o tipo do bloco. É o que transforma uma mensagem de texto em pergunta com botões. */
   onTrocarTipo?: (nodeId: string, tipo: FlowNodeType, data: Record<string, unknown>) => void;
   onSelecionarNode: (nodeId: string) => void;
+  /**
+   * NO SOCIAL SELLER O PAINEL TEM OUTRA CABEÇA.
+   *
+   * No funil ele abre com duas abas — "Configurar" e "Problemas" — porque um fluxo comercial tem
+   * vinte blocos e a lista de pendências é metade do trabalho. Numa automação de Instagram de seis
+   * blocos, a aba "Problemas" fica vazia quase sempre, e duas abas em cima de um formulário de
+   * três campos são dois cliques pra decidir nada. Aqui o painel abre direto no bloco, com o nome
+   * dele no topo, um X pra fechar e o Salvar no rodapé.
+   *
+   * As pendências não se perdem: elas continuam no cabeçalho do editor, que é onde não dá pra
+   * sair da tela sem ver.
+   */
+  ehSocial?: boolean;
+  onFechar?: () => void;
+  onSalvar?: () => void;
+  temPendencia?: boolean;
 }) {
   const { t: traduzir } = useIdioma();
   const [aba, setAba] = useState<"configurar" | "problemas">("configurar");
   const node = selectedNodes.length === 1 ? selectedNodes[0] : null;
   const { funis } = useFunis();
 
+  /** O nome do bloco aberto, que vira o título do painel no Social Seller. */
+  const tituloSocial = node
+    ? node.titulo || BLOCOS_DISPONIVEIS.find((b) => b.tipo === node.type)?.label || node.type
+    : traduzir("Configurações da automação");
+
   return (
-    <aside className="flow-config" aria-label={traduzir("Painel de configuração")}>
+    <aside className={`flow-config${ehSocial ? " flow-config-social" : ""}`} aria-label={traduzir("Painel de configuração")}>
+      {ehSocial ? (
+        <header className="cfg-topo">
+          <h2>{traduzir(tituloSocial)}</h2>
+          {onFechar ? (
+            <button type="button" className="cfg-fechar" aria-label={traduzir("Fechar")} onClick={onFechar}>
+              <IconClose width={14} height={14} />
+            </button>
+          ) : null}
+        </header>
+      ) : null}
+
+      {ehSocial ? null : (
       <div className="flow-config-tabs">
         <button type="button" className={`flow-tab${aba === "configurar" ? " on" : ""}`} onClick={() => setAba("configurar")}>
           {traduzir("Configurar")}
@@ -265,9 +303,10 @@ export function ConfigPanel({
           Problemas{problemas.length > 0 ? ` (${problemas.length})` : ""}
         </button>
       </div>
+      )}
 
       <div className="flow-config-body">
-        {aba === "problemas" ? (
+        {aba === "problemas" && !ehSocial ? (
           <div className="flow-form">
             {problemas.length === 0 ? (
               <p className="hint">{traduzir("Nenhum problema encontrado: esse fluxo está pronto pra publicar.")}</p>
@@ -335,6 +374,20 @@ export function ConfigPanel({
           </>
         )}
       </div>
+
+      {/*
+        O SALVAR NO RODAPÉ, como na referência. Ele não é um botão decorativo: chama a mesma
+        gravação do cabeçalho do editor. Fica apagado quando não há nada pendente, porque um botão
+        sempre aceso que às vezes não faz nada ensina a ignorá-lo.
+      */}
+      {ehSocial && onSalvar ? (
+        <footer className="cfg-rodape">
+          <button type="button" className="cfg-salvar" disabled={!temPendencia} onClick={onSalvar}>
+            {traduzir("Salvar")}
+            <IconCheck width={13} height={13} aria-hidden="true" />
+          </button>
+        </footer>
+      ) : null}
     </aside>
   );
 }

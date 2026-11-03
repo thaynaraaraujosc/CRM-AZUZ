@@ -1517,6 +1517,10 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           onRemoverOpcaoAresta={removerOpcaoAresta}
           onTrocarTipo={trocarTipoDoNode}
           onSelecionarNode={irParaONode}
+          ehSocial={ehSocial}
+          onFechar={() => setSelectedNodeIds([])}
+          onSalvar={salvarAlteracoes}
+          temPendencia={temPendencia}
         />
       </div>
 
