@@ -23923,6 +23923,109 @@ td.trafego-col-crm:first-of-type {
   font-family: var(--fonte-inter), var(--pilha-sistema);
 }
 
+/*
+ * AS SUPERFÍCIES DO MÓDULO: papel quase branco por baixo, branco PURO nos cartões.
+ *
+ * O CRM claro tem `--canvas: #eef1f5`, um cinza-azulado, e os cartões saem quase da mesma cor —
+ * o que faz cada linha da lista parecer um pedaço do fundo em vez de um botão. A referência usa
+ * `#FAFAFA` no fundo e `#FFFFFF` nos cartões: a diferença é pequena no papel e enorme na tela,
+ * porque é ELA que diz "isto aqui se clica".
+ *
+ * Os tokens são redefinidos só dentro do módulo. O resto do CRM continua no cinza-azulado dele.
+ */
+.content.social-layout,
+.flow-shell-social {
+  --canvas: #fafafa;
+  --surface: #ffffff;
+  --surface-1: #ffffff;
+  --surface-2: #f1f5f9;
+  --surface-hover: #f1f5f9;
+  --surface-active: #e2e8f0;
+  --surface-elevated: #ffffff;
+  --line: #e2e8f0;
+  --line-soft: #e2e8f0;
+  --line-strong: #cbd5e1;
+  --border: #e2e8f0;
+  --ink: #1e293b;
+  --text-muted: #64748b;
+  --text-faint: #94a3b8;
+}
+
+.content.social-layout {
+  background: #fafafa;
+}
+
+/*
+ * No escuro nada disso vale: `#FAFAFA` de fundo com texto claro seria ilegível. O módulo volta a
+ * usar as superfícies do tema, e quem carrega a identidade lá é o azul, não o papel.
+ */
+:root[data-theme="dark"] .content.social-layout,
+:root[data-theme="dark"] .flow-shell-social {
+  --canvas: #000d17;
+  --surface: var(--navy-raised);
+  --surface-1: var(--navy-raised);
+  --surface-2: var(--navy-raised-2);
+  --surface-hover: var(--navy-raised-2);
+  --surface-active: var(--surface-elevated);
+  --line: rgba(255, 255, 255, 0.1);
+  --line-soft: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.18);
+  --border: rgba(255, 255, 255, 0.1);
+  --ink: #fafafa;
+  --text-muted: rgba(255, 255, 255, 0.62);
+}
+
+:root[data-theme="dark"] .content.social-layout {
+  background: var(--canvas);
+}
+
+/*
+ * A ESCADA DE TAMANHOS DA REFERÊNCIA.
+ *
+ * O CRM é um painel denso de 13px; a referência trabalha em 14 e 16. Trocar só a cor e manter o
+ * 13 deixa a tela com a paleta certa e a densidade errada — foi o que sobrou de "não está igual"
+ * depois de acertar os hex.
+ */
+.content.social-layout .ssl-nome strong {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+}
+
+.content.social-layout .ssl-col strong {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+}
+
+.content.social-layout .ssl-col span,
+.content.social-layout .ssl-situacao {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--text-muted);
+}
+
+.content.social-layout .ssl-chip {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+}
+
+.content.social-layout .social-secao-topo h3 {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+/* As linhas são BRANCAS, sempre: é o contraste com o papel que as faz lerem como botão. */
+.content.social-layout .ssl-item {
+  background: #ffffff;
+}
+
+:root[data-theme="dark"] .content.social-layout .ssl-item {
+  background: var(--surface);
+}
+
 /* ============================================================================
  * O MÓDULO SOCIAL SELLER, FORA DO EDITOR
  *
@@ -24004,7 +24107,7 @@ td.trafego-col-crm:first-of-type {
   display: flex;
   align-items: center;
   gap: 10px;
-  flex: 1 1 260px;
+  flex: 1 1 330px;
   min-width: 0;
   border: 0;
   background: none;
@@ -24035,6 +24138,11 @@ td.trafego-col-crm:first-of-type {
 /* O gatilho como pastilha embaixo do nome: é a segunda coisa que se procura numa lista de robôs
    ("qual deles responde comentário?"), e numa coluna separada ele ficava a meia tela do nome. */
 .ssl-chip {
+  /* Numa linha só: quebrado, o selo vira um retângulo de duas linhas que parece caixa de texto. */
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   padding: 3px 8px;
   border-radius: 999px;
   /* `--surface-2` é quase o branco do cartão: a pastilha sumia. Uma mistura com a tinta dá o
@@ -24236,12 +24344,22 @@ td.trafego-col-crm:first-of-type {
   text-align: center;
 }
 
-/* O painel do bloco clicado abre pela ESQUERDA no Social Seller, como na referência: o canvas
-   corre pra direita, e a coluna de ferramentas (que fica na direita) não briga com ele. */
+/*
+ * O painel do bloco é uma GAVETA que flutua sobre o canvas, pela esquerda.
+ *
+ * Era uma coluna no grid: ela empurrava o canvas e ficava lá o tempo todo. Flutuando, o desenho
+ * do fluxo não se mexe quando a gaveta abre e fecha — e um fluxo que pula de lugar a cada clique
+ * em bloco é a forma mais rápida de perder de vista onde se estava.
+ */
 .flow-shell-social .flow-config {
-  order: -1;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 20;
   border-right: 1px solid var(--line-soft);
   border-left: 0;
+  box-shadow: 0px 10px 15px -3px rgba(0, 0, 0, 0.1), 0px 4px 6px -4px rgba(0, 0, 0, 0.1);
 }
 
 /*

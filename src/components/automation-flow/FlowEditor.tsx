@@ -154,6 +154,9 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
    * não é gravar — dizer "Salvo às 15:26" assim que a tela abre seria afirmar algo que não houve.
    */
   const [salvoEm, setSalvoEm] = useState<string | null>(null);
+  /* As configurações gerais do fluxo, no Social Seller, vêm pelo "⋮": o painel não fica mais
+     preso aberto, então sem isto não haveria como chegar no nome, na descrição e nos horários. */
+  const [configGeralAberta, setConfigGeralAberta] = useState(false);
   /* O "Salvo em …" do canvas marca a hora quando a gravação TERMINA: `salvando` indo de ligado
      pra desligado é o único instante em que se sabe que o que está na tela foi pro banco. */
   const estavaSalvando = useRef(false);
@@ -1082,6 +1085,10 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           onPublicar={publicar}
           onAbrirHistorico={() => setHistoricoAberto(true)}
           onAbrirExecucoes={() => setExecucoesAbertas(true)}
+          onAbrirConfiguracoes={() => {
+            setSelectedNodeIds([]);
+            setConfigGeralAberta(true);
+          }}
           entenderFluxoAtivo={entenderFluxoAtivo}
           onAlternarEntenderFluxo={() => setEntenderFluxoAtivo((v) => !v)}
           modoConstrucao={modoConstrucao}
@@ -1522,6 +1529,18 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
         </div>
         )}
 
+        {/*
+          NO SOCIAL SELLER O PAINEL SÓ EXISTE COM UM BLOCO SELECIONADO.
+          
+          No funil ele é uma coluna fixa: fica aberta o tempo todo e, sem seleção, mostra as
+          configurações gerais do fluxo. Na referência do Instagram é uma GAVETA — ela aparece
+          quando se clica num bloco e some quando se fecha. A diferença não é estética: com a
+          coluna presa, o canvas de uma automação de seis blocos perde 448px de largura o tempo
+          todo pra um painel que, sem seleção, não está respondendo pergunta nenhuma.
+          
+          As configurações gerais do fluxo não se perderam: elas continuam no "⋮" do cabeçalho.
+        */}
+        {ehSocial && selectedNodes.length === 0 && !configGeralAberta ? null : (
         <ConfigPanel
           fluxo={fluxoNaTela}
           selectedNodes={selectedNodes}
@@ -1534,10 +1553,14 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           onTrocarTipo={trocarTipoDoNode}
           onSelecionarNode={irParaONode}
           ehSocial={ehSocial}
-          onFechar={() => setSelectedNodeIds([])}
+          onFechar={() => {
+            setSelectedNodeIds([]);
+            setConfigGeralAberta(false);
+          }}
           onSalvar={salvarAlteracoes}
           temPendencia={temPendencia}
         />
+        )}
       </div>
 
       {simuladorAberto && fluxoParaSimular ? <Simulador fluxo={fluxoParaSimular} onFechar={() => setSimuladorAberto(false)} /> : null}

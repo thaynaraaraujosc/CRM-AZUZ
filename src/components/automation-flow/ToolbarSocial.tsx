@@ -39,6 +39,7 @@ export function ToolbarSocial({
   onSalvarRascunho,
   onPublicar,
   onAbrirHistorico,
+  onAbrirConfiguracoes,
   entenderFluxoAtivo,
   onAlternarEntenderFluxo,
   modoConstrucao,
@@ -63,6 +64,8 @@ export function ToolbarSocial({
   onSalvarRascunho: () => void;
   onPublicar: () => void;
   onAbrirHistorico: () => void;
+  /** As configurações gerais do fluxo: nome, descrição, horários. */
+  onAbrirConfiguracoes: () => void;
   entenderFluxoAtivo: boolean;
   onAlternarEntenderFluxo: () => void;
   modoConstrucao: boolean;
@@ -205,6 +208,11 @@ export function ToolbarSocial({
           </button>
           {menuAberto ? (
             <div className="ss-menu" role="menu">
+              <button type="button" role="menuitem" onClick={() => fecharEntao(onAbrirConfiguracoes)}>
+                {traduzir("Configurações da automação")}
+                <em>{traduzir("Nome, descrição e horários em que ela pode rodar.")}</em>
+              </button>
+              <hr />
               <button
                 type="button"
                 role="menuitem"
