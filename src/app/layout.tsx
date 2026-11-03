@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import { Inter } from "next/font/google";
 import "./globals.css";
 /* DEPOIS do globals, e isso importa: as regras daqui têm a mesma força de algumas de lá
    (`:root[data-theme="dark"] .input` e `:root .painel-formularios .input` valem 3 classes cada), e
@@ -19,9 +20,22 @@ const SCRIPT_TEMA_INICIAL = `
 `;
 
 
-/* Não há mais fonte baixada: o produto inteiro usa Arial, que é fonte de sistema (ver
-   `--pilha-sistema` no globals.css). Poppins e Montserrat saíram daqui porque ninguém mais as
-   referencia: mantê-las carregadas seria baixar duas famílias de fonte que nenhuma tela usa. */
+/*
+ * UMA FONTE BAIXADA, E SÓ UMA, PARA UM MÓDULO SÓ.
+ *
+ * Poppins e Montserrat saíram daqui porque nenhuma tela as referenciava — baixar família de fonte
+ * que ninguém usa é custo sem retorno. O resto do produto segue em Arial, fonte de sistema (ver
+ * `--pilha-sistema` no globals.css), e isso não mudou.
+ *
+ * A Inter volta por um motivo concreto: o Social Seller foi desenhado contra uma referência que
+ * usa Inter em tudo (ver `docs/referencia-gaio.md`), e tipografia é a metade do "parece o mesmo
+ * produto" que nenhuma cor resolve. Ela entra como VARIÁVEL e é aplicada só dentro do módulo —
+ * nenhuma outra tela do CRM troca de fonte por causa disto.
+ *
+ * É variável (um arquivo serve todos os pesos) e `display: "swap"`, então ela não segura a
+ * primeira pintura: o texto aparece na fonte de sistema e troca quando a Inter chega.
+ */
+const inter = Inter({ subsets: ["latin"], variable: "--fonte-inter", display: "swap" });
 
 export const metadata: Metadata = {
   /**
@@ -46,7 +60,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" className={inter.variable}>
       <body>
         <Script id="tema-inicial" strategy="beforeInteractive">
           {SCRIPT_TEMA_INICIAL}

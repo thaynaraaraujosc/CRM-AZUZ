@@ -19944,7 +19944,8 @@ table.tbl .name-cell .r {
 /* Módulo Instagram e TikTok: menu à esquerda, conteúdo à direita. */
 .social-layout {
   display: grid;
-  grid-template-columns: 210px 1fr;
+  /* 288px fixos, medido na referência. Eram 210px, de olho. */
+  grid-template-columns: 288px 1fr;
   gap: var(--space-4);
   align-items: start;
 }
@@ -19956,18 +19957,24 @@ table.tbl .name-cell .r {
 .social-menu {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   position: sticky;
   top: var(--space-3);
+  padding: 8px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
 }
 
 .social-menu-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
+  /* Itens de 48px com gap de 12px, como na referência. */
+  min-height: 48px;
+  gap: 12px;
+  padding: 8px 16px;
   border-radius: var(--radius-2);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-muted);
   text-decoration: none;
 }
@@ -19983,20 +19990,28 @@ table.tbl .name-cell .r {
 /* O item ativo ganha uma barra à esquerda, e não só fundo: numa coluna de seis itens com fundos
    parecidos, a barra é o que se acha de relance com o olho correndo de cima a baixo. */
 .social-menu-item.on {
-  background: var(--blue-soft);
-  color: var(--blue);
-  font-weight: 700;
+  background: var(--ss-azul-suave, #e7e8ff);
+  color: #0020ad;
+  font-weight: 600;
+}
+
+:root[data-theme="dark"] .social-menu-item.on {
+  color: var(--ss-azul, #657bff);
 }
 
 .social-menu-item.on::before {
   content: "";
   position: absolute;
   left: 0;
-  top: 6px;
-  bottom: 6px;
+  top: 8px;
+  bottom: 8px;
   width: 3px;
   border-radius: 0 999px 999px 0;
-  background: var(--blue);
+  background: #1641ff;
+}
+
+:root[data-theme="dark"] .social-menu-item.on::before {
+  background: var(--ss-azul, #657bff);
 }
 
 .social-menu-linha {
@@ -20070,20 +20085,24 @@ table.tbl .name-cell .r {
  * independentes — não como "escolha uma destas". Num trilho cinza com a escolhida em pastilha
  * clara, a relação entre as três fica desenhada.
  */
+/* Raio 8px e fundo `#E2E8F0`, medidos na referência — eu tinha feito pastilha de 999px. */
 .ss-seg {
   display: inline-flex;
   gap: 2px;
   padding: 3px;
-  border-radius: 999px;
+  border-radius: 8px;
+  background: var(--ss-linha, #e2e8f0);
+}
+
+:root[data-theme="dark"] .ss-seg {
   background: var(--surface-2);
-  border: 1px solid var(--line-soft);
 }
 
 .ss-seg-item {
   border: 0;
   background: none;
   padding: 5px 14px;
-  border-radius: 999px;
+  border-radius: 6px;
   font: inherit;
   font-size: 12px;
   font-weight: 600;
@@ -20097,9 +20116,14 @@ table.tbl .name-cell .r {
 }
 
 .ss-seg-item.on {
+  background: #fff;
+  color: var(--ss-tinta, #1e293b);
+  box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.1), 0px 1px 2px -1px rgba(0, 0, 0, 0.1);
+}
+
+:root[data-theme="dark"] .ss-seg-item.on {
   background: var(--surface);
-  color: var(--blue);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  color: var(--ink);
 }
 
 /* De que janela são os números. Sem isto, "48 interações" não diz 48 em quanto tempo — e o
@@ -23881,6 +23905,24 @@ td.trafego-col-crm:first-of-type {
   max-width: 300px;
 }
 
+/*
+ * A FONTE DO MÓDULO.
+ *
+ * O resto do CRM é Arial, fonte de sistema, e continua sendo. A referência do Social Seller é
+ * Inter em tudo, e tipografia é a metade do "parece o mesmo produto" que cor nenhuma resolve —
+ * com Arial, cada letra fica diferente mesmo com todos os hex certos.
+ *
+ * `--fonte-inter` vem do `next/font/google` no layout raiz (um arquivo, variável, `swap`), e o
+ * fallback é a mesma pilha de sistema do resto: se a fonte não chegar, a tela continua legível.
+ */
+.social-layout,
+.flow-shell-social,
+.tpl-janela,
+.gat-modal,
+.pp-caixa {
+  font-family: var(--fonte-inter), var(--pilha-sistema);
+}
+
 /* ============================================================================
  * O MÓDULO SOCIAL SELLER, FORA DO EDITOR
  *
@@ -24822,4 +24864,119 @@ td.trafego-col-crm:first-of-type {
   font-size: 13px;
   line-height: 1.5;
   color: var(--ss-tinta-fraca, #64748b);
+}
+
+/* O bloco Distribuir: o selo da soma em cima, porque é a única coisa que pode dar errado aqui. */
+.dist-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.dist-topo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--ss-linha, #e2e8f0);
+  border-radius: 8px;
+}
+
+.dist-topo strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dist-topo p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--ss-tinta-fraca, #64748b);
+}
+
+/* Alerta enquanto não fecha 100, verde quando fecha. Descobrir que soma 90% só na hora de publicar
+   é tarde; descobrir quando um contato some no meio do fluxo é pior. */
+.dist-soma {
+  flex: none;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #fcebe2;
+  color: #ea580c;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.dist-soma.ok {
+  background: #e3f4e9;
+  color: #16a34a;
+}
+
+.dist-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dist-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dist-linha {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dist-linha .input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.dist-pct {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  font-size: 13px;
+  color: var(--ss-tinta-fraca, #64748b);
+}
+
+.dist-pct .input {
+  width: 72px;
+  text-align: center;
+}
+
+.dist-remover {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 8px;
+  background: #fde9e9;
+  color: #dc2626;
+  cursor: pointer;
+}
+
+.dist-remover:disabled {
+  background: var(--surface-2);
+  color: var(--text-faint, var(--text-muted));
+  cursor: not-allowed;
+}
+
+.dist-aviso {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #fcebe2;
+  color: #9a3412;
+  font-size: 12px;
+  line-height: 1.45;
 }

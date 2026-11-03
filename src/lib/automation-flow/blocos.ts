@@ -515,6 +515,29 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
       ],
     }),
   },
+  {
+    /*
+     * DISTRIBUIR: o teste A/B do construtor.
+     *
+     * Diferente de "Decisão: vários caminhos", que escolhe o caminho pelo QUE a pessoa respondeu.
+     * Aqui não se olha nada do contato: sorteia-se. É o que serve pra descobrir qual das duas
+     * mensagens converte mais, mandando metade por cada uma.
+     */
+    tipo: "distribuir_sorteio",
+    categoria: "condicao",
+    grupo: "decisoes",
+    label: "Distribuir",
+    descricao: "Sorteia por qual saída cada contato segue, com a porcentagem que você definir. É o teste A/B.",
+    icone: "Shuffle",
+    corClasse: corDaCategoria("condicao"),
+    dataPadrao: () => ({
+      // Nasce com o caso comum já montado: metade pra cada lado.
+      opcoes: [
+        { id: "a", rotulo: "Opção 1", porcentagem: 50 },
+        { id: "b", rotulo: "Opção 2", porcentagem: 50 },
+      ],
+    }),
+  },
 
   // ------------------------------------------------------------- mensagem --
   {

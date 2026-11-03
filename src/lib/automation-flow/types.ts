@@ -64,6 +64,7 @@ export type FlowNodeType =
   // condicao
   | "condicao_grupo"
   | "decisao_multipla"
+  | "distribuir_sorteio"
   // mensagem
   | "mensagem_texto"
   | "mensagem_imagem"
@@ -263,6 +264,24 @@ export type DecisaoMultiplaData = {
   /** Só usado quando `campo === "campo_personalizado"`. */
   campoPersonalizadoNome?: string;
   caminhos: CaminhoDecisao[];
+};
+
+/**
+ * DISTRIBUIR: manda cada contato por uma saída diferente, por sorteio com peso.
+ *
+ * É o bloco de teste A/B. A soma das porcentagens tem que dar 100 — e isso é validado na gravação
+ * e de novo na execução, porque um fluxo publicado com 90% espalhados por duas saídas deixaria 10%
+ * dos contatos sem caminho, e "sem caminho" num robô publicado é o contato parado para sempre.
+ */
+export type OpcaoDistribuicao = {
+  id: string;
+  rotulo: string;
+  /** De 0 a 100. */
+  porcentagem: number;
+};
+
+export type DistribuirSorteioData = {
+  opcoes: OpcaoDistribuicao[];
 };
 
 export type MensagemTextoData = {

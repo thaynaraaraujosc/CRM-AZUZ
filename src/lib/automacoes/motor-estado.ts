@@ -21,6 +21,7 @@ import type {
   CriarNegocioData,
   CriarTarefaData,
   DecisaoMultiplaData,
+  DistribuirSorteioData,
   DistribuirDisponibilidadeData,
   EncaminharEquipeData,
   EncaminharHumanoData,
@@ -492,6 +493,44 @@ async function executarNo(params: {
       if (data.seSemEmail === "encerrar") return { tipo: "encerrar", situacao: "concluida", detalhe: r.detalhe };
       if (data.seSemEmail === "caminho_alternativo") return { tipo: "seguir", saida: "sem_email", detalhe: r.detalhe };
       return { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+    }
+
+    /*
+     * DISTRIBUIR: sorteio com peso.
+     *
+     * Um número entre 0 e 100 e as faixas acumuladas das opções: 50/50 vira "abaixo de 50 vai pela
+     * primeira, de 50 pra cima pela segunda". O sorteio é por CONTATO e não por execução salva —
+     * reexecutar o mesmo fluxo pode cair no outro lado, e isso é o esperado num teste A/B.
+     *
+     * A soma é conferida aqui, de novo, mesmo a tela já validando: um fluxo pode ter sido
+     * publicado antes desta validação existir, e 90% espalhados em duas saídas deixaria 10% dos
+     * contatos sem caminho. Sem caminho, num robô publicado, é contato parado pra sempre — então
+     * o resto vai pela última opção em vez de sumir.
+     */
+    case "distribuir_sorteio": {
+      const data = no.data as DistribuirSorteioData;
+      const opcoes = (data.opcoes ?? []).filter((o) => o.id);
+      if (!opcoes.length) {
+        return { tipo: "erro", detalhe: "O bloco Distribuir está sem opções." };
+      }
+      const sorteio = Math.random() * 100;
+      let acumulado = 0;
+      for (const opcao of opcoes) {
+        acumulado += Number(opcao.porcentagem) || 0;
+        if (sorteio < acumulado) {
+          return {
+            tipo: "seguir",
+            saida: opcao.id,
+            detalhe: `Sorteou ${sorteio.toFixed(1)} e seguiu por "${opcao.rotulo || opcao.id}" (${opcao.porcentagem}%).`,
+          };
+        }
+      }
+      const ultima = opcoes[opcoes.length - 1];
+      return {
+        tipo: "seguir",
+        saida: ultima.id,
+        detalhe: `As porcentagens somam ${acumulado}%, não 100%. Seguiu por "${ultima.rotulo || ultima.id}".`,
+      };
     }
 
     case "decisao_multipla": {

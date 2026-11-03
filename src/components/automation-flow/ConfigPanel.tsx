@@ -19,6 +19,7 @@ import type {
   ExecutarRoboData,
   ReagirMensagemData,
   DecisaoMultiplaData,
+  DistribuirSorteioData,
   IaClassificarData,
   FlowNode,
   FlowNodeType,
@@ -65,6 +66,7 @@ import { TarefaEventoForm } from "./forms/TarefaEventoForm";
 import { IconAlerta, IconCheck, IconClose, IconErro } from "@/components/icons";
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
 import { EscolhaDeConteudo } from "./forms/EscolhaDeConteudo";
+import { DistribuirSorteioForm } from "./forms/DistribuirSorteioForm";
 
 /**
  * Os tipos que a escolha de formato troca entre si.
@@ -186,6 +188,15 @@ function FormularioDoNode({
   if (node.type === "mensagem_modelo_whatsapp") {
     return <MensagemModeloForm data={node.data as MensagemModeloWhatsappData} onChange={(d) => onUpdateNodeData(node.id, d)} />;
   }
+  if (node.type === "distribuir_sorteio") {
+    return (
+      <DistribuirSorteioForm
+        data={node.data as DistribuirSorteioData}
+        onChange={(d) => onUpdateNodeData(node.id, d)}
+      />
+    );
+  }
+
   if (node.type === "decisao_multipla") {
     return (
       <DecisaoMultiplaForm

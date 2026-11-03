@@ -11,6 +11,7 @@ import type {
   AguardarData,
   CondicaoGrupoData,
   DecisaoMultiplaData,
+  DistribuirSorteioData,
   IaClassificarData,
   FlowNode,
   FlowNodeCategory,
@@ -59,6 +60,14 @@ export function saidasDoNo(node: FlowNode): SaidaNo[] {
       { handleId: "sim", label: `✓ ${simLabel}` },
       { handleId: "nao", label: `✕ ${naoLabel}` },
     ];
+  }
+
+  if (node.type === "distribuir_sorteio") {
+    const data = node.data as DistribuirSorteioData;
+    const opcoes = (data.opcoes ?? []).filter((o) => o.id);
+    // A porcentagem vai NO RÓTULO da saída, e não só no painel: olhando o desenho, "Opção 1 - 70%"
+    // conta o experimento inteiro sem abrir bloco nenhum.
+    return opcoes.map((o) => ({ handleId: o.id, label: `${o.rotulo || o.id} - ${o.porcentagem}%` }));
   }
 
   if (node.type === "mensagem_botoes" || node.type === "mensagem_lista") {
@@ -313,6 +322,14 @@ export function resumoNo(node: FlowNode, funis?: Funil[]): string {
     }
     case "mensagem_texto": {
       return `"${truncar(String(d.texto ?? ""))}" · Canal: ${d.canal ?? "whatsapp"}`;
+    }
+    case "distribuir_sorteio": {
+      const data = node.data as DistribuirSorteioData;
+      const opcoes = data.opcoes ?? [];
+      const soma = opcoes.reduce((t, o) => t + (Number(o.porcentagem) || 0), 0);
+      if (!opcoes.length) return "Sem opções definidas";
+      if (soma !== 100) return `As porcentagens somam ${soma}%, e precisam somar 100%`;
+      return opcoes.map((o) => `${o.rotulo || o.id} ${o.porcentagem}%`).join(" · ");
     }
     case "decisao_multipla": {
       const data = node.data as DecisaoMultiplaData;
