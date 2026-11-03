@@ -64,6 +64,24 @@ import { MensagemOpcoesForm } from "./forms/MensagemOpcoesForm";
 import { TarefaEventoForm } from "./forms/TarefaEventoForm";
 import { IconAlerta, IconCheck, IconClose, IconErro } from "@/components/icons";
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
+import { EscolhaDeConteudo } from "./forms/EscolhaDeConteudo";
+
+/**
+ * Os tipos que a escolha de formato troca entre si.
+ *
+ * É uma lista fechada de propósito: trocar o tipo de um bloco APAGA as ligações que saíam dele
+ * (ver `trocarTipoDoNode`), e isso só é aceitável entre formatos da mesma mensagem. Oferecer a
+ * troca num bloco de condição faria a pessoa perder dois caminhos sem ser avisada.
+ */
+const FORMATOS_DE_MENSAGEM: FlowNodeType[] = [
+  "mensagem_texto",
+  "mensagem_botoes",
+  "aguardar",
+  "mensagem_audio",
+  "mensagem_imagem",
+  "mensagem_video",
+  "mensagem_documento",
+];
 import type { AreaAutomacao } from "@/lib/canais/capacidades";
 import { useIdioma } from "@/lib/idioma-context";
 
@@ -329,9 +347,28 @@ export function ConfigPanel({
           </div>
         ) : node ? (
           <>
+            {/*
+              A ESCOLHA DO FORMATO, no topo e só no Social Seller.
+              
+              No CRM cada formato de mensagem é um TIPO de bloco, e escolher o formato era escolher
+              o bloco certo lá no menu do "+": decidir antes de abrir. Aqui a lista fica dentro do
+              bloco, que é onde a pergunta "texto ou áudio?" aparece — olhando a conversa que está
+              sendo montada, e não o menu.
+            */}
+            {ehSocial && onTrocarTipo && FORMATOS_DE_MENSAGEM.includes(node.type) ? (
+              <EscolhaDeConteudo
+                tipoAtual={node.type}
+                onEscolher={(tipo, dados) => {
+                  if (tipo !== node.type) onTrocarTipo(node.id, tipo, dados);
+                }}
+              />
+            ) : null}
+
+            {ehSocial ? null : (
             <div className="panel-h">
               <h4>{node.titulo || node.type}</h4>
             </div>
+            )}
             <div className="flow-form">
               <div className="field">
                 <label>{traduzir("Título do bloco")}</label>

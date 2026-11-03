@@ -24533,3 +24533,94 @@ td.trafego-col-crm:first-of-type {
   background: color-mix(in srgb, var(--ss-azul, #2563eb) 38%, transparent);
   cursor: not-allowed;
 }
+
+/*
+ * "ESCOLHA UM BLOCO PARA COMEÇAR": a lista de formatos no topo do painel do bloco de mensagem.
+ *
+ * Cada formato é uma linha com ícone, nome e o "+" à direita — o mesmo desenho dos itens da
+ * caixinha do "+", porque é a mesma decisão ("o que entra aqui?") vista de outro lugar. O formato
+ * em uso fica marcado, e não escondido: sem a marca, quem abre o bloco pela segunda vez não sabe
+ * se a lista é "o que ele é" ou "o que ele pode virar".
+ */
+.esc-conteudo {
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.esc-conteudo-titulo {
+  margin: 0 0 var(--space-3);
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+.esc-conteudo-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.esc-conteudo-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--ss-linha, #e2e8f0);
+  border-radius: 12px;
+  background: var(--surface);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.14s ease, background 0.14s ease;
+}
+
+.esc-conteudo-item:hover {
+  background: var(--ss-suave, #f1f5f9);
+}
+
+.esc-conteudo-item.on {
+  border-color: var(--ss-azul, #0028fe);
+  background: var(--ss-azul-suave, #e7e8ff);
+}
+
+.esc-conteudo-icone {
+  display: inline-flex;
+  flex: none;
+  color: var(--ss-tinta-fraca, #64748b);
+}
+
+.esc-conteudo-item.on .esc-conteudo-icone {
+  color: var(--ss-azul, #0028fe);
+}
+
+.esc-conteudo-textos {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.esc-conteudo-textos strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.esc-conteudo-textos > span {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--ss-tinta-fraca, #64748b);
+}
+
+.esc-conteudo-mais {
+  flex: none;
+  font-size: 17px;
+  line-height: 1;
+  color: var(--ss-tinta-fraca, #64748b);
+}
+
+.esc-conteudo-item.on .esc-conteudo-mais {
+  color: var(--ss-azul, #0028fe);
+}
