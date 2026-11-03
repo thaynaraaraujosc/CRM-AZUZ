@@ -21037,15 +21037,17 @@ table.tbl .name-cell .r {
 .fflow-acoes {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  align-items: center;
+  gap: 6px var(--space-2);
   margin-top: var(--space-2);
 }
 
-/* "igual à geral": o formulário que ainda não tem regra própria. Discreto, porque é o estado
-   normal — a maioria dos formulários segue a geral e isso não é um alerta. */
+/* "segue a regra geral": o formulário que ainda não tem regra própria. Em texto miúdo ao lado do
+   botão, e não em etiqueta no cabeçalho — é o estado NORMAL (a maioria segue a geral), e uma
+   etiqueta a mais em cada linha fechada só faz o cabeçalho ficar mais difícil de ler. */
 .fflow-herdado {
-  margin-left: 6px;
-  font-weight: 500;
+  font-size: 11px;
+  color: var(--text-muted);
 }
 
 /*
@@ -21078,10 +21080,14 @@ table.tbl .name-cell .r {
   border-top: 1px solid var(--line-soft);
 }
 
+.prot-linha:hover {
+  background: color-mix(in srgb, var(--acao) 5%, transparent);
+}
+
 .prot-rotulo {
   flex: 0 0 130px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 650;
 }
 
 .prot-campos {
@@ -21100,15 +21106,32 @@ table.tbl .name-cell .r {
   font-size: 13px;
 }
 
+/*
+ * OS CAMPOS COMO PASTILHAS.
+ *
+ * Eram caixas de formulário de largura cheia no meio de uma frase ("só manda das [____] às
+ * [____]"), e uma caixa de formulário nesse tamanho promete que cabe texto livre — não cabe: de um
+ * lado é uma lista de horários, do outro é um número de dois dígitos. Do tamanho do conteúdo, com
+ * canto arredondado e a cor do grupo no foco, eles leem como parte da frase.
+ */
 .prot-campo .input {
   width: auto;
   min-width: 82px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--surface-1);
+  font-weight: 600;
+  text-align: center;
+}
+
+.prot-campo .input:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--acao) 55%, var(--line));
 }
 
 .prot-campo .prot-numero {
-  width: 72px;
+  width: 64px;
   min-width: 0;
-  text-align: center;
 }
 
 .prot-nota {
@@ -21137,6 +21160,133 @@ table.tbl .name-cell .r {
 .prot-disjuntor p {
   margin: 0;
   flex: 1 1 240px;
+}
+
+/*
+ * OS GRUPOS DE FORMULÁRIO, um por origem: AZUZ Flow e CRM.
+ *
+ * A cor é o que separa os dois à distância — ouro no Flow, azul no CRM —, e ela entra por um token
+ * local (`--fgrupo-cor`) em vez de ser escrita em cada regra. Assim marca, contagem e borda de foco
+ * saem da mesma fonte, e um terceiro grupo (se um dia houver) é uma classe de três linhas.
+ *
+ * O azul precisa de valor literal: `--blue` é o token de ACENTO, e no tema escuro ele vira ouro —
+ * usá-lo aqui faria os dois grupos ficarem dourados à noite, que é o oposto do que a cor serve.
+ */
+.fgrupo {
+  --fgrupo-cor: var(--text-muted);
+  --fgrupo-fundo: var(--surface-2);
+  padding: 0;
+  overflow: hidden;
+}
+
+.fgrupo.ouro {
+  --fgrupo-cor: var(--acao);
+  --fgrupo-fundo: color-mix(in srgb, var(--acao) 12%, transparent);
+}
+
+.fgrupo.azul {
+  --fgrupo-cor: #2e6bff;
+  --fgrupo-fundo: color-mix(in srgb, #2e6bff 10%, transparent);
+}
+
+:root[data-theme="dark"] .fgrupo.azul {
+  --fgrupo-cor: #9db8ff;
+  --fgrupo-fundo: color-mix(in srgb, #9db8ff 16%, transparent);
+}
+
+/* O cabeçalho inteiro é o botão: uma seta de 14px é alvo ruim no celular, e quem lê o nome do
+   grupo espera que clicar nele abra. */
+.fgrupo-cabecalho {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.fgrupo-cabecalho:hover {
+  background: var(--fgrupo-fundo);
+}
+
+.fgrupo-cabecalho:focus-visible {
+  outline: 2px solid var(--fgrupo-cor);
+  outline-offset: -2px;
+}
+
+/* A marca da origem: um traço vertical, não um ponto nem um ícone. Ponto colorido lê como
+   "status" (ligado/desligado), e aqui a cor não diz estado nenhum — diz de onde o grupo vem. */
+.fgrupo-marca {
+  flex: none;
+  width: 3px;
+  align-self: stretch;
+  min-height: 30px;
+  border-radius: 999px;
+  background: var(--fgrupo-cor);
+}
+
+.fgrupo-textos {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.fgrupo-titulo {
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.fgrupo-explicacao {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.fgrupo-contagem {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--fgrupo-fundo);
+  color: var(--fgrupo-cor);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.fgrupo-seta {
+  flex: none;
+  color: var(--text-muted);
+  transition: transform 0.16s ease;
+}
+
+.fgrupo.aberto .fgrupo-seta {
+  transform: rotate(180deg);
+}
+
+.fgrupo-corpo {
+  padding: 0 var(--space-3) var(--space-3);
+  border-top: 1px solid var(--line-soft);
+}
+
+.fgrupo-corpo > .fflow-lista {
+  padding-top: var(--space-3);
+}
+
+.fflow-vazio {
+  margin: 0;
+  padding: var(--space-4) var(--space-2);
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
 }
 
 /*
@@ -21171,17 +21321,32 @@ table.tbl .name-cell .r {
 }
 
 .fflow-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
+/* CADA FORMULÁRIO É UM BOTÃO, e não uma linha separada por filete.
+   Empilhadas sem borda, cinco linhas de nome + etiquetas leem como uma tabela — e numa tabela
+   ninguém espera que a linha abra. Com borda e cantos, cada formulário é visivelmente uma coisa
+   em que se clica. */
 .fflow-item {
-  border-top: 1px solid var(--line-soft);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-2);
+  background: var(--surface-1);
+  transition: border-color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.fflow-item:hover {
+  border-color: color-mix(in srgb, var(--fgrupo-cor, var(--text-muted)) 45%, var(--line-soft));
 }
 
 .fflow-item.aberta {
-  background: var(--surface-1);
+  border-color: color-mix(in srgb, var(--fgrupo-cor, var(--text-muted)) 55%, var(--line-soft));
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .fflow-cabecalho {
@@ -21189,16 +21354,18 @@ table.tbl .name-cell .r {
   align-items: center;
   gap: var(--space-3);
   width: 100%;
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-3);
   border: 0;
+  border-radius: inherit;
   background: none;
   font: inherit;
   text-align: left;
   cursor: pointer;
 }
 
-.fflow-cabecalho:hover {
-  background: var(--surface-hover, var(--surface-2));
+.fflow-cabecalho:focus-visible {
+  outline: 2px solid var(--fgrupo-cor, var(--blue));
+  outline-offset: -2px;
 }
 
 .fflow-nome {
@@ -21231,24 +21398,70 @@ table.tbl .name-cell .r {
 .fflow-corpo {
   display: flex;
   flex-direction: column;
+  gap: var(--space-3);
+  padding: 0 var(--space-3) var(--space-3);
+}
+
+/*
+ * O CORPO EM BLOCOS COM TÍTULO.
+ *
+ * Eram dez coisas empilhadas com o mesmo peso: interruptor, duas notas em cinza, rótulo, campo,
+ * seis etiquetas de variável, dois botões e uma lista de robôs. Separado em "a mensagem" e "os
+ * robôs", cada pergunta tem onde ser respondida, e o que é explicação fica visivelmente menor
+ * do que o que é controle.
+ */
+.fflow-bloco {
+  display: flex;
+  flex-direction: column;
   gap: 6px;
-  padding: 0 var(--space-4) var(--space-4);
+  padding: var(--space-3);
+  border-radius: var(--radius-2);
+  background: var(--surface-2);
+}
+
+.fflow-bloco-topo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.fflow-bloco-topo > div {
+  min-width: 0;
+}
+
+.fflow-bloco-titulo {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.fflow-bloco-nota {
+  margin: 2px 0 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+/* O aviso de "não envia ao CRM" aberto: aqui ele É um defeito a resolver, e não mais uma linha
+   cinza — fechado, ele já aparece como etiqueta no cabeçalho. */
+.fflow-aviso {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: var(--radius-2);
+  border: 1px solid color-mix(in srgb, var(--danger) 28%, transparent);
+  background: color-mix(in srgb, var(--danger) 8%, transparent);
+  font-size: 11px;
+  line-height: 1.45;
 }
 
 .fflow-nota {
   margin: 0;
 }
 
-.fflow-interruptor {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  padding: var(--space-2) 0;
-}
-
 .fflow-mensagem {
-  min-height: 150px;
+  min-height: 130px;
+  background: var(--surface-1);
   resize: vertical;
 }
 
@@ -21268,12 +21481,6 @@ table.tbl .name-cell .r {
   background: var(--surface-2);
   font-size: 11px;
   cursor: help;
-}
-
-.fflow-robos-bloco {
-  margin-top: var(--space-2);
-  padding-top: var(--space-2);
-  border-top: 1px solid var(--line-soft);
 }
 
 .ig-escrever {

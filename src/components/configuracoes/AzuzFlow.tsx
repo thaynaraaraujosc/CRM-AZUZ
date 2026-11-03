@@ -422,7 +422,7 @@ export function AzuzFlow() {
             */}
           <p className="hint">
             {traduzir("A confirmação de reunião e a mensagem de cada formulário ficam em")}{" "}
-            <a href="/automacoes/formularios-flow">{traduzir("Automações › Formulários do Flow")}</a>.
+            <a href="/automacoes/formularios">{traduzir("Automações › Formulários do Flow")}</a>.
           </p>
         </div>
       ) : null}
