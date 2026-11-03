@@ -69,6 +69,16 @@ const PREFIXOS_PUBLICOS = [
   // A pergunta do Flow sobre o que aconteceu com os leads que ele mandou. Mesma defesa das duas de
   // cima: a lista é por CAMINHO, então uma rota nova precisa entrar aqui ou vira 307 pro /login.
   "/api/integracoes/azuz-flow/confirmacoes",
+  /*
+   * A lista de formulários que o Flow manda. Mesma chave, mesma direção, mesma defesa.
+   *
+   * Esta rota tem DUAS portas: o `POST` é do Flow (chave) e o `GET` é da tela de Automações
+   * (sessão). Estar aqui não abre o `GET`: a lista de rotas públicas diz só que o proxy não
+   * redireciona; o `auth()` dentro do `GET` continua recusando quem não tem sessão. Sem esta
+   * linha, o `POST` do Flow receberia um 307 pro /login e a lista nunca chegaria — o quarto caso
+   * do sintoma descrito no topo deste arquivo.
+   */
+  "/api/integracoes/azuz-flow/formularios",
 
   // O link rastreado que fica no botão de WhatsApp do site do cliente. Quem clica nele é um
   // visitante do site de outra empresa: não tem conta no CRM, nunca vai ter, e exigir sessão

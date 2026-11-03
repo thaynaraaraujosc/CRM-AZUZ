@@ -57,6 +57,7 @@ import { MensagemContatoForm } from "./forms/MensagemContatoForm";
 import { MensagemEmailForm } from "./forms/MensagemEmailForm";
 import { MensagemForm } from "./forms/MensagemForm";
 import { MensagemLocalizacaoForm } from "./forms/MensagemLocalizacaoForm";
+import { FormularioPreenchidoForm } from "./forms/FormularioPreenchidoForm";
 import { MensagemMidiaForm } from "./forms/MensagemMidiaForm";
 import { MensagemModeloForm } from "./forms/MensagemModeloForm";
 import { MensagemOpcoesForm } from "./forms/MensagemOpcoesForm";
@@ -102,6 +103,16 @@ function FormularioDoNode({
     return (
       <ComentarioInstagramForm
         data={node.data as Parameters<typeof ComentarioInstagramForm>[0]["data"]}
+        onChange={(d) => onUpdateNodeData(node.id, d)}
+      />
+    );
+  }
+  // De qual formulário este robô atende. Ver `formulario-do-gatilho.ts`: sem esta escolha, todo
+  // robô de formulário responde a todo formulário.
+  if (node.type === "formulario_preenchido") {
+    return (
+      <FormularioPreenchidoForm
+        data={node.data as { formularioId?: string }}
         onChange={(d) => onUpdateNodeData(node.id, d)}
       />
     );

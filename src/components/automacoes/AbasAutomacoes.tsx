@@ -31,6 +31,10 @@ import { useIdioma } from "@/lib/idioma-context";
  */
 const ABAS = [
   { href: "/automacoes", label: "Automatizar funil", exato: true },
+  // Os formulários do AZUZ Flow e o robô de cada um. Entra aqui, e não em Configurações, porque a
+  // pergunta que ele responde é "o que acontece quando preenchem este formulário" — que é
+  // automação. Em Configurações fica só o que liga e desliga a integração.
+  { href: "/automacoes/formularios-flow", label: "Formulários do Flow", exato: false },
   { href: "/automacoes/templates", label: "Templates", exato: false },
   { href: "/automacoes/disparos", label: "Disparo em massa", exato: false },
 ] as const;

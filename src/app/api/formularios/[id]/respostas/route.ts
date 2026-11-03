@@ -15,6 +15,7 @@ import {
 } from "@/lib/seguranca/limite-de-uso";
 import { dispararGatilhosDoLead } from "@/lib/funil/gatilhos-etapa";
 import { dispararAutomacoesDoCrm } from "@/lib/automation-flow/disparar-no-servidor";
+import { identificadorDoFormularioDoCrm } from "@/lib/automation-flow/formulario-do-gatilho";
 
 /**
  * POST registra uma resposta pra esse formulário. Usado por `registrarResposta` no Context e
@@ -50,7 +51,7 @@ export async function POST(request: Request, ctx: RouteContext<"/api/formularios
   // contato e o card dependerem da aba ficar aberta.
   const formulario = await prisma.formulario.findUnique({
     where: { id },
-    select: { workspaceId: true, nome: true, paginas: true },
+    select: { id: true, workspaceId: true, nome: true, paginas: true },
   });
   if (!formulario) return NextResponse.json({ erro: "Formulário não encontrado" }, { status: 404 });
 
@@ -96,6 +97,9 @@ export async function POST(request: Request, ctx: RouteContext<"/api/formularios
     workspaceId: formulario.workspaceId,
     tipoGatilho: "formulario_preenchido",
     contatoNome: contatoNome?.trim() || nomeDeQuemRespondeu(valores) || `Resposta ${linha.id}`,
+    // QUAL formulário foi preenchido. Sem isto, um robô montado pra UM formulário respondia a
+    // todos. Ver `formulario-do-gatilho.ts`.
+    formularioId: identificadorDoFormularioDoCrm(formulario.id),
     chaveEvento: `formulario:${linha.id}`,
   }).catch((erro) => console.error("[formularios] falha ao disparar automações:", erro));
 

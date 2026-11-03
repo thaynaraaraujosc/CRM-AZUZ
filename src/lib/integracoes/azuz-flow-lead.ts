@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { aoCriarContato } from "@/lib/automacoes/gatilhos-crm";
 import { dispararAutomacoesDoCrm } from "@/lib/automation-flow/disparar-no-servidor";
+import { identificadorDoFormularioDoFlow } from "@/lib/automation-flow/formulario-do-gatilho";
 import { encontrarContatoPorTelefone } from "@/lib/contatos/upsert";
 import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
 import {
@@ -165,6 +166,8 @@ export type DependenciasDoFlow = {
   dispararAutomacoes: (params: {
     contatoNome: string;
     chaveEvento: string;
+    /** De qual formulário do Flow veio este lead. Ver `formulario-do-gatilho.ts`. */
+    formularioId: string;
   }) => Promise<void>;
 };
 
@@ -630,6 +633,16 @@ export async function receberLeadDoFlow(params: {
     .dispararAutomacoes({
       contatoNome: nomeDoContato,
       chaveEvento: `flow:${lead.respostaId}`,
+      /*
+       * QUAL formulário do Flow. É o que permite um robô por formulário — "deste aqui eu quero uma
+       * resposta, daquele outro quero outra".
+       *
+       * Até aqui o id não era passado, e a etiqueta `Flow: <nome>` era o único jeito de separar um
+       * formulário do outro: uma condição dentro de cada robô, comparando o NOME, que muda quando
+       * alguém renomeia o formulário no Flow e leva junto todas as automações presas a ele. O id
+       * não muda.
+       */
+      formularioId: identificadorDoFormularioDoFlow(lead.formularioId),
     })
     .catch((erro) =>
       console.error(
@@ -898,11 +911,12 @@ export function dependenciasReais(workspaceId: string): DependenciasDoFlow {
     avisarContatoCriado({ contatoNome, contatoId }) {
       aoCriarContato({ workspaceId, contatoNome, contatoId });
     },
-    async dispararAutomacoes({ contatoNome, chaveEvento }) {
+    async dispararAutomacoes({ contatoNome, chaveEvento, formularioId }) {
       await dispararAutomacoesDoCrm({
         workspaceId,
         contatoNome,
         tipoGatilho: "formulario_preenchido",
+        formularioId,
         chaveEvento,
       });
     },

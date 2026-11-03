@@ -7,6 +7,7 @@ import type { FluxoAutomacao } from "@/lib/automation-flow/types";
 import { enviarTextoPeloCanal } from "@/lib/conversas/enviar-pelo-canal";
 import { continuarComResposta, iniciarFluxoComEstado } from "@/lib/automacoes/iniciar";
 import type { AreaAutomacao } from "@/lib/canais/capacidades";
+import { gatilhoServeAoFormulario } from "@/lib/automation-flow/formulario-do-gatilho";
 
 /**
  * Dispara as automações quando chega uma mensagem. Do lado do SERVIDOR, a partir do webhook.
@@ -79,6 +80,14 @@ export async function dispararAutomacoesDoCrm(params: {
   funilId?: string;
   etapaId?: string;
   etapaTitulo?: string;
+  /**
+   * DE QUAL FORMULÁRIO veio o evento, quando o gatilho é "formulário preenchido".
+   *
+   * Sem isto, todo robô de formulário disparava para TODO formulário — do CRM e do AZUZ Flow —, e
+   * não havia como uma resposta ser diferente da outra. Ver `formulario-do-gatilho.ts`: lá está o
+   * prefixo que separa os dois produtos e a regra de compatibilidade.
+   */
+  formularioId?: string;
   /** Trava contra disparo repetido: "etapa:<cardId>:<etapaId>". */
   chaveEvento?: string;
 }): Promise<void> {
@@ -91,6 +100,7 @@ export async function dispararAutomacoesDoCrm(params: {
     funilId: params.funilId,
     etapaId: params.etapaId,
     etapaTitulo: params.etapaTitulo,
+    formularioId: params.formularioId,
     chaveEvento: params.chaveEvento,
   });
 }
@@ -107,6 +117,8 @@ async function dispararAutomacoes(params: {
   etapaTitulo?: string;
   publicacaoId?: string;
   storyId?: string;
+  /** De qual formulário veio o evento. Ver `formulario-do-gatilho.ts`. */
+  formularioId?: string;
   chaveEvento?: string;
   instagramUserId?: string;
   responderComentario?: (texto: string) => Promise<void>;
@@ -169,6 +181,14 @@ async function dispararAutomacoes(params: {
     const noGatilhoDoFluxo = fluxo.nodes.find((n) => n.category === "gatilho");
     const tipoAceito = tipoDoGatilhoQueCasa(params.tipoGatilho, noGatilhoDoFluxo?.type);
     if (!tipoAceito) continue;
+
+    /*
+     * DE QUAL FORMULÁRIO. O bloco "Formulário preenchido" sempre teve este campo e ninguém o lia,
+     * porque o disparo não mandava de qual formulário o evento vinha — então todo robô de
+     * formulário respondia a todo formulário, do CRM e do Flow. Ver `formulario-do-gatilho.ts`.
+     */
+    const formularioDoBloco = (noGatilhoDoFluxo?.data as { formularioId?: string } | undefined)?.formularioId;
+    if (!gatilhoServeAoFormulario(formularioDoBloco, params.formularioId)) continue;
 
     // A etapa é a dona do gatilho quando existe um gatilho de etapa apontando pra este fluxo.
     // Sem esta checagem, um fluxo com bloco de gatilho E linha em GatilhoEtapa dispararia DUAS

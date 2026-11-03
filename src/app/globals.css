@@ -20987,6 +20987,49 @@ table.tbl .name-cell .r {
   max-width: 68%;
 }
 
+/*
+ * FORMULÁRIOS DO AZUZ FLOW: um cartão por formulário, com os robôs que respondem a ele.
+ *
+ * Grade que se adapta em vez de colunas fixas: a quantidade de formulários varia muito de agência
+ * pra agência (uma tem dois, outra tem vinte), e um número fixo de colunas deixaria metade da tela
+ * vazia num caso e apertaria no outro.
+ */
+.fflow-grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.fflow-card-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.fflow-card-topo .int-title {
+  margin: 0;
+}
+
+.fflow-robos {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fflow-robo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: 13px;
+}
+
 .ig-escrever {
   border-top: 1px solid var(--line-soft);
   padding: var(--space-3);
