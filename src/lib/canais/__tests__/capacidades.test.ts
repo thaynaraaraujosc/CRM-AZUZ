@@ -9,6 +9,7 @@ import {
   blocoValeNoCanal,
   canaisDisponiveis,
   blocoValeNaArea,
+  blocoApareceNaArea,
   canaisDaArea,
   canalDaConexao,
   esperaCabeNaJanela,
@@ -240,5 +241,43 @@ describe("gatilho vem de onde faz sentido", () => {
     expect(grupoDeGatilhoValeNaArea("instagram", "social")).toBe(true);
     expect(grupoDeGatilhoValeNaArea("agenda", "social")).toBe(false);
     expect(grupoDeGatilhoValeNaArea("gatilhos", "social")).toBe(false);
+  });
+});
+
+/**
+ * OS BLOCOS DE CONTATO NO INSTAGRAM.
+ *
+ * Etiquetar quem respondeu, guardar a resposta num campo, chamar outro robô e pausar os envios
+ * daquele contato são do grupo "crm", que a área social não mostra — e por isso ficaram invisíveis
+ * no Instagram por engano, apesar de o motor saber executá-los desde sempre.
+ *
+ * Este teste existe pra que voltar a escondê-los seja uma falha, e não uma descoberta de alguém
+ * montando um robô e não achando o bloco de etiqueta.
+ */
+describe("os blocos de contato aparecem no Instagram", () => {
+  const ESPERADOS = [
+    "adicionar_etiqueta",
+    "remover_etiqueta",
+    "atualizar_campo",
+    "executar_robo",
+    "pausar_automacoes",
+  ] as const;
+
+  for (const tipo of ESPERADOS) {
+    it(`oferece "${tipo}" na área social`, () => {
+      const bloco = BLOCOS_DISPONIVEIS.find((b) => b.tipo === tipo);
+      expect(bloco, `o bloco ${tipo} sumiu da biblioteca`).toBeDefined();
+      expect(blocoApareceNaArea(bloco!, "social")).toBe(true);
+    });
+  }
+
+  it("não abre o grupo inteiro do CRM junto", () => {
+    // Criar negócio e atualizar valor são de FUNIL, e o Instagram não tem funil. Se este teste
+    // quebrar, a exceção por bloco virou exceção por grupo.
+    for (const tipo of ["criar_negocio", "atualizar_valor"] as const) {
+      const bloco = BLOCOS_DISPONIVEIS.find((b) => b.tipo === tipo);
+      expect(bloco, `o bloco ${tipo} sumiu da biblioteca`).toBeDefined();
+      expect(blocoApareceNaArea(bloco!, "social")).toBe(false);
+    }
   });
 });

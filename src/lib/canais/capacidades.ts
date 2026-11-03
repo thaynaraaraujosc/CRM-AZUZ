@@ -392,6 +392,44 @@ export const GRUPOS_DA_AREA: Record<AreaAutomacao, string[]> = {
   ],
 };
 
+/**
+ * BLOCOS QUE ENTRAM NA ÁREA MESMO COM O GRUPO DELES DE FORA.
+ *
+ * `GRUPOS_DA_AREA` tira do social o grupo "crm" inteiro, e isso está certo pra quase tudo que há
+ * lá dentro: mover etapa, criar negócio, atualizar valor, marcar consulta — nada disso existe num
+ * robô de Instagram, que não tem funil. Mas seis blocos daquele grupo são de CONTATO, não de
+ * funil, e fazem todo sentido no Direct: etiquetar quem respondeu, guardar uma resposta num campo,
+ * chamar outro robô, pausar os envios pra aquele contato.
+ *
+ * Eles já existiam, o motor já os executa (`motor-estado.ts`), e o único motivo de não aparecerem
+ * no Instagram era o filtro ser por GRUPO e não por bloco. Esta lista é a exceção por bloco — e é
+ * uma lista curta de propósito: abrir o grupo inteiro devolveria os dezesseis.
+ */
+const BLOCOS_EXTRAS_DA_AREA: Record<AreaAutomacao, FlowNodeType[]> = {
+  comercial: [],
+  social: [
+    "adicionar_etiqueta",
+    "remover_etiqueta",
+    "atualizar_campo",
+    "executar_robo",
+    "pausar_automacoes",
+  ],
+};
+
+/**
+ * Este bloco aparece na biblioteca desta área?
+ *
+ * Soma as duas perguntas que estavam espalhadas: "o grupo dele vale aqui?" (ou ele é uma das
+ * exceções acima) e "o canal desta área entrega o recurso?".
+ */
+export function blocoApareceNaArea(
+  bloco: { tipo: FlowNodeType; grupo: string },
+  area: AreaAutomacao,
+): boolean {
+  const peloGrupo = grupoValeNaArea(bloco.grupo, area) || BLOCOS_EXTRAS_DA_AREA[area].includes(bloco.tipo);
+  return peloGrupo && blocoValeNaArea(bloco.tipo, area);
+}
+
 /** O grupo aparece nesta área? */
 export function grupoValeNaArea(grupo: string, area: AreaAutomacao): boolean {
   return GRUPOS_DA_AREA[area].includes(grupo);

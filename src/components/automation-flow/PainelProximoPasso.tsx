@@ -14,7 +14,7 @@ import {
   IconRelogio,
 } from "@/components/icons";
 import { BLOCOS_DISPONIVEIS, GRUPOS_BIBLIOTECA } from "@/lib/automation-flow/blocos";
-import { blocoValeNaArea, grupoValeNaArea, type AreaAutomacao } from "@/lib/canais/capacidades";
+import { blocoApareceNaArea, blocoValeNaArea, type AreaAutomacao } from "@/lib/canais/capacidades";
 import { sugestoesApos } from "@/lib/automation-flow/sugestoes";
 import type { FlowNodeCategory, FlowNodeType } from "@/lib/automation-flow/types";
 import { useIdioma } from "@/lib/idioma-context";
@@ -86,10 +86,7 @@ export function PainelProximoPasso({
 
   /** Gatilho não é "próximo passo": ele é o começo, e só pode existir um por fluxo. */
   const candidatos = useMemo(
-    () =>
-      BLOCOS_DISPONIVEIS.filter(
-        (b) => b.categoria !== "gatilho" && grupoValeNaArea(b.grupo, area) && blocoValeNaArea(b.tipo, area),
-      ),
+    () => BLOCOS_DISPONIVEIS.filter((b) => b.categoria !== "gatilho" && blocoApareceNaArea(b, area)),
     [area],
   );
 
@@ -105,8 +102,22 @@ export function PainelProximoPasso({
     })).filter((g) => g.blocos.length);
   }, [candidatos, termo]);
 
-  /* Corrida e sem cabeçalho de grupo: ver `compacto`. */
-  const corridos = useMemo(() => porGrupo.flatMap((g) => g.blocos), [porGrupo]);
+  /*
+   * A LISTA CORRIDA SAI DOS CANDIDATOS, e não de `porGrupo`.
+   *
+   * `porGrupo` monta a lista percorrendo `GRUPOS_BIBLIOTECA` e filtrando por grupo — e os blocos
+   * que entram nesta área POR EXCEÇÃO (etiqueta, campo do contato, executar outro robô) têm grupo
+   * "crm", que não existe aqui. Eles passariam no filtro de candidatos e sumiriam na hora de
+   * agrupar. Sem cabeçalho de grupo, agrupar não serve pra nada mesmo.
+   */
+  const corridos = useMemo(() => {
+    const filtrados = termo
+      ? candidatos.filter(
+          (b) => b.label.toLowerCase().includes(termo) || (b.descricao ?? "").toLowerCase().includes(termo),
+        )
+      : candidatos;
+    return filtrados;
+  }, [candidatos, termo]);
 
   if (compacto) {
     return (
