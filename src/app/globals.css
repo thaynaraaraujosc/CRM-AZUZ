@@ -23381,15 +23381,39 @@ td.trafego-col-crm:first-of-type {
  * mexer em duas linhas.
  * ========================================================================== */
 .flow-shell-social {
-  --ss-azul: #2563eb;
-  --ss-azul-forte: #1d4ed8;
-  --ss-azul-suave: #eff4ff;
+  /*
+   * Os valores saem de `docs/referencia-gaio.md`, lidos do CSS computado da referência — não são
+   * estimativa de captura de tela. A primeira versão deste arquivo tinha `#2563eb`, tirado a olho
+   * de um print, e estava errada em todos os três.
+   */
+  --ss-azul: #0028fe;
+  --ss-azul-forte: #0024d4;
+  --ss-azul-suave: #e7e8ff;
+  --ss-papel: #fafafa;
+  --ss-linha: #e2e8f0;
+  --ss-tinta: #1e293b;
+  --ss-tinta-fraca: #64748b;
+  --ss-suave: #f1f5f9;
+  --ss-cinza-300: #cbd5e1;
+  --ss-cinza-400: #94a3b8;
 }
 
+/*
+ * A referência não tem tema escuro. O CRM tem, e nele o azul `#0028fe` sobre fundo quase preto
+ * fica em 2,3:1 — ilegível como texto. No escuro ele sobe na mesma escada da marca (500/400), que
+ * é a cor dela ainda assim, só que no tom que o fundo escuro aceita.
+ */
 :root[data-theme="dark"] .flow-shell-social {
-  --ss-azul: #5b8cff;
-  --ss-azul-forte: #7ba3ff;
-  --ss-azul-suave: rgba(91, 140, 255, 0.16);
+  --ss-azul: #657bff;
+  --ss-azul-forte: #8b97ff;
+  --ss-azul-suave: rgba(101, 123, 255, 0.18);
+  --ss-papel: var(--canvas);
+  --ss-linha: var(--line);
+  --ss-tinta: var(--ink);
+  --ss-tinta-fraca: var(--text-muted);
+  --ss-suave: var(--surface-2);
+  --ss-cinza-300: rgba(255, 255, 255, 0.28);
+  --ss-cinza-400: rgba(255, 255, 255, 0.4);
 }
 
 /* --- A barra de cima --- */
@@ -23481,7 +23505,9 @@ td.trafego-col-crm:first-of-type {
 }
 
 .ss-toolbar-publicar {
-  height: 34px;
+  /* 144×36px na referência. */
+  min-width: 144px;
+  height: 36px;
   padding: 0 16px;
   border: 0;
   border-radius: var(--radius-2);
@@ -23577,8 +23603,9 @@ td.trafego-col-crm:first-of-type {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  /* 40×40px na referência. */
+  width: 40px;
+  height: 40px;
   border: 0;
   border-radius: var(--radius-2);
   background: none;
@@ -23655,15 +23682,37 @@ td.trafego-col-crm:first-of-type {
  * cinco tipos numa automação de seis blocos: a barra vira enfeite, e sete cores num canvas de
  * cartões brancos é exatamente o mosaico que a referência não tem.
  */
+/*
+ * O CARTÃO É UM ANEL INTERNO, não uma borda.
+ *
+ * Na referência o bloco não tem `border`: ele tem `box-shadow: #64748B 0 0 0 1px inset`. A
+ * diferença não é preciosismo — borda soma 1px de cada lado à caixa, e as medidas dela (300px de
+ * largura, cabeçalho de 44px) são da caixa SEM borda. Com borda, cada bloco fica 2px mais largo e
+ * o alinhamento das linhas de ligação sai do lugar.
+ */
 .flow-shell-social .flow-node {
-  border: 1px solid var(--line);
+  width: 300px;
+  min-width: 300px;
+  max-width: 300px;
+  padding-bottom: 16px;
+  border: 0;
   border-radius: 12px;
+  background: #fff;
+  box-shadow: var(--ss-tinta-fraca, #64748b) 0 0 0 1px inset;
+}
+
+:root[data-theme="dark"] .flow-shell-social .flow-node {
   background: var(--surface);
 }
 
+/* O anel azul fica no CABEÇALHO, não no cartão inteiro: é assim na referência, e é o que separa
+   "este bloco está aberto no painel" de "este bloco tem problema" (que pinta a aba de laranja). */
 .flow-shell-social .flow-node.is-selected {
-  border-color: var(--ss-azul);
-  box-shadow: 0 0 0 1px var(--ss-azul);
+  box-shadow: var(--ss-azul) 0 0 0 1px inset;
+}
+
+.flow-shell-social .flow-node.is-selected .flow-node-header {
+  box-shadow: var(--ss-azul) 0 0 0 1px inset;
 }
 
 /*
@@ -23672,20 +23721,29 @@ td.trafego-col-crm:first-of-type {
  * Saem de fora da borda porque o cartão inteiro é conteúdo — a aba diz o que o bloco é e em que
  * estado está sem gastar uma linha de dentro dele.
  */
+/*
+ * A ABA tem 44px de altura e fica 12px ESCONDIDA atrás do cartão — 32px aparecem.
+ *
+ * É por isso que ela leva `padding: 8px 12px 20px`: os 20px de baixo são o pedaço que some atrás
+ * do bloco. Desenhá-la com a altura só do que se vê deixaria o texto colado na borda do cartão.
+ */
 .flow-node-aba {
   position: absolute;
-  top: -22px;
-  left: -1px;
+  top: -32px;
+  left: 0;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  height: 22px;
-  padding: 0 10px;
+  gap: 8px;
+  /* Na referência a aba tem 44px e 12px dela somem atrás do cartão; desenhada assim, de fora, o
+     que se vê é o mesmo e não depende de ordem de pintura entre pai e filho. */
+  height: 32px;
+  padding: 0 12px;
   border-radius: 8px 8px 0 0;
-  background: #475569;
-  color: #fff;
-  font-size: 11px;
-  font-weight: 650;
+  background: var(--ss-tinta-fraca, #64748b);
+  color: #fafafa;
+  font-size: 12px;
+  line-height: 15.6px;
+  font-weight: 500;
   white-space: nowrap;
 }
 
@@ -23707,28 +23765,34 @@ td.trafego-col-crm:first-of-type {
  * e o que o bloco FAZ (o texto, as saídas, o aviso de não configurado) fica num retângulo cinza
  * encostado nas bordas de dentro. Sem isso o cartão é um parágrafo solto embaixo de um título.
  */
+/* Cabeçalho de 44px, raio só em cima, padding 12/16, gap 12 — medidas da referência. */
 .flow-shell-social .flow-node-header {
+  min-height: 44px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
   border-bottom: 0;
-  padding-bottom: var(--space-2);
+  border-radius: 12px 12px 0 0;
 }
 
-.flow-shell-social .flow-node.is-selected .flow-node-header {
-  border-bottom: 1px solid var(--ss-azul);
-}
-
+/* O miolo é uma caixa clara encostada nas bordas de dentro, com 44px de respiro embaixo pro
+   rodapé "Próximo passo" caber sem empurrar o conteúdo. */
 .flow-shell-social .flow-node-body {
-  margin: 0 10px;
-  padding: 10px;
-  border-radius: 10px;
-  background: var(--surface-2);
+  margin: 0 16px;
+  padding: 20px;
+  border-radius: 8px;
+  background: var(--ss-suave, #f1f5f9);
+  box-shadow: var(--ss-cinza-300, #cbd5e1) 0 0 0 1px inset;
+  color: var(--ss-tinta-fraca, #64748b);
   text-align: center;
 }
 
 /* A bolha da mensagem JÁ é a caixa clara: aninhar uma na outra daria duas molduras cinza. */
 .flow-shell-social .flow-node-body:has(.flow-bolha) {
-  margin: 0;
-  padding: 0 10px;
+  margin: 0 16px;
+  padding: 0;
   background: none;
+  box-shadow: none;
   text-align: left;
 }
 
@@ -23736,10 +23800,10 @@ td.trafego-col-crm:first-of-type {
    saída numa pastilha branca — é o desenho da referência, e é o que faz "Sim" e "Não" lerem
    como dois caminhos e não como duas linhas de texto. */
 .flow-shell-social .flow-node-handles {
-  margin: 8px 10px 0;
-  padding: 10px;
-  border-radius: 10px;
-  background: var(--surface-2);
+  margin: 12px 16px 0;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--ss-suave, #f1f5f9);
 }
 
 .flow-shell-social .flow-node-handle-row {
@@ -23749,8 +23813,45 @@ td.trafego-col-crm:first-of-type {
   padding: 7px 10px;
 }
 
+/* O rodapé, com o "Próximo passo" alinhado à direita e o ponto de saída na borda. */
 .flow-shell-social .flow-node-saida-unica {
-  padding-top: 8px;
+  min-height: 28px;
+  margin-top: 12px;
+  padding: 0 16px;
+}
+
+.flow-shell-social .flow-node-proximo {
+  font-size: 12px;
+  line-height: 15.6px;
+  font-weight: 500;
+  color: var(--ss-tinta-fraca, #64748b);
+}
+
+/* O canvas é papel liso: `#FAFAFA`, sem grade e sem pontos. */
+.flow-shell-social .flow-canvas,
+.flow-shell-social .react-flow__pane {
+  background: var(--ss-papel, #fafafa);
+}
+
+/* A ligação: 2px em `#94A3B8`, contínua. */
+.flow-shell-social .react-flow__edge-path {
+  stroke: var(--ss-cinza-400, #94a3b8);
+  stroke-width: 2;
+}
+
+/* Ponto de entrada à esquerda do cabeçalho: 20px, cinza 300, anel branco de 3px. */
+.flow-shell-social .react-flow__handle {
+  width: 20px;
+  height: 20px;
+  background: var(--ss-cinza-300, #cbd5e1);
+  border: 3px solid #fff;
+  box-shadow: rgba(0, 0, 0, 0.15) 0 0 3px 0;
+}
+
+.flow-shell-social .react-flow__handle.flow-handle-inline {
+  width: 10px;
+  height: 10px;
+  border-width: 2px;
 }
 
 /*
@@ -23788,16 +23889,16 @@ td.trafego-col-crm:first-of-type {
  * ========================================================================== */
 .social-layout,
 .ss-primario {
-  --ss-azul: #2563eb;
-  --ss-azul-forte: #1d4ed8;
-  --ss-azul-suave: #eff4ff;
+  --ss-azul: #0028fe;
+  --ss-azul-forte: #0024d4;
+  --ss-azul-suave: #e7e8ff;
 }
 
 :root[data-theme="dark"] .social-layout,
 :root[data-theme="dark"] .ss-primario {
-  --ss-azul: #5b8cff;
-  --ss-azul-forte: #7ba3ff;
-  --ss-azul-suave: rgba(91, 140, 255, 0.16);
+  --ss-azul: #657bff;
+  --ss-azul-forte: #8b97ff;
+  --ss-azul-suave: rgba(101, 123, 255, 0.18);
 }
 
 .btn.ss-primario {
@@ -23833,7 +23934,7 @@ td.trafego-col-crm:first-of-type {
 .ssl-lista {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 16px;
   list-style: none;
   margin: 0;
   padding: 0;
@@ -23842,10 +23943,12 @@ td.trafego-col-crm:first-of-type {
 .ssl-item {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--line-soft);
-  border-radius: 10px;
+  /* 80px de altura, borda 1px, raio 8px, padding 15px, 16px entre linhas: da referência. */
+  min-height: 80px;
+  gap: 16px;
+  padding: 15px;
+  border: 1px solid var(--ss-linha, #e2e8f0);
+  border-radius: 8px;
   background: var(--surface);
   transition: border-color 0.14s ease, box-shadow 0.14s ease;
 }
@@ -23932,8 +24035,9 @@ td.trafego-col-crm:first-of-type {
 .ssl-switch {
   position: relative;
   flex: none;
-  width: 34px;
-  height: 20px;
+  /* 32×18px na referência. */
+  width: 32px;
+  height: 18px;
   padding: 0;
   border: 0;
   border-radius: 999px;
@@ -23950,8 +24054,8 @@ td.trafego-col-crm:first-of-type {
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   background: #fff;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
@@ -23991,8 +24095,8 @@ td.trafego-col-crm:first-of-type {
   z-index: 30;
   display: flex;
   flex-direction: column;
-  width: 290px;
-  max-height: min(460px, calc(100% - 120px));
+  width: 250px;
+  max-height: min(430px, calc(100% - 120px));
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--surface);
@@ -24037,7 +24141,7 @@ td.trafego-col-crm:first-of-type {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  padding: 6px;
+  padding: 10px;
 }
 
 .pp-item {
@@ -24271,13 +24375,13 @@ td.trafego-col-crm:first-of-type {
 /* Os tokens do azul precisam existir também dentro da janela, que é filha do overlay e não de
    `.social-layout`. */
 .tpl-janela {
-  --ss-azul: #2563eb;
-  --ss-azul-suave: #eff4ff;
+  --ss-azul: #0028fe;
+  --ss-azul-suave: #e7e8ff;
 }
 
 :root[data-theme="dark"] .tpl-janela {
-  --ss-azul: #5b8cff;
-  --ss-azul-suave: rgba(91, 140, 255, 0.16);
+  --ss-azul: #657bff;
+  --ss-azul-suave: rgba(101, 123, 255, 0.18);
 }
 
 /* A lixeira que aparece no meio da ligação quando o mouse passa por cima dela. */
@@ -24345,7 +24449,8 @@ td.trafego-col-crm:first-of-type {
 .flow-config-social {
   display: flex;
   flex-direction: column;
-  width: 380px;
+  /* 448px fixos, medido na referência. Eu tinha posto 380 de olho. */
+  width: 448px;
   background: var(--surface);
 }
 
@@ -24353,17 +24458,19 @@ td.trafego-col-crm:first-of-type {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-3);
+  /* 69px de altura, padding 16px, gap 16px: medidas da referência. */
+  min-height: 69px;
+  gap: 16px;
   flex: none;
-  padding: var(--space-4);
+  padding: 16px;
   border-bottom: 1px solid var(--line-soft);
 }
 
 .cfg-topo h2 {
   margin: 0;
-  font-size: 19px;
-  font-weight: 650;
-  letter-spacing: -0.01em;
+  font-size: 20px;
+  line-height: 25px;
+  font-weight: 600;
   overflow-wrap: anywhere;
 }
 
