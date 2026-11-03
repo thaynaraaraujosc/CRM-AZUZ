@@ -42,10 +42,12 @@ import { HistoricoExecucoes } from "./HistoricoExecucoes";
 import { HistoricoVersoes } from "./HistoricoVersoes";
 import { Simulador } from "./Simulador";
 import { Toolbar } from "./Toolbar";
+import { ToolbarSocial } from "./ToolbarSocial";
+import { BarraFerramentasSocial } from "./BarraFerramentasSocial";
 import { ListaDePassos } from "./ListaDePassos";
 import { PainelProximoPasso } from "./PainelProximoPasso";
 import { nodeTypes } from "./nodes";
-import { IconClose, IconExpandir } from "@/components/icons";
+import { IconCheck, IconClose, IconExpandir } from "@/components/icons";
 import { useIdioma } from "@/lib/idioma-context";
 import {
   CORES_CATEGORIA,
@@ -141,6 +143,21 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const [rfEdges, setRfEdges] = useState<FlowRFEdge[]>(() => domainEdgesToRF(fluxo?.edges ?? []));
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
   const [salvando, setSalvando] = useState(false);
+  /*
+   * QUANDO GRAVOU, pro rodapé "Salvo em 03/11/2026 às 15:26" do canvas do Social Seller.
+   *
+   * É hora de RELÓGIO desta sessão, e não um campo do fluxo: a resposta que interessa é "o que
+   * está na tela já está gravado?", e ela só vale pra esta aba. Começa nulo porque abrir um fluxo
+   * não é gravar — dizer "Salvo às 15:26" assim que a tela abre seria afirmar algo que não houve.
+   */
+  const [salvoEm, setSalvoEm] = useState<string | null>(null);
+  /* O "Salvo em …" do canvas marca a hora quando a gravação TERMINA: `salvando` indo de ligado
+     pra desligado é o único instante em que se sabe que o que está na tela foi pro banco. */
+  const estavaSalvando = useRef(false);
+  useEffect(() => {
+    if (estavaSalvando.current && !salvando) setSalvoEm(new Date().toISOString());
+    estavaSalvando.current = salvando;
+  }, [salvando]);
   /** Já pedimos a lista de novo por causa deste fluxo? Uma vez basta: mais que isso vira laço. */
   const jaPediuListaRef = useRef(false);
   /** A busca extra já terminou. Só depois dela "não achei" pode virar "não existe". */
@@ -992,8 +1009,44 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     );
   }
 
+  const ehSocial = area === "social";
+
   return (
-    <div className="flow-shell">
+    <div className={`flow-shell${ehSocial ? " flow-shell-social" : ""}`}>
+      {/*
+        DUAS BARRAS, uma por área.
+        
+        A do funil tem doze controles na mesma linha e cabe porque foi crescendo. Uma automação de
+        Instagram é curta e se monta em dois minutos: com aquela barra, o editor fica mais
+        complicado que a própria automação. A do Social Seller deixa à vista só voltar, o nome,
+        publicar e o "⋮" — e nada saiu do editor: tudo o que não está na barra está no menu.
+      */}
+      {ehSocial ? (
+        <ToolbarSocial
+          nome={fluxoNaTela.nome}
+          onChangeNome={(nome) => updateFluxoMeta({ nome })}
+          status={fluxo.status}
+          salvando={salvando}
+          salvoEm={salvoEm}
+          temPendencia={temPendencia}
+          onSalvarAlteracoes={salvarAlteracoes}
+          onDescartarAlteracoes={descartarAlteracoes}
+          ativa={fluxo.ativa}
+          podeAtivar={fluxo.status === "publicado"}
+          onToggleAtiva={() => alternarAtivo(fluxoId)}
+          onTestar={() => setSimuladorAberto(true)}
+          onSalvarRascunho={salvarRascunhoAgora}
+          onPublicar={publicar}
+          onAbrirHistorico={() => setHistoricoAberto(true)}
+          onAbrirExecucoes={() => setExecucoesAbertas(true)}
+          entenderFluxoAtivo={entenderFluxoAtivo}
+          onAlternarEntenderFluxo={() => setEntenderFluxoAtivo((v) => !v)}
+          modoConstrucao={modoConstrucao}
+          onAlternarModo={() => setModoConstrucao((v) => !v)}
+          modoPassos={modoPassos}
+          onModoPassos={setModoPassos}
+        />
+      ) : (
       <Toolbar
         nome={fluxoNaTela.nome}
         onChangeNome={(nome) => updateFluxoMeta({ nome })}
@@ -1022,6 +1075,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
         modoPassos={modoPassos}
         onModoPassos={setModoPassos}
       />
+      )}
 
       <div className="flow-body">
         {modoConstrucao ? (
@@ -1108,6 +1162,54 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
             proOptions={{ hideAttribution: true }}
           >
             <Background gap={18} />
+            {/*
+              No Social Seller a coluna da direita substitui estes controles: ter os dois seria
+              zoom em dois lugares, e o de baixo-à-esquerda é o que ninguém acha.
+            */}
+            {ehSocial ? (
+              <Panel position="top-right">
+                <BarraFerramentasSocial
+                  podeDesfazer={historyIndex > 0}
+                  podeRefazer={historyIndex < historyLen - 1}
+                  habilitado={modoConstrucao}
+                  entenderFluxoAtivo={entenderFluxoAtivo}
+                  onAdicionar={() => setAcaoRapida({ nodeId: "", handleId: undefined })}
+                  onZoomMais={() => zoomIn({ duration: 200 })}
+                  onZoomMenos={() => zoomOut({ duration: 200 })}
+                  onCentralizar={() => centralizarTudo()}
+                  onDesfazer={undo}
+                  onRefazer={redo}
+                  onOrganizar={organizarAutomaticamente}
+                  onExecucoes={() => setExecucoesAbertas(true)}
+                  onHistorico={() => setHistoricoAberto(true)}
+                  onAlternarEntenderFluxo={() => setEntenderFluxoAtivo((v) => !v)}
+                />
+              </Panel>
+            ) : null}
+
+            {/* "Salvo em…" longe dos botões: é informação, não controle. */}
+            {ehSocial ? (
+              <Panel position="bottom-right">
+                <span className={`ss-salvo${salvando ? " salvando" : ""}`}>
+                  {salvando ? (
+                    traduzir("Salvando…")
+                  ) : salvoEm ? (
+                    <>
+                      <IconCheck width={13} height={13} aria-hidden="true" />
+                      {traduzir("Salvo em")} {new Date(salvoEm).toLocaleString("pt-BR", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                      })}{" "}
+                      {traduzir("às")}{" "}
+                      {new Date(salvoEm).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                    </>
+                  ) : null}
+                </span>
+              </Panel>
+            ) : null}
+
+            {ehSocial ? null : (
             <Controls showZoom={false} showFitView={false} showInteractive={false}>
               <ControlButton title={traduzir("Aumentar zoom")} aria-label={traduzir("Aumentar zoom")} onClick={() => zoomIn({ duration: 200 })}>
                 +
@@ -1119,6 +1221,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                 <IconExpandir width={13} height={13} />
               </ControlButton>
             </Controls>
+            )}
             {minimapaVisivel ? (
               <MiniMap pannable zoomable nodeColor={(n) => CORES_CATEGORIA[String(n.type)] ?? "#94a3b8"} />
             ) : null}

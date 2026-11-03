@@ -20063,14 +20063,6 @@ table.tbl .name-cell .r {
   font-weight: 650;
 }
 
-/* Botão de atalho no canto da seção: menor que o botão normal, porque é um desvio e não a ação
-   principal da tela. */
-.ss-secao-topo .btn.pequeno {
-  height: 28px;
-  padding: 0 10px;
-  font-size: 12px;
-}
-
 /*
  * O SELETOR DE PERÍODO COMO UM CONTROLE SÓ.
  *
@@ -23371,4 +23363,419 @@ td.trafego-col-crm:first-of-type {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* ============================================================================
+ * O EDITOR DO SOCIAL SELLER
+ *
+ * A IDENTIDADE AQUI É O AZUL VIVO, e isso é uma decisão, não um deslize.
+ *
+ * No resto do CRM o acento é `--blue`, que no tema claro é o navy (#002037) e no escuro é o
+ * dourado. Serve pro produto inteiro e funciona. Mas o editor de automação do Instagram foi
+ * desenhado contra uma referência azul — botão de publicar, bloco selecionado, "+" da coluna —, e
+ * a dona do produto pediu a MESMA identidade da referência, não uma tradução dela. Em navy e
+ * dourado, "Selecionado" e "Testar e publicar" leem como outro produto colado dentro deste.
+ *
+ * Por isso o azul entra como token LOCAL (`--ss-azul`), preso a `.flow-shell-social`. Ele não
+ * vaza: nenhuma outra tela do CRM muda de cor por causa desta regra, e trocar o azul do editor é
+ * mexer em duas linhas.
+ * ========================================================================== */
+.flow-shell-social {
+  --ss-azul: #2563eb;
+  --ss-azul-forte: #1d4ed8;
+  --ss-azul-suave: #eff4ff;
+}
+
+:root[data-theme="dark"] .flow-shell-social {
+  --ss-azul: #5b8cff;
+  --ss-azul-forte: #7ba3ff;
+  --ss-azul-suave: rgba(91, 140, 255, 0.16);
+}
+
+/* --- A barra de cima --- */
+.ss-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 10px var(--space-4);
+  background: var(--surface);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.ss-toolbar-esq,
+.ss-toolbar-dir {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+/* Voltar num quadrado arredondado, e não uma seta solta: solta ela é do tamanho de uma letra, e
+   é o controle que mais se usa depois de publicar. */
+.ss-toolbar-voltar,
+.ss-toolbar-lapis,
+.ss-toolbar-mais {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: var(--radius-2);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 18px;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.14s ease;
+}
+
+.ss-toolbar-voltar:hover,
+.ss-toolbar-lapis:hover,
+.ss-toolbar-mais:hover {
+  background: var(--surface-active);
+}
+
+.ss-toolbar-lapis {
+  width: 28px;
+  height: 28px;
+  background: none;
+  color: var(--text-muted);
+}
+
+.ss-toolbar-nome {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ss-toolbar-nome-input {
+  width: 260px;
+  height: 34px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* A pendência não vai pro menu: sair da tela com alteração não gravada perde o trabalho, e isso
+   é a única coisa aqui que não pode estar escondida. */
+.ss-toolbar-pendencia {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 4px 4px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--warning, #d8a400) 14%, transparent);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.ss-toolbar-caixa {
+  position: relative;
+}
+
+.ss-toolbar-publicar {
+  height: 34px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: var(--radius-2);
+  background: var(--ss-azul);
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background 0.14s ease;
+}
+
+.ss-toolbar-publicar:hover {
+  background: var(--ss-azul-forte);
+}
+
+/* O menu dos dois botões do canto. Cada item com a explicação embaixo: "Publicar agora" e
+   "Salvar rascunho" são irreversíveis de jeitos diferentes, e o nome sozinho não conta qual. */
+.ss-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 40;
+  min-width: 240px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-2);
+  background: var(--surface-elevated, var(--surface));
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
+}
+
+.ss-menu button {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--radius-2);
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 550;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ss-menu button:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+
+.ss-menu button:disabled {
+  color: var(--text-faint, var(--text-muted));
+  cursor: not-allowed;
+}
+
+.ss-menu button em {
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1.35;
+  color: var(--text-muted);
+}
+
+.ss-menu hr {
+  border: 0;
+  border-top: 1px solid var(--line-soft);
+  margin: 4px 6px;
+}
+
+/* --- A coluna de ferramentas, à direita do canvas --- */
+.ss-ferramentas {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.ss-ferramentas-grupo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-3);
+  background: var(--surface);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
+}
+
+.ss-ferramenta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: var(--radius-2);
+  background: none;
+  color: var(--text-muted);
+  font-size: 19px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+
+.ss-ferramenta:hover:not(:disabled) {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.ss-ferramenta:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+/* O "+" é o único cheio e colorido: é a ação que faz a automação existir. O resto é manobra, e
+   manobra não disputa atenção com conteúdo. */
+.ss-ferramenta.principal {
+  background: var(--ss-azul);
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.ss-ferramenta.principal:hover:not(:disabled) {
+  background: var(--ss-azul-forte);
+  color: #fff;
+}
+
+/* Separado do grupo, em cima: muda o que a tela MOSTRA, não o que ela faz. */
+.ss-ferramenta.destaque {
+  border: 1px solid var(--line-soft);
+  background: var(--ss-azul-suave);
+  color: var(--ss-azul);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
+}
+
+.ss-ferramenta.destaque.on {
+  background: var(--ss-azul);
+  color: #fff;
+  border-color: transparent;
+}
+
+.ss-ferramentas-linha {
+  width: 20px;
+  border: 0;
+  border-top: 1px solid var(--line-soft);
+  margin: 4px 0;
+}
+
+/* --- "Salvo em …" --- */
+.ss-salvo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.ss-salvo svg {
+  color: var(--ok, #16a34a);
+}
+
+/* --- Os blocos, no canvas do Social Seller --- */
+
+/*
+ * SEM A BARRA COLORIDA DA ESQUERDA.
+ *
+ * No funil ela identifica sete categorias de bloco de relance, e vale a pena. Aqui são quatro ou
+ * cinco tipos numa automação de seis blocos: a barra vira enfeite, e sete cores num canvas de
+ * cartões brancos é exatamente o mosaico que a referência não tem.
+ */
+.flow-shell-social .flow-node {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.flow-shell-social .flow-node.is-selected {
+  border-color: var(--ss-azul);
+  box-shadow: 0 0 0 1px var(--ss-azul);
+}
+
+/*
+ * AS ABAS DE CIMA: "⚡ Gatilho" e "Selecionado".
+ *
+ * Saem de fora da borda porque o cartão inteiro é conteúdo — a aba diz o que o bloco é e em que
+ * estado está sem gastar uma linha de dentro dele.
+ */
+.flow-node-aba {
+  position: absolute;
+  top: -22px;
+  left: -1px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 10px;
+  border-radius: 8px 8px 0 0;
+  background: #475569;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.flow-node-aba.selecionado {
+  background: var(--ss-azul);
+}
+
+/* --- Botão pequeno, usado na barra e nos cantos de seção --- */
+.btn.pequeno {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+/*
+ * O CONTEÚDO DO BLOCO NUMA CAIXA CLARA, dentro do cartão branco.
+ *
+ * É o que dá ao canvas da referência a leitura de "cartão com um miolo": o título fica no branco,
+ * e o que o bloco FAZ (o texto, as saídas, o aviso de não configurado) fica num retângulo cinza
+ * encostado nas bordas de dentro. Sem isso o cartão é um parágrafo solto embaixo de um título.
+ */
+.flow-shell-social .flow-node-header {
+  border-bottom: 0;
+  padding-bottom: var(--space-2);
+}
+
+.flow-shell-social .flow-node.is-selected .flow-node-header {
+  border-bottom: 1px solid var(--ss-azul);
+}
+
+.flow-shell-social .flow-node-body {
+  margin: 0 10px;
+  padding: 10px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  text-align: center;
+}
+
+/* A bolha da mensagem JÁ é a caixa clara: aninhar uma na outra daria duas molduras cinza. */
+.flow-shell-social .flow-node-body:has(.flow-bolha) {
+  margin: 0;
+  padding: 0 10px;
+  background: none;
+  text-align: left;
+}
+
+/* As saídas (Sim/Não, Sucesso/Falha, as opções da pergunta) também num bloco claro, com cada
+   saída numa pastilha branca — é o desenho da referência, e é o que faz "Sim" e "Não" lerem
+   como dois caminhos e não como duas linhas de texto. */
+.flow-shell-social .flow-node-handles {
+  margin: 8px 10px 0;
+  padding: 10px;
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+
+.flow-shell-social .flow-node-handle-row {
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  padding: 7px 10px;
+}
+
+.flow-shell-social .flow-node-saida-unica {
+  padding-top: 8px;
+}
+
+/*
+ * A CATEGORIA EM CINZA, e não na cor do bloco.
+ *
+ * No funil a categoria é colorida porque ela é o atalho pra "que tipo de bloco é este" num fluxo
+ * de vinte. Aqui, com a barra lateral colorida removida, ela virou a única coisa colorida do
+ * cartão — e três cartões lado a lado viram "INSTAGRAM" azul, "MENSAGEM" verde e "CONDIÇÃO" roxo
+ * competindo com os próprios títulos. Em cinza, e sem caixa alta, ela volta a ser o que é: a
+ * linha de cima do título.
+ */
+.flow-shell-social .flow-node-categoria {
+  color: var(--text-muted);
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.flow-shell-social .flow-node-label {
+  font-size: 13.5px;
+  white-space: normal;
+}
+
+.flow-shell-social .flow-node {
+  min-width: 260px;
+  max-width: 300px;
 }

@@ -10,7 +10,6 @@ import {
   IconInicio,
   IconDoc,
   IconRelatorios,
-  IconTrafego,
   IconEnviar,
 } from "@/components/icons";
 
@@ -34,8 +33,17 @@ const PRINCIPAIS = [
   { href: "/social-seller/modelos", label: "Meus templates", exato: false, Icon: IconDoc },
 ] as const;
 
+/*
+ * O PAINEL SAIU DO MENU, e a tela não foi apagada.
+ *
+ * Ele respondia a mesma pergunta do Resumo com mais números, e no menu os dois disputavam: quem
+ * abre o módulo não tem como saber qual dos dois tem a resposta. Agora a porta do painel é uma
+ * só, o "Ver painel completo" lá dentro do Resumo, onde a pergunta "e o que mais?" aparece.
+ *
+ * Execuções fica: ela responde outra coisa — "este robô rodou? deu erro?" —, e é a única tela do
+ * módulo que responde isso.
+ */
 const CONSULTA = [
-  { href: "/social-seller/painel", label: "Painel", exato: false, Icon: IconTrafego },
   { href: "/social-seller/execucoes", label: "Execuções", exato: false, Icon: IconRelatorios },
 ] as const;
 

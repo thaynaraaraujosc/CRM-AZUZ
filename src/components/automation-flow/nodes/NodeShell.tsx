@@ -18,6 +18,7 @@ import {
   IconLampada,
   IconPlug,
   IconInstagram,
+  IconRaio,
   IconRamificacao,
   IconRelogio,
 } from "@/components/icons";
@@ -110,6 +111,24 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
     <div className={classes} data-node-id={id}>
       {temEntrada(flowNode.category) ? (
         <Handle type="target" position={Position.Top} className="flow-handle" />
+      ) : null}
+
+      {/*
+        AS ABAS DE CIMA, só no Social Seller.
+        
+        "Gatilho" numa aba escura acima do cartão e "Selecionado" numa aba azul no lugar dela.
+        Vêm de fora da borda porque o cartão inteiro é conteúdo: a aba diz O QUE ele é e em que
+        estado está sem gastar uma linha de dentro — e num canvas com oito blocos, achar o que
+        começa tudo vira um relance em vez de uma leitura.
+      */}
+      {area === "social" ? (
+        selected ? (
+          <span className="flow-node-aba selecionado">{traduzir("Selecionado")}</span>
+        ) : flowNode.category === "gatilho" ? (
+          <span className="flow-node-aba">
+            <IconRaio width={11} height={11} aria-hidden="true" /> {traduzir("Gatilho")}
+          </span>
+        ) : null
       ) : null}
 
       {ordemNarrativa ? (

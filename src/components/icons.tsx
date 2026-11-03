@@ -1003,3 +1003,68 @@ export function IconNovaPasta(props: Props) {
     </svg>
   );
 }
+
+/**
+ * O RAIO DO GATILHO.
+ *
+ * `IconAutomacoes` desenha um robô e serve pra "automação" como assunto; o gatilho é outra coisa
+ * dentro dela — o instante em que ela começa —, e no canvas os dois aparecem lado a lado. Um
+ * símbolo só pros dois faria o cartão de gatilho parecer "mais uma automação".
+ */
+export function IconRaio(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z" />
+    </svg>
+  );
+}
+
+/** Aproximar. A lupa com o "+" dentro, e não um "+" sozinho: sozinho ele é "adicionar". */
+export function IconZoomMais(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="11" cy="11" r="7" />
+      <path d="M11 8v6M8 11h6M20 20l-3.6-3.6" />
+    </svg>
+  );
+}
+
+/** Afastar. */
+export function IconZoomMenos(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="11" cy="11" r="7" />
+      <path d="M8 11h6M20 20l-3.6-3.6" />
+    </svg>
+  );
+}
+
+/** Desfazer: a seta que volta. Era o caractere "↶", que muda de desenho em cada fonte. */
+export function IconDesfazer(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M9 14 4 9l5-5" />
+      <path d="M4 9h10a6 6 0 0 1 0 12h-3" />
+    </svg>
+  );
+}
+
+/** Refazer. */
+export function IconRefazer(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="m15 14 5-5-5-5" />
+      <path d="M20 9H10a6 6 0 0 0 0 12h3" />
+    </svg>
+  );
+}
+
+/** Varinha: arrumar o fluxo sozinho. */
+export function IconVarinha(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="m15 4-11 11 4 4L19 8l-4-4Z" />
+      <path d="M18 2v3M21.5 3.5h-3M6 19l-2 2M20 14v3M21.5 15.5h-3" />
+    </svg>
+  );
+}
