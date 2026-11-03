@@ -45,6 +45,7 @@ import { Toolbar } from "./Toolbar";
 import { ToolbarSocial } from "./ToolbarSocial";
 import { BarraFerramentasSocial } from "./BarraFerramentasSocial";
 import { ArestaSocial } from "./ArestaSocial";
+import { GatilhosDoSocial } from "./GatilhosDoSocial";
 import { ListaDePassos } from "./ListaDePassos";
 import { PainelProximoPasso } from "./PainelProximoPasso";
 import { nodeTypes } from "./nodes";
@@ -1341,7 +1342,9 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                 <span className="no-gatilho-vazio-selo">{traduzir("Gatilho")}</span>
                 <div className="no-gatilho-vazio-corpo">
                   <h4>{traduzir("Gatilho para acionar a automação")}</h4>
-                  <button type="button" className="no-gatilho-vazio-btn" onClick={() => setLibAberta(true)}>
+                  {/* Abria a biblioteca da esquerda, que saiu do Social Seller: o botão tinha
+                      virado um clique que não fazia nada. Agora abre a gaveta de gatilhos. */}
+                  <button type="button" className="no-gatilho-vazio-btn" onClick={() => setEscolherGatilhoAberto(true)}>
                     {traduzir("Adicionar gatilho +")}
                   </button>
                 </div>
@@ -1382,7 +1385,20 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           ) : null}
 
 
-          {escolherGatilhoAberto ? (
+          {escolherGatilhoAberto && ehSocial ? (
+            <GatilhosDoSocial
+              gatilhoAtual={domainNodesAtuais.find((n) => n.category === "gatilho")?.type}
+              onFechar={() => setEscolherGatilhoAberto(false)}
+              onEscolher={(tipo) => {
+                const atual = rfNodes.find((n) => n.data.flowNode.category === "gatilho");
+                if (atual) trocarTipoDoNode(atual.id, tipo, {});
+                else adicionarBloco(tipo, { x: 80, y: 80 });
+                setEscolherGatilhoAberto(false);
+              }}
+            />
+          ) : null}
+
+          {escolherGatilhoAberto && !ehSocial ? (
             <div className="modal-overlay" onClick={() => setEscolherGatilhoAberto(false)}>
               <div className="modal flow-escolher-gatilho" onClick={(e) => e.stopPropagation()}>
                 <div className="panel-h">

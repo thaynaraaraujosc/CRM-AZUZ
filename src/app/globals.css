@@ -24624,3 +24624,202 @@ td.trafego-col-crm:first-of-type {
 .esc-conteudo-item.on .esc-conteudo-mais {
   color: var(--ss-azul, #0028fe);
 }
+
+/*
+ * A GAVETA DE GATILHOS.
+ *
+ * Mesmas medidas do painel do bloco (448px, cabeçalho de 69px): é a mesma gaveta, com outro
+ * conteúdo. O item tem 48px de altura, raio 12px, padding 12/16 e a marca de 20px — as medidas
+ * lidas da referência.
+ */
+.gat-gaveta {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 20;
+  box-shadow: 0px 10px 15px -3px rgba(0, 0, 0, 0.1), 0px 4px 6px -4px rgba(0, 0, 0, 0.1);
+}
+
+.gat-pergunta {
+  margin: 0 0 6px;
+  font-size: 18px;
+  line-height: 25.2px;
+  font-weight: 600;
+}
+
+.gat-ajuda {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: var(--space-4);
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ss-tinta-fraca, #64748b);
+  cursor: pointer;
+}
+
+.gat-ajuda:hover {
+  color: var(--ss-azul, #0028fe);
+}
+
+.gat-ajuda > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.gat-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: var(--space-3);
+}
+
+.gat-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 16px;
+  border: 1px solid var(--ss-linha, #e2e8f0);
+  border-radius: 12px;
+  background: var(--surface);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.14s ease, background 0.14s ease;
+}
+
+.gat-item:hover {
+  background: var(--ss-suave, #f1f5f9);
+}
+
+.gat-item.on {
+  border-color: var(--ss-azul, #0028fe);
+  background: var(--ss-azul-suave, #e7e8ff);
+}
+
+/*
+ * A MARCA É REDONDA, e não quadrada: um gatilho por automação.
+ *
+ * Caixa de marcar quadrada promete "escolha quantos quiser", e o motor guarda um bloco de gatilho
+ * por fluxo. A forma conta a regra antes do primeiro clique, que é melhor do que deixar clicar e
+ * desmarcar o anterior sem explicação.
+ */
+.gat-marca {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border: 1.5px solid var(--ss-cinza-300, #cbd5e1);
+  border-radius: 50%;
+  background: var(--surface);
+}
+
+.gat-item.on .gat-marca {
+  border-color: var(--ss-azul, #0028fe);
+  border-width: 6px;
+}
+
+.gat-textos {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.gat-textos strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.gat-textos > span {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--ss-tinta-fraca, #64748b);
+}
+
+.gat-avancado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--ss-linha, #e2e8f0);
+  border-radius: 12px;
+  background: var(--surface);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.gat-avancado:hover {
+  background: var(--ss-suave, #f1f5f9);
+}
+
+.gat-avancado .girado {
+  transform: rotate(180deg);
+}
+
+.gat-rodape {
+  justify-content: space-between;
+}
+
+.gat-modal {
+  display: flex;
+  flex-direction: column;
+  width: min(512px, 94vw);
+  max-height: 86vh;
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: 0px 10px 15px -3px rgba(0, 0, 0, 0.1), 0px 4px 6px -4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.gat-modal-corpo {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-4);
+}
+
+.gat-modal-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.gat-modal-item strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.gat-modal-item > span {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ss-tinta-fraca, #64748b);
+}
+
+.gat-modal-fim {
+  margin: var(--space-3) 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ss-tinta-fraca, #64748b);
+}

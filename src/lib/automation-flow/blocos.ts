@@ -370,7 +370,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     tipo: "instagram_direct_recebido",
     categoria: "gatilho",
     grupo: "instagram",
-    label: "Mensagem no Direct",
+    label: "Mensagem recebida",
     descricao:
       "Dispara quando chega uma mensagem de texto no Direct. Sem palavra configurada, qualquer mensagem serve.",
     icone: "Instagram",
@@ -386,7 +386,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     tipo: "instagram_story_respondido",
     categoria: "gatilho",
     grupo: "instagram",
-    label: "Resposta a um story seu",
+    label: "Resposta nos stories",
     descricao:
       "Dispara quando alguém responde um story seu. Vale pra qualquer story ou só pro que você escolher entre os que estão no ar.",
     icone: "Instagram",
@@ -439,7 +439,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     tipo: "comentario_instagram",
     categoria: "gatilho",
     grupo: "instagram",
-    label: "Comentário numa publicação",
+    label: "Comentário no Feed ou Reels",
     descricao:
       "Dispara quando alguém comenta num post ou reel. Dá pra filtrar por palavra e restringir a uma publicação.",
     icone: "Instagram",
@@ -476,7 +476,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     tipo: "instagram_mencao_story",
     categoria: "gatilho",
     grupo: "instagram",
-    label: "Menção do seu perfil num story",
+    label: "Menção nos stories",
     descricao: "Dispara quando alguém marca seu @ num story. Serve pra agradecer ou repostar na hora.",
     icone: "Instagram",
     corClasse: corDaCategoria("gatilho"),
