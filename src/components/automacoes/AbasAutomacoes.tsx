@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+
 import { useIdioma } from "@/lib/idioma-context";
 
 /**
@@ -31,20 +33,56 @@ import { useIdioma } from "@/lib/idioma-context";
  */
 const ABAS = [
   { href: "/automacoes", label: "Automatizar funil", exato: true },
-  // Os formulários do AZUZ Flow e o robô de cada um. Entra aqui, e não em Configurações, porque a
-  // pergunta que ele responde é "o que acontece quando preenchem este formulário" — que é
-  // automação. Em Configurações fica só o que liga e desliga a integração.
-  { href: "/automacoes/formularios-flow", label: "Formulários do Flow", exato: false },
   { href: "/automacoes/templates", label: "Templates", exato: false },
   { href: "/automacoes/disparos", label: "Disparo em massa", exato: false },
 ] as const;
 
+/**
+ * "Formulários do Flow" SÓ EXISTE PARA QUEM TEM O FLOW.
+ *
+ * O CRM é vendido sozinho: a maioria das agências não usa o AZUZ Flow, e para elas essa aba seria
+ * um lugar a mais que só sabe dizer "conecte primeiro". Uma aba que nunca tem nada dentro ensina a
+ * ignorar a barra de abas.
+ *
+ * A pergunta é feita uma vez por montagem, numa rota que a tela já usa. Enquanto a resposta não
+ * chega, a aba não aparece — aparecer e sumir seria pior do que demorar um instante a mais.
+ */
+function useFlowConectado(): boolean {
+  const [conectado, setConectado] = useState(false);
+  useEffect(() => {
+    let vivo = true;
+    fetch("/api/integracoes/azuz-flow/formularios")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((dados: { conectado?: unknown } | null) => {
+        if (vivo) setConectado(dados?.conectado === true);
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, []);
+  return conectado;
+}
+
 export function AbasAutomacoes() {
   const { t: traduzir } = useIdioma();
   const pathname = usePathname() ?? "";
+  const flowConectado = useFlowConectado();
+
+  const abas = flowConectado
+    ? [
+        ABAS[0],
+        // Os formulários do AZUZ Flow e o que acontece com cada um. Entra aqui, e não em
+        // Configurações, porque a pergunta que ele responde é "o que acontece quando preenchem
+        // este formulário" — que é automação. Em Configurações fica só o que conecta.
+        { href: "/automacoes/formularios-flow", label: "Formulários do Flow", exato: false } as const,
+        ...ABAS.slice(1),
+      ]
+    : [...ABAS];
+
   return (
     <nav className="tabs automacoes-abas" aria-label={traduzir("Seções de Automações")}>
-      {ABAS.map((aba) => {
+      {abas.map((aba) => {
         const ativa = aba.exato
           ? pathname === aba.href || pathname.startsWith("/automacoes/editor")
           : pathname.startsWith(aba.href);

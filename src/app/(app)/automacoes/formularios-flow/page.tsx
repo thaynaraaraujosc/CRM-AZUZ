@@ -1,34 +1,42 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
-import { Topbar } from "@/components/ui";
+import { Topbar, Toggle } from "@/components/ui";
 import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
+import { ProtecoesDoNumero } from "@/components/automacoes/ProtecoesDoNumero";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
-import {
-  identificadorDoFormularioDoFlow,
-} from "@/lib/automation-flow/formulario-do-gatilho";
-import type { FormularioDoFlow, ListaDeFormularios } from "@/lib/integracoes/azuz-flow-formularios";
+import { identificadorDoFormularioDoFlow } from "@/lib/automation-flow/formulario-do-gatilho";
+import type { RecursoDosFormularios } from "@/app/api/integracoes/azuz-flow/formularios/route";
+import type { FormularioDoFlow } from "@/lib/integracoes/azuz-flow-formularios";
 import type { FluxoAutomacao } from "@/lib/automation-flow/types";
 import { useIdioma } from "@/lib/idioma-context";
 
 /**
- * FORMULÁRIOS DO AZUZ FLOW: qual robô responde a cada um.
+ * FORMULÁRIOS DO AZUZ FLOW: o que acontece quando cada um é preenchido.
  *
- * A tela existe por causa de um defeito com duas metades, e mostra as duas:
+ * Duas coisas por formulário, e as duas estavam no lugar errado antes:
  *
- *  1. O CRM só sabia que um formulário do Flow existia DEPOIS que chegava um lead dele. Formulário
- *     novo, ou ainda não preenchido por ninguém, não existia aqui — e não dava pra preparar robô
- *     nenhum pra ele. Agora o Flow manda a lista inteira (ver `azuz-flow-formularios.ts`).
- *  2. Todo robô de "formulário preenchido" respondia a TODO formulário, porque o disparo não dizia
- *     de qual formulário o evento vinha. Era por isso que a mesma resposta chegava para
- *     formulários diferentes.
+ *  1. A CONFIRMAÇÃO DE REUNIÃO — ligar e escrever a mensagem que o lead recebe. Morava em
+ *     Configurações › Outras integrações, numa configuração só para todos os formulários. Mas
+ *     Configurações é onde se CONECTA uma integração; o que acontece quando um formulário é
+ *     preenchido é automação, e é diferente de um formulário pro outro.
+ *  2. OS ROBÔS que respondem àquele formulário, com link pra abrir cada um.
  *
- * O que ela NÃO faz é editar robô: a escolha do formulário mora no bloco de gatilho, dentro do
- * próprio robô, que é onde o resto da configuração dele está. Ter dois lugares para a mesma
- * escolha é como se cria a tela que discorda do que o robô faz.
+ * A aba só existe quando o Flow está conectado (ver `AbasAutomacoes`): sem chave não há lista, e
+ * uma aba que só sabe dizer "conecte primeiro" é um lugar a mais pra não encontrar nada.
  */
+
+/** As variáveis que o texto aceita. Copiadas do servidor em vez de importadas: é texto de tela. */
+const VARIAVEIS: [string, string][] = [
+  ["{{primeiroNome}}", "o primeiro nome de quem preencheu"],
+  ["{{data}}", "a data por extenso"],
+  ["{{dataCurta}}", "a data em números"],
+  ["{{hora}}", "a hora em Brasília"],
+  ["{{link}}", "o link da reunião"],
+  ["{{empresa}}", "o nome da sua empresa"],
+];
 
 /** O bloco de gatilho do fluxo, quando ele é "formulário preenchido". */
 function gatilhoDeFormulario(fluxo: FluxoAutomacao): { formularioId?: string } | null {
@@ -39,12 +47,12 @@ function gatilhoDeFormulario(fluxo: FluxoAutomacao): { formularioId?: string } |
 
 function Robo({ fluxo }: { fluxo: FluxoAutomacao }) {
   const { t: traduzir } = useIdioma();
-  const no = fluxo.status === "publicado" && fluxo.ativa;
+  const noAr = fluxo.status === "publicado" && fluxo.ativa;
   return (
     <li className="fflow-robo">
       <Link href={`/automacoes/editor/${fluxo.id}`}>{fluxo.nome}</Link>
-      <span className={`pill${no ? " on" : ""}`}>
-        {no ? traduzir("no ar") : fluxo.status === "publicado" ? traduzir("pausado") : traduzir("rascunho")}
+      <span className={`pill${noAr ? " on" : ""}`}>
+        {noAr ? traduzir("no ar") : fluxo.status === "publicado" ? traduzir("pausado") : traduzir("rascunho")}
       </span>
     </li>
   );
@@ -53,11 +61,44 @@ function Robo({ fluxo }: { fluxo: FluxoAutomacao }) {
 function CartaoDoFormulario({
   formulario,
   robos,
+  propria,
+  geral,
+  aoSalvar,
 }: {
   formulario: FormularioDoFlow;
   robos: FluxoAutomacao[];
+  /** A configuração só deste formulário. `null` = segue a geral. */
+  propria: { ativa: boolean; texto: string } | null;
+  geral: { ativa: boolean; texto: string };
+  aoSalvar: (id: string, valor: { ativa: boolean; texto: string } | null) => Promise<void>;
 }) {
   const { t: traduzir } = useIdioma();
+  /*
+   * O RASCUNHO LOCAL começa no que ESTE formulário vai fazer hoje — a configuração própria quando
+   * existe, a geral quando não. Começar vazio faria o campo parecer "sem mensagem" num formulário
+   * que manda mensagem; começar na própria apenas quando ela existe faria o texto aparecer do nada
+   * ao ligar o botão.
+   */
+  const efetiva = propria ?? geral;
+  const [ativa, setAtiva] = useState(efetiva.ativa);
+  const [texto, setTexto] = useState(efetiva.texto);
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  const mudou = ativa !== efetiva.ativa || texto !== efetiva.texto;
+
+  async function salvar() {
+    setSalvando(true);
+    setErro(null);
+    try {
+      await aoSalvar(formulario.id, { ativa, texto });
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : traduzir("Não deu pra salvar."));
+    } finally {
+      setSalvando(false);
+    }
+  }
+
   return (
     <section className="card fflow-card">
       <header className="fflow-card-topo">
@@ -70,14 +111,59 @@ function CartaoDoFormulario({
         *
         * No Flow, "enviar ao CRM" é um liga/desliga DE CADA FORMULÁRIO — conectar a agência não
         * conecta os formulários dela. Era isso que fazia "conectei e só veio um". Sem este aviso, a
-        * pessoa montaria um robô aqui pra um formulário que nunca vai disparar, e nada na tela
-        * diria por quê.
+        * pessoa configuraria aqui um formulário que nunca vai chegar, e nada diria por quê.
         */}
       {formulario.enviaAoCrm ? null : (
         <p className="int-aviso-conflito">
           {traduzir("Este formulário não está enviando ao CRM. Ligue o envio nele, lá no AZUZ Flow.")}
         </p>
       )}
+
+      <div className="fflow-confirmacao">
+        <div className="toggle-row">
+          <span className="tl">
+            {traduzir("Confirmação de reunião")}
+            {!propria ? <span className="pill fflow-herdado">{traduzir("igual à geral")}</span> : null}
+          </span>
+          <Toggle defaultOn={ativa} label={traduzir("Confirmação de reunião")} onToggle={setAtiva} />
+        </div>
+
+        <label className="lbl-pequeno" htmlFor={`msg-${formulario.id}`}>
+          {traduzir("Mensagem")}
+        </label>
+        <textarea
+          id={`msg-${formulario.id}`}
+          className="input"
+          rows={5}
+          maxLength={2000}
+          value={texto}
+          onChange={(e) => setTexto(e.target.value)}
+        />
+        <p className="hint fflow-variaveis">
+          {VARIAVEIS.map(([chave, explicacao]) => (
+            <span key={chave}>
+              <code>{chave}</code> {traduzir(explicacao)}
+            </span>
+          ))}
+        </p>
+
+        {erro ? <p className="int-aviso-conflito">{erro}</p> : null}
+
+        <div className="fflow-acoes">
+          <button type="button" className="btn primary" disabled={!mudou || salvando} onClick={() => void salvar()}>
+            {salvando ? traduzir("Salvando…") : traduzir("Salvar")}
+          </button>
+          {/*
+            APAGAR A EXCEÇÃO é diferente de desligar. Desligado é "neste formulário, não mande";
+            sem exceção é "siga a regra geral". Sem este botão não haveria como voltar atrás.
+          */}
+          {propria ? (
+            <button type="button" className="btn ghost" disabled={salvando} onClick={() => void aoSalvar(formulario.id, null)}>
+              {traduzir("Voltar a seguir a geral")}
+            </button>
+          ) : null}
+        </div>
+      </div>
 
       {robos.length ? (
         <ul className="fflow-robos">
@@ -95,35 +181,49 @@ function CartaoDoFormulario({
   );
 }
 
-function FormulariosDoFlowConteudo() {
+export default function FormulariosDoFlowPage() {
   const { t: traduzir } = useIdioma();
   const { fluxos, carregado } = useAutomationFlows();
-  const [lista, setLista] = useState<ListaDeFormularios | null>(null);
+  const [recurso, setRecurso] = useState<RecursoDosFormularios | null>(null);
   const [erro, setErro] = useState(false);
 
-  useEffect(() => {
-    fetch("/api/integracoes/azuz-flow/formularios")
+  const carregar = useCallback(() => {
+    return fetch("/api/integracoes/azuz-flow/formularios")
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-      .then((dados: ListaDeFormularios) => {
-        setLista(Array.isArray(dados?.formularios) ? dados : { formularios: [], sincronizadaEm: null });
+      .then((dados: RecursoDosFormularios) => {
+        setRecurso(Array.isArray(dados?.formularios) ? dados : null);
+        setErro(!Array.isArray(dados?.formularios));
       })
       .catch(() => setErro(true));
   }, []);
 
-  const deFormulario = fluxos
-    .filter((f) => gatilhoDeFormulario(f) !== null)
-    .filter((f) => !f.arquivada);
+  useEffect(() => {
+    void carregar();
+  }, [carregar]);
+
+  async function salvarFormulario(id: string, valor: { ativa: boolean; texto: string } | null) {
+    const resposta = await fetch("/api/integracoes/azuz-flow/config", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ umFormulario: { id, confirmacao: valor } }),
+    });
+    if (!resposta.ok) {
+      const corpo = (await resposta.json().catch(() => null)) as { erro?: string } | null;
+      throw new Error(corpo?.erro ?? traduzir("Não deu pra salvar."));
+    }
+    await carregar();
+  }
+
+  const deFormulario = fluxos.filter((f) => gatilhoDeFormulario(f) !== null && !f.arquivada);
 
   /*
    * OS ROBÔS QUE RESPONDEM A TUDO ficam numa faixa própria, em cima.
    *
    * É o estado herdado: nenhum robô publicado antes desta mudança tem formulário escolhido, então
-   * todos estão aqui. Escondê-los faria a tela dizer "nenhum robô responde a este formulário"
-   * embaixo de cada cartão enquanto, na prática, TODOS respondem a todos — exatamente o defeito
-   * que a pessoa veio consertar.
+   * todos estão aqui. Escondê-los faria cada cartão dizer "nenhum robô responde a este formulário"
+   * enquanto, na prática, TODOS respondem a todos — o defeito que a pessoa veio consertar.
    */
   const respondemATudo = deFormulario.filter((f) => !gatilhoDeFormulario(f)?.formularioId?.trim());
-
   const robosDoFormulario = (id: string) => {
     const identificador = identificadorDoFormularioDoFlow(id);
     return deFormulario.filter((f) => gatilhoDeFormulario(f)?.formularioId?.trim() === identificador);
@@ -133,12 +233,15 @@ function FormulariosDoFlowConteudo() {
     <>
       <Topbar
         title={traduzir("Formulários do AZUZ Flow")}
-        sub={traduzir("Qual robô responde a cada formulário")}
+        sub={traduzir("O que acontece quando cada formulário é preenchido")}
         actions={<Link className="btn primary" href="/automacoes/novo">{traduzir("+ Nova automação")}</Link>}
       />
       <AbasAutomacoes />
 
       <div className="content">
+        {/* As proteções do número vêm antes dos formulários porque valem para todos eles. */}
+        <ProtecoesDoNumero />
+
         {respondemATudo.length ? (
           <section className="card">
             <p className="int-title">{traduzir("Respondem a qualquer formulário")}</p>
@@ -159,9 +262,9 @@ function FormulariosDoFlowConteudo() {
           <section className="card">
             <p className="hint">{traduzir("Não deu pra ler a lista de formulários agora.")}</p>
           </section>
-        ) : !lista || !carregado ? (
+        ) : !recurso || !carregado ? (
           <p className="hint">{traduzir("Carregando…")}</p>
-        ) : !lista.formularios.length ? (
+        ) : !recurso.formularios.length ? (
           <section className="card">
             <p className="int-title">{traduzir("Nenhum formulário do AZUZ Flow ainda")}</p>
             {/*
@@ -170,28 +273,39 @@ function FormulariosDoFlowConteudo() {
             */}
             <p className="hint">
               {traduzir(
-                "Quem manda a lista é o próprio AZUZ Flow, com a chave que vocês já conectaram. Se os formulários não aparecerem, confira a conexão em Configurações → Outras integrações.",
+                "Quem manda a lista é o próprio AZUZ Flow, com a chave que vocês já conectaram. Todo formulário publicado lá aparece aqui sozinho.",
               )}
             </p>
           </section>
         ) : (
           <div className="fflow-grade">
-            {lista.formularios.map((f) => (
-              <CartaoDoFormulario key={f.id} formulario={f} robos={robosDoFormulario(f.id)} />
+            {recurso.formularios.map((f) => (
+              <CartaoDoFormulario
+                /*
+                 * A CHAVE CARREGA SE HÁ REGRA PRÓPRIA, e não só o id.
+                 *
+                 * O cartão guarda o rascunho do campo em estado local, começando no que vale hoje.
+                 * Ao apagar a exceção ("voltar a seguir a geral"), o que vale passa a ser outro, e
+                 * sem remontar o cartão continuaria mostrando o texto antigo — com o botão Salvar
+                 * aceso, porque ele compararia com o novo valor efetivo.
+                 */
+                key={`${f.id}:${recurso.porFormulario[f.id] ? "proprio" : "geral"}`}
+                formulario={f}
+                robos={robosDoFormulario(f.id)}
+                propria={recurso.porFormulario[f.id]?.confirmacao ?? null}
+                geral={recurso.geral}
+                aoSalvar={salvarFormulario}
+              />
             ))}
           </div>
         )}
 
-        {lista?.sincronizadaEm ? (
+        {recurso?.sincronizadaEm ? (
           <p className="hint">
-            {traduzir("Lista recebida do Flow em")} {new Date(lista.sincronizadaEm).toLocaleString("pt-BR")}.
+            {traduzir("Lista recebida do Flow em")} {new Date(recurso.sincronizadaEm).toLocaleString("pt-BR")}.
           </p>
         ) : null}
       </div>
     </>
   );
-}
-
-export default function FormulariosDoFlowPage() {
-  return <FormulariosDoFlowConteudo />;
 }

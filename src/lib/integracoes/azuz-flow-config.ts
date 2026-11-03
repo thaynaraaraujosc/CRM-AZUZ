@@ -66,6 +66,22 @@ export type ConfigDoFlow = {
       texto: string;
     };
   };
+  /**
+   * A CONFIRMAÇÃO DE CADA FORMULÁRIO DO FLOW, quando ela é diferente da geral.
+   *
+   * A chave é o id do formulário no Flow. Só entra aqui o formulário que a pessoa configurou na
+   * tela de Automações › Formulários do Flow; quem não está aqui segue a configuração geral acima.
+   *
+   * SOBRESCREVER, E NÃO SUBSTITUIR, é a decisão que impede um apagão: a agência que já tem a
+   * confirmação ligada com um texto escrito há meses continua exatamente como está, para todos os
+   * formulários, até escolher mudar um deles. Se a configuração geral deixasse de valer no dia em
+   * que esta coluna nasceu, a confirmação simplesmente pararia de sair, sem erro em lugar nenhum.
+   *
+   * As PROTEÇÕES (janela, tetos, pausa, disjuntor) continuam só na geral, de propósito: elas
+   * protegem o NÚMERO, não o formulário. Uma por formulário protegeria pela metade — cinco
+   * formulários com teto de 30 são 150 primeiras mensagens no mesmo número, no mesmo dia.
+   */
+  porFormulario: Record<string, { confirmacao: { ativa: boolean; texto: string } }>;
 };
 
 export const CONFIG_PADRAO: ConfigDoFlow = {
@@ -92,6 +108,7 @@ export const CONFIG_PADRAO: ConfigDoFlow = {
     falhasParaPausar: 5,
   },
   formulario: { confirmacao: { ativa: false, texto: TEXTO_PADRAO_DA_CONFIRMACAO } },
+  porFormulario: {},
 };
 
 /**
@@ -130,7 +147,53 @@ export function lerConfigDoFlow(dados: unknown): ConfigDoFlow {
       falhasParaPausar: numeroEntre(confirmacao.falhasParaPausar, 1, 50, CONFIG_PADRAO.confirmacao.falhasParaPausar),
     },
     formulario: lerFormulario(bruto.formulario),
+    porFormulario: lerPorFormulario(bruto.porFormulario),
   };
+}
+
+/** Teto de formulários configurados à parte. Protege a coluna JSON; o Flow também corta em 300. */
+const MAX_POR_FORMULARIO = 300;
+
+/** As exceções por formulário, com a mesma desconfiança do resto: veio do banco, pode ter qualquer
+ *  forma. Entrada sem id ou sem objeto é descartada — ela não teria a que se aplicar. */
+function lerPorFormulario(dados: unknown): ConfigDoFlow["porFormulario"] {
+  if (typeof dados !== "object" || dados === null) return {};
+  const saida: ConfigDoFlow["porFormulario"] = {};
+  for (const [id, valor] of Object.entries(dados as Record<string, unknown>)) {
+    if (!id.trim() || typeof valor !== "object" || valor === null) continue;
+    const bruto = valor as Record<string, unknown>;
+    const confirmacao = (typeof bruto.confirmacao === "object" && bruto.confirmacao !== null
+      ? bruto.confirmacao
+      : {}) as Record<string, unknown>;
+    const texto = typeof confirmacao.texto === "string" ? confirmacao.texto.trim() : "";
+    saida[id.trim()] = {
+      confirmacao: {
+        // `=== true` pelo mesmo motivo das outras duas: ligar por acidente é mandar mensagem pra
+        // gente de verdade.
+        ativa: confirmacao.ativa === true,
+        texto: texto || CONFIG_PADRAO.confirmacao.texto,
+      },
+    };
+    if (Object.keys(saida).length >= MAX_POR_FORMULARIO) break;
+  }
+  return saida;
+}
+
+/**
+ * A confirmação que vale PARA ESTE FORMULÁRIO.
+ *
+ * O formulário configurado à parte manda; o resto segue a geral. É a regra inteira, e ela mora
+ * aqui — numa função pura — porque é ela que decide se uma mensagem sai para o WhatsApp de uma
+ * pessoa de verdade, e isso precisa ser provável sem banco.
+ */
+export function confirmacaoDoFormulario(
+  config: ConfigDoFlow,
+  formularioId: string | null | undefined,
+): { ativa: boolean; texto: string; doFormulario: boolean } {
+  const id = formularioId?.trim();
+  const proprio = id ? config.porFormulario[id] : undefined;
+  if (proprio) return { ...proprio.confirmacao, doFormulario: true };
+  return { ativa: config.confirmacao.ativa, texto: config.confirmacao.texto, doFormulario: false };
 }
 
 /** O bloco do formulário do CRM, com a mesma desconfiança do resto: veio do banco, pode ter
@@ -201,9 +264,17 @@ export async function configDoFlow(workspaceId: string): Promise<ConfigDoFlow> {
  * o texto e os tetos a cada clique — qualquer um deles desatualizado sobrescreveria o que outra
  * pessoa acabou de salvar.
  */
-export type MudancasDoFlow = Partial<Omit<ConfigDoFlow, "confirmacao" | "formulario">> & {
+export type MudancasDoFlow = Partial<Omit<ConfigDoFlow, "confirmacao" | "formulario" | "porFormulario">> & {
   confirmacao?: Partial<ConfigDoFlow["confirmacao"]>;
   formulario?: { confirmacao?: Partial<ConfigDoFlow["formulario"]["confirmacao"]> };
+  /**
+   * A confirmação de UM formulário. Um por vez, de propósito: a tela edita um cartão por vez, e
+   * mandar o mapa inteiro faria duas abas abertas apagarem o trabalho uma da outra.
+   *
+   * `null` em `confirmacao` APAGA a exceção — o formulário volta a seguir a geral. É a diferença
+   * entre "desligado neste formulário" e "sem regra própria", e sem ela não haveria como desfazer.
+   */
+  umFormulario?: { id: string; confirmacao: { ativa: boolean; texto: string } | null };
 };
 
 /** Grava o que mudou, preservando o resto. Devolve como ficou. */
@@ -218,6 +289,13 @@ export async function salvarConfigDoFlow(
    * `{ ...atual, ...mudancas }` sozinho trocaria `confirmacao` inteira: salvar só o liga/desliga
    * apagaria o texto que a agência escreveu, sem avisar.
    */
+  const porFormulario = { ...atual.porFormulario };
+  if (mudancas.umFormulario?.id.trim()) {
+    const { id, confirmacao } = mudancas.umFormulario;
+    if (confirmacao) porFormulario[id.trim()] = { confirmacao };
+    else delete porFormulario[id.trim()];
+  }
+
   const novo: ConfigDoFlow = {
     ...atual,
     ...mudancas,
@@ -225,7 +303,11 @@ export async function salvarConfigDoFlow(
     formulario: {
       confirmacao: { ...atual.formulario.confirmacao, ...(mudancas.formulario?.confirmacao ?? {}) },
     },
+    porFormulario,
   };
+  // `umFormulario` é instrução de mudança, não campo guardado: sem isto ele iria parar no banco
+  // junto com o resto por causa do espalhamento de `mudancas` acima.
+  delete (novo as Partial<MudancasDoFlow>).umFormulario;
   await prisma.preferencia.upsert({
     where: { workspaceId_chave: { workspaceId, chave: CHAVE } },
     create: { workspaceId, chave: CHAVE, dados: novo },

@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
-import { autenticarChaveDoFlow } from "@/lib/integracoes/azuz-flow-chave";
+import { autenticarChaveDoFlow, PROVEDOR_FLOW } from "@/lib/integracoes/azuz-flow-chave";
+import { configDoFlow } from "@/lib/integracoes/azuz-flow-config";
 import {
   formulariosDoFlow,
   guardarFormulariosDoFlow,
   lerListaDeFormularios,
+  type ListaDeFormularios,
 } from "@/lib/integracoes/azuz-flow-formularios";
+import { prisma } from "@/lib/prisma";
 import { comRespostaEmJson } from "@/lib/integracoes/resposta-em-json";
 import { contarChamada, corpoGrandeDemais, respostaDeCorpoGrande } from "@/lib/seguranca/limite-de-uso";
 
@@ -64,12 +67,42 @@ export async function POST(request: Request) {
   });
 }
 
+/** O que a tela precisa, numa chamada só. Ver o tipo no topo do arquivo da tela. */
+export type RecursoDosFormularios = ListaDeFormularios & {
+  /** Existe chave do Flow ativa nesta empresa? É o que decide se a aba aparece. */
+  conectado: boolean;
+  /** A confirmação GERAL, que vale pro formulário sem regra própria. */
+  geral: { ativa: boolean; texto: string };
+  /** As exceções, por id de formulário do Flow. */
+  porFormulario: Record<string, { confirmacao: { ativa: boolean; texto: string } }>;
+};
+
 export async function GET() {
   return comRespostaEmJson("azuz-flow/formularios GET", async () => {
     const sessao = await auth();
     if (!sessao) return recusar(401, "Não autenticado");
-    return NextResponse.json(await formulariosDoFlow(sessao.user.workspaceId), {
-      headers: { "cache-control": "no-store" },
-    });
+    const workspaceId = sessao.user.workspaceId;
+
+    /*
+     * TUDO NUMA CHAMADA SÓ. A tela precisa das três coisas ao mesmo tempo — a lista, a
+     * configuração de cada formulário e a geral que vale pro resto — e três chamadas criariam o
+     * instante em que ela já desenhou os cartões e ainda não sabe quais estão configurados, que é
+     * quando um cartão pisca dizendo o contrário do que vai dizer um segundo depois.
+     */
+    const [lista, config, chave] = await Promise.all([
+      formulariosDoFlow(workspaceId),
+      configDoFlow(workspaceId),
+      prisma.chaveDeIntegracao
+        .findFirst({ where: { workspaceId, provedor: PROVEDOR_FLOW, revogadaEm: null }, select: { id: true } })
+        .catch(() => null),
+    ]);
+
+    const recurso: RecursoDosFormularios = {
+      ...lista,
+      conectado: Boolean(chave),
+      geral: { ativa: config.confirmacao.ativa, texto: config.confirmacao.texto },
+      porFormulario: config.porFormulario,
+    };
+    return NextResponse.json(recurso, { headers: { "cache-control": "no-store" } });
   });
 }

@@ -17,6 +17,7 @@ import {
   type ConfigDoFlow,
 } from "@/lib/integracoes/azuz-flow-config";
 import { decidirConfirmacao } from "@/lib/integracoes/azuz-flow-confirmacao-decisao";
+import { confirmacaoDoFormulario } from "@/lib/integracoes/azuz-flow-config";
 import { quandoEnviar } from "@/lib/integracoes/azuz-flow-janela";
 import { montarTextoDaConfirmacao } from "@/lib/integracoes/azuz-flow-confirmacao-texto";
 import {
@@ -472,8 +473,17 @@ export async function receberLeadDoFlow(params: {
    * mensagem que nunca foi mandada.
    */
   if (lead.reuniao) {
+    /*
+     * A CONFIRMAÇÃO DESTE FORMULÁRIO, que pode não ser a geral.
+     *
+     * "De um formulário eu quero uma resposta, de outro quero outra" — é o que a tela de Automações
+     * › Formulários do Flow configura. Formulário sem configuração própria segue a geral, e é por
+     * isso que ligar esta regra não muda nada para quem já tinha a confirmação funcionando. Ver
+     * `confirmacaoDoFormulario`.
+     */
+    const confirmacao = confirmacaoDoFormulario(config, lead.formularioId);
     const decisao = decidirConfirmacao({
-      ativa: config.confirmacao.ativa,
+      ativa: confirmacao.ativa,
       inicio: lead.reuniao.inicio,
       consentiu: lead.consentimentoWhatsApp,
       telefone: lead.whatsapp,
@@ -536,7 +546,7 @@ export async function receberLeadDoFlow(params: {
           await deps.anotarNaLinhaDoTempo({ contatoNome: nomeDoContato, descricao: quando.motivo });
         }
       } else {
-        const texto = montarTextoDaConfirmacao(config.confirmacao.texto, {
+        const texto = montarTextoDaConfirmacao(confirmacao.texto, {
           primeiroNome: lead.nome ?? nomeDoContato,
           inicio: lead.reuniao.inicio,
           link: lead.reuniao.link,

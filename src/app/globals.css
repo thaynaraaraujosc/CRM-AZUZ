@@ -21030,6 +21030,67 @@ table.tbl .name-cell .r {
   font-size: 13px;
 }
 
+/* A confirmação daquele formulário: interruptor, mensagem e as variáveis que ela aceita. */
+.fflow-confirmacao {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: var(--space-2) 0;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--line-soft);
+}
+
+/* Rótulo pequeno de campo. Existe porque dentro de um cartão estreito o rótulo padrão compete em
+   peso com o título do formulário, e a pessoa lê dois títulos em vez de um título e um campo. */
+.lbl-pequeno {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* As variáveis em coluna: dentro de um cartão de 260px, lado a lado elas quebram no meio do
+   `{{primeiroNome}}` e o código fica ilegível. */
+.fflow-variaveis {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fflow-variaveis code {
+  font-size: 11px;
+}
+
+.fflow-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: var(--space-2);
+}
+
+/* "igual à geral": o formulário que ainda não tem regra própria. Discreto, porque é o estado
+   normal — a maioria dos formulários segue a geral e isso não é um alerta. */
+.fflow-herdado {
+  margin-left: 6px;
+  font-weight: 500;
+}
+
+/* As proteções do número, numa linha que se dobra. Horário e tetos são campos curtos: empilhá-los
+   faria um cartão de cinco linhas pra cinco números de dois dígitos. */
+.prot-grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: var(--space-2);
+  margin: var(--space-3) 0;
+}
+
+.prot-grade label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .ig-escrever {
   border-top: 1px solid var(--line-soft);
   padding: var(--space-3);

@@ -80,6 +80,9 @@ export async function PUT(request: Request) {
       /** O texto da confirmação do formulário DO CRM. Separado por origem, a pedido: cada uma fala
        *  com as palavras da agência pra aquele público. As proteções seguem compartilhadas. */
       formulario?: { confirmacao?: { ativa?: unknown; texto?: unknown } };
+      /** A confirmação de UM formulário do Flow. `confirmacao: null` apaga a exceção e o
+       *  formulário volta a seguir a geral. Ver `MudancasDoFlow`. */
+      umFormulario?: { id?: unknown; confirmacao?: { ativa?: unknown; texto?: unknown } | null };
     };
 
     const mudancas: MudancasDoFlow = {};
@@ -193,6 +196,32 @@ export async function PUT(request: Request) {
         confirmacao.texto = bruto.texto;
       }
       if (Object.keys(confirmacao).length) mudancas.formulario = { confirmacao };
+    }
+
+    if (corpo.umFormulario !== undefined) {
+      const bruto = corpo.umFormulario;
+      const id = typeof bruto.id === "string" ? bruto.id.trim() : "";
+      if (!id) {
+        return NextResponse.json({ erro: "Falta dizer de qual formulário." }, { status: 400 });
+      }
+      if (bruto.confirmacao === null) {
+        mudancas.umFormulario = { id, confirmacao: null };
+      } else {
+        const c = bruto.confirmacao ?? {};
+        if (typeof c.ativa !== "boolean") {
+          return NextResponse.json({ erro: "O liga/desliga da confirmação precisa ser true ou false." }, { status: 400 });
+        }
+        if (typeof c.texto !== "string") {
+          return NextResponse.json({ erro: "O texto da confirmação precisa ser texto." }, { status: 400 });
+        }
+        if (c.texto.length > 2000) {
+          return NextResponse.json({ erro: "O texto da confirmação passou de 2000 caracteres." }, { status: 400 });
+        }
+        // Os dois campos juntos, e não um `Partial`: esta é a configuração INTEIRA daquele
+        // formulário. Salvar só metade criaria uma exceção pela metade, com o outro campo vindo de
+        // lugar nenhum.
+        mudancas.umFormulario = { id, confirmacao: { ativa: c.ativa, texto: c.texto } };
+      }
     }
 
     if (!Object.keys(mudancas).length) {
