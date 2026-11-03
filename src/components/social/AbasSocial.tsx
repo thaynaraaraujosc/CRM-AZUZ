@@ -7,6 +7,7 @@ import type { SVGProps } from "react";
 import { useIdioma } from "@/lib/idioma-context";
 import {
   IconAutomacoes,
+  IconInicio,
   IconDoc,
   IconRelatorios,
   IconTrafego,
@@ -16,9 +17,10 @@ import {
 /**
  * Menu lateral do módulo Social Seller (o antigo "Instagram" dentro de Automações).
  *
- * A ordem é a do trabalho, não a alfabética. Primeiro o que se faz todo dia: montar automação,
- * escrever resposta automática, guardar modelo. Depois, separado por uma linha, o que se
- * CONSULTA: painel e execuções.
+ * A ordem é a do trabalho, não a alfabética. O Resumo primeiro, porque é onde se cai ao entrar e
+ * onde se pergunta "como está indo". Depois o que se FAZ todo dia: montar automação, escrever
+ * resposta automática, guardar modelo. Por último, separado por uma linha, o que se CONSULTA:
+ * painel e execuções.
  *
  * "Disparos" e "Conexões" saíram daqui, e nenhum dos dois foi apagado. Disparo é um só, em
  * Automações → Disparo em massa, e sempre foi o mesmo backend. Conexão se administra em
@@ -26,9 +28,10 @@ import {
  * a escolher por qual entrar, e a resposta certa nunca é óbvia.
  */
 const PRINCIPAIS = [
-  { href: "/social-seller", label: "Automações", exato: true, Icon: IconAutomacoes },
-  { href: "/social-seller/respostas", label: "Resposta automática", exato: false, Icon: IconEnviar },
-  { href: "/social-seller/modelos", label: "Meus Templates", exato: false, Icon: IconDoc },
+  { href: "/social-seller", label: "Resumo", exato: true, Icon: IconInicio },
+  { href: "/social-seller/automacoes", label: "Automações", exato: false, Icon: IconAutomacoes },
+  { href: "/social-seller/respostas", label: "Lista de respostas", exato: false, Icon: IconEnviar },
+  { href: "/social-seller/modelos", label: "Meus templates", exato: false, Icon: IconDoc },
 ] as const;
 
 const CONSULTA = [

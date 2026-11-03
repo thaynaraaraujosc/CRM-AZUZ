@@ -217,7 +217,7 @@ export default function SocialPage() {
           )}
 
           <div className="social-atalhos mt16">
-            <Link className="btn primary" href="/social-seller">
+            <Link className="btn primary" href="/social-seller/automacoes">
               {traduzir("Abrir automações")}
             </Link>
             <Link className="btn" href="/social-seller/execucoes">

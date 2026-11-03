@@ -54,7 +54,7 @@ export default function NovaAutomacaoSocialPage() {
 
       <div className="content">
         <nav className="social-migalhas" aria-label={traduzir("Onde você está")}>
-          <button type="button" className="link" onClick={() => router.push("/social-seller")}>
+          <button type="button" className="link" onClick={() => router.push("/social-seller/automacoes")}>
             {traduzir("Automações")}
           </button>
           <span aria-hidden="true">›</span>

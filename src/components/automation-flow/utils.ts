@@ -5,6 +5,7 @@ import dagre from "dagre";
 import { saidasDoNo } from "@/lib/automation-flow/resumo";
 import { MarkerType, type Edge, type Node } from "@xyflow/react";
 
+import type { AreaAutomacao } from "@/lib/canais/capacidades";
 import type {
   FlowEdge,
   FlowNode,
@@ -25,6 +26,16 @@ export type FlowRFNodeData = {
   explicacao?: string;
   /** Fechado sobre o id do nó lá no FlowEditor. Abre o seletor rápido "O que acontece agora?" pra essa saída específica. */
   onAdicionarApos?: (handleId: string | undefined) => void;
+  /**
+   * A área do fluxo a que este nó pertence. Viaja no `data` porque o nó não a conhece: ela é do
+   * FLUXO, e o React Flow entrega ao componente só o nó.
+   *
+   * Serve pra uma coisa: no Social Seller o bloco mostra a cara do Instagram — a marca no
+   * cabeçalho de quem fala com a rede, e o texto numa bolha igual à que o contato vai ver no
+   * Direct. Sem isso o canvas do Instagram é idêntico ao do funil, e quem monta não tem como
+   * conferir, olhando, o que a pessoa do outro lado vai receber.
+   */
+  area?: AreaAutomacao;
 };
 
 /**

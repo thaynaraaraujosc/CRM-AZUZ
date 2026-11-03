@@ -11268,6 +11268,45 @@ button.camp-row:hover {
   color: var(--flow-cor-categoria, var(--text-muted));
 }
 
+/*
+ * A MARCA DO INSTAGRAM no bloco que fala com o Instagram.
+ *
+ * Ela entra com o degradê da própria marca (ver `IconInstagram`), que é a única exceção à regra
+ * de ícone monocromático do CRM — é assim que o Instagram se apresenta, e metade da utilidade de
+ * ver a marca ali é reconhecê-la sem ler. Por isso `color` não a afeta, e o único ajuste aqui é
+ * de alinhamento.
+ */
+.flow-node-icon.is-instagram {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 1px;
+}
+
+/*
+ * A MENSAGEM COMO ELA CHEGA NO DIRECT.
+ *
+ * Cinza clara, canto arredondado com o de baixo à esquerda menor, texto com as quebras de linha
+ * que foram escritas: é a bolha que o contato vê. O resumo entre aspas que ficava aqui descrevia
+ * o bloco ("texto · Canal: instagram") em vez de mostrar a mensagem, e conferir o texto exigia
+ * abrir o painel de configuração de cada passo.
+ */
+.flow-bolha {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 12px 12px 12px 4px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  /* Mensagem longa não pode esticar o bloco até o canvas virar uma coluna de texto. */
+  max-height: 96px;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, #000 72px, transparent 96px);
+  mask-image: linear-gradient(to bottom, #000 72px, transparent 96px);
+}
+
 .flow-node-textos {
   flex: 1;
   min-width: 0;
@@ -11377,7 +11416,21 @@ button.camp-row:hover {
    overflow:visible pra isso não cortar). */
 .flow-node-saida-unica {
   position: relative;
-  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  height: 22px;
+  padding: 0 var(--space-3) 4px;
+}
+
+/* "Próximo passo" escrito ao lado do ponto de saída. Um ponto sozinho na borda não diz que dali
+   se arrasta pro bloco seguinte, e quem nunca montou um fluxo não tem como descobrir isso
+   olhando. */
+.flow-node-proximo {
+  font-size: 10px;
+  color: var(--text-faint, var(--text-muted));
+  letter-spacing: 0.01em;
+  pointer-events: none;
 }
 
 .flow-node-add-btn {
@@ -19915,16 +19968,143 @@ table.tbl .name-cell .r {
   background: var(--surface-hover);
 }
 
+.social-menu-item {
+  position: relative;
+}
+
+/* O item ativo ganha uma barra à esquerda, e não só fundo: numa coluna de seis itens com fundos
+   parecidos, a barra é o que se acha de relance com o olho correndo de cima a baixo. */
 .social-menu-item.on {
   background: var(--blue-soft);
   color: var(--blue);
   font-weight: 700;
 }
 
+.social-menu-item.on::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  border-radius: 0 999px 999px 0;
+  background: var(--blue);
+}
+
 .social-menu-linha {
   border: 0;
   border-top: 1px solid var(--line-soft);
   margin: var(--space-2) 6px;
+}
+
+/*
+ * A TELA DE RESUMO DO SOCIAL SELLER.
+ *
+ * Seções com título e um atalho à direita, em vez de uma pilha de cartões iguais: cada seção
+ * responde a uma pergunta diferente ("como foi?", "por onde começo?", "o que chegou?"), e um
+ * cartão por pergunta deixaria tudo com o mesmo peso.
+ */
+.ss-saudacao {
+  margin-bottom: var(--space-4);
+}
+
+.ss-saudacao h2 {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.25;
+  font-weight: 650;
+}
+
+/* O nome em acento: é o único pedaço da frase que muda de pessoa pra pessoa. */
+.ss-saudacao h2 span {
+  color: var(--blue);
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+
+.ss-secao {
+  margin-bottom: var(--space-5, var(--space-4));
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.ss-secao:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.ss-secao-topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.ss-secao-topo h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.ss-objetivos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-3);
+}
+
+/* Um objetivo é um BOTÃO que já cria o rascunho: o cartão que só explica e manda pra outra tela
+   escolher de novo é um clique a mais no momento em que a pessoa está decidindo se vale a pena. */
+.ss-objetivo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  background: var(--surface);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.14s ease, box-shadow 0.14s ease, transform 0.14s ease;
+}
+
+.ss-objetivo:hover {
+  border-color: color-mix(in srgb, var(--blue) 45%, var(--border));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.ss-objetivo:active {
+  transform: translateY(1px);
+}
+
+.ss-objetivo strong {
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.ss-objetivo span {
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.ss-desconectado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.ss-desconectado > div {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+.ss-desconectado .hint {
+  margin: 2px 0 0;
 }
 
 /* Barra de busca e filtros, na ordem em que a pessoa pensa: procurar, filtrar, escolher a visão. */

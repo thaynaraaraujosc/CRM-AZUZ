@@ -889,9 +889,10 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           ordemNarrativa: ordemNarrativaPorNode?.get(n.id),
           explicacao: entenderFluxoAtivo ? explicacaoDoNo(n.data.flowNode, funis) : undefined,
           onAdicionarApos: modoConstrucao ? (handleId: string | undefined) => setAcaoRapida({ nodeId: n.id, handleId }) : undefined,
+          area,
         },
       })),
-    [rfNodes, problemasPorNode, saidasConectadasPorNode, entradasPorNode, ordemNarrativaPorNode, entenderFluxoAtivo, nodesRelacionados, modoConstrucao, funis, nodePiscando],
+    [rfNodes, problemasPorNode, saidasConectadasPorNode, entradasPorNode, ordemNarrativaPorNode, entenderFluxoAtivo, nodesRelacionados, modoConstrucao, funis, nodePiscando, area],
   );
   /**
    * De qual bloco o fluxo parte: o gatilho, ou o primeiro bloco sem nada chegando nele.

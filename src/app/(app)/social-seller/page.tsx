@@ -1,376 +1,250 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 import { Topbar } from "@/components/ui";
 import { AbasSocial } from "@/components/social/AbasSocial";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
-import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
-import { blocoValeNaArea, grupoDeGatilhoValeNaArea } from "@/lib/canais/capacidades";
-import { IconGrade, IconLista, IconMaisOpcoes, IconNovaPasta, IconSearch } from "@/components/icons";
-import type { PastaSalva } from "@/app/api/automacoes-pastas/route";
-import type { ConexaoSocial } from "@/app/api/social/conexoes/route";
-import type { FluxoAutomacao } from "@/lib/automation-flow/types";
+import { MODELOS_SOCIAIS } from "@/lib/social/modelos-rapidos";
+import { IconInstagram } from "@/components/icons";
 import { useIdioma } from "@/lib/idioma-context";
-
-type Visao = "lista" | "grade";
-type FiltroStatus = "todos" | "ativo" | "inativo" | "rascunho";
+import type { PainelSocial } from "@/app/api/social/metricas/route";
 
 /**
- * Os gatilhos que existem nesta área, pro filtro. Sai da mesma tabela que a biblioteca usa, e com
- * o mesmo par de regras que ela: `blocoValeNaArea` diz se o bloco funciona no canal, e
- * `grupoDeGatilhoValeNaArea` diz se aquele TIPO de gatilho existe aqui. Só com a primeira, o
- * filtro oferecia "Lead entrou na etapa", "Tarefa criada", "Consulta agendada" e mais vinte
- * gatilhos do funil que nenhum robô do Instagram pode ter.
- */
-const GATILHOS_SOCIAIS = BLOCOS_DISPONIVEIS.filter(
-  (b) =>
-    b.categoria === "gatilho" &&
-    blocoValeNaArea(b.tipo, "social") &&
-    grupoDeGatilhoValeNaArea(b.grupo, "social"),
-);
-
-function dataCurta(iso?: string): string {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleString("pt-BR", {
-    day: "numeric",
-    month: "short",
-    year: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-/** O gatilho do robô, em palavras. É a coluna que responde "o que faz este aqui começar?". */
-function gatilhoDoFluxo(fluxo: FluxoAutomacao): string {
-  const no = fluxo.nodes?.find((n) => n.category === "gatilho");
-  if (!no) return "Sem gatilho";
-  return BLOCOS_DISPONIVEIS.find((b) => b.tipo === no.type)?.label ?? no.type;
-}
-
-/**
- * Automações do Instagram.
+ * RESUMO DA CONTA: a primeira tela do Social Seller.
  *
- * Mesma lista, mesmo editor e mesmo motor dos robôs do funil: o que separa os dois é a `area` do
- * fluxo, que decide quais gatilhos e quais blocos existem na tela. Um robô daqui move o lead no
- * funil, cria tarefa e chama um atendente igual ao outro, porque é o mesmo código rodando.
+ * Quem clica em "Social Seller" no menu caía direto na LISTA de automações — a tela de quem já
+ * sabe o que vai editar. Quem abre o módulo quase sempre quer outra coisa antes: saber como foi o
+ * dia e, se ainda não tem robô nenhum, saber por onde começar. A lista continua existindo, agora
+ * em `/social-seller/automacoes`, a um clique no menu.
+ *
+ * SÓ NÚMERO QUE EXISTE, a mesma regra do painel. Tudo aqui sai de `/api/social/metricas`, que
+ * conta linha de banco deste workspace. Não há "economia de tempo", não há "cliques em links": o
+ * CRM não mede nenhum dos dois, e inventá-los seria transformar a tela de abertura do módulo numa
+ * tela que mente logo no primeiro olhar.
  */
-export default function AutomacoesSociaisPage() {
+
+/*
+ * DIA, SEMANA E MÊS, e não 7/30/90 dias.
+ *
+ * É a janela em que se pensa o Instagram ("como foi hoje?"), e é a mesma escada do painel por
+ * baixo — a API recebe dias e não sabe que a tela chama de "semana".
+ */
+const PERIODOS = [
+  { dias: 1, label: "Dia" },
+  { dias: 7, label: "Semana" },
+  { dias: 30, label: "Mês" },
+] as const;
+
+/** Só o primeiro nome: "Olá, Thaynara Araújo Santos Costa" não cabe e não é como se cumprimenta. */
+function primeiroNome(nome?: string | null): string | null {
+  const limpo = (nome ?? "").trim();
+  if (!limpo) return null;
+  return limpo.split(/\s+/)[0] ?? null;
+}
+
+function Numero({ valor, label, ajuda }: { valor: number; label: string; ajuda?: string }) {
+  const { t: traduzir, localeNumero } = useIdioma();
+  return (
+    <div className="social-numero">
+      <strong>{valor.toLocaleString(localeNumero)}</strong>
+      <span>{traduzir(label)}</span>
+      {ajuda ? <em>{traduzir(ajuda)}</em> : null}
+    </div>
+  );
+}
+
+export default function ResumoSocialPage() {
   const { t: traduzir } = useIdioma();
+  const { data: sessao } = useSession();
   const router = useRouter();
-  const { fluxos, atualizarFluxo, alternarAtivo, excluirFluxo, duplicarFluxo } = useAutomationFlows();
-
-  const [conexoes, setConexoes] = useState<ConexaoSocial[] | null>(null);
-  const [pastas, setPastas] = useState<PastaSalva[]>([]);
-  const [busca, setBusca] = useState("");
-  const [status, setStatus] = useState<FiltroStatus>("todos");
-  const [gatilho, setGatilho] = useState("todos");
-  const [visao, setVisao] = useState<Visao>("lista");
-  const [pastaAberta, setPastaAberta] = useState<string | null>(null);
-  const [menuAberto, setMenuAberto] = useState<string | null>(null);
-
-  const carregarPastas = useCallback(async () => {
-    const r = await fetch("/api/automacoes-pastas?area=social", { cache: "no-store" });
-    setPastas(r.ok ? ((await r.json()) as PastaSalva[]) : []);
-  }, []);
+  const { criarFluxo } = useAutomationFlows();
+  const [dias, setDias] = useState<number>(7);
+  /* O período pedido viaja JUNTO com a resposta, como no painel: assim "carregando" é derivado
+     (a resposta que tenho não é do período que estou mostrando) em vez de ser um segundo estado
+     que precisa ser ligado e desligado na mão, e que erra sozinho quando duas buscas se cruzam. */
+  const [resposta, setResposta] = useState<{ paraDias: number; dados: PainelSocial | null } | null>(null);
 
   useEffect(() => {
-    fetch("/api/social/conexoes", { cache: "no-store" })
-      .then((r) => (r.ok ? (r.json() as Promise<ConexaoSocial[]>) : []))
-      .then((dados) => setConexoes(Array.isArray(dados) ? dados : []))
-      .catch(() => setConexoes([]));
-  }, []);
-
-  useEffect(() => {
-    Promise.resolve()
-      .then(carregarPastas)
-      .catch(() => setPastas([]));
-  }, [carregarPastas]);
-
-  const instagram = conexoes?.find((c) => c.canal === "instagram");
-
-  const visiveis = useMemo(() => {
-    const termo = busca.trim().toLowerCase();
-    return fluxos
-      .filter((f) => f.area === "social" && !f.arquivada)
-      .filter((f) => (pastaAberta ? f.pastaId === pastaAberta : true))
-      .filter((f) => (termo ? f.nome.toLowerCase().includes(termo) : true))
-      .filter((f) => {
-        if (status === "todos") return true;
-        if (status === "rascunho") return f.status === "rascunho";
-        if (status === "ativo") return f.status === "publicado" && f.ativa;
-        return f.status === "publicado" && !f.ativa;
+    let cancelado = false;
+    fetch(`/api/social/metricas?dias=${dias}`, { cache: "no-store" })
+      .then((r) => (r.ok ? (r.json() as Promise<PainelSocial>) : null))
+      .then((dados) => {
+        if (!cancelado) setResposta({ paraDias: dias, dados });
       })
-      .filter((f) => (gatilho === "todos" ? true : f.nodes?.some((n) => n.type === gatilho)));
-  }, [fluxos, busca, status, gatilho, pastaAberta]);
+      .catch(() => {
+        if (!cancelado) setResposta({ paraDias: dias, dados: null });
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, [dias]);
 
-  async function novaPasta() {
-    const nome = window.prompt("Nome da pasta");
-    if (!nome?.trim()) return;
-    await fetch("/api/automacoes-pastas", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ nome, area: "social" }),
+  const carregando = resposta?.paraDias !== dias;
+  const painel = resposta?.dados ?? null;
+  const nome = primeiroNome(sessao?.user?.name);
+
+  /** Um modelo vira rascunho e abre no editor. Nunca publicado: ver `/social-seller/novo`. */
+  function comecarPor(modeloId: string) {
+    const modelo = MODELOS_SOCIAIS.find((m) => m.id === modeloId);
+    if (!modelo) return;
+    const { nodes, edges, configuracoes } = modelo.construir();
+    const novo = criarFluxo({
+      nome: modelo.nome,
+      descricao: modelo.descricao,
+      area: "social",
+      nodes,
+      edges,
+      configuracoes,
     });
-    await carregarPastas();
+    router.push(`/automacoes/editor/${novo.id}`);
   }
 
-  async function apagarPasta(id: string, nome: string) {
-    if (!window.confirm(traduzir('Apagar a pasta "{nome}"? Os robôs dentro dela voltam pra lista principal.', { nome }))) return;
-    await fetch(`/api/automacoes-pastas/${id}`, { method: "DELETE" });
-    if (pastaAberta === id) setPastaAberta(null);
-    await carregarPastas();
-  }
-
-  function moverParaPasta(fluxoId: string) {
-    const escolha = window.prompt(
-      `Digite o número da pasta:\n0 - Nenhuma (lista principal)\n${pastas.map((p, i) => `${i + 1} - ${p.nome}`).join("\n")}`,
-    );
-    if (escolha === null) return;
-    const indice = Number(escolha);
-    if (!Number.isFinite(indice) || indice < 0 || indice > pastas.length) return;
-    atualizarFluxo(fluxoId, { pastaId: indice === 0 ? null : pastas[indice - 1].id });
-    carregarPastas().catch(() => {});
-  }
+  const interacoes = painel
+    ? painel.crm.directs +
+      painel.crm.comentarios +
+      painel.crm.storiesRespondidos +
+      painel.crm.mencoes +
+      painel.crm.reacoes
+    : 0;
+  const noAr = painel?.robos.filter((r) => r.ligado).length ?? 0;
 
   return (
     <>
+      {/* Sem subtítulo: o nome do módulo já diz o que ele é, e a saudação logo abaixo dá o resto. */}
       <Topbar
-        title="Social Seller"
-        sub={traduzir("Robôs que respondem comentário, Direct, story e menção")}
+        title={traduzir("Social Seller")}
         actions={
-          <button type="button" className="btn primary" onClick={() => router.push("/social-seller/novo")}>{traduzir("+ Criar automação")}</button>
+          <Link className="btn primary" href="/social-seller/novo">
+            {traduzir("+ Criar automação")}
+          </Link>
         }
       />
 
       <div className="content social-layout">
         <AbasSocial />
-
         <div className="social-conteudo">
-          {instagram && !instagram.conectado ? (
-            <section className="card" style={{ marginBottom: "var(--space-3)" }}>
-              <strong>{traduzir("O Instagram não está conectado.")}</strong>
-              <p className="hint mt8">
-                {instagram.motivo} Dá pra montar os robôs aqui, mas nenhum gatilho vai acontecer.
-              </p>
+          <header className="ss-saudacao">
+            <h2>
+              {nome ? (
+                <>
+                  {traduzir("Olá,")} <span>{nome}</span>! {traduzir("Que bom ter você aqui.")}
+                </>
+              ) : (
+                traduzir("Que bom ter você aqui.")
+              )}
+            </h2>
+          </header>
+
+          {/*
+            A CONTA DESCONECTADA É A PRIMEIRA COISA, e não um aviso no rodapé: com ela fora do ar
+            todo número desta tela é zero por falta de conexão, não por falta de movimento, e os
+            dois zeros são visualmente idênticos.
+          */}
+          {painel && !painel.conectado ? (
+            <section className="card ss-desconectado">
+              <IconInstagram width={22} height={22} aria-hidden="true" />
+              <div>
+                <strong>{traduzir("O Instagram não está conectado.")}</strong>
+                <p className="hint">
+                  {painel.motivoDesconectado ? traduzir(painel.motivoDesconectado) : null}{" "}
+                  {traduzir("Enquanto isso nenhum evento chega e nenhum robô daqui dispara.")}
+                </p>
+              </div>
+              <Link className="btn" href="/configuracoes?secao=integracoes">
+                {traduzir("Conectar")}
+              </Link>
             </section>
           ) : null}
 
-          <div className="social-filtros">
-            <div className="social-busca">
-              <IconSearch width={14} height={14} aria-hidden="true" />
-              <input
-                className="input"
-                placeholder={traduzir("Buscar por automações")}
-                value={busca}
-                onChange={(e) => setBusca(e.target.value)}
-              />
-            </div>
-
-            <select className="input" value={status} onChange={(e) => setStatus(e.target.value as FiltroStatus)}>
-              <option value="todos">{traduzir("Status: todos")}</option>
-              <option value="ativo">{traduzir("Ligadas")}</option>
-              <option value="inativo">{traduzir("Pausadas")}</option>
-              <option value="rascunho">{traduzir("Rascunhos")}</option>
-            </select>
-
-            <select className="input" value={gatilho} onChange={(e) => setGatilho(e.target.value)}>
-              <option value="todos">{traduzir("Gatilho: todos")}</option>
-              {GATILHOS_SOCIAIS.map((g) => (
-                <option key={g.tipo} value={g.tipo}>
-                  {traduzir(g.label)}
-                </option>
-              ))}
-            </select>
-
-            <div className="social-visao">
-              <button
-                type="button"
-                className={`icon-btn${visao === "lista" ? " on" : ""}`}
-                aria-label={traduzir("Ver em lista")}
-                aria-pressed={visao === "lista"}
-                onClick={() => setVisao("lista")}
-              >
-                <IconLista width={14} height={14} />
-              </button>
-              <button
-                type="button"
-                className={`icon-btn${visao === "grade" ? " on" : ""}`}
-                aria-label={traduzir("Ver em grade")}
-                aria-pressed={visao === "grade"}
-                onClick={() => setVisao("grade")}
-              >
-                <IconGrade width={14} height={14} />
-              </button>
-            </div>
-          </div>
-
-          <section className="card">
-            <div className="social-secao-topo">
-              <h3>
-                {traduzir("Pastas")} <span className="social-contador">{pastas.length}</span>
-              </h3>
-              <button type="button" className="btn ghost" onClick={novaPasta}>
-                <IconNovaPasta width={14} height={14} aria-hidden="true" /> {traduzir("Nova pasta")}
-              </button>
-            </div>
-
-            {!pastas.length ? (
-              <p className="hint">
-                {traduzir("Nenhuma pasta. Com poucos robôs isso não faz falta; a partir de uma dezena, faz.")}
-              </p>
-            ) : (
-              <div className="social-pastas">
-                <button
-                  type="button"
-                  className={`social-pasta${pastaAberta === null ? " on" : ""}`}
-                  onClick={() => setPastaAberta(null)}
-                >
-                  <strong>{traduzir("Todas")}</strong>
-                  <span>{fluxos.filter((f) => f.area === "social" && !f.arquivada).length}</span>
-                </button>
-                {pastas.map((p) => (
-                  <div key={p.id} className={`social-pasta${pastaAberta === p.id ? " on" : ""}`}>
-                    <button type="button" className="social-pasta-abrir" onClick={() => setPastaAberta(p.id)}>
-                      <strong>{p.nome}</strong>
-                      <span>{p.total}</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="icon-btn subtle"
-                      aria-label={`Apagar a pasta ${p.nome}`}
-                      onClick={() => apagarPasta(p.id, p.nome)}
-                    >
-                      <IconMaisOpcoes width={13} height={13} />
-                    </button>
-                  </div>
+          <section className="ss-secao">
+            <div className="ss-secao-topo">
+              <h3>{traduzir("Resumo da sua conta")}</h3>
+              <div className="social-periodo">
+                {PERIODOS.map((p) => (
+                  <button
+                    key={p.dias}
+                    type="button"
+                    className={`seg-chip${dias === p.dias ? " on" : ""}`}
+                    onClick={() => setDias(p.dias)}
+                  >
+                    {traduzir(p.label)}
+                  </button>
                 ))}
+              </div>
+            </div>
+
+            {carregando || !painel ? (
+              <p className="hint">{traduzir("Carregando…")}</p>
+            ) : (
+              <div className="social-numeros">
+                <Numero
+                  valor={painel.crm.automacoesIniciadas}
+                  label="Automações disparadas"
+                  ajuda="Cada vez que um robô do Instagram começou a rodar."
+                />
+                <Numero valor={interacoes} label="Interações recebidas" ajuda="Directs, comentários, stories, menções e reações." />
+                <Numero
+                  valor={painel.crm.leadsCriados}
+                  label="Novos contatos capturados"
+                  ajuda="Contatos que nasceram do Instagram no período."
+                />
+                <Numero valor={noAr} label="Robôs no ar" ajuda="Publicados e ligados agora. Não depende do período." />
               </div>
             )}
           </section>
 
-          <section className="card mt16">
-            <div className="social-secao-topo">
-              <h3>
-                {traduzir("Automações")} <span className="social-contador">{visiveis.length}</span>
-              </h3>
+          {/*
+            "COMECE POR UM OBJETIVO" é o atalho de quem ainda não tem robô. São os mesmos modelos
+            de `/social-seller/novo`, em uma linha: a tela de abertura é onde a pergunta "e agora,
+            o que eu faço?" aparece, e mandar pra outra tela só pra escolher é um clique a mais no
+            exato momento em que se está decidindo se vale a pena.
+          */}
+          <section className="ss-secao">
+            <div className="ss-secao-topo">
+              <h3>{traduzir("Escolha um objetivo e comece em minutos")}</h3>
+              <Link className="link" href="/social-seller/automacoes">
+                {traduzir("Todas as automações")}
+              </Link>
             </div>
+            <div className="ss-objetivos">
+              {MODELOS_SOCIAIS.map((m) => (
+                <button key={m.id} type="button" className="ss-objetivo" onClick={() => comecarPor(m.id)}>
+                  <IconInstagram width={18} height={18} aria-hidden="true" />
+                  <strong>{traduzir(m.nome)}</strong>
+                  <span>{traduzir(m.descricao)}</span>
+                </button>
+              ))}
+            </div>
+          </section>
 
-            {!visiveis.length ? (
-              <p className="hint">
-                {fluxos.some((f) => f.area === "social")
-                  ? "Nenhuma automação com esses filtros."
-                  : "Nenhuma automação ainda. Use “+ Criar automação” pra começar."}
-              </p>
-            ) : visao === "grade" ? (
-              <div className="social-grade">
-                {visiveis.map((f) => (
-                  <button
-                    key={f.id}
-                    type="button"
-                    className="social-card"
-                    onClick={() => router.push(`/automacoes/editor/${f.id}`)}
-                  >
-                    <strong>{f.nome}</strong>
-                    <span>{gatilhoDoFluxo(f)}</span>
-                    <em>
-                      {f.status === "rascunho" ? traduzir("Rascunho") : f.ativa ? traduzir("Ligada") : traduzir("Pausada")} ·{" "}
-                      {f.execucoes} execuções
-                    </em>
-                  </button>
-                ))}
-              </div>
+          <section className="ss-secao">
+            <div className="ss-secao-topo">
+              <h3>{traduzir("Interações recebidas")}</h3>
+              <Link className="link" href="/social-seller/painel">
+                {traduzir("Ver painel completo")}
+              </Link>
+            </div>
+            {carregando || !painel ? (
+              <p className="hint">{traduzir("Carregando…")}</p>
             ) : (
-              <table className="table social-tabela">
-                <thead>
-                  <tr>
-                    <th>{traduzir("Automação")}</th>
-                    <th>{traduzir("Gatilho")}</th>
-                    <th>{traduzir("Criado")}</th>
-                    <th>{traduzir("Última publicação")}</th>
-                    <th>{traduzir("Execuções")}</th>
-                    <th>{traduzir("Situação")}</th>
-                    <th aria-label={traduzir("Ações")} />
-                  </tr>
-                </thead>
-                <tbody>
-                  {visiveis.map((f) => (
-                    <tr key={f.id}>
-                      <td>
-                        <button
-                          type="button"
-                          className="link"
-                          onClick={() => router.push(`/automacoes/editor/${f.id}`)}
-                        >
-                          {f.nome}
-                        </button>
-                      </td>
-                      <td className="hint">{gatilhoDoFluxo(f)}</td>
-                      <td className="hint">{dataCurta(f.criadoEm)}</td>
-                      <td className="hint">{f.publicadoEm ? dataCurta(f.publicadoEm) : "—"}</td>
-                      <td>{f.execucoes}</td>
-                      <td>
-                        {f.status === "rascunho" ? (
-                          <span className="badge badge-neutral">{traduzir("Rascunho")}</span>
-                        ) : (
-                          <label className="social-toggle">
-                            <input type="checkbox" checked={f.ativa} onChange={() => alternarAtivo(f.id)} />
-                            <span>{f.ativa ? "Ativo" : "Inativo"}</span>
-                          </label>
-                        )}
-                      </td>
-                      <td style={{ textAlign: "right", position: "relative" }}>
-                        <button
-                          type="button"
-                          className="icon-btn subtle"
-                          aria-label={`Mais opções de ${f.nome}`}
-                          onClick={() => setMenuAberto(menuAberto === f.id ? null : f.id)}
-                        >
-                          <IconMaisOpcoes width={14} height={14} />
-                        </button>
-                        {menuAberto === f.id ? (
-                          <div className="social-menu-opcoes" role="menu">
-                            <button type="button" onClick={() => router.push(`/automacoes/editor/${f.id}`)}>
-                              {traduzir("Abrir")}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const copia = duplicarFluxo(f.id);
-                                setMenuAberto(null);
-                                if (copia) router.push(`/automacoes/editor/${copia.id}`);
-                              }}
-                            >
-                              {traduzir("Duplicar")}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                moverParaPasta(f.id);
-                                setMenuAberto(null);
-                              }}
-                            >
-                              {traduzir("Mover pra pasta")}
-                            </button>
-                            <button
-                              type="button"
-                              className="perigo"
-                              onClick={() => {
-                                setMenuAberto(null);
-                                if (window.confirm(traduzir('Excluir "{nome}"? Isso não volta.', { nome: f.nome }))) excluirFluxo(f.id);
-                              }}
-                            >
-                              {traduzir("Excluir")}
-                            </button>
-                          </div>
-                        ) : null}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <div className="social-numeros">
+                <Numero valor={painel.crm.directs} label="Mensagens diretas" />
+                <Numero valor={painel.crm.comentarios} label="Comentários" />
+                <Numero valor={painel.crm.storiesRespondidos} label="Respostas a stories" />
+                <Numero valor={painel.crm.mencoes} label="Menções em stories" />
+                <Numero valor={painel.crm.reacoes} label="Reações" />
+              </div>
             )}
+            {/*
+              O QUE A META INFORMA (alcance, visitas ao perfil) fica no painel, e não aqui. São
+              números de outra procedência e outra confiabilidade: dependem de permissão, de tipo
+              de conta e da API estar de pé. Lado a lado com os nossos, na tela de abertura, os
+              dois pareceriam a mesma coisa.
+            */}
           </section>
         </div>
       </div>

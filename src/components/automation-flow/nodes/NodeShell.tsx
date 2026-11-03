@@ -4,7 +4,7 @@ import { Handle, Position, type NodeProps } from "@xyflow/react";
 
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
 import { resumoIndicaIncompleto, resumoNo, saidasDoNo, temEntrada } from "@/lib/automation-flow/resumo";
-import type { FlowNodeCategory } from "@/lib/automation-flow/types";
+import type { FlowNode as FlowNodeDominio, FlowNodeCategory } from "@/lib/automation-flow/types";
 import { useFunis } from "@/lib/funis-context";
 import type { FlowRFNode } from "../utils";
 import { useIdioma } from "@/lib/idioma-context";
@@ -17,6 +17,7 @@ import {
   IconEquipe,
   IconLampada,
   IconPlug,
+  IconInstagram,
   IconRamificacao,
   IconRelogio,
 } from "@/components/icons";
@@ -48,6 +49,30 @@ const NOME_CATEGORIA: Record<FlowNodeCategory, string> = {
 };
 
 /**
+ * O TEXTO QUE A PESSOA DO OUTRO LADO VAI VER, quando o bloco manda um.
+ *
+ * O resumo do nó serve pra outra coisa: ele descreve o bloco ("texto · Canal: instagram", "2
+ * opções"), entre aspas e truncado. Quem monta uma automação de Instagram precisa conferir o
+ * contrário — a mensagem como ela chega no Direct. Por isso a bolha usa o texto CRU, com as
+ * quebras de linha que foram escritas, e devolve `null` quando o bloco não manda texto nenhum
+ * (uma espera, uma condição, uma etiqueta): aí o resumo continua sendo o que se mostra.
+ */
+function textoDaMensagem(node: FlowNodeDominio): string | null {
+  const d = (node.data ?? {}) as Record<string, unknown>;
+  const campo =
+    node.type === "mensagem_texto" || node.type === "mensagem_botoes" || node.type === "mensagem_lista"
+      ? d.texto
+      : node.type === "mensagem_imagem" ||
+          node.type === "mensagem_video" ||
+          node.type === "mensagem_audio" ||
+          node.type === "mensagem_documento"
+        ? d.legenda
+        : null;
+  const texto = typeof campo === "string" ? campo.trim() : "";
+  return texto ? texto : null;
+}
+
+/**
  * Renderizador único de nó, reaproveitado pelos 8 componentes registrados em
  * `nodeTypes` (um por `FlowNodeCategory`). A diferença visual/comportamental
  * entre tipos dentro da mesma categoria vem só de `saidasDoNo`/`resumoNo`,
@@ -55,7 +80,17 @@ const NOME_CATEGORIA: Record<FlowNodeCategory, string> = {
  */
 export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
   const { t: traduzir } = useIdioma();
-  const { flowNode, problemas, saidasConectadas, caminhosConvergindo, ordemNarrativa, explicacao, onAdicionarApos } = data;
+  const { flowNode, problemas, saidasConectadas, caminhosConvergindo, ordemNarrativa, explicacao, onAdicionarApos, area } =
+    data;
+  /*
+   * A CARA DO INSTAGRAM só no Social Seller, e só nos blocos que falam com a rede.
+   *
+   * Gatilho e mensagem são os dois que tocam o Direct: um recebe o evento, o outro manda o texto.
+   * Uma condição, uma espera ou uma etiqueta acontecem dentro do CRM e não têm nada de Instagram
+   * — marcá-las com a marca da rede faria a marca querer dizer "bloco", e aí ela não diria nada.
+   */
+  const caraDoInstagram = area === "social" && (flowNode.category === "gatilho" || flowNode.category === "mensagem");
+  const bolha = area === "social" ? textoDaMensagem(flowNode) : null;
   const { funis } = useFunis();
   const bloco = BLOCOS_DISPONIVEIS.find((b) => b.tipo === flowNode.type);
   const saidas = saidasDoNo(flowNode);
@@ -90,8 +125,9 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
       ) : null}
 
       <div className="flow-node-header">
-        <span className="flow-node-icon" aria-hidden="true">
+        <span className={`flow-node-icon${caraDoInstagram ? " is-instagram" : ""}`} aria-hidden="true">
           {(() => {
+            if (caraDoInstagram) return <IconInstagram width={16} height={16} />;
             const IconeCategoria = ICONE_CATEGORIA[flowNode.category];
             return <IconeCategoria width={14} height={14} />;
           })()}
@@ -112,20 +148,27 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
         ) : null}
       </div>
 
-      {(() => {
-        const resumo = resumoNo(flowNode, funis);
-        const incompleto = resumoIndicaIncompleto(resumo);
-        return (
-          <div className={`flow-node-body${incompleto ? " flow-node-body-incompleto" : ""}`}>
-            {incompleto ? (
-              <span aria-hidden="true" style={{ display: "inline-flex", verticalAlign: "-2px", marginRight: 4 }}>
-                <IconAlerta width={12} height={12} />
-              </span>
-            ) : null}
-            {resumo}
-          </div>
-        );
-      })()}
+      {bolha ? (
+        /* A mensagem como ela chega no Direct: bolha, texto cru, quebras de linha preservadas. */
+        <div className="flow-node-body">
+          <p className="flow-bolha">{bolha}</p>
+        </div>
+      ) : (
+        (() => {
+          const resumo = resumoNo(flowNode, funis);
+          const incompleto = resumoIndicaIncompleto(resumo);
+          return (
+            <div className={`flow-node-body${incompleto ? " flow-node-body-incompleto" : ""}`}>
+              {incompleto ? (
+                <span aria-hidden="true" style={{ display: "inline-flex", verticalAlign: "-2px", marginRight: 4 }}>
+                  <IconAlerta width={12} height={12} />
+                </span>
+              ) : null}
+              {resumo}
+            </div>
+          );
+        })()
+      )}
 
       {explicacao ? (
         <div className="flow-node-explicacao">
@@ -179,6 +222,9 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
         </div>
       ) : saidas.length === 1 ? (
         <div className="flow-node-saida-unica">
+          {/* "Próximo passo" escrito: o ponto de conexão sozinho não diz o que ele é, e quem
+              nunca montou um fluxo não descobre que se arrasta dali pra ligar no bloco seguinte. */}
+          <span className="flow-node-proximo">{traduzir("Próximo passo")}</span>
           <Handle type="source" position={Position.Bottom} className="flow-handle" />
           {!(saidasConectadas?.has("__default__") ?? false) && onAdicionarApos ? (
             <button
