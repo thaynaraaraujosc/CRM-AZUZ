@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { Topbar } from "@/components/ui";
-import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
 import { AbasSocial } from "@/components/social/AbasSocial";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
@@ -138,13 +137,12 @@ export default function AutomacoesSociaisPage() {
   return (
     <>
       <Topbar
-        title="Instagram"
+        title="Social Seller"
         sub={traduzir("Robôs que respondem comentário, Direct, story e menção")}
         actions={
-          <button type="button" className="btn primary" onClick={() => router.push("/automacoes/social/novo")}>{traduzir("+ Criar automação")}</button>
+          <button type="button" className="btn primary" onClick={() => router.push("/social-seller/novo")}>{traduzir("+ Criar automação")}</button>
         }
       />
-      <AbasAutomacoes />
 
       <div className="content social-layout">
         <AbasSocial />

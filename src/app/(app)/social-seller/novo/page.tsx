@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { Topbar } from "@/components/ui";
-import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { MODELOS_SOCIAIS } from "@/lib/social/modelos-rapidos";
 import { IconAutomacoes, IconDoc, IconSparkle } from "@/components/icons";
@@ -51,12 +50,11 @@ export default function NovaAutomacaoSocialPage() {
 
   return (
     <>
-      <Topbar title={traduzir("Criar automação")} sub="Instagram" />
-      <AbasAutomacoes />
+      <Topbar title={traduzir("Criar automação")} sub="Social Seller" />
 
       <div className="content">
         <nav className="social-migalhas" aria-label={traduzir("Onde você está")}>
-          <button type="button" className="link" onClick={() => router.push("/automacoes/social")}>
+          <button type="button" className="link" onClick={() => router.push("/social-seller")}>
             {traduzir("Automações")}
           </button>
           <span aria-hidden="true">›</span>

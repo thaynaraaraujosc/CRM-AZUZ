@@ -21,6 +21,7 @@ import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-positio
 import {
   IconAutomacoes,
   IconInstagram,
+  IconRespostaRapida,
   IconWhatsApp,
   IconConfiguracoes,
   IconContatos,
@@ -73,6 +74,22 @@ export const navEntries: NavEntry[] = [
   { href: "/contatos", label: "Contatos", Icon: IconContatos },
   ...gestaoAtividadeItens,
   { href: "/automacoes", label: "Automações", Icon: IconAutomacoes },
+  /*
+   * O SOCIAL SELLER SAIU DE DENTRO DE AUTOMAÇÕES, e virou item próprio aqui embaixo dela.
+   *
+   * Era uma ABA de Automações, e isso colocava um módulo com menu lateral próprio (automações,
+   * resposta automática, templates, painel, execuções) dentro de uma aba de outro módulo: quem
+   * entrava em Automações pra mexer no funil caía numa tela com outra navegação dentro. São dois
+   * trabalhos — automatizar o atendimento do Direct e automatizar a esteira comercial —, feitos
+   * por gente diferente, em momentos diferentes.
+   *
+   * Fica logo ABAIXO de Automações, e não em outro grupo: a vizinhança é o que diz que os dois são
+   * da mesma família, agora sem um morar dentro do outro.
+   */
+  // Ícone de balão com linhas, e não o do Instagram: o item do Instagram já está lá em cima (a
+  // caixa de entrada), e dois itens com o MESMO ícone num menu de dez é o tipo de detalhe que faz
+  // a pessoa clicar no errado. O balão diz o que este módulo faz — responder sozinho.
+  { href: "/social-seller", label: "Social Seller", Icon: IconRespostaRapida },
   { href: "/azuz-ia", label: "Azuz IA", Icon: IconSparkle },
   { href: "/configuracoes", label: "Configurações", Icon: IconConfiguracoes },
 ];

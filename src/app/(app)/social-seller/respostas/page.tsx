@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 
 import { Topbar } from "@/components/ui";
-import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
 import { AbasSocial } from "@/components/social/AbasSocial";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { useIdioma } from "@/lib/idioma-context";
@@ -105,7 +104,6 @@ export default function RespostasAutomaticasPage() {
           </button>
         }
       />
-      <AbasAutomacoes />
 
       <div className="content social-layout">
         <AbasSocial />

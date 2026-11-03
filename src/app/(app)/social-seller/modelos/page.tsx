@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
 import { Topbar } from "@/components/ui";
-import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
 import { AbasSocial } from "@/components/social/AbasSocial";
 import { MODELOS_AZUZ, type ModeloAzuz } from "@/lib/social/modelos-azuz";
 import { LIMITES } from "@/lib/templates/regras";
@@ -78,7 +77,7 @@ export default function ModelosSociaisPage() {
   return (
     <>
       <Topbar
-        title={traduzir("Modelos do Instagram")}
+        title={traduzir("Modelos do Social Seller")}
         sub={traduzir("Mensagens reutilizáveis do Direct")}
         actions={
           <Link className="btn primary" href="/automacoes/templates">
@@ -86,7 +85,6 @@ export default function ModelosSociaisPage() {
           </Link>
         }
       />
-      <AbasAutomacoes />
 
       <div className="content social-layout">
         <AbasSocial />

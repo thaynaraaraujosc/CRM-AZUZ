@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 
 import { Topbar } from "@/components/ui";
-import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
 import { AbasSocial } from "@/components/social/AbasSocial";
 import { TabelaExecucoes } from "@/components/automacoes/TabelaExecucoes";
 import type { PainelExecucoes } from "@/app/api/automacoes/execucoes/route";
@@ -60,7 +59,6 @@ export default function ExecucoesSociaisPage() {
           </div>
         }
       />
-      <AbasAutomacoes />
 
       <div className="content social-layout">
         <AbasSocial />

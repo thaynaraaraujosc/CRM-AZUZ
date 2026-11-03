@@ -14,7 +14,7 @@ import {
 } from "@/components/icons";
 
 /**
- * Menu lateral do módulo Instagram.
+ * Menu lateral do módulo Social Seller (o antigo "Instagram" dentro de Automações).
  *
  * A ordem é a do trabalho, não a alfabética. Primeiro o que se faz todo dia: montar automação,
  * escrever resposta automática, guardar modelo. Depois, separado por uma linha, o que se
@@ -26,14 +26,14 @@ import {
  * a escolher por qual entrar, e a resposta certa nunca é óbvia.
  */
 const PRINCIPAIS = [
-  { href: "/automacoes/social", label: "Automações", exato: true, Icon: IconAutomacoes },
-  { href: "/automacoes/social/respostas", label: "Resposta automática", exato: false, Icon: IconEnviar },
-  { href: "/automacoes/social/modelos", label: "Meus Templates", exato: false, Icon: IconDoc },
+  { href: "/social-seller", label: "Automações", exato: true, Icon: IconAutomacoes },
+  { href: "/social-seller/respostas", label: "Resposta automática", exato: false, Icon: IconEnviar },
+  { href: "/social-seller/modelos", label: "Meus Templates", exato: false, Icon: IconDoc },
 ] as const;
 
 const CONSULTA = [
-  { href: "/automacoes/social/painel", label: "Painel", exato: false, Icon: IconTrafego },
-  { href: "/automacoes/social/execucoes", label: "Execuções", exato: false, Icon: IconRelatorios },
+  { href: "/social-seller/painel", label: "Painel", exato: false, Icon: IconTrafego },
+  { href: "/social-seller/execucoes", label: "Execuções", exato: false, Icon: IconRelatorios },
 ] as const;
 
 function Item({
@@ -63,7 +63,7 @@ export function AbasSocial() {
   const { t: traduzir } = useIdioma();
   const pathname = usePathname() ?? "";
   return (
-    <nav className="social-menu" aria-label={traduzir("Seções do Instagram")}>
+    <nav className="social-menu" aria-label={traduzir("Seções do Social Seller")}>
       {PRINCIPAIS.map((i) => (
         <Item key={i.href} {...i} pathname={pathname} />
       ))}

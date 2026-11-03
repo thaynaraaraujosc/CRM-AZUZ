@@ -12,9 +12,14 @@ import { useIdioma } from "@/lib/idioma-context";
  * gatilhos. Agora é uma entrada só, e a escolha de olhar por etapa ou por robô virou uma troca de
  * visão dentro da própria tela, onde ela não parece outro produto.
  *
- * "Instagram" entra aqui pelo mesmo raciocínio, e não como item separado no menu lateral:
- * automação de rede social é automação. Ter uma entrada própria no menu principal recriaria a
- * impressão de dois produtos que a unificação das abas acabou de desfazer.
+ * "Instagram" MOROU AQUI, e saiu em 03/11/2026 pra virar o Social Seller, no menu lateral.
+ *
+ * O raciocínio antigo era que automação de rede social é automação, e que uma entrada própria no
+ * menu recriaria a impressão de dois produtos. O uso desmentiu: o Social Seller tem menu próprio
+ * (automações, resposta automática, templates, painel, execuções), e um módulo com menu lateral
+ * dentro de uma ABA de outro módulo é que parecia dois produtos — a pessoa entrava em Automações
+ * pra mexer no funil e caía numa tela com outra navegação dentro. Automatizar o atendimento do
+ * Direct e automatizar a esteira comercial são dois trabalhos, feitos por gente diferente.
  *
  * "Disparo em massa" era o item "Ações" do menu principal. Ele saiu de lá porque mandar mensagem
  * pra muita gente de uma vez é um tipo de automação (a mais simples), e ter dois lugares no menu
@@ -26,7 +31,6 @@ import { useIdioma } from "@/lib/idioma-context";
  */
 const ABAS = [
   { href: "/automacoes", label: "Automatizar funil", exato: true },
-  { href: "/automacoes/social", label: "Instagram", exato: false },
   { href: "/automacoes/templates", label: "Templates", exato: false },
   { href: "/automacoes/disparos", label: "Disparo em massa", exato: false },
 ] as const;

@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 
 import { Topbar } from "@/components/ui";
-import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
 import { AbasSocial } from "@/components/social/AbasSocial";
 import { useIdioma } from "@/lib/idioma-context";
 import type { PainelSocial } from "@/app/api/social/metricas/route";
@@ -65,7 +64,7 @@ export default function SocialPage() {
   return (
     <>
       <Topbar
-        title={traduzir("Social")}
+        title={traduzir("Social Seller")}
         sub={traduzir("Instagram: o que chegou, o que os robôs fizeram e o que a Meta informa")}
         actions={
           <div className="social-periodo">
@@ -82,7 +81,6 @@ export default function SocialPage() {
           </div>
         }
       />
-      <AbasAutomacoes />
 
       <div className="content social-layout">
         <AbasSocial />
@@ -219,10 +217,10 @@ export default function SocialPage() {
           )}
 
           <div className="social-atalhos mt16">
-            <Link className="btn primary" href="/automacoes/social">
+            <Link className="btn primary" href="/social-seller">
               {traduzir("Abrir automações")}
             </Link>
-            <Link className="btn" href="/automacoes/social/execucoes">
+            <Link className="btn" href="/social-seller/execucoes">
               {traduzir("Ver execuções e erros")}
             </Link>
             <Link className="btn" href="/instagram/contatos">
