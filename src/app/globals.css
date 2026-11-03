@@ -1410,8 +1410,16 @@ table {
    clique, e quem usa não descobre que dá pra clicar. Todo botão do CRM tem corpo — o que muda
    entre as variantes é o PESO, não a existência. A hierarquia fica: escuro (principal), índigo
    (acento), branco com borda (secundário), cinza claro (fantasma). */
+/*
+ * O FUNDO SAI DO TOKEN, e não de um cinza fixo.
+ *
+ * Era `#f1f2f5` com `color: var(--ink)`. No tema claro, cinza claro com tinta escura; no escuro,
+ * o fundo continuava cinza claro e a tinta virava BRANCA — texto branco sobre quase branco, em
+ * todo botão discreto do produto. `--surface-2` é o mesmo cinza no claro e escurece no escuro,
+ * então o par fundo/tinta se mantém legível nos dois.
+ */
 .btn.ghost {
-  background: #f1f2f5;
+  background: var(--surface-2);
   border-color: var(--line);
   color: var(--ink);
   box-shadow: none;
@@ -1424,7 +1432,7 @@ table {
 }
 
 .btn.ghost:hover {
-  background: #e7e9ee;
+  background: var(--surface-active);
   border-color: var(--line-strong);
   color: var(--ink);
   box-shadow: var(--shadow-xs);
@@ -20000,7 +20008,7 @@ table.tbl .name-cell .r {
 /*
  * A TELA DE RESUMO DO SOCIAL SELLER.
  *
- * Seções com título e um atalho à direita, em vez de uma pilha de cartões iguais: cada seção
+ * Seções com título e um botão à direita, em vez de uma pilha de cartões iguais: cada seção
  * responde a uma pergunta diferente ("como foi?", "por onde começo?", "o que chegou?"), e um
  * cartão por pergunta deixaria tudo com o mesmo peso.
  */
@@ -20010,20 +20018,27 @@ table.tbl .name-cell .r {
 
 .ss-saudacao h2 {
   margin: 0;
-  font-size: 22px;
+  font-size: 23px;
   line-height: 1.25;
   font-weight: 650;
+  letter-spacing: -0.01em;
 }
 
-/* O nome em acento: é o único pedaço da frase que muda de pessoa pra pessoa. */
+/* O nome em acento: é o único pedaço da frase que muda de pessoa pra pessoa. No claro vai no azul
+   vivo da marca — `--blue` lá é o navy, e navy sobre preto-azulado não se distingue do resto da
+   frase; no escuro `--blue` já é o dourado, que destaca sozinho. */
 .ss-saudacao h2 span {
-  color: var(--blue);
+  color: #2e6bff;
   text-transform: uppercase;
   letter-spacing: 0.01em;
 }
 
+:root[data-theme="dark"] .ss-saudacao h2 span {
+  color: var(--blue);
+}
+
 .ss-secao {
-  margin-bottom: var(--space-5, var(--space-4));
+  margin-bottom: var(--space-4);
   padding-bottom: var(--space-4);
   border-bottom: 1px solid var(--line-soft);
 }
@@ -20048,9 +20063,286 @@ table.tbl .name-cell .r {
   font-weight: 650;
 }
 
+/* Botão de atalho no canto da seção: menor que o botão normal, porque é um desvio e não a ação
+   principal da tela. */
+.ss-secao-topo .btn.pequeno {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+/*
+ * O SELETOR DE PERÍODO COMO UM CONTROLE SÓ.
+ *
+ * Eram três botões soltos com borda cada um, e três caixas lado a lado leem como três ações
+ * independentes — não como "escolha uma destas". Num trilho cinza com a escolhida em pastilha
+ * clara, a relação entre as três fica desenhada.
+ */
+.ss-seg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--line-soft);
+}
+
+.ss-seg-item {
+  border: 0;
+  background: none;
+  padding: 5px 14px;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+
+.ss-seg-item:hover {
+  color: var(--ink);
+}
+
+.ss-seg-item.on {
+  background: var(--surface);
+  color: var(--blue);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+/* De que janela são os números. Sem isto, "48 interações" não diz 48 em quanto tempo — e o
+   seletor acima some do campo de visão assim que a pessoa rola. */
+.ss-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 var(--space-3);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.ss-meta strong {
+  font-weight: 650;
+  color: var(--ink);
+}
+
+/*
+ * OS MÍNIMOS SÃO APERTADOS DE PROPÓSITO: 165px pros quatro, 135px pros cinco.
+ *
+ * Com 190px, quatro números num conteúdo de ~770px viravam três por linha e um órfão embaixo,
+ * metade da tela vazia ao lado dele. São números que se leem juntos; cabendo a fileira inteira,
+ * a comparação entre eles é de relance. Em tela estreita o `auto-fit` dobra sozinho.
+ */
+.ss-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+  gap: var(--space-3);
+}
+
+.ss-tiles.compactos {
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+}
+
+.ss-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  background: var(--surface);
+  transition: border-color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.ss-tile:hover {
+  border-color: color-mix(in srgb, var(--blue) 35%, var(--border));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* O ícone numa pastilha, e não solto: solto ele briga com o número por atenção, e o número é o
+   que a pessoa veio ver. */
+.ss-tile-icone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  margin-bottom: 4px;
+  border-radius: var(--radius-2);
+  background: var(--blue-soft-2);
+  color: var(--blue);
+}
+
+.ss-tile strong {
+  font-size: 24px;
+  line-height: 1.1;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.ss-tile-label {
+  font-size: 12px;
+  font-weight: 550;
+}
+
+.ss-tile em {
+  font-size: 10px;
+  font-style: normal;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+/*
+ * A TRILHA DE PRIMEIROS PASSOS: o único bloco colorido da tela.
+ *
+ * Chapado no navy da marca, e não em gradiente. A referência que inspirou a tela usa um degradê
+ * roxo-azul de ponta a ponta; o produto evita gradiente pesado, e o efeito pretendido — "este
+ * cartão é diferente de todos os outros" — se consegue igual com uma cor só, que ainda por cima
+ * é a da identidade.
+ */
+.ss-passos {
+  margin-bottom: var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--radius-3);
+  background: #002037;
+  color: #fff;
+}
+
+:root[data-theme="dark"] .ss-passos {
+  background: var(--navy-raised-2);
+  border: 1px solid var(--line);
+}
+
+.ss-passos-topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.ss-passos-topo strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.ss-passos-topo p {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+/* O botão aponta pro PRÓXIMO passo em aberto, não pro primeiro da lista: quem já conectou a conta
+   não quer "Conectar" como ação sugerida. */
+.ss-passos-botao {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--acao);
+  color: var(--acao-texto);
+  font-size: 12px;
+  font-weight: 650;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.ss-passos-botao:hover {
+  background: var(--acao-hover);
+}
+
+.ss-trilha {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+  gap: var(--space-3);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: passo;
+}
+
+.ss-passo {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 2px solid rgba(255, 255, 255, 0.16);
+  counter-increment: passo;
+}
+
+.ss-passo.feito {
+  border-top-color: var(--acao);
+}
+
+/* A marca é número enquanto o passo está em aberto e vira ✓ quando está feito: assim a trilha se
+   lê como progresso, e não como uma lista de quatro itens iguais. */
+.ss-passo-marca {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.28);
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.ss-passo-marca::before {
+  content: counter(passo);
+}
+
+.ss-passo.feito .ss-passo-marca {
+  border-color: var(--acao);
+  background: var(--acao);
+  color: var(--acao-texto);
+}
+
+.ss-passo.feito .ss-passo-marca::before {
+  content: none;
+}
+
+.ss-passo.agora .ss-passo-marca {
+  border-color: #fff;
+  color: #fff;
+}
+
+.ss-passo-textos {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ss-passo-textos strong {
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.3;
+}
+
+.ss-passo-textos > span {
+  font-size: 11px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+
+
+.ss-passo.feito .ss-passo-textos strong,
+.ss-passo.feito .ss-passo-textos > span {
+  color: rgba(255, 255, 255, 0.5);
+}
+
 .ss-objetivos {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
   gap: var(--space-3);
 }
 
@@ -20058,9 +20350,8 @@ table.tbl .name-cell .r {
    escolher de novo é um clique a mais no momento em que a pessoa está decidindo se vale a pena. */
 .ss-objetivo {
   display: flex;
-  flex-direction: column;
   align-items: flex-start;
-  gap: 6px;
+  gap: 10px;
   padding: var(--space-3);
   border: 1px solid var(--border);
   border-radius: var(--radius-2);
@@ -20079,32 +20370,67 @@ table.tbl .name-cell .r {
   transform: translateY(1px);
 }
 
-.ss-objetivo strong {
+.ss-objetivo-icone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-2);
+  background: var(--surface-2);
+}
+
+.ss-objetivo-textos {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.ss-objetivo-textos strong {
   font-size: 13px;
   line-height: 1.3;
 }
 
-.ss-objetivo span {
+.ss-objetivo-textos > span {
   font-size: 11px;
   line-height: 1.45;
   color: var(--text-muted);
 }
 
-.ss-desconectado {
+/* Faixa de aviso com ação: o que está impedindo a tela de funcionar, e o botão que resolve. */
+.ss-faixa {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-3);
   margin-bottom: var(--space-4);
+  padding: var(--space-3);
+  border-radius: var(--radius-2);
+  border: 1px solid var(--border);
+  background: var(--surface);
 }
 
-.ss-desconectado > div {
+.ss-faixa.alerta {
+  border-color: color-mix(in srgb, var(--danger) 30%, transparent);
+  background: color-mix(in srgb, var(--danger) 7%, transparent);
+}
+
+.ss-faixa > div {
   flex: 1 1 260px;
   min-width: 0;
 }
 
-.ss-desconectado .hint {
+.ss-faixa strong {
+  font-size: 13px;
+}
+
+.ss-faixa p {
   margin: 2px 0 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-muted);
 }
 
 /* Barra de busca e filtros, na ordem em que a pessoa pensa: procurar, filtrar, escolher a visão. */
