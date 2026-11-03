@@ -2,7 +2,17 @@
 
 import { useMemo, useState } from "react";
 
-import { IconClose } from "@/components/icons";
+import {
+  IconAutomacoes,
+  IconBandeira,
+  IconClose,
+  IconConfiguracoes,
+  IconConversas,
+  IconEquipe,
+  IconPlug,
+  IconRamificacao,
+  IconRelogio,
+} from "@/components/icons";
 import { BLOCOS_DISPONIVEIS, GRUPOS_BIBLIOTECA } from "@/lib/automation-flow/blocos";
 import { blocoValeNaArea, grupoValeNaArea, type AreaAutomacao } from "@/lib/canais/capacidades";
 import { sugestoesApos } from "@/lib/automation-flow/sugestoes";
@@ -20,6 +30,18 @@ import { useIdioma } from "@/lib/idioma-context";
  * possibilidades óbvias depois do bloco atual. A lista completa fica logo abaixo, agrupada, pra
  * quem quer outra coisa. Uma busca resolve os dois casos quando a pessoa já sabe o nome.
  */
+/** O mesmo ícone que o bloco vai ter no canvas: escolher e reconhecer depois é o mesmo desenho. */
+const ICONE_CATEGORIA: Record<FlowNodeCategory, typeof IconAutomacoes> = {
+  gatilho: IconAutomacoes,
+  condicao: IconRamificacao,
+  mensagem: IconConversas,
+  espera: IconRelogio,
+  acao: IconConfiguracoes,
+  humano: IconEquipe,
+  integracao: IconPlug,
+  fim: IconBandeira,
+};
+
 export function PainelProximoPasso({
   tipoAnterior,
   categoriaAnterior,
@@ -28,6 +50,7 @@ export function PainelProximoPasso({
   onEscolher,
   onFollowUp,
   onFechar,
+  compacto,
 }: {
   tipoAnterior?: FlowNodeType;
   categoriaAnterior?: FlowNodeCategory;
@@ -39,6 +62,15 @@ export function PainelProximoPasso({
   /** O par pronto de espera + cobrança. É o caminho mais pedido depois de uma pergunta. */
   onFollowUp: () => void;
   onFechar: () => void;
+  /**
+   * A VERSÃO DO SOCIAL SELLER: uma caixinha flutuante, não uma gaveta de altura cheia.
+   *
+   * Uma gaveta é a forma certa no funil, onde a lista tem dez grupos e sessenta blocos e se passa
+   * um tempo procurando. Aqui são poucos blocos e a escolha é de um segundo: a caixa aparece ao
+   * lado do canvas, com o fluxo inteiro à vista atrás dela, e a lista vai corrida — sem cabeçalho
+   * de grupo, que com três blocos por grupo ocupa mais linha que os próprios blocos.
+   */
+  compacto?: boolean;
 }) {
   const { t: traduzir } = useIdioma();
   const [busca, setBusca] = useState("");
@@ -72,6 +104,59 @@ export function PainelProximoPasso({
       blocos: filtrados.filter((b) => b.grupo === grupo.id),
     })).filter((g) => g.blocos.length);
   }, [candidatos, termo]);
+
+  /* Corrida e sem cabeçalho de grupo: ver `compacto`. */
+  const corridos = useMemo(() => porGrupo.flatMap((g) => g.blocos), [porGrupo]);
+
+  if (compacto) {
+    return (
+      <aside className="pp-caixa" role="dialog" aria-label={traduzir("Adicionar bloco")}>
+        <div className="pp-busca">
+          <input
+            className="input"
+            placeholder={traduzir("Buscar")}
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            autoFocus
+          />
+          <button type="button" className="pp-fechar" aria-label={traduzir("Fechar")} onClick={onFechar}>
+            <IconClose width={13} height={13} />
+          </button>
+        </div>
+
+        <div className="pp-lista">
+          {sugeridos.length ? (
+            <button type="button" className="pp-item" onClick={onFollowUp}>
+              <span className="pp-item-icone">
+                <IconRelogio width={16} height={16} />
+              </span>
+              <span className="pp-item-textos">
+                <strong>{traduzir("Adicionar follow-up")}</strong>
+                <span>{traduzir("Espera 2 horas e, se não vier resposta, manda uma cobrança.")}</span>
+              </span>
+            </button>
+          ) : null}
+
+          {corridos.map((bloco) => {
+            const Icone = ICONE_CATEGORIA[bloco.categoria];
+            return (
+              <button key={bloco.tipo} type="button" className="pp-item" onClick={() => onEscolher(bloco.tipo)}>
+                <span className="pp-item-icone">
+                  <Icone width={16} height={16} />
+                </span>
+                <span className="pp-item-textos">
+                  <strong>{bloco.label}</strong>
+                  {bloco.descricao ? <span>{bloco.descricao}</span> : null}
+                </span>
+              </button>
+            );
+          })}
+
+          {!corridos.length ? <p className="hint pp-vazio">{traduzir("Nada com esse nome.")}</p> : null}
+        </div>
+      </aside>
+    );
+  }
 
   return (
     <aside className="proximo-passo" role="dialog" aria-label={traduzir("Adicionar próximo passo")}>

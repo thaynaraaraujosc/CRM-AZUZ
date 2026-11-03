@@ -17,7 +17,9 @@ import {
   IconEquipe,
   IconLampada,
   IconPlug,
+  IconDuplicar,
   IconInstagram,
+  IconLixeira,
   IconRaio,
   IconRamificacao,
   IconRelogio,
@@ -81,7 +83,7 @@ function textoDaMensagem(node: FlowNodeDominio): string | null {
  */
 export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
   const { t: traduzir } = useIdioma();
-  const { flowNode, problemas, saidasConectadas, caminhosConvergindo, ordemNarrativa, explicacao, onAdicionarApos, area } =
+  const { flowNode, problemas, saidasConectadas, caminhosConvergindo, ordemNarrativa, explicacao, onAdicionarApos, area, aoDuplicar, aoRemover } =
     data;
   /*
    * A CARA DO INSTAGRAM só no Social Seller, e só nos blocos que falam com a rede.
@@ -121,6 +123,44 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
         estado está sem gastar uma linha de dentro — e num canvas com oito blocos, achar o que
         começa tudo vira um relance em vez de uma leitura.
       */}
+      {/*
+        COPIAR E APAGAR EM CIMA DO BLOCO SELECIONADO.
+        
+        Antes os dois caminhos eram o menu do botão direito e a tecla Delete — nenhum dos dois se
+        descobre olhando. Com o bloco selecionado, os dois ficam onde a pessoa acabou de clicar.
+      */}
+      {area === "social" && selected && (aoDuplicar || aoRemover) ? (
+        <div className="flow-node-ferramentas">
+          {aoDuplicar ? (
+            <button
+              type="button"
+              aria-label={traduzir("Duplicar este bloco")}
+              title={traduzir("Duplicar este bloco")}
+              onClick={(e) => {
+                e.stopPropagation();
+                aoDuplicar();
+              }}
+            >
+              <IconDuplicar width={14} height={14} />
+            </button>
+          ) : null}
+          {aoRemover ? (
+            <button
+              type="button"
+              className="perigo"
+              aria-label={traduzir("Apagar este bloco")}
+              title={traduzir("Apagar este bloco")}
+              onClick={(e) => {
+                e.stopPropagation();
+                aoRemover();
+              }}
+            >
+              <IconLixeira width={14} height={14} />
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
       {area === "social" ? (
         selected ? (
           <span className="flow-node-aba selecionado">{traduzir("Selecionado")}</span>

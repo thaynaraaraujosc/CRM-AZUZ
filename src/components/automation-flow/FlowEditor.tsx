@@ -44,6 +44,7 @@ import { Simulador } from "./Simulador";
 import { Toolbar } from "./Toolbar";
 import { ToolbarSocial } from "./ToolbarSocial";
 import { BarraFerramentasSocial } from "./BarraFerramentasSocial";
+import { ArestaSocial } from "./ArestaSocial";
 import { ListaDePassos } from "./ListaDePassos";
 import { PainelProximoPasso } from "./PainelProximoPasso";
 import { nodeTypes } from "./nodes";
@@ -115,6 +116,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const fluxo = fluxos.find((f) => f.id === fluxoId);
   // Fluxo sem área é comercial: é o que todo fluxo criado antes desta coluna é.
   const area = fluxo?.area ?? "comercial";
+  const ehSocial = area === "social";
 
   const { screenToFlowPosition, fitView, setCenter, zoomIn, zoomOut } = useReactFlow();
   const { funis } = useFunis();
@@ -375,6 +377,31 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   }
   function onNodeDragStop() {
     persist(rfNodes, rfEdges);
+  }
+
+  /** Desfaz UMA ligação, sem mexer nos blocos dos dois lados. */
+  function removerAresta(id: string) {
+    const novoEdges = rfEdges.filter((e) => e.id !== id);
+    setRfEdges(novoEdges);
+    persist(rfNodes, novoEdges);
+  }
+
+  /** Copia UM bloco, pelo botão em cima dele. `duplicarSelecionados` cuida da seleção múltipla. */
+  function duplicarUm(nodeId: string) {
+    const origem = rfNodes.find((n) => n.id === nodeId);
+    if (!origem) return;
+    const id = novoIdNo();
+    const pos = { x: origem.position.x + 40, y: origem.position.y + 40 };
+    const copia: FlowRFNode = {
+      id,
+      type: origem.type,
+      position: pos,
+      data: { flowNode: { ...origem.data.flowNode, id, position: pos }, problemas: [] },
+    };
+    const novoNodes = [...rfNodes, copia];
+    setRfNodes(novoNodes);
+    setSelectedNodeIds([id]);
+    persist(novoNodes, rfEdges);
   }
 
   function removerNodes(ids: string[]) {
@@ -907,9 +934,15 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           explicacao: entenderFluxoAtivo ? explicacaoDoNo(n.data.flowNode, funis) : undefined,
           onAdicionarApos: modoConstrucao ? (handleId: string | undefined) => setAcaoRapida({ nodeId: n.id, handleId }) : undefined,
           area,
+          /* Os dois botões que aparecem em cima do bloco selecionado, no Social Seller. */
+          aoDuplicar: ehSocial && modoConstrucao ? () => duplicarUm(n.id) : undefined,
+          aoRemover: ehSocial && modoConstrucao ? () => removerNodes([n.id]) : undefined,
         },
       })),
-    [rfNodes, problemasPorNode, saidasConectadasPorNode, entradasPorNode, ordemNarrativaPorNode, entenderFluxoAtivo, nodesRelacionados, modoConstrucao, funis, nodePiscando, area],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `duplicarUm` e `removerNodes` são
+    // funções recriadas a cada render; incluí-las refaria o mapa de nós em todo render, que é o
+    // oposto do que este memo existe pra evitar. Elas só leem estado no momento do clique.
+    [rfNodes, problemasPorNode, saidasConectadasPorNode, entradasPorNode, ordemNarrativaPorNode, entenderFluxoAtivo, nodesRelacionados, modoConstrucao, funis, nodePiscando, area, ehSocial],
   );
   /**
    * De qual bloco o fluxo parte: o gatilho, ou o primeiro bloco sem nada chegando nele.
@@ -976,6 +1009,17 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     [inicioDesenhado, edgesParaRenderizar],
   );
 
+  /* A lixeira do hover da ligação. Só no Social Seller: no funil a seta se apaga pela seleção. */
+  const edgeTypes = useMemo(() => ({ social: ArestaSocial }), []);
+  const edgesDesenhadas = useMemo(
+    () =>
+      ehSocial
+        ? edgesComInicio.map((e) => ({ ...e, type: "social", data: { aoApagar: removerAresta } }) as FlowRFEdge)
+        : edgesComInicio,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [edgesComInicio, ehSocial],
+  );
+
   /**
    * O fluxo como está NA TELA: o gravado, com o que foi digitado por cima.
    *
@@ -1008,8 +1052,6 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
       </div>
     );
   }
-
-  const ehSocial = area === "social";
 
   return (
     <div className={`flow-shell${ehSocial ? " flow-shell-social" : ""}`}>
@@ -1078,7 +1120,16 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
       )}
 
       <div className="flow-body">
-        {modoConstrucao ? (
+        {/*
+          NO SOCIAL SELLER NÃO HÁ BIBLIOTECA FIXA à esquerda.
+          
+          Ela é do editor do funil, onde se monta um fluxo de vinte blocos e vale ter a paleta
+          aberta o tempo todo. Aqui o bloco entra por onde a pessoa está olhando: o "+" da saída
+          do bloco anterior, ou o "+" da coluna da direita. Uma coluna fixa com dez categorias
+          rouba um terço da tela de uma automação que tem seis blocos — e a esquerda é onde o
+          painel do bloco clicado precisa abrir.
+        */}
+        {modoConstrucao && !ehSocial ? (
           <BlockLibrary
             aberta={libAberta}
             area={area}
@@ -1110,8 +1161,9 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
         >
           <ReactFlow
             nodes={nodesComInicio}
-            edges={edgesComInicio}
+            edges={edgesDesenhadas}
             nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
             /*
              * Zoom bem largo nos dois sentidos.
              *
@@ -1161,7 +1213,9 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
             fitView
             proOptions={{ hideAttribution: true }}
           >
-            <Background gap={18} />
+            {/* O pontilhado é do editor do funil. A referência do Social Seller é papel liso, e o
+                ponto a cada 18px disputa com os cartões num canvas de seis blocos. */}
+            {ehSocial ? null : <Background gap={18} />}
             {/*
               No Social Seller a coluna da direita substitui estes controles: ter os dois seria
               zoom em dois lugares, e o de baixo-à-esquerda é o que ninguém acha.
@@ -1394,6 +1448,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                 setAcaoRapida(null);
               }}
               onFechar={() => setAcaoRapida(null)}
+              compacto={ehSocial}
             />
           ) : null}
 

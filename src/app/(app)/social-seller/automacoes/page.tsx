@@ -8,7 +8,7 @@ import { AbasSocial } from "@/components/social/AbasSocial";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
 import { blocoValeNaArea, grupoDeGatilhoValeNaArea } from "@/lib/canais/capacidades";
-import { IconGrade, IconLista, IconMaisOpcoes, IconNovaPasta, IconSearch } from "@/components/icons";
+import { IconGrade, IconInstagram, IconLista, IconMaisOpcoes, IconNovaPasta, IconSearch } from "@/components/icons";
 import type { PastaSalva } from "@/app/api/automacoes-pastas/route";
 import type { ConexaoSocial } from "@/app/api/social/conexoes/route";
 import type { FluxoAutomacao } from "@/lib/automation-flow/types";
@@ -147,7 +147,7 @@ export default function AutomacoesSociaisPage() {
         title={traduzir("Automações")}
         sub="Social Seller"
         actions={
-          <button type="button" className="btn primary" onClick={() => router.push("/social-seller/novo")}>{traduzir("+ Criar automação")}</button>
+          <button type="button" className="btn ss-primario" onClick={() => router.push("/social-seller/novo")}>{traduzir("+ Criar automação")}</button>
         }
       />
 
@@ -213,7 +213,7 @@ export default function AutomacoesSociaisPage() {
             </div>
           </div>
 
-          <section className="card">
+          <section className="ssl-secao">
             <div className="social-secao-topo">
               <h3>
                 {traduzir("Pastas")} <span className="social-contador">{pastas.length}</span>
@@ -257,7 +257,7 @@ export default function AutomacoesSociaisPage() {
             )}
           </section>
 
-          <section className="card mt16">
+          <section className="ssl-secao">
             <div className="social-secao-topo">
               <h3>
                 {traduzir("Automações")} <span className="social-contador">{visiveis.length}</span>
@@ -289,94 +289,114 @@ export default function AutomacoesSociaisPage() {
                 ))}
               </div>
             ) : (
-              <table className="table social-tabela">
-                <thead>
-                  <tr>
-                    <th>{traduzir("Automação")}</th>
-                    <th>{traduzir("Gatilho")}</th>
-                    <th>{traduzir("Criado")}</th>
-                    <th>{traduzir("Última publicação")}</th>
-                    <th>{traduzir("Execuções")}</th>
-                    <th>{traduzir("Situação")}</th>
-                    <th aria-label={traduzir("Ações")} />
-                  </tr>
-                </thead>
-                <tbody>
-                  {visiveis.map((f) => (
-                    <tr key={f.id}>
-                      <td>
-                        <button
-                          type="button"
-                          className="link"
-                          onClick={() => router.push(`/automacoes/editor/${f.id}`)}
-                        >
-                          {f.nome}
-                        </button>
-                      </td>
-                      <td className="hint">{gatilhoDoFluxo(f)}</td>
-                      <td className="hint">{dataCurta(f.criadoEm)}</td>
-                      <td className="hint">{f.publicadoEm ? dataCurta(f.publicadoEm) : "—"}</td>
-                      <td>{f.execucoes}</td>
-                      <td>
-                        {f.status === "rascunho" ? (
-                          <span className="badge badge-neutral">{traduzir("Rascunho")}</span>
-                        ) : (
-                          <label className="social-toggle">
-                            <input type="checkbox" checked={f.ativa} onChange={() => alternarAtivo(f.id)} />
-                            <span>{f.ativa ? "Ativo" : "Inativo"}</span>
-                          </label>
-                        )}
-                      </td>
-                      <td style={{ textAlign: "right", position: "relative" }}>
-                        <button
-                          type="button"
-                          className="icon-btn subtle"
-                          aria-label={`Mais opções de ${f.nome}`}
-                          onClick={() => setMenuAberto(menuAberto === f.id ? null : f.id)}
-                        >
-                          <IconMaisOpcoes width={14} height={14} />
-                        </button>
-                        {menuAberto === f.id ? (
-                          <div className="social-menu-opcoes" role="menu">
-                            <button type="button" onClick={() => router.push(`/automacoes/editor/${f.id}`)}>
-                              {traduzir("Abrir")}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const copia = duplicarFluxo(f.id);
-                                setMenuAberto(null);
-                                if (copia) router.push(`/automacoes/editor/${copia.id}`);
-                              }}
-                            >
-                              {traduzir("Duplicar")}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                moverParaPasta(f.id);
-                                setMenuAberto(null);
-                              }}
-                            >
-                              {traduzir("Mover pra pasta")}
-                            </button>
-                            <button
-                              type="button"
-                              className="perigo"
-                              onClick={() => {
-                                setMenuAberto(null);
-                                if (window.confirm(traduzir('Excluir "{nome}"? Isso não volta.', { nome: f.nome }))) excluirFluxo(f.id);
-                              }}
-                            >
-                              {traduzir("Excluir")}
-                            </button>
-                          </div>
-                        ) : null}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              /*
+                UMA LISTA DE CARTÕES, e não uma tabela.
+                
+                A tabela tinha cabeçalho em caixa alta e seis colunas de larguras iguais: boa pra
+                comparar cem linhas, péssima pra quatro robôs com nomes longos. Em cartão, o nome
+                e o gatilho ficam juntos à esquerda (que é como se procura um robô), e cada número
+                leva o próprio rótulo embaixo — some o cabeçalho, e com ele a leitura em ziguezague
+                entre o topo da tabela e a linha.
+              */
+              <ul className="ssl-lista">
+                {visiveis.map((f) => (
+                  <li key={f.id} className="ssl-item">
+                    <button
+                      type="button"
+                      className="ssl-abrir"
+                      onClick={() => router.push(`/automacoes/editor/${f.id}`)}
+                    >
+                      <span className="ssl-icone" aria-hidden="true">
+                        <IconInstagram width={18} height={18} />
+                      </span>
+                      <span className="ssl-nome">
+                        <strong>{f.nome}</strong>
+                        <span className="ssl-chip">{traduzir(gatilhoDoFluxo(f))}</span>
+                      </span>
+                    </button>
+
+                    <div className="ssl-col">
+                      <strong>{dataCurta(f.criadoEm)}</strong>
+                      <span>{traduzir("Criado")}</span>
+                    </div>
+                    <div className="ssl-col">
+                      <strong>{f.publicadoEm ? dataCurta(f.publicadoEm) : "—"}</strong>
+                      <span>{traduzir("Última publicação")}</span>
+                    </div>
+                    <div className="ssl-col">
+                      <strong>{f.execucoes}</strong>
+                      <span>{traduzir("Execuções")}</span>
+                    </div>
+
+                    <div className="ssl-situacao">
+                      {f.status === "rascunho" ? (
+                        <span className="badge badge-neutral">{traduzir("Rascunho")}</span>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={f.ativa}
+                            aria-label={`${f.ativa ? "Pausar" : "Ligar"} ${f.nome}`}
+                            className={`ssl-switch${f.ativa ? " on" : ""}`}
+                            onClick={() => alternarAtivo(f.id)}
+                          >
+                            <span className="ssl-switch-bola" />
+                          </button>
+                          <span>{f.ativa ? traduzir("Ativo") : traduzir("Inativo")}</span>
+                        </>
+                      )}
+                    </div>
+
+                    <div className="ssl-acoes">
+                      <button
+                        type="button"
+                        className="icon-btn subtle"
+                        aria-label={`Mais opções de ${f.nome}`}
+                        onClick={() => setMenuAberto(menuAberto === f.id ? null : f.id)}
+                      >
+                        <IconMaisOpcoes width={14} height={14} />
+                      </button>
+                      {menuAberto === f.id ? (
+                        <div className="social-menu-opcoes" role="menu">
+                          <button type="button" onClick={() => router.push(`/automacoes/editor/${f.id}`)}>
+                            {traduzir("Abrir")}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const copia = duplicarFluxo(f.id);
+                              setMenuAberto(null);
+                              if (copia) router.push(`/automacoes/editor/${copia.id}`);
+                            }}
+                          >
+                            {traduzir("Duplicar")}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              moverParaPasta(f.id);
+                              setMenuAberto(null);
+                            }}
+                          >
+                            {traduzir("Mover pra pasta")}
+                          </button>
+                          <button
+                            type="button"
+                            className="perigo"
+                            onClick={() => {
+                              setMenuAberto(null);
+                              if (window.confirm(traduzir('Excluir "{nome}"? Isso não volta.', { nome: f.nome }))) excluirFluxo(f.id);
+                            }}
+                          >
+                            {traduzir("Excluir")}
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                  </li>
+                ))}
+              </ul>
             )}
           </section>
         </div>

@@ -36,6 +36,9 @@ export type FlowRFNodeData = {
    * conferir, olhando, o que a pessoa do outro lado vai receber.
    */
   area?: AreaAutomacao;
+  /** Copiar e apagar ESTE bloco, pelos dois botões que aparecem em cima dele quando selecionado. */
+  aoDuplicar?: () => void;
+  aoRemover?: () => void;
 };
 
 /**
@@ -45,7 +48,13 @@ export type FlowRFNodeData = {
  * precisa existir aqui só porque o React Flow tipa o nó pelo nome do componente que o desenha.
  */
 export type FlowRFNode = Node<FlowRFNodeData, FlowNodeCategory | "inicio">;
-export type FlowRFEdge = Edge<Record<string, never>>;
+/**
+ * A aresta carrega `aoApagar` no `data` — a lixeira que aparece ao passar o mouse por cima dela
+ * (ver `ArestaSocial`). Era `Record<string, never>`, que é "nada aqui dentro": o componente de
+ * aresta não recebe props soltas, e o jeito do React Flow de entregar um callback pra ele é o
+ * `data` da própria aresta.
+ */
+export type FlowRFEdge = Edge<{ aoApagar?: (id: string) => void }>;
 
 export function domainNodesToRF(nodes: FlowNode[]): FlowRFNode[] {
   return nodes.map((n) => ({
