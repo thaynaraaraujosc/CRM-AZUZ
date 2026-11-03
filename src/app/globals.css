@@ -2058,6 +2058,19 @@ table {
   white-space: nowrap;
 }
 
+/*
+ * Etiqueta de ATENÇÃO: algo que impede a coisa de funcionar, dito sem susto.
+ *
+ * Existe porque a alternativa era uma caixa vermelha de duas linhas, e num estado que é o NORMAL
+ * de quem ainda não ligou nada — quatro de cinco formulários — quatro caixas vermelhas empilhadas
+ * leem como quatro defeitos. A explicação inteira fica no corpo, ao abrir a linha.
+ */
+.pill.alerta {
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 30%, transparent);
+}
+
 /* Etiqueta de estado é texto de 9,5px: no azul padrão sobre o azul-suave dava 4,17:1, abaixo do
    mínimo. O azul escuro da marca resolve sem trocar a cor da etiqueta. */
 .pill.on {
@@ -20994,25 +21007,6 @@ table.tbl .name-cell .r {
  * pra agência (uma tem dois, outra tem vinte), e um número fixo de colunas deixaria metade da tela
  * vazia num caso e apertaria no outro.
  */
-.fflow-grade {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: var(--space-3);
-  margin-top: var(--space-3);
-}
-
-.fflow-card-topo {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  margin-bottom: var(--space-2);
-}
-
-.fflow-card-topo .int-title {
-  margin: 0;
-}
-
 .fflow-robos {
   list-style: none;
   margin: var(--space-2) 0 0;
@@ -21030,16 +21024,6 @@ table.tbl .name-cell .r {
   font-size: 13px;
 }
 
-/* A confirmação daquele formulário: interruptor, mensagem e as variáveis que ela aceita. */
-.fflow-confirmacao {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin: var(--space-2) 0;
-  padding-top: var(--space-2);
-  border-top: 1px solid var(--line-soft);
-}
-
 /* Rótulo pequeno de campo. Existe porque dentro de um cartão estreito o rótulo padrão compete em
    peso com o título do formulário, e a pessoa lê dois títulos em vez de um título e um campo. */
 .lbl-pequeno {
@@ -21048,18 +21032,6 @@ table.tbl .name-cell .r {
   letter-spacing: 0.02em;
   text-transform: uppercase;
   color: var(--text-muted);
-}
-
-/* As variáveis em coluna: dentro de um cartão de 260px, lado a lado elas quebram no meio do
-   `{{primeiroNome}}` e o código fica ilegível. */
-.fflow-variaveis {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.fflow-variaveis code {
-  font-size: 11px;
 }
 
 .fflow-acoes {
@@ -21076,19 +21048,232 @@ table.tbl .name-cell .r {
   font-weight: 500;
 }
 
-/* As proteções do número, numa linha que se dobra. Horário e tetos são campos curtos: empilhá-los
-   faria um cartão de cinco linhas pra cinco números de dois dígitos. */
-.prot-grade {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-  gap: var(--space-2);
-  margin: var(--space-3) 0;
+/*
+ * AS PROTEÇÕES DO NÚMERO, agrupadas por assunto.
+ *
+ * Eram cinco caixas numa fileira com rótulos em maiúsculas — DAS, ÀS, POR DIA, POR NÚMERO, FALHAS
+ * ATÉ PAUSAR —, e assim ninguém lê que as duas primeiras são uma coisa só e as três seguintes são
+ * outra. Em linhas com o assunto escrito à esquerda, a frase se lê inteira: "só manda das 5 às 23",
+ * "no máximo 30 por dia".
+ */
+.prot-card {
+  padding: 0;
+  overflow: hidden;
 }
 
-.prot-grade label {
+.prot-topo {
+  padding: var(--space-4) var(--space-4) var(--space-2);
+}
+
+.prot-topo .int-title {
+  margin: 0 0 2px;
+}
+
+.prot-linha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--line-soft);
+}
+
+.prot-rotulo {
+  flex: 0 0 130px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.prot-campos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+/* Cada campo com as palavras em volta, não um rótulo em cima: "das [05:00] às [23:00]" se lê como
+   frase, e é assim que a regra é pensada por quem a configura. */
+.prot-campo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.prot-campo .input {
+  width: auto;
+  min-width: 82px;
+}
+
+.prot-campo .prot-numero {
+  width: 72px;
+  min-width: 0;
+  text-align: center;
+}
+
+.prot-nota {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.prot-pausa {
+  justify-content: space-between;
+}
+
+.prot-disjuntor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin: 0 var(--space-4) var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-2);
+  background: color-mix(in srgb, var(--danger) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--danger) 28%, transparent);
+  font-size: 12px;
+}
+
+.prot-disjuntor p {
+  margin: 0;
+  flex: 1 1 240px;
+}
+
+/*
+ * A LISTA DE FORMULÁRIOS, uma linha por formulário, que abre.
+ *
+ * Era uma grade de cartões, e com cinco formulários virou cinco colunas estreitas, cada uma com um
+ * campo de texto rolando dentro e a mesma lista de variáveis repetida embaixo — a tela inteira
+ * preenchida com a mesma informação cinco vezes. Numa lista, "qual formulário manda mensagem?" se
+ * lê de cima a baixo, e o campo só aparece no que está sendo editado.
+ */
+.fflow-lista-card {
+  padding: var(--space-4) 0 0;
+}
+
+.fflow-lista-card .int-title {
+  margin: 0 var(--space-4) var(--space-2);
+}
+
+.fflow-contagem {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 18px;
+  margin-left: 4px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.fflow-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.fflow-item {
+  border-top: 1px solid var(--line-soft);
+}
+
+.fflow-item.aberta {
+  background: var(--surface-1);
+}
+
+.fflow-cabecalho {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.fflow-cabecalho:hover {
+  background: var(--surface-hover, var(--surface-2));
+}
+
+.fflow-nome {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.fflow-marcas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+/* A seta gira ao abrir: é o sinal de que a linha tem mais coisa dentro. */
+.fflow-seta {
+  flex: none;
+  color: var(--text-muted);
+  transition: transform 0.16s ease;
+}
+
+.fflow-item.aberta .fflow-seta {
+  transform: rotate(180deg);
+}
+
+.fflow-corpo {
   display: flex;
   flex-direction: column;
+  gap: 6px;
+  padding: 0 var(--space-4) var(--space-4);
+}
+
+.fflow-nota {
+  margin: 0;
+}
+
+.fflow-interruptor {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+}
+
+.fflow-mensagem {
+  min-height: 150px;
+  resize: vertical;
+}
+
+/* As variáveis como etiquetas, numa linha que se dobra: em coluna ocupavam mais espaço que a
+   própria mensagem. A explicação de cada uma fica no `title`. */
+.fflow-variaveis {
+  display: flex;
+  flex-wrap: wrap;
   gap: 4px;
+  margin: 0;
+}
+
+.fflow-variavel code {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: var(--radius-2);
+  background: var(--surface-2);
+  font-size: 11px;
+  cursor: help;
+}
+
+.fflow-robos-bloco {
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--line-soft);
 }
 
 .ig-escrever {

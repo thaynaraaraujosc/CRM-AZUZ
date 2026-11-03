@@ -18,7 +18,6 @@ import { mesmoNumero } from "@/lib/integracoes/numero-whatsapp";
 import type { StatusIntegracaoNaoOficial } from "./useIntegracaoNaoOficial";
 import { useIdioma } from "@/lib/idioma-context";
 import { AzuzFlow } from "./AzuzFlow";
-import { ConfirmacaoDoFormulario } from "./ConfirmacaoDoFormulario";
 
 /** O que aparece em "Em breve". Zapier, Make, Stripe e Mercado Pago saíram: não estão no plano. */
 type AppFuturo = { nome: string; descricao: string; categoria: string };
@@ -242,7 +241,10 @@ export function IntegracoesSecao() {
           entra na lista de "Prontas pra usar" (que é por onde a empresa fala com o cliente). */}
       <AzuzFlow />
 
-      <ConfirmacaoDoFormulario />
+      {/* "Formulário do CRM" MUDOU DE CASA, em 03/11/2026, junto com a do AZUZ Flow e pelo mesmo
+          motivo: a mensagem que sai quando alguém preenche um formulário não é conexão, é
+          automação — e era UMA mensagem para todos os formulários, quando cada um pede a sua.
+          Agora fica em Automações › Formulários do Flow, uma por formulário. */}
 
       {/* Só pra quem administra a plataforma.
           Cadastrar o webhook na Meta é feito UMA vez, no app da Meta, por quem é dono dele. Não

@@ -82,6 +82,15 @@ export type ConfigDoFlow = {
    * formulários com teto de 30 são 150 primeiras mensagens no mesmo número, no mesmo dia.
    */
   porFormulario: Record<string, { confirmacao: { ativa: boolean; texto: string } }>;
+  /**
+   * O mesmo, para os formulários DO PRÓPRIO CRM.
+   *
+   * Mapa separado do de cima, e não um só com prefixo, por uma razão prática: `porFormulario` já
+   * está gravado em produção com o id cru do Flow. Mudar o formato da chave agora tornaria órfã a
+   * configuração de quem já salvou alguma — e o sintoma seria a mensagem voltar sozinha pro texto
+   * geral, sem nada explicando.
+   */
+  porFormularioDoCrm: Record<string, { confirmacao: { ativa: boolean; texto: string } }>;
 };
 
 export const CONFIG_PADRAO: ConfigDoFlow = {
@@ -109,6 +118,7 @@ export const CONFIG_PADRAO: ConfigDoFlow = {
   },
   formulario: { confirmacao: { ativa: false, texto: TEXTO_PADRAO_DA_CONFIRMACAO } },
   porFormulario: {},
+  porFormularioDoCrm: {},
 };
 
 /**
@@ -148,6 +158,7 @@ export function lerConfigDoFlow(dados: unknown): ConfigDoFlow {
     },
     formulario: lerFormulario(bruto.formulario),
     porFormulario: lerPorFormulario(bruto.porFormulario),
+    porFormularioDoCrm: lerPorFormulario(bruto.porFormularioDoCrm),
   };
 }
 
@@ -194,6 +205,28 @@ export function confirmacaoDoFormulario(
   const proprio = id ? config.porFormulario[id] : undefined;
   if (proprio) return { ...proprio.confirmacao, doFormulario: true };
   return { ativa: config.confirmacao.ativa, texto: config.confirmacao.texto, doFormulario: false };
+}
+
+/**
+ * A mesma regra, para um formulário DO CRM.
+ *
+ * A geral de onde ela cai é outra (`formulario.confirmacao`, o texto que a agência escreve pros
+ * formulários do próprio CRM), e é isso que justifica a segunda função em vez de um parâmetro: as
+ * duas origens falam com públicos diferentes, e foi a pedido que os textos gerais ficaram
+ * separados desde o começo.
+ */
+export function confirmacaoDoFormularioDoCrm(
+  config: ConfigDoFlow,
+  formularioId: string | null | undefined,
+): { ativa: boolean; texto: string; doFormulario: boolean } {
+  const id = formularioId?.trim();
+  const proprio = id ? config.porFormularioDoCrm[id] : undefined;
+  if (proprio) return { ...proprio.confirmacao, doFormulario: true };
+  return {
+    ativa: config.formulario.confirmacao.ativa,
+    texto: config.formulario.confirmacao.texto,
+    doFormulario: false,
+  };
 }
 
 /** O bloco do formulário do CRM, com a mesma desconfiança do resto: veio do banco, pode ter
@@ -264,7 +297,9 @@ export async function configDoFlow(workspaceId: string): Promise<ConfigDoFlow> {
  * o texto e os tetos a cada clique — qualquer um deles desatualizado sobrescreveria o que outra
  * pessoa acabou de salvar.
  */
-export type MudancasDoFlow = Partial<Omit<ConfigDoFlow, "confirmacao" | "formulario" | "porFormulario">> & {
+export type MudancasDoFlow = Partial<
+  Omit<ConfigDoFlow, "confirmacao" | "formulario" | "porFormulario" | "porFormularioDoCrm">
+> & {
   confirmacao?: Partial<ConfigDoFlow["confirmacao"]>;
   formulario?: { confirmacao?: Partial<ConfigDoFlow["formulario"]["confirmacao"]> };
   /**
@@ -275,6 +310,8 @@ export type MudancasDoFlow = Partial<Omit<ConfigDoFlow, "confirmacao" | "formula
    * entre "desligado neste formulário" e "sem regra própria", e sem ela não haveria como desfazer.
    */
   umFormulario?: { id: string; confirmacao: { ativa: boolean; texto: string } | null };
+  /** O mesmo, para um formulário do próprio CRM. */
+  umFormularioDoCrm?: { id: string; confirmacao: { ativa: boolean; texto: string } | null };
 };
 
 /** Grava o que mudou, preservando o resto. Devolve como ficou. */
@@ -296,6 +333,13 @@ export async function salvarConfigDoFlow(
     else delete porFormulario[id.trim()];
   }
 
+  const porFormularioDoCrm = { ...atual.porFormularioDoCrm };
+  if (mudancas.umFormularioDoCrm?.id.trim()) {
+    const { id, confirmacao } = mudancas.umFormularioDoCrm;
+    if (confirmacao) porFormularioDoCrm[id.trim()] = { confirmacao };
+    else delete porFormularioDoCrm[id.trim()];
+  }
+
   const novo: ConfigDoFlow = {
     ...atual,
     ...mudancas,
@@ -304,10 +348,12 @@ export async function salvarConfigDoFlow(
       confirmacao: { ...atual.formulario.confirmacao, ...(mudancas.formulario?.confirmacao ?? {}) },
     },
     porFormulario,
+    porFormularioDoCrm,
   };
-  // `umFormulario` é instrução de mudança, não campo guardado: sem isto ele iria parar no banco
-  // junto com o resto por causa do espalhamento de `mudancas` acima.
+  // Instrução de mudança, não campo guardado: sem isto elas iriam parar no banco junto com o resto
+  // por causa do espalhamento de `mudancas` acima.
   delete (novo as Partial<MudancasDoFlow>).umFormulario;
+  delete (novo as Partial<MudancasDoFlow>).umFormularioDoCrm;
   await prisma.preferencia.upsert({
     where: { workspaceId_chave: { workspaceId, chave: CHAVE } },
     create: { workspaceId, chave: CHAVE, dados: novo },

@@ -4,7 +4,7 @@ import { dataIsoEmBrasilia, horaEmBrasilia } from "@/lib/agenda/fuso";
 import { ehChaveDuplicada } from "@/lib/prisma-erros";
 import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
 import { escolherCanalDoFlow } from "@/lib/integracoes/azuz-flow-canal";
-import { configDoFlow } from "@/lib/integracoes/azuz-flow-config";
+import { configDoFlow, confirmacaoDoFormularioDoCrm } from "@/lib/integracoes/azuz-flow-config";
 import { conexoesDeWhatsappDoWorkspace } from "@/lib/integracoes/azuz-flow-conexoes";
 import { decidirConfirmacao } from "@/lib/integracoes/azuz-flow-confirmacao-decisao";
 import { anotarNaConversa, enfileirarConfirmacao } from "@/lib/integracoes/azuz-flow-confirmacao-fila";
@@ -38,6 +38,8 @@ import { hojeEmBrasilia, somarDias } from "@/lib/agenda/fuso";
  */
 export async function confirmarReuniaoDoFormulario(params: {
   workspaceId: string;
+  /** Qual formulário foi preenchido. É o que permite uma mensagem por formulário. */
+  formularioId: string;
   formularioNome: string;
   respostaId: string;
   /** As páginas do formulário, pra achar a configuração da agenda do campo "Agendar reunião". */
@@ -86,7 +88,13 @@ export async function confirmarReuniaoDoFormulario(params: {
   if (!lead.whatsapp) return;
 
   const config = await configDoFlow(workspaceId);
-  const confirmacao = config.formulario.confirmacao;
+  /*
+   * A confirmação DESTE formulário, que pode não ser a geral.
+   *
+   * Formulário sem configuração própria segue a geral — é o que faz esta mudança não alterar nada
+   * para quem já tinha o aviso funcionando. Ver `confirmacaoDoFormularioDoCrm`.
+   */
+  const confirmacao = confirmacaoDoFormularioDoCrm(config, params.formularioId);
   if (!confirmacao.ativa) return;
 
   const conexoes = await conexoesDeWhatsappDoWorkspace(workspaceId);

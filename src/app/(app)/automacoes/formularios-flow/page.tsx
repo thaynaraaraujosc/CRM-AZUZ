@@ -6,8 +6,13 @@ import Link from "next/link";
 import { Topbar, Toggle } from "@/components/ui";
 import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
 import { ProtecoesDoNumero } from "@/components/automacoes/ProtecoesDoNumero";
+import { IconExpandir } from "@/components/icons";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
-import { identificadorDoFormularioDoFlow } from "@/lib/automation-flow/formulario-do-gatilho";
+import {
+  identificadorDoFormularioDoCrm,
+  identificadorDoFormularioDoFlow,
+} from "@/lib/automation-flow/formulario-do-gatilho";
+import { useFormularios } from "@/lib/formularios-context";
 import type { RecursoDosFormularios } from "@/app/api/integracoes/azuz-flow/formularios/route";
 import type { FormularioDoFlow } from "@/lib/integracoes/azuz-flow-formularios";
 import type { FluxoAutomacao } from "@/lib/automation-flow/types";
@@ -16,16 +21,15 @@ import { useIdioma } from "@/lib/idioma-context";
 /**
  * FORMULÁRIOS DO AZUZ FLOW: o que acontece quando cada um é preenchido.
  *
- * Duas coisas por formulário, e as duas estavam no lugar errado antes:
+ * Duas coisas por formulário: a confirmação de reunião (ligar e escrever a mensagem que o lead
+ * recebe ao responder AQUELE formulário) e os robôs que respondem a ele.
  *
- *  1. A CONFIRMAÇÃO DE REUNIÃO — ligar e escrever a mensagem que o lead recebe. Morava em
- *     Configurações › Outras integrações, numa configuração só para todos os formulários. Mas
- *     Configurações é onde se CONECTA uma integração; o que acontece quando um formulário é
- *     preenchido é automação, e é diferente de um formulário pro outro.
- *  2. OS ROBÔS que respondem àquele formulário, com link pra abrir cada um.
- *
- * A aba só existe quando o Flow está conectado (ver `AbasAutomacoes`): sem chave não há lista, e
- * uma aba que só sabe dizer "conecte primeiro" é um lugar a mais pra não encontrar nada.
+ * UMA LISTA QUE ABRE, e não uma grade de cartões. A primeira versão era uma grade, e com cinco
+ * formulários ela virou cinco colunas estreitas, cada uma com um campo de texto rolando dentro e a
+ * mesma lista de variáveis repetida embaixo — a tela inteira preenchida com a mesma informação
+ * cinco vezes, e o nome de cada formulário espremido no topo. Numa lista, a resposta pra "qual
+ * formulário manda mensagem?" se lê de cima a baixo, e o campo só aparece no que está sendo
+ * editado.
  */
 
 /** As variáveis que o texto aceita. Copiadas do servidor em vez de importadas: é texto de tela. */
@@ -58,7 +62,7 @@ function Robo({ fluxo }: { fluxo: FluxoAutomacao }) {
   );
 }
 
-function CartaoDoFormulario({
+function LinhaDoFormulario({
   formulario,
   robos,
   propria,
@@ -73,11 +77,12 @@ function CartaoDoFormulario({
   aoSalvar: (id: string, valor: { ativa: boolean; texto: string } | null) => Promise<void>;
 }) {
   const { t: traduzir } = useIdioma();
+  const [aberta, setAberta] = useState(false);
+
   /*
    * O RASCUNHO LOCAL começa no que ESTE formulário vai fazer hoje — a configuração própria quando
    * existe, a geral quando não. Começar vazio faria o campo parecer "sem mensagem" num formulário
-   * que manda mensagem; começar na própria apenas quando ela existe faria o texto aparecer do nada
-   * ao ligar o botão.
+   * que manda mensagem.
    */
   const efetiva = propria ?? geral;
   const [ativa, setAtiva] = useState(efetiva.ativa);
@@ -100,90 +105,135 @@ function CartaoDoFormulario({
   }
 
   return (
-    <section className="card fflow-card">
-      <header className="fflow-card-topo">
-        <p className="int-title">{formulario.nome}</p>
-        {formulario.publicado ? null : <span className="pill">{traduzir("rascunho no Flow")}</span>}
-      </header>
+    <li className={`fflow-item${aberta ? " aberta" : ""}`}>
+      <button type="button" className="fflow-cabecalho" onClick={() => setAberta((v) => !v)} aria-expanded={aberta}>
+        <span className="fflow-nome">{formulario.nome}</span>
 
-      {/*
-        * A RESPOSTA PRA "POR QUE ESSE FORMULÁRIO NUNCA CHEGA".
-        *
-        * No Flow, "enviar ao CRM" é um liga/desliga DE CADA FORMULÁRIO — conectar a agência não
-        * conecta os formulários dela. Era isso que fazia "conectei e só veio um". Sem este aviso, a
-        * pessoa configuraria aqui um formulário que nunca vai chegar, e nada diria por quê.
-        */}
-      {formulario.enviaAoCrm ? null : (
-        <p className="int-aviso-conflito">
-          {traduzir("Este formulário não está enviando ao CRM. Ligue o envio nele, lá no AZUZ Flow.")}
-        </p>
-      )}
-
-      <div className="fflow-confirmacao">
-        <div className="toggle-row">
-          <span className="tl">
-            {traduzir("Confirmação de reunião")}
-            {!propria ? <span className="pill fflow-herdado">{traduzir("igual à geral")}</span> : null}
-          </span>
-          <Toggle defaultOn={ativa} label={traduzir("Confirmação de reunião")} onToggle={setAtiva} />
-        </div>
-
-        <label className="lbl-pequeno" htmlFor={`msg-${formulario.id}`}>
-          {traduzir("Mensagem")}
-        </label>
-        <textarea
-          id={`msg-${formulario.id}`}
-          className="input"
-          rows={5}
-          maxLength={2000}
-          value={texto}
-          onChange={(e) => setTexto(e.target.value)}
-        />
-        <p className="hint fflow-variaveis">
-          {VARIAVEIS.map(([chave, explicacao]) => (
-            <span key={chave}>
-              <code>{chave}</code> {traduzir(explicacao)}
-            </span>
-          ))}
-        </p>
-
-        {erro ? <p className="int-aviso-conflito">{erro}</p> : null}
-
-        <div className="fflow-acoes">
-          <button type="button" className="btn primary" disabled={!mudou || salvando} onClick={() => void salvar()}>
-            {salvando ? traduzir("Salvando…") : traduzir("Salvar")}
-          </button>
+        <span className="fflow-marcas">
           {/*
-            APAGAR A EXCEÇÃO é diferente de desligar. Desligado é "neste formulário, não mande";
-            sem exceção é "siga a regra geral". Sem este botão não haveria como voltar atrás.
-          */}
-          {propria ? (
-            <button type="button" className="btn ghost" disabled={salvando} onClick={() => void aoSalvar(formulario.id, null)}>
-              {traduzir("Voltar a seguir a geral")}
-            </button>
+            * "NÃO ENVIA AO CRM" EM UMA ETIQUETA, e não num aviso vermelho de duas linhas.
+            *
+            * No Flow, "enviar ao CRM" é um liga/desliga de cada formulário — conectar a agência não
+            * conecta os formulários dela. É informação importante, mas é o estado NORMAL de um
+            * formulário que ninguém ligou ainda: com quatro de cinco assim, quatro caixas vermelhas
+            * empilhadas leem como quatro defeitos. A explicação inteira fica no corpo, ao abrir.
+            */}
+          {formulario.enviaAoCrm ? null : <span className="pill alerta">{traduzir("não envia ao CRM")}</span>}
+          {formulario.publicado ? null : <span className="pill">{traduzir("rascunho no Flow")}</span>}
+          <span className={`pill${efetiva.ativa ? " on" : ""}`}>
+            {efetiva.ativa ? traduzir("confirmação ligada") : traduzir("confirmação desligada")}
+          </span>
+          {propria ? null : <span className="fflow-herdado">{traduzir("igual à geral")}</span>}
+          {robos.length ? (
+            <span className="fflow-herdado">
+              {robos.length === 1 ? traduzir("1 robô") : `${robos.length} ${traduzir("robôs")}`}
+            </span>
           ) : null}
-        </div>
-      </div>
+        </span>
 
-      {robos.length ? (
-        <ul className="fflow-robos">
-          {robos.map((f) => (
-            <Robo key={f.id} fluxo={f} />
-          ))}
-        </ul>
-      ) : (
-        <p className="hint">
-          {traduzir("Nenhum robô responde só a este formulário.")}{" "}
-          <Link href="/automacoes/novo">{traduzir("Criar um")}</Link>
-        </p>
-      )}
-    </section>
+        <IconExpandir className="fflow-seta" width={14} height={14} aria-hidden="true" />
+      </button>
+
+      {aberta ? (
+        <div className="fflow-corpo">
+          {formulario.enviaAoCrm ? null : (
+            <p className="hint fflow-nota">
+              {traduzir(
+                "Enquanto o envio ao CRM estiver desligado neste formulário, lá no AZUZ Flow, nada do que for configurado aqui vai acontecer.",
+              )}
+            </p>
+          )}
+
+          <div className="fflow-interruptor">
+            <span className="tl">{traduzir("Confirmação de reunião")}</span>
+            <Toggle defaultOn={ativa} label={traduzir("Confirmação de reunião")} onToggle={setAtiva} />
+          </div>
+          {/*
+            QUANDO ELA SAI, dito aqui porque nem todo formulário tem reunião.
+            
+            Um formulário de pesquisa, de inscrição ou de contato não marca horário nenhum — e nele
+            este interruptor ligado não manda nada. Sem esta linha, "ligada" num formulário desses
+            é uma promessa que a tela faz e o CRM não cumpre, e não há como a pessoa descobrir por
+            quê. Mandar mensagem a quem respondeu SEM reunião é outra coisa, e ela se monta como
+            robô: ver a lista no fim deste bloco.
+          */}
+          <p className="hint fflow-nota">
+            {traduzir(
+              "Sai só quando o formulário tiver um campo de agendamento preenchido e a pessoa tiver aceitado receber mensagem.",
+            )}
+          </p>
+
+          <label className="lbl-pequeno" htmlFor={`msg-${formulario.id}`}>
+            {traduzir("Mensagem que o lead recebe")}
+          </label>
+          <textarea
+            id={`msg-${formulario.id}`}
+            className="input fflow-mensagem"
+            rows={8}
+            maxLength={2000}
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+          />
+
+          {/* As variáveis como etiquetas, numa linha que se dobra: a lista em coluna ocupava mais
+              espaço que a própria mensagem. */}
+          <p className="fflow-variaveis">
+            {VARIAVEIS.map(([chave, explicacao]) => (
+              <span key={chave} className="fflow-variavel" title={traduzir(explicacao)}>
+                <code>{chave}</code>
+              </span>
+            ))}
+          </p>
+
+          {erro ? <p className="int-aviso-conflito">{erro}</p> : null}
+
+          <div className="fflow-acoes">
+            <button type="button" className="btn primary" disabled={!mudou || salvando} onClick={() => void salvar()}>
+              {salvando ? traduzir("Salvando…") : traduzir("Salvar")}
+            </button>
+            {/*
+              APAGAR A EXCEÇÃO é diferente de desligar. Desligado é "neste formulário, não mande";
+              sem exceção é "siga a regra geral". Sem este botão não haveria como voltar atrás.
+            */}
+            {propria ? (
+              <button
+                type="button"
+                className="btn ghost"
+                disabled={salvando}
+                onClick={() => void aoSalvar(formulario.id, null)}
+              >
+                {traduzir("Voltar a seguir a geral")}
+              </button>
+            ) : null}
+          </div>
+
+          <div className="fflow-robos-bloco">
+            <span className="lbl-pequeno">{traduzir("Robôs que respondem a este formulário")}</span>
+            {robos.length ? (
+              <ul className="fflow-robos">
+                {robos.map((f) => (
+                  <Robo key={f.id} fluxo={f} />
+                ))}
+              </ul>
+            ) : (
+              <p className="hint">
+                {traduzir(
+                  "Nenhum ainda. É por aqui que se manda mensagem a quem respondeu SEM marcar reunião: um robô com o gatilho “Formulário preenchido”, com este formulário escolhido.",
+                )}{" "}
+                <Link href="/automacoes/novo">{traduzir("Criar um")}</Link>
+              </p>
+            )}
+          </div>
+        </div>
+      ) : null}
+    </li>
   );
 }
 
 export default function FormulariosDoFlowPage() {
   const { t: traduzir } = useIdioma();
   const { fluxos, carregado } = useAutomationFlows();
+  const { formularios } = useFormularios();
   const [recurso, setRecurso] = useState<RecursoDosFormularios | null>(null);
   const [erro, setErro] = useState(false);
 
@@ -201,11 +251,16 @@ export default function FormulariosDoFlowPage() {
     void carregar();
   }, [carregar]);
 
-  async function salvarFormulario(id: string, valor: { ativa: boolean; texto: string } | null) {
+  /** Grava a exceção de UM formulário. `campo` diz de qual origem ele é. */
+  async function salvarUm(
+    campo: "umFormulario" | "umFormularioDoCrm",
+    id: string,
+    valor: { ativa: boolean; texto: string } | null,
+  ) {
     const resposta = await fetch("/api/integracoes/azuz-flow/config", {
       method: "PUT",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ umFormulario: { id, confirmacao: valor } }),
+      body: JSON.stringify({ [campo]: { id, confirmacao: valor } }),
     });
     if (!resposta.ok) {
       const corpo = (await resposta.json().catch(() => null)) as { erro?: string } | null;
@@ -214,13 +269,18 @@ export default function FormulariosDoFlowPage() {
     await carregar();
   }
 
+  const salvarFormulario = (id: string, valor: { ativa: boolean; texto: string } | null) =>
+    salvarUm("umFormulario", id, valor);
+  const salvarFormularioDoCrm = (id: string, valor: { ativa: boolean; texto: string } | null) =>
+    salvarUm("umFormularioDoCrm", id, valor);
+
   const deFormulario = fluxos.filter((f) => gatilhoDeFormulario(f) !== null && !f.arquivada);
 
   /*
    * OS ROBÔS QUE RESPONDEM A TUDO ficam numa faixa própria, em cima.
    *
    * É o estado herdado: nenhum robô publicado antes desta mudança tem formulário escolhido, então
-   * todos estão aqui. Escondê-los faria cada cartão dizer "nenhum robô responde a este formulário"
+   * todos estão aqui. Escondê-los faria cada linha dizer "nenhum robô responde a este formulário"
    * enquanto, na prática, TODOS respondem a todos — o defeito que a pessoa veio consertar.
    */
   const respondemATudo = deFormulario.filter((f) => !gatilhoDeFormulario(f)?.formularioId?.trim());
@@ -228,12 +288,15 @@ export default function FormulariosDoFlowPage() {
     const identificador = identificadorDoFormularioDoFlow(id);
     return deFormulario.filter((f) => gatilhoDeFormulario(f)?.formularioId?.trim() === identificador);
   };
+  // O do CRM vai sem prefixo nenhum. Ver `formulario-do-gatilho.ts`.
+  const robosDoFormularioDoCrm = (id: string) =>
+    deFormulario.filter((f) => gatilhoDeFormulario(f)?.formularioId?.trim() === identificadorDoFormularioDoCrm(id));
 
   return (
     <>
+      {/* Sem subtítulo: o nome da tela já diz de que ela trata, e cada linha diz o resto. */}
       <Topbar
         title={traduzir("Formulários do AZUZ Flow")}
-        sub={traduzir("O que acontece quando cada formulário é preenchido")}
         actions={<Link className="btn primary" href="/automacoes/novo">{traduzir("+ Nova automação")}</Link>}
       />
       <AbasAutomacoes />
@@ -278,27 +341,59 @@ export default function FormulariosDoFlowPage() {
             </p>
           </section>
         ) : (
-          <div className="fflow-grade">
-            {recurso.formularios.map((f) => (
-              <CartaoDoFormulario
-                /*
-                 * A CHAVE CARREGA SE HÁ REGRA PRÓPRIA, e não só o id.
-                 *
-                 * O cartão guarda o rascunho do campo em estado local, começando no que vale hoje.
-                 * Ao apagar a exceção ("voltar a seguir a geral"), o que vale passa a ser outro, e
-                 * sem remontar o cartão continuaria mostrando o texto antigo — com o botão Salvar
-                 * aceso, porque ele compararia com o novo valor efetivo.
-                 */
-                key={`${f.id}:${recurso.porFormulario[f.id] ? "proprio" : "geral"}`}
-                formulario={f}
-                robos={robosDoFormulario(f.id)}
-                propria={recurso.porFormulario[f.id]?.confirmacao ?? null}
-                geral={recurso.geral}
-                aoSalvar={salvarFormulario}
-              />
-            ))}
-          </div>
+          <section className="card fflow-lista-card">
+            <p className="int-title">
+              {traduzir("Formulários")} <span className="fflow-contagem">{recurso.formularios.length}</span>
+            </p>
+            <ul className="fflow-lista">
+              {recurso.formularios.map((f) => (
+                <LinhaDoFormulario
+                  /*
+                   * A CHAVE CARREGA SE HÁ REGRA PRÓPRIA, e não só o id.
+                   *
+                   * A linha guarda o rascunho do campo em estado local, começando no que vale hoje.
+                   * Ao apagar a exceção ("voltar a seguir a geral"), o que vale passa a ser outro, e
+                   * sem remontar a linha ela continuaria mostrando o texto antigo — com o botão
+                   * Salvar aceso, porque ele compararia com o novo valor efetivo.
+                   */
+                  key={`${f.id}:${recurso.porFormulario[f.id] ? "proprio" : "geral"}`}
+                  formulario={f}
+                  robos={robosDoFormulario(f.id)}
+                  propria={recurso.porFormulario[f.id]?.confirmacao ?? null}
+                  geral={recurso.geral}
+                  aoSalvar={salvarFormulario}
+                />
+              ))}
+            </ul>
+          </section>
         )}
+
+        {/*
+          OS FORMULÁRIOS DO PRÓPRIO CRM, na mesma pasta.
+          
+          Eles moravam em Configurações, num cartão "Formulário do CRM" com UMA mensagem pra todos.
+          A pergunta é a mesma dos de cima — "o que acontece quando preenchem este formulário" — e
+          responder em dois lugares faria procurar no errado metade das vezes.
+        */}
+        {recurso && formularios.length ? (
+          <section className="card fflow-lista-card">
+            <p className="int-title">
+              {traduzir("Formulários do CRM")} <span className="fflow-contagem">{formularios.length}</span>
+            </p>
+            <ul className="fflow-lista">
+              {formularios.map((f) => (
+                <LinhaDoFormulario
+                  key={`crm:${f.id}:${recurso.porFormularioDoCrm[f.id] ? "proprio" : "geral"}`}
+                  formulario={{ id: f.id, nome: f.nome, publicado: f.status === "publicado", enviaAoCrm: true }}
+                  robos={robosDoFormularioDoCrm(f.id)}
+                  propria={recurso.porFormularioDoCrm[f.id]?.confirmacao ?? null}
+                  geral={recurso.geralDoCrm}
+                  aoSalvar={salvarFormularioDoCrm}
+                />
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         {recurso?.sincronizadaEm ? (
           <p className="hint">

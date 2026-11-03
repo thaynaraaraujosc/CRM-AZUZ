@@ -71,10 +71,15 @@ export async function POST(request: Request) {
 export type RecursoDosFormularios = ListaDeFormularios & {
   /** Existe chave do Flow ativa nesta empresa? É o que decide se a aba aparece. */
   conectado: boolean;
-  /** A confirmação GERAL, que vale pro formulário sem regra própria. */
+  /** A confirmação GERAL dos formulários do Flow, pro que não tem regra própria. */
   geral: { ativa: boolean; texto: string };
   /** As exceções, por id de formulário do Flow. */
   porFormulario: Record<string, { confirmacao: { ativa: boolean; texto: string } }>;
+  /** A geral dos formulários DO CRM. Texto separado desde sempre: cada origem fala com o público
+   *  dela com as palavras da agência. */
+  geralDoCrm: { ativa: boolean; texto: string };
+  /** As exceções, por id de formulário do CRM. */
+  porFormularioDoCrm: Record<string, { confirmacao: { ativa: boolean; texto: string } }>;
 };
 
 export async function GET() {
@@ -102,6 +107,11 @@ export async function GET() {
       conectado: Boolean(chave),
       geral: { ativa: config.confirmacao.ativa, texto: config.confirmacao.texto },
       porFormulario: config.porFormulario,
+      geralDoCrm: {
+        ativa: config.formulario.confirmacao.ativa,
+        texto: config.formulario.confirmacao.texto,
+      },
+      porFormularioDoCrm: config.porFormularioDoCrm,
     };
     return NextResponse.json(recurso, { headers: { "cache-control": "no-store" } });
   });
