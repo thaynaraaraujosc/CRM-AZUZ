@@ -1,14 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { IconAutomacoes, IconClose, IconRestaurar } from "@/components/icons";
 import { Ajuda } from "@/components/ui";
-import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
-import { HORARIOS, SeletorDeHora } from "./SeletorDeHora";
+import { useFecharMenuDeLinha } from "@/lib/menu-de-linha";
+import { SeletorDeHora } from "./SeletorDeHora";
 import { CondicaoForm } from "@/components/automation-flow/forms/CondicaoForm";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { MigrarGatilhos } from "./MigrarGatilhos";
@@ -106,6 +106,11 @@ type Rascunho = {
   horaInicio: string;
   horaFim: string;
   horarioDiario: string;
+  /** Só pro "numa data e hora": o instante marcado, como o campo da tela produz. */
+  dataHora: string;
+  /** Só pro "sem resposta": quanto tempo de silêncio, e em que unidade. */
+  esperaValor: number;
+  esperaUnidade: string;
   ativo: boolean;
   /** Não é campo do gatilho: é o "rodar agora nos leads que já estão aqui". */
   aplicarAosAtuais: boolean;
@@ -123,6 +128,11 @@ function rascunhoNovo(etapaId: string, tipoAcao: TipoAcaoGatilho): Rascunho {
     horaInicio: "",
     horaFim: "",
     horarioDiario: "",
+    dataHora: "",
+    // Duas horas: o mesmo padrão do gatilho de tempo dos robôs. Um número já escolhido evita o
+    // campo vazio que não dispara nada e parece configurado.
+    esperaValor: 2,
+    esperaUnidade: "horas",
     ativo: true,
     aplicarAosAtuais: false,
   };
@@ -141,15 +151,33 @@ function doGatilho(g: GatilhoEtapaVisao): Rascunho {
     horaInicio: g.horaInicio ?? "",
     horaFim: g.horaFim ?? "",
     horarioDiario: g.horarioDiario ?? "",
+    dataHora: g.dataHora ?? "",
+    esperaValor: g.esperaValor ?? 2,
+    esperaUnidade: g.esperaUnidade ?? "horas",
     ativo: g.ativo,
     aplicarAosAtuais: false,
   };
 }
 
-/** A linha cinza de cima do cartão: quando o gatilho dispara. */
+/**
+ * A linha cinza de cima do cartão: quando o gatilho dispara.
+ *
+ * Os de relógio mostram o NÚMERO no cartão, não só o nome: "Diariamente" e "Sem resposta" sem a
+ * hora e sem o prazo são três gatilhos idênticos na grade, e abrir um por um pra saber qual é
+ * qual é exatamente o que a grade existe pra evitar.
+ */
 function linhaDoQuando(g: GatilhoEtapaVisao): string {
   const base = QUANDO_ROTULO[g.quando];
-  return g.quando === "diariamente" && g.horarioDiario ? `Diariamente às ${g.horarioDiario}` : base;
+  if (g.quando === "diariamente" && g.horarioDiario) return `Diariamente às ${g.horarioDiario}`;
+  if (g.quando === "data_hora" && g.dataHora) {
+    const [dia, hora] = g.dataHora.split("T");
+    const [a, m, d] = dia.split("-");
+    return `Em ${d}/${m}/${a} às ${(hora ?? "").slice(0, 5)}`;
+  }
+  if (g.quando === "sem_resposta" && g.esperaValor) {
+    return `Depois de ${g.esperaValor} ${g.esperaUnidade ?? "horas"} sem resposta`;
+  }
+  return base;
 }
 
 /** A linha em negrito: o que ela faz. */
@@ -265,38 +293,63 @@ export function AutomacaoDoFunil({
   /** O nome que o robô novo vai ter. `null` enquanto o campo não foi aberto. */
   const [nomeDoRoboNovo, setNomeDoRoboNovo] = useState<string | null>(null);
 
+  /** A lista de etapas do "Vale também para" está aberta? */
+  const [escolhendoEtapas, setEscolhendoEtapas] = useState(false);
+
   /*
-   * ONDE O PAINEL ABRE.
+   * ONDE O PAINEL ABRE: NO MEIO DA TELA, com o resto escurecido.
    *
-   * Era uma folha fixa na direita, com véu por cima da grade. A Thaynara pediu o jeito do Kommo:
-   * a caixa abre COLADA no cartão em que se clicou. A diferença não é estética — na folha da
-   * direita o cartão que se está editando fica do outro lado da tela, escondido atrás do véu, e
-   * é justamente ele que dá o contexto do que se está mexendo.
+   * Já foi uma folha fixa na direita, e depois uma caixa colada no cartão clicado. A caixa colada
+   * resolvia o contexto (dava pra ver o cartão que se estava editando) e criou outro problema: o
+   * formulário é alto, a grade rola por baixo dele, e metade da tela continuava disputando a
+   * atenção com o que se estava preenchendo. A Thaynara pediu o terceiro jeito, e é o certo pra
+   * um formulário com dez campos — ele vira a única coisa na tela enquanto está aberto.
    *
-   * Guardamos o elemento, não só a medida dele: a grade rola de lado, e uma medida tirada no
-   * clique aponta pro lugar onde o cartão ESTAVA (ver `use-floating-position.ts`).
+   * Clicar no fundo escuro fecha, e Esc também. Sem véu clicável, a única saída seria achar o "x".
    */
-  const ancoraRef = useRef<HTMLElement | null>(null);
-  const [ancora, setAncora] = useState<AnchorRect | null>(null);
   const fecharPainel = useCallback(() => {
     setEscolhendoAcao(null);
     setRascunho(null);
-    ancoraRef.current = null;
+    setEscolhendoEtapas(false);
   }, []);
   const painelAberto = escolhendoAcao !== null || rascunho !== null;
-  const { ref: painelRef, posicao: posicaoDoPainel } = useFloatingPosition(
-    ancora,
-    painelAberto,
-    8,
-    fecharPainel,
-    ancoraRef,
-  );
 
-  /** Guarda quem abriu o painel, pra caixa nascer colada nele e continuar colada ao rolar. */
-  function ancorarEm(elemento: HTMLElement) {
-    ancoraRef.current = elemento;
-    setAncora(elemento.getBoundingClientRect());
-  }
+  useEffect(() => {
+    if (!painelAberto) return;
+    function aoTeclar(evento: KeyboardEvent) {
+      if (evento.key !== "Escape") return;
+      // Com a lista de etapas aberta, Esc fecha SÓ ela: fechar o formulário inteiro perderia tudo
+      // que a pessoa preencheu por causa de um gesto que ela usou pra sair de um menu.
+      if (escolhendoEtapas) {
+        setEscolhendoEtapas(false);
+        return;
+      }
+      fecharPainel();
+    }
+    document.addEventListener("keydown", aoTeclar);
+    return () => document.removeEventListener("keydown", aoTeclar);
+  }, [painelAberto, escolhendoEtapas, fecharPainel]);
+
+  /*
+   * O FUNDO NÃO ROLA ENQUANTO O FORMULÁRIO ESTÁ ABERTO.
+   *
+   * Sem isto, a roda do mouse sobre o véu rola a grade atrás: o formulário fica parado e o mundo
+   * se mexe embaixo dele, que é a sensação de uma caixa solta em cima da página em vez de uma
+   * tela própria.
+   */
+  useEffect(() => {
+    if (!painelAberto) return;
+    const antes = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = antes;
+    };
+  }, [painelAberto]);
+
+  // `useCallback` e não uma arrow solta: o hook depende da função, e uma nova a cada render faria
+  // ele desligar e religar os ouvintes de clique em todo render enquanto a lista estivesse aberta.
+  const fecharEtapas = useCallback(() => setEscolhendoEtapas(false), []);
+  useFecharMenuDeLinha(escolhendoEtapas, fecharEtapas);
 
   /**
    * Solta a etapa arrastada na posição `destino`.
@@ -382,6 +435,26 @@ export function AutomacaoDoFunil({
     return Math.max(maior + 3, 6);
   }, [colunas, porEtapa]);
 
+  /** As etapas que o gatilho PODE cobrir além da dele: todas as outras do funil. */
+  const outrasEtapas = useMemo(
+    () => colunas.filter((c) => c.id !== rascunho?.etapaId),
+    [colunas, rascunho?.etapaId],
+  );
+
+  /**
+   * O que a linha fechada do seletor diz.
+   *
+   * Com a lista fechada, esta frase é a única informação disponível: ela precisa responder
+   * "quantas e quais" sem obrigar a abrir de novo. Até duas, cabem os nomes; daí pra cima só o
+   * número, senão a linha vira um parágrafo.
+   */
+  const resumoDasEtapasExtras = useMemo(() => {
+    if (!etapasExtras.length) return traduzir("Só esta etapa");
+    const nomes = outrasEtapas.filter((c) => etapasExtras.includes(c.id)).map((c) => c.titulo);
+    if (nomes.length <= 2) return nomes.join(", ");
+    return traduzir("{n} etapas escolhidas", { n: String(nomes.length) });
+  }, [etapasExtras, outrasEtapas, traduzir]);
+
   function faltaAlgo(r: Rascunho): string | null {
     const d = r.acaoDados;
     if (r.tipoAcao === "robo" && !r.fluxoId) return "Escolha o robô que esta etapa vai executar.";
@@ -393,6 +466,8 @@ export function AutomacaoDoFunil({
     if (r.tipoAcao === "webhook" && !d.webhookUrl?.trim()) return "Informe o endereço do webhook.";
     if (r.tipoAcao === "mensagem" && !d.mensagemTexto?.trim()) return "Escreva a mensagem.";
     if (r.quando === "diariamente" && !r.horarioDiario) return "Escolha a hora da varredura diária.";
+    if (r.quando === "data_hora" && !r.dataHora) return "Escolha a data e a hora do gatilho.";
+    if (r.quando === "sem_resposta" && !(r.esperaValor > 0)) return "Diga quanto tempo de silêncio o gatilho espera.";
     return null;
   }
 
@@ -425,6 +500,9 @@ export function AutomacaoDoFunil({
         horaInicio: rascunho.horaInicio || null,
         horaFim: rascunho.horaFim || null,
         horarioDiario: rascunho.horarioDiario || null,
+        dataHora: rascunho.dataHora || null,
+        esperaValor: rascunho.quando === "sem_resposta" ? rascunho.esperaValor : null,
+        esperaUnidade: rascunho.quando === "sem_resposta" ? rascunho.esperaUnidade : null,
         ativo: rascunho.ativo,
       };
       const resposta = rascunho.id
@@ -573,12 +651,12 @@ export function AutomacaoDoFunil({
     setRascunho({ ...rascunho, acaoDados: { ...rascunho.acaoDados, ...patch } });
   }
 
-  function abrirNovo(etapaId: string, elemento: HTMLElement) {
+  function abrirNovo(etapaId: string) {
     setErro(null);
     setAviso(null);
     setRascunho(null);
     setNomeDoRoboNovo(null);
-    ancorarEm(elemento);
+    setEscolhendoEtapas(false);
     setEscolhendoAcao(etapaId);
   }
 
@@ -720,13 +798,13 @@ export function AutomacaoDoFunil({
                         <button
                           type="button"
                           className="fauto-gat-corpo"
-                          onClick={(e) => {
+                          onClick={() => {
                             setErro(null);
                             setAviso(null);
                             setEscolhendoAcao(null);
                             setEtapasExtras([]);
                             setNomeDoRoboNovo(null);
-                            ancorarEm(e.currentTarget);
+                            setEscolhendoEtapas(false);
                             setRascunho(doGatilho(gatilho));
                           }}
                         >
@@ -780,7 +858,7 @@ export function AutomacaoDoFunil({
                         className={`fauto-add${
                           (porEtapa.get(coluna.id)?.length ?? 0) === linha ? "" : " ao-passar"
                         }`}
-                        onClick={(e) => abrirNovo(coluna.id, e.currentTarget)}
+                        onClick={() => abrirNovo(coluna.id)}
                       >
                         <span aria-hidden="true">+</span> {traduzir("Adicionar gatilho")}
                       </button>
@@ -793,23 +871,22 @@ export function AutomacaoDoFunil({
         </div>
 
         {/*
-          AS DUAS CAIXAS ABREM COLADAS NO CARTÃO, por portal em `document.body`.
+          AS DUAS CAIXAS ABREM NO MEIO DA TELA, por portal em `document.body`.
           
           Por portal e não dentro da célula: a grade tem rolagem própria, e uma caixa desenhada
-          dentro dela seria cortada na borda e ainda esticaria a área de rolagem. Fora dela, a
-          caixa flutua por cima de tudo e continua grudada no cartão porque o posicionamento mede
-          o elemento vivo a cada rolagem.
+          dentro dela seria cortada na borda e ainda esticaria a área de rolagem.
           
-          O VÉU SAIU junto com a folha da direita. Ele existia porque a folha ficava longe do que
-          se estava editando e sobrava uma faixa de grade ao lado, que parecia ter mais informação.
-          Colada no cartão não há essa dúvida — e clicar fora, ou Esc, fecha do mesmo jeito.
+          O véu voltou — e agora ele é o ponto. Enquanto o formulário está aberto, ele é a tela:
+          o resto escurece, não rola e não compete por atenção. Clicar no véu fecha, e Esc também.
         */}
-        {escolhendoAcao && posicaoDoPainel
+        {escolhendoAcao
           ? createPortal(
+              <div className="fauto-veu" onClick={fecharPainel} role="presentation">
               <div
                 className="fauto-painel"
-                ref={painelRef}
-                style={{ top: posicaoDoPainel.top, left: posicaoDoPainel.left }}
+                role="dialog"
+                aria-modal="true"
+                onClick={(e) => e.stopPropagation()}
               >
                 <div className="fauto-painel-topo">
                   <strong>{traduzir("O que esta etapa faz?")}</strong>
@@ -834,17 +911,20 @@ export function AutomacaoDoFunil({
                     </button>
                   ))}
                 </div>
+              </div>
               </div>,
               document.body,
             )
           : null}
 
-        {rascunho && posicaoDoPainel
+        {rascunho
           ? createPortal(
+          <div className="fauto-veu" onClick={fecharPainel} role="presentation">
           <div
             className="fauto-painel"
-            ref={painelRef}
-            style={{ top: posicaoDoPainel.top, left: posicaoDoPainel.left }}
+            role="dialog"
+            aria-modal="true"
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="fauto-painel-topo">
               <strong>{rascunho.id ? "Editar gatilho" : ACAO_ROTULO[rascunho.tipoAcao]}</strong>
@@ -881,38 +961,77 @@ export function AutomacaoDoFunil({
               não tem resposta certa. Pra estender, apaga e cria de novo.
             */}
             {!rascunho.id && colunas.length > 1 ? (
+              /*
+               * AS OUTRAS ETAPAS SAEM DE UMA LISTA, não de uma parede de pastilhas.
+               *
+               * Com catorze etapas, catorze pastilhas ligadas/desligadas ocupavam mais espaço que
+               * o resto do formulário inteiro e empurravam pra baixo os campos que realmente
+               * precisam ser preenchidos. Fechada, a lista é uma linha que já diz o resultado
+               * ("Só esta etapa" / "Mais 3 etapas"); aberta, é a mesma escolha de antes.
+               */
               <div className="field">
-                <label>{traduzir("Vale também para")}</label>
-                <div className="fauto-etapas-extra">
-                  {colunas
-                    .filter((c) => c.id !== rascunho.etapaId)
-                    .map((c) => {
-                      const marcada = etapasExtras.includes(c.id);
-                      return (
+                <label>
+                  {traduzir("Vale também para")}
+                  <Ajuda
+                    texto={traduzir(
+                      "Sem nenhuma marcada, o gatilho vale só nesta etapa. Marcando outras, ele vira uma faixa só, atravessando as etapas escolhidas — uma coisa pra manter, em vez de uma por etapa.",
+                    )}
+                  />
+                </label>
+                <div className="fauto-escolha" data-menu-de-linha="">
+                  <button
+                    type="button"
+                    className="input fauto-escolha-alvo"
+                    aria-expanded={escolhendoEtapas}
+                    onClick={() => setEscolhendoEtapas((a) => !a)}
+                  >
+                    <span>{resumoDasEtapasExtras}</span>
+                    <span className="fauto-escolha-seta" aria-hidden="true">
+                      ▾
+                    </span>
+                  </button>
+                  {escolhendoEtapas ? (
+                    <div className="fauto-escolha-lista">
+                      {outrasEtapas.map((c) => {
+                        const marcada = etapasExtras.includes(c.id);
+                        return (
+                          <button
+                            key={c.id}
+                            type="button"
+                            role="checkbox"
+                            aria-checked={marcada}
+                            className={`fauto-escolha-item${marcada ? " on" : ""}`}
+                            onClick={() =>
+                              setEtapasExtras((atual) =>
+                                atual.includes(c.id) ? atual.filter((x) => x !== c.id) : [...atual, c.id],
+                              )
+                            }
+                          >
+                            <span className="fauto-escolha-marca" aria-hidden="true">
+                              {marcada ? "✓" : ""}
+                            </span>
+                            {c.titulo}
+                          </button>
+                        );
+                      })}
+                      <div className="fauto-escolha-fim">
                         <button
-                          key={c.id}
                           type="button"
-                          role="checkbox"
-                          aria-checked={marcada}
-                          className={`fauto-etapa-chip${marcada ? " on" : ""}`}
-                          onClick={() =>
-                            setEtapasExtras((atual) =>
-                              atual.includes(c.id) ? atual.filter((x) => x !== c.id) : [...atual, c.id],
-                            )
-                          }
+                          className="fauto-mini"
+                          onClick={() => setEtapasExtras(outrasEtapas.map((c) => c.id))}
                         >
-                          {c.titulo}
+                          {traduzir("Todas")}
                         </button>
-                      );
-                    })}
+                        <button type="button" className="fauto-mini" onClick={() => setEtapasExtras([])}>
+                          {traduzir("Limpar")}
+                        </button>
+                        <button type="button" className="fauto-mini forte" onClick={() => setEscolhendoEtapas(false)}>
+                          {traduzir("Pronto")}
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
-                <span className="hint">
-                  {etapasExtras.length
-                    ? traduzir("Vira uma faixa só, atravessando {n} etapas.", {
-                        n: String(etapasExtras.length + 1),
-                      })
-                    : traduzir("Deixe em branco para valer só nesta etapa.")}
-                </span>
               </div>
             ) : null}
 
@@ -947,6 +1066,51 @@ export function AutomacaoDoFunil({
                   <Ajuda
                     texto={traduzir(
                       "Todo dia nessa hora, para cada lead que estiver nesta etapa. Serve pra cobrança e lembrete de quem está parado.",
+                    )}
+                  />
+                </div>
+              ) : null}
+
+              {rascunho.quando === "data_hora" ? (
+                <div className="fauto-horas mt8">
+                  <input
+                    type="datetime-local"
+                    className="input"
+                    value={rascunho.dataHora}
+                    onChange={(e) => setRascunho({ ...rascunho, dataHora: e.target.value })}
+                    aria-label={traduzir("Data e hora do gatilho")}
+                  />
+                  <Ajuda
+                    texto={traduzir(
+                      "Uma vez só, na data e na hora marcadas, para cada lead que estiver nesta etapa naquele momento. Horário de Brasília.",
+                    )}
+                  />
+                </div>
+              ) : null}
+
+              {rascunho.quando === "sem_resposta" ? (
+                <div className="fauto-horas mt8">
+                  <input
+                    type="number"
+                    min={1}
+                    max={365}
+                    className="input fauto-numero"
+                    value={rascunho.esperaValor}
+                    onChange={(e) => setRascunho({ ...rascunho, esperaValor: Number(e.target.value) })}
+                    aria-label={traduzir("Tempo sem resposta")}
+                  />
+                  <select
+                    className="input"
+                    value={rascunho.esperaUnidade}
+                    onChange={(e) => setRascunho({ ...rascunho, esperaUnidade: e.target.value })}
+                    aria-label={traduzir("Unidade de tempo")}
+                  >
+                    <option value="horas">{traduzir("horas")}</option>
+                    <option value="dias">{traduzir("dias")}</option>
+                  </select>
+                  <Ajuda
+                    texto={traduzir(
+                      "Conta desde a última mensagem DO LEAD. Vale para quem está nesta etapa, dispara no máximo uma vez por dia para cada um e respeita a janela de \"Ativo\" aí embaixo.",
                     )}
                   />
                 </div>
@@ -1040,7 +1204,10 @@ export function AutomacaoDoFunil({
 
             {rascunho.tipoAcao === "mensagem" ? (
               <div className="field">
-                <label>{traduzir("Mensagem")}</label>
+                <label>
+                  {traduzir("Mensagem")}
+                  <Ajuda texto={traduzir("Aceita as mesmas variáveis dos blocos de mensagem, como {primeiro_nome}.")} />
+                </label>
                 <textarea
                   className="input"
                   rows={4}
@@ -1048,7 +1215,6 @@ export function AutomacaoDoFunil({
                   onChange={(e) => mudarDados({ mensagemTexto: e.target.value })}
                   placeholder="Oi {primeiro_nome}, tudo bem?"
                 />
-                <p className="hint mt8">{traduzir("Aceita as mesmas variáveis dos blocos de mensagem.")}</p>
               </div>
             ) : null}
 
@@ -1248,6 +1414,7 @@ export function AutomacaoDoFunil({
                 {salvando ? "Salvando…" : "Pronto"}
               </button>
             </div>
+          </div>
           </div>,
           document.body,
             )

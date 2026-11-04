@@ -1633,7 +1633,8 @@ model GatilhoEtapa {
   etapaId String
   etapa   FunilEtapa @relation(fields: [etapaId], references: [id], onDelete: Cascade)
 
-  // "movido" | "criado" | "movido_ou_criado" | "responsavel_alterado" | "diariamente"
+  // "movido" | "criado" | "movido_ou_criado" | "responsavel_alterado" | "diariamente" |
+  // "data_hora" | "sem_resposta" | "mensagem_recebida" | "formulario_enviado" | …
   quando String
 
   // O QUE a etapa faz. "robo" executa um fluxo; os outros são ações diretas, sem robô no meio,
@@ -1674,6 +1675,15 @@ model GatilhoEtapa {
 
   // Só pro quando = "diariamente": a que horas a varredura roda ("12:00").
   horarioDiario String?
+
+  // Só pro quando = "data_hora": o instante marcado, uma vez só, em hora local
+  // ("2026-11-04T22:33"). Texto e não DateTime de propósito: é a hora do RELÓGIO de quem marcou,
+  // como o campo da tela produz, e a varredura compara minuto a minuto com o relógio do servidor.
+  dataHora String?
+
+  // Só pro quando = "sem_resposta": quanto tempo de silêncio do lead ("2" + "horas"|"dias").
+  esperaValor   Int?
+  esperaUnidade String?
 
   ativo Boolean @default(true)
   ordem Int     @default(0)

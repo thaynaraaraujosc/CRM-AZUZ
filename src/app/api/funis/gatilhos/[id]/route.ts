@@ -42,6 +42,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       ...("horaInicio" in patch ? { horaInicio: patch.horaInicio ?? null } : {}),
       ...("horaFim" in patch ? { horaFim: patch.horaFim ?? null } : {}),
       ...("horarioDiario" in patch ? { horarioDiario: patch.horarioDiario ?? null } : {}),
+      ...("dataHora" in patch ? { dataHora: patch.dataHora ?? null } : {}),
+      // Zero e vazio viram `null`: "sem tempo escolhido" é a ausência do campo, não um 0 que a
+      // varredura teria que interpretar.
+      ...("esperaValor" in patch ? { esperaValor: Number(patch.esperaValor) > 0 ? Number(patch.esperaValor) : null } : {}),
+      ...("esperaUnidade" in patch ? { esperaUnidade: patch.esperaUnidade ?? null } : {}),
       ...(typeof patch.ativo === "boolean" ? { ativo: patch.ativo } : {}),
       ...(typeof patch.ordem === "number" ? { ordem: patch.ordem } : {}),
   };

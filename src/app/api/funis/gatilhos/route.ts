@@ -24,6 +24,9 @@ function paraVisao(linha: {
   horaInicio: string | null;
   horaFim: string | null;
   horarioDiario: string | null;
+  dataHora: string | null;
+  esperaValor: number | null;
+  esperaUnidade: string | null;
   ativo: boolean;
   ordem: number;
   grupoId: string | null;
@@ -96,6 +99,22 @@ export async function POST(request: Request) {
   if (tipoAcao === "robo" && !dados.fluxoId) {
     return NextResponse.json({ erro: "Gatilho de robô precisa de um robô escolhido." }, { status: 400 });
   }
+  /*
+   * O QUE CADA GATILHO DE RELÓGIO PRECISA, conferido também aqui.
+   *
+   * A tela já cobra, mas a tela não é a guarda: sem data o gatilho "numa data e hora" nunca
+   * dispararia, e sem tempo o de silêncio cairia no padrão sem que ninguém tivesse escolhido —
+   * duas automações que parecem configuradas e não são.
+   */
+  if (dados.quando === "data_hora" && !String(dados.dataHora ?? "").trim()) {
+    return NextResponse.json({ erro: "Escolha a data e a hora do gatilho." }, { status: 400 });
+  }
+  if (dados.quando === "sem_resposta" && !(Number(dados.esperaValor) > 0)) {
+    return NextResponse.json({ erro: "Diga quanto tempo de silêncio o gatilho espera." }, { status: 400 });
+  }
+  if (dados.quando === "diariamente" && !String(dados.horarioDiario ?? "").trim()) {
+    return NextResponse.json({ erro: "Escolha a hora da varredura diária." }, { status: 400 });
+  }
 
   // As etapas e o robô têm que ser DESTE workspace. Sem esta checagem, um id chutado ligaria um
   // gatilho no funil de outro cliente.
@@ -152,6 +171,9 @@ export async function POST(request: Request) {
     horaInicio: dados.horaInicio ?? null,
     horaFim: dados.horaFim ?? null,
     horarioDiario: dados.horarioDiario ?? null,
+    dataHora: dados.dataHora ?? null,
+    esperaValor: Number(dados.esperaValor) > 0 ? Number(dados.esperaValor) : null,
+    esperaUnidade: dados.esperaUnidade ?? null,
     ativo: dados.ativo ?? true,
     ordem: proximaOrdem,
     grupoId,

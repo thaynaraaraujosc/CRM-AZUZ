@@ -6,6 +6,8 @@ import {
   ACAO_ROTULO,
   EVENTO_DO_QUANDO,
   dentroDaJanelaDoGatilho,
+  ehOMinutoMarcado,
+  limiteDeSilencio,
   quandoAceitos,
   QUANDO_ROTULO,
   type AcaoDados,
@@ -14,6 +16,7 @@ import {
   type TipoAcaoGatilho,
 } from "./gatilhos-etapa-tipos";
 import { acoesReais } from "@/lib/automacoes/acoes";
+import { primeiraVezPara } from "@/lib/automacoes/idempotencia";
 
 export { ACAO_ROTULO, dentroDaJanelaDoGatilho, QUANDO_ROTULO };
 export type { AcaoDados, GatilhoEtapaVisao, QuandoGatilho, TipoAcaoGatilho };
@@ -275,27 +278,133 @@ export async function rodarGatilhoNosLeadsDaEtapa(params: {
 }
 
 /**
- * A varredura do `quando = "diariamente"`. Chamada pela batida do cron.
+ * Quem está nesta etapa e ficou tempo demais sem falar.
  *
- * Roda os gatilhos cuja hora já passou HOJE e que ainda não rodaram hoje. O controle é o
- * `criadoEm`/`ultimoDisparo`? Não: é a própria hora comparada com a batida, com uma janela de
- * tolerância do tamanho do intervalo do cron. Um gatilho marcado pras 12:00 dispara na primeira
- * batida a partir das 12:00, e não de novo, porque a janela já passou.
+ * "Sem resposta" se mede pela última mensagem DO LEAD, não pela última da conversa: se a régua
+ * fosse a última mensagem qualquer, nossa própria cobrança de ontem zeraria o relógio e o gatilho
+ * nunca mais dispararia. Quem nunca mandou mensagem nenhuma fica de fora — não dá pra passar
+ * tempo "desde a última resposta" de quem nunca respondeu, e incluí-los transformaria o gatilho
+ * numa varredura da base inteira.
  */
-export async function rodarGatilhosDiarios(agora: Date = new Date()): Promise<{ gatilhos: number; leads: number }> {
-  const hora = `${String(agora.getHours()).padStart(2, "0")}:${String(agora.getMinutes()).padStart(2, "0")}`;
-  const linhas = await prisma.gatilhoEtapa.findMany({
-    where: { quando: "diariamente", ativo: true, horarioDiario: hora },
+async function leadsEmSilencio(params: {
+  workspaceId: string;
+  etapaId: string;
+  limite: Date;
+}): Promise<string[]> {
+  const cards = await prisma.negocioCard.findMany({
+    where: { workspaceId: params.workspaceId, etapaId: params.etapaId },
+    select: { nome: true },
+    take: 500,
+  });
+  if (!cards.length) return [];
+
+  const ultimas = await prisma.mensagemExtra.groupBy({
+    by: ["contato"],
+    where: { workspaceId: params.workspaceId, contato: { in: cards.map((c) => c.nome) }, tipo: "in" },
+    _max: { criadoEm: true },
   });
 
+  return ultimas
+    .filter((u) => u._max.criadoEm && u._max.criadoEm < params.limite)
+    .map((u) => u.contato);
+}
+
+/**
+ * A varredura dos gatilhos de RELÓGIO da etapa ("diariamente", data marcada, silêncio do lead).
+ * Chamada pela batida do cron.
+ *
+ * O controle de repetição é diferente em cada um, porque a pergunta é diferente:
+ *
+ * - "Diariamente às 12:00" dispara na batida do minuto exato, e não de novo porque o minuto já
+ *   passou. É o mais barato: na maioria das batidas a consulta não acha nada.
+ * - "Numa data e hora" é a mesma coisa, uma vez só — com uma trava de idempotência por cima, pra
+ *   uma batida repetida do cron não mandar duas vezes.
+ * - "Sem resposta" é o único que fica verdadeiro por HORAS seguidas: sem trava, ele dispararia a
+ *   cada batida enquanto o lead continuasse calado. A trava é por lead e por DIA — cobrar quem
+ *   sumiu uma vez por dia é o que a gente quis dizer; a cada minuto é spam.
+ */
+export async function rodarGatilhosProgramados(agora: Date = new Date()): Promise<{ gatilhos: number; leads: number }> {
+  const hora = `${String(agora.getHours()).padStart(2, "0")}:${String(agora.getMinutes()).padStart(2, "0")}`;
+  const dia = agora.toISOString().slice(0, 10);
+
+  /*
+   * O SILÊNCIO SÓ É CONFERIDO DE 10 EM 10 MINUTOS, e isso é dinheiro.
+   *
+   * Os outros dois se resolvem no banco (um `where` por hora exata que quase sempre volta vazio).
+   * O de silêncio não: ele precisa olhar os cards da etapa e as mensagens deles, e continuaria
+   * verdadeiro a cada batida. Rodar isso 1.440 vezes por dia pra responder uma pergunta medida em
+   * HORAS seria pagar sessenta vezes por minuto de precisão que ninguém pediu.
+   */
+  const conferirSilencio = agora.getMinutes() % 10 === 0;
+
+  const linhas = await prisma.gatilhoEtapa.findMany({
+    where: {
+      ativo: true,
+      OR: [
+        { quando: "diariamente", horarioDiario: hora },
+        { quando: "data_hora" },
+        ...(conferirSilencio ? [{ quando: "sem_resposta" }] : []),
+      ],
+    },
+  });
+
+  let gatilhos = 0;
   let leads = 0;
   for (const linha of linhas) {
+    if (linha.quando === "data_hora") {
+      if (!ehOMinutoMarcado(linha.dataHora, agora)) continue;
+      const primeiraVez = await primeiraVezPara({
+        workspaceId: linha.workspaceId,
+        fluxoId: `gatilho:${linha.id}`,
+        chaveEvento: `data_hora:${linha.dataHora}`,
+      });
+      if (!primeiraVez) continue;
+      gatilhos++;
+      leads += await rodarGatilhoNosLeadsDaEtapa({
+        workspaceId: linha.workspaceId,
+        gatilhoId: linha.id,
+      }).catch(() => 0);
+      continue;
+    }
+
+    if (linha.quando === "sem_resposta") {
+      // A janela VALE aqui: quem escolhe a hora é o relógio, não a pessoa. Sem isso, "cobrar quem
+      // sumiu há 2 horas" mandaria mensagem às três da manhã.
+      if (!dentroDaJanelaDoGatilho(linha as unknown as GatilhoEtapaVisao, agora)) continue;
+      const calados = await leadsEmSilencio({
+        workspaceId: linha.workspaceId,
+        etapaId: linha.etapaId,
+        limite: limiteDeSilencio(linha.esperaValor, linha.esperaUnidade, agora),
+      }).catch(() => []);
+      if (!calados.length) continue;
+      gatilhos++;
+      for (const contatoNome of calados) {
+        const primeiraVez = await primeiraVezPara({
+          workspaceId: linha.workspaceId,
+          fluxoId: `gatilho:${linha.id}`,
+          chaveEvento: `sem_resposta:${contatoNome}:${dia}`,
+        });
+        if (!primeiraVez) continue;
+        const feito = await executarUmGatilho({
+          workspaceId: linha.workspaceId,
+          contatoNome,
+          gatilho: linha,
+        }).catch((erro) => {
+          console.error(`[gatilho-etapa] ${linha.id} falhou no lead ${contatoNome}:`, erro);
+          return false;
+        });
+        if (feito) leads++;
+      }
+      continue;
+    }
+
+    gatilhos++;
     leads += await rodarGatilhoNosLeadsDaEtapa({
       workspaceId: linha.workspaceId,
       gatilhoId: linha.id,
     }).catch(() => 0);
   }
-  return { gatilhos: linhas.length, leads };
+  return { gatilhos, leads };
 }
 
 /**

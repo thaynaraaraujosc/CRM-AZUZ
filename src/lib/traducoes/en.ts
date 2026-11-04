@@ -524,6 +524,24 @@ export const TRADUCOES_EN: Record<string, string> = {
   "Última mensagem deste contato": "This contact's last message",
   "Última visualização": "Last viewed",
 
+  // ---- Gatilhos de etapa do funil (o formulário "O que esta etapa faz?") ----
+  "Aceita as mesmas variáveis dos blocos de mensagem, como {primeiro_nome}.":
+    "Accepts the same variables as the message blocks, such as {primeiro_nome}.",
+  "Conta desde a última mensagem DO LEAD. Vale para quem está nesta etapa, dispara no máximo uma vez por dia para cada um e respeita a janela de \"Ativo\" aí embaixo.":
+    "Counted from the LEAD's last message. It applies to whoever is in this stage, fires at most once a day for each of them and respects the \"Active\" window below.",
+  "Data e hora do gatilho": "Trigger date and time",
+  "Diga quanto tempo de silêncio o gatilho espera.": "Say how long the trigger waits in silence.",
+  "Escolha a data e a hora do gatilho.": "Choose the trigger date and time.",
+  "Sem nenhuma marcada, o gatilho vale só nesta etapa. Marcando outras, ele vira uma faixa só, atravessando as etapas escolhidas — uma coisa pra manter, em vez de uma por etapa.":
+    "With none selected, the trigger applies to this stage only. Selecting others turns it into a single band across the chosen stages — one thing to maintain instead of one per stage.",
+  "Só esta etapa": "This stage only",
+  "Tempo sem resposta": "Time without a reply",
+  "Uma vez só, na data e na hora marcadas, para cada lead que estiver nesta etapa naquele momento. Horário de Brasília.":
+    "Once only, on the date and time set, for each lead in this stage at that moment. Brasília time.",
+  "{n} etapas escolhidas": "{n} stages selected",
+  dias: "days",
+  horas: "hours",
+
   // ---- Editores, automações e telas gerais ----
   "A empresa": "The company",
   "A pessoa vai receber:": "The person will receive:",

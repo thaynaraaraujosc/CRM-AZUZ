@@ -9,6 +9,8 @@ import { enviarTextoPeloCanal } from "@/lib/conversas/enviar-pelo-canal";
 import { continuarComResposta, iniciarFluxoComEstado } from "@/lib/automacoes/iniciar";
 import type { AreaAutomacao } from "@/lib/canais/capacidades";
 import { gatilhoServeAoFormulario } from "@/lib/automation-flow/formulario-do-gatilho";
+import { dispararGatilhosDoLead } from "@/lib/funil/gatilhos-etapa";
+import { emSegundoPlano } from "@/lib/automacoes/segundo-plano";
 
 /**
  * Dispara as automações quando chega uma mensagem. Do lado do SERVIDOR, a partir do webhook.
@@ -38,6 +40,24 @@ export async function dispararAutomacoesDeMensagemRecebida(params: {
     idDaOpcao: params.idDaOpcao,
     tipoGatilho: "mensagem_recebida",
   });
+
+  /*
+   * A MESMA MENSAGEM TAMBÉM ACORDA OS GATILHOS DA ETAPA em que o lead está.
+   *
+   * É o que faz "quando alguém de Follow-up responder, mova pra Qualificado" existir sem precisar
+   * montar um robô de um passo só. O gatilho do fluxo continua sendo outro caminho, independente:
+   * os dois podem existir ao mesmo tempo, e desligar um não desliga o outro.
+   *
+   * Em segundo plano e engolindo erro: responder o cliente é o que importa nesta função, e uma
+   * falha aqui não pode derrubar o disparo do robô que já aconteceu acima.
+   */
+  emSegundoPlano("gatilho de etapa mensagem_recebida", () =>
+    dispararGatilhosDoLead({
+      workspaceId: params.workspaceId,
+      contatoNome: params.contatoNome,
+      tipoGatilho: "mensagem_recebida",
+    }),
+  );
 }
 
 /**

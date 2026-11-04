@@ -31,6 +31,10 @@ export type QuandoGatilho =
   | "campo_alterado"
   // Programados
   | "diariamente"
+  | "data_hora"
+  | "sem_resposta"
+  // Conversa
+  | "mensagem_recebida"
   // Ações
   | "formulario_enviado";
 
@@ -95,6 +99,11 @@ export type GatilhoEtapaVisao = {
   horaInicio?: string | null;
   horaFim?: string | null;
   horarioDiario?: string | null;
+  /** Só pro quando = "data_hora": o instante marcado, em hora local ("2026-11-04T22:33"). */
+  dataHora?: string | null;
+  /** Só pro quando = "sem_resposta": quanto tempo de silêncio, e em que unidade. */
+  esperaValor?: number | null;
+  esperaUnidade?: string | null;
   ativo: boolean;
   ordem: number;
 };
@@ -108,7 +117,10 @@ export const QUANDO_ROTULO: Record<QuandoGatilho, string> = {
   etiqueta_adicionada: "Quando uma etiqueta for adicionada",
   etiqueta_removida: "Quando uma etiqueta for removida",
   campo_alterado: "Quando um campo for alterado",
-  diariamente: "Diariamente",
+  diariamente: "Diariamente, numa hora",
+  data_hora: "Numa data e hora exatas, uma vez",
+  sem_resposta: "Quando passar um tempo sem resposta do lead",
+  mensagem_recebida: "Quando o lead mandar uma mensagem",
   formulario_enviado: "Quando um formulário for enviado",
 };
 
@@ -127,9 +139,23 @@ export const CATEGORIAS_GATILHO: { titulo: string; quandos: QuandoGatilho[] }[] 
       "campo_alterado",
     ],
   },
-  { titulo: "Gatilhos programados", quandos: ["diariamente"] },
+  { titulo: "Gatilhos programados", quandos: ["diariamente", "data_hora", "sem_resposta"] },
+  { titulo: "Gatilhos de conversação", quandos: ["mensagem_recebida"] },
   { titulo: "Gatilhos baseados em ações", quandos: ["formulario_enviado"] },
 ];
+
+/**
+ * OS GATILHOS QUE O RELÓGIO ACIONA, não um evento.
+ *
+ * Ninguém move um card nem manda mensagem: alguém precisa PERGUNTAR, de minuto em minuto, se
+ * chegou a hora. A lista mora aqui (e não dentro da varredura) porque é a mesma resposta que o
+ * teste usa pra cobrar `EVENTO_DO_QUANDO` de todos os OUTROS: um gatilho novo ou está nesta lista,
+ * ou tem evento do CRM que o aciona. Fora disso, ele existiria só na tela.
+ */
+export const QUANDOS_VARRIDOS: QuandoGatilho[] = ["diariamente", "data_hora", "sem_resposta"];
+
+/** Os que acontecem quando o lead CHEGA na etapa: o disparo sai de quem moveu o card. */
+export const QUANDOS_DE_ENTRADA: QuandoGatilho[] = ["movido", "criado", "movido_ou_criado"];
 
 /**
  * O evento do CRM que aciona cada `quando`, pros gatilhos que NÃO são de entrada na etapa.
@@ -139,6 +165,10 @@ export const CATEGORIAS_GATILHO: { titulo: string; quandos: QuandoGatilho[] }[] 
  */
 export const EVENTO_DO_QUANDO: Partial<Record<QuandoGatilho, string>> = {
   saiu: "lead_saiu_etapa",
+  // A mensagem que chega do lead, em qualquer canal. É o mesmo evento que já aciona o bloco
+  // "Mensagem recebida" dos robôs: aqui ele passa a acordar também os gatilhos da etapa em que o
+  // lead está, que é o que faz "quando alguém de Follow-up responder, faça X" existir.
+  mensagem_recebida: "mensagem_recebida",
   responsavel_alterado: "responsavel_alterado",
   etiqueta_adicionada: "etiqueta_adicionada",
   etiqueta_removida: "etiqueta_removida",
@@ -192,3 +222,38 @@ export function dentroDaJanelaDoGatilho(
   return de <= ate ? minutos >= de && minutos <= ate : minutos >= de || minutos <= ate;
 }
 
+
+/**
+ * Chegou o minuto marcado?
+ *
+ * O instante é guardado como texto local ("2026-11-04T22:33"), igual ao que o `datetime-local` da
+ * tela produz, e a comparação é de MINUTO — a varredura bate a cada minuto, e comparar instantes
+ * exatos nunca casaria. Fora aqui ninguém formata esse texto: duas formatações divergiriam, e
+ * divergir significa um gatilho que nunca dispara.
+ */
+export function minutoLocal(agora: Date): string {
+  const d = (n: number) => String(n).padStart(2, "0");
+  return `${agora.getFullYear()}-${d(agora.getMonth() + 1)}-${d(agora.getDate())}T${d(agora.getHours())}:${d(agora.getMinutes())}`;
+}
+
+export function ehOMinutoMarcado(dataHora: string | null | undefined, agora: Date): boolean {
+  if (!dataHora) return false;
+  // Aceita com e sem segundos: alguns navegadores mandam "2026-11-04T22:33:00".
+  return dataHora.slice(0, 16) === minutoLocal(agora);
+}
+
+/**
+ * Desde quando o lead está em silêncio pro gatilho valer.
+ *
+ * Devolve o INSTANTE LIMITE: última mensagem do lead mais antiga que isso = ele sumiu há tempo
+ * demais. Sem valor configurado são 2 horas, o mesmo padrão do gatilho de tempo dos robôs.
+ */
+export function limiteDeSilencio(
+  valor: number | null | undefined,
+  unidade: string | null | undefined,
+  agora: Date,
+): Date {
+  const quantos = Number(valor) > 0 ? Number(valor) : 2;
+  const porUnidade = String(unidade ?? "horas").startsWith("dia") ? 86_400_000 : 3_600_000;
+  return new Date(agora.getTime() - quantos * porUnidade);
+}

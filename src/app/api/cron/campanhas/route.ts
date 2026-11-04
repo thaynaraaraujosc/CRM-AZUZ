@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { rodarRodadaDeCampanhas } from "@/lib/campanhas/worker";
 import { retomarEsperasVencidas } from "@/lib/automacoes/iniciar";
 import { rodarGatilhosDeTempo } from "@/lib/automacoes/gatilhos-tempo";
-import { rodarGatilhosDiarios } from "@/lib/funil/gatilhos-etapa";
+import { rodarGatilhosProgramados } from "@/lib/funil/gatilhos-etapa";
 import { adotarOrfasDeTodosOsWorkspaces } from "@/lib/conversas/adotar-orfas";
 import { rodarHistoricosPendentes } from "@/lib/integracoes/historico-passo";
 import { padronizarNomesDeTodosOsWorkspaces } from "@/lib/funis/consolidar";
@@ -82,10 +82,12 @@ export async function GET(request: Request) {
     return { disparados: 0 };
   });
 
-  // Os gatilhos "Diariamente às HH:MM" das etapas do funil. Só olha o minuto exato, então na
-  // maioria das batidas a consulta não devolve nada e sai de graça.
-  const diarios = await rodarGatilhosDiarios().catch((erro) => {
-    console.error("[cron] falha nos gatilhos diários do funil:", erro);
+  // Os gatilhos de RELÓGIO das etapas do funil: "Diariamente às HH:MM", a data e hora marcadas e
+  // o lead que ficou tempo demais sem responder. Os dois primeiros só olham o minuto exato, então
+  // na maioria das batidas a consulta não devolve nada e sai de graça; o de silêncio é conferido
+  // de 10 em 10 minutos (ver `rodarGatilhosProgramados`).
+  const diarios = await rodarGatilhosProgramados().catch((erro) => {
+    console.error("[cron] falha nos gatilhos programados do funil:", erro);
     return { gatilhos: 0, leads: 0 };
   });
 

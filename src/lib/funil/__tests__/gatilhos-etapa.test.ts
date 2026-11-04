@@ -3,9 +3,14 @@ import { describe, expect, it } from "vitest";
 import {
   CATEGORIAS_GATILHO,
   dentroDaJanelaDoGatilho,
+  ehOMinutoMarcado,
   EVENTO_DO_QUANDO,
+  limiteDeSilencio,
+  minutoLocal,
   QUANDO_ROTULO,
   quandoAceitos,
+  QUANDOS_DE_ENTRADA,
+  QUANDOS_VARRIDOS,
   type QuandoGatilho,
 } from "../gatilhos-etapa-tipos";
 
@@ -73,13 +78,63 @@ describe("o menu de gatilhos", () => {
     expect(new Set(noMenu).size).toBe(noMenu.length);
   });
 
-  it("os gatilhos que não são de etapa têm um evento do CRM que os aciona", () => {
-    // O contrário é o defeito que essa tabela existe pra impedir: oferecer na tela um gatilho que
-    // o servidor nunca dispara, e a pessoa monta a automação e fica esperando.
-    const deEntrada: QuandoGatilho[] = ["movido", "criado", "movido_ou_criado", "diariamente"];
+  it("todo gatilho tem quem o acione: entrada na etapa, varredura, ou um evento do CRM", () => {
+    /*
+     * A REGRA QUE IMPEDE O PIOR DEFEITO: um gatilho que existe na tela e nunca acontece.
+     *
+     * São três formas de acontecer, e todo `quando` precisa estar em exatamente uma delas. Quem
+     * entra na etapa é disparado por quem moveu o card; os de relógio são encontrados pela
+     * varredura do cron; o resto depende de um evento do CRM, e a tabela diz qual.
+     */
     const todos = Object.keys(QUANDO_ROTULO) as QuandoGatilho[];
-    for (const q of todos.filter((x) => !deEntrada.includes(x))) {
-      expect(EVENTO_DO_QUANDO[q], `"${q}" não tem evento do CRM`).toBeTruthy();
+    for (const q of todos) {
+      const formas = [
+        QUANDOS_DE_ENTRADA.includes(q),
+        QUANDOS_VARRIDOS.includes(q),
+        Boolean(EVENTO_DO_QUANDO[q]),
+      ].filter(Boolean);
+      expect(formas.length, `"${q}" não tem quem o acione (ou tem mais de um)`).toBe(1);
     }
+  });
+});
+
+describe("gatilhos de relógio da etapa", () => {
+  it("a data e hora marcadas valem no MINUTO delas, e só nele", () => {
+    const marcado = "2026-11-04T22:33";
+    expect(ehOMinutoMarcado(marcado, new Date(2026, 10, 4, 22, 33))).toBe(true);
+    // Um segundo depois ainda é o mesmo minuto: a batida do cron não cai no segundo zero.
+    expect(ehOMinutoMarcado(marcado, new Date(2026, 10, 4, 22, 33, 59))).toBe(true);
+    expect(ehOMinutoMarcado(marcado, new Date(2026, 10, 4, 22, 34))).toBe(false);
+    expect(ehOMinutoMarcado(marcado, new Date(2026, 10, 5, 22, 33))).toBe(false);
+  });
+
+  it("aceita o texto com segundos, que alguns navegadores mandam", () => {
+    expect(ehOMinutoMarcado("2026-11-04T22:33:00", new Date(2026, 10, 4, 22, 33))).toBe(true);
+  });
+
+  it("sem data marcada, nunca é a hora", () => {
+    expect(ehOMinutoMarcado(null, new Date())).toBe(false);
+    expect(ehOMinutoMarcado("", new Date())).toBe(false);
+  });
+
+  it("o minuto é escrito em hora LOCAL, igual ao campo da tela", () => {
+    // `toISOString` daria UTC e o gatilho das 22:33 dispararia três horas fora. Este é o ponto da
+    // função existir em vez de cada lado formatar do seu jeito.
+    expect(minutoLocal(new Date(2026, 10, 4, 22, 33))).toBe("2026-11-04T22:33");
+    expect(minutoLocal(new Date(2026, 0, 9, 7, 5))).toBe("2026-01-09T07:05");
+  });
+
+  it("o silêncio vira um instante limite, em horas ou em dias", () => {
+    const agora = new Date(2026, 10, 4, 12, 0);
+    expect(limiteDeSilencio(2, "horas", agora)).toEqual(new Date(2026, 10, 4, 10, 0));
+    expect(limiteDeSilencio(3, "dias", agora)).toEqual(new Date(2026, 10, 1, 12, 0));
+  });
+
+  it("sem tempo escolhido, o silêncio são duas horas", () => {
+    const agora = new Date(2026, 10, 4, 12, 0);
+    // Mesmo padrão do gatilho de tempo dos robôs. Zero e negativo caem nele também: um gatilho
+    // com prazo zero dispararia pra todo mundo que já falou alguma vez.
+    expect(limiteDeSilencio(null, null, agora)).toEqual(new Date(2026, 10, 4, 10, 0));
+    expect(limiteDeSilencio(0, "horas", agora)).toEqual(new Date(2026, 10, 4, 10, 0));
   });
 });
