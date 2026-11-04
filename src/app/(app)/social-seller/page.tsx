@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 
 import { Topbar } from "@/components/ui";
 import { AbasSocial } from "@/components/social/AbasSocial";
@@ -51,12 +50,6 @@ const PERIODOS = [
   { dias: 30, label: "Mês" },
 ] as const;
 
-/** Só o primeiro nome: "Olá, Thaynara Araújo Santos Costa" não cabe e não é como se cumprimenta. */
-function primeiroNome(nome?: string | null): string | null {
-  const limpo = (nome ?? "").trim();
-  if (!limpo) return null;
-  return limpo.split(/\s+/)[0] ?? null;
-}
 
 type Icone = typeof IconAutomacoes;
 
@@ -83,7 +76,6 @@ function Tile({ Icone, valor, label, ajuda }: { Icone: Icone; valor: number; lab
 
 export default function ResumoSocialPage() {
   const { t: traduzir } = useIdioma();
-  const { data: sessao } = useSession();
   const router = useRouter();
   const { criarFluxo } = useAutomationFlows();
   const [dias, setDias] = useState<number>(7);
@@ -109,7 +101,6 @@ export default function ResumoSocialPage() {
 
   const carregando = resposta?.paraDias !== dias;
   const painel = resposta?.dados ?? null;
-  const nome = primeiroNome(sessao?.user?.name);
 
   /** Um modelo vira rascunho e abre no editor. Nunca publicado: ver `/social-seller/novo`. */
   function comecarPor(modeloId: string) {
@@ -192,16 +183,22 @@ export default function ResumoSocialPage() {
       <div className="content social-layout">
         <AbasSocial />
         <div className="social-conteudo">
-          <header className="ss-saudacao">
-            <h2>
-              {nome ? (
-                <>
-                  {traduzir("Olá,")} <span>{nome}</span>! {traduzir("Que bom ter você aqui.")}
-                </>
-              ) : (
-                traduzir("Que bom ter você aqui.")
+          {/*
+            TÍTULO DE PÁGINA, e não saudação.
+            
+            Era "Olá, Emilly! Que bom ter você aqui." — e é justamente esse tipo de frase que dá à
+            tela a cara de assistente, não de ferramenta. A referência que a Thaynara escolheu
+            (Umbler Talk) abre toda tela do mesmo jeito: o nome do que você está vendo, grande, e
+            uma linha dizendo o que dá pra fazer ali. O nome de quem entrou já está no menu, no
+            rodapé da barra lateral, o tempo todo.
+          */}
+          <header className="ss-cabeca">
+            <h2>{traduzir("Resumo")}</h2>
+            <p>
+              {traduzir(
+                "Como o Instagram se comportou no período, e o que falta para o atendimento rodar sozinho.",
               )}
-            </h2>
+            </p>
           </header>
 
           {/*

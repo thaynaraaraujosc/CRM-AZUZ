@@ -26410,3 +26410,156 @@ td.trafego-col-crm:first-of-type {
   width: auto;
   flex: 1 1 0;
 }
+
+/* ================= A ESTÉTICA DO UMBLER NO SOCIAL SELLER =================
+ *
+ * A Thaynara escolheu o Umbler Talk como referência de acabamento pra este módulo: papel
+ * azul-lavanda muito claro, cartões brancos sem contorno flutuando nele, título grande, botão
+ * principal em pastilha cheia. O oposto da "cara de IA", que é a grade de quadradinhos iguais,
+ * todos com borda, todos do mesmo peso, sobre fundo branco.
+ *
+ * Só o PAPEL e o ACABAMENTO vêm de lá. A cor de ação continua sendo a do módulo (`--ss-azul`),
+ * que veio da outra referência e já está em botão, aba e item de menu — trocar por um segundo
+ * azul faria duas identidades dentro da mesma tela, que é exatamente o que a unificação do
+ * renderizador de mensagens resolveu.
+ *
+ * ESCOPADO no `.content.social-layout`: o resto do CRM continua no cinza-azulado dele.
+ */
+.content.social-layout {
+  background: #eef2fe;
+}
+
+:root[data-theme="dark"] .content.social-layout {
+  background: var(--canvas);
+}
+
+/*
+ * O CABEÇALHO DA PÁGINA: nome grande, uma linha explicando.
+ *
+ * Substituiu "Olá, Emilly! Que bom ter você aqui." — saudação é o que faz uma ferramenta soar
+ * como assistente. Quem entrou já está escrito no rodapé do menu, o tempo todo.
+ */
+.ss-cabeca {
+  margin-bottom: var(--space-5);
+}
+
+.ss-cabeca h2 {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.ss-cabeca p {
+  margin: 6px 0 0;
+  max-width: 68ch;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+/*
+ * CADA SEÇÃO É UM CARTÃO BRANCO sobre o papel, e não uma faixa separada por filete.
+ *
+ * Eram `border-bottom: 1px` entre as seções: numa tela com quatro, isso são quatro traços
+ * horizontais atravessando tudo, e o olho lê "formulário comprido" em vez de "quatro assuntos".
+ * Cartão branco sobre papel colorido é a mesma separação, feita por superfície.
+ */
+.content.social-layout .ss-secao,
+.content.social-layout .ss-passos {
+  margin-bottom: var(--space-4);
+  padding: var(--space-5);
+  border: 0;
+  border-radius: 16px;
+  background: var(--surface-elevated);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.05);
+}
+
+.content.social-layout .ss-secao:last-child {
+  margin-bottom: 0;
+  padding-bottom: var(--space-5);
+}
+
+/*
+ * OS NÚMEROS SEM CONTORNO.
+ *
+ * Quatro caixas com borda, todas iguais, lado a lado — é a assinatura visual do painel genérico.
+ * Dentro de um cartão branco, o que separa um número do outro é o ESPAÇO; a borda só repetia a
+ * divisão que o espaço já faz, e somava quatro retângulos à tela.
+ */
+.content.social-layout .ss-tile {
+  border: 0;
+  background: none;
+  padding: 0;
+  gap: 6px;
+}
+
+.content.social-layout .ss-tile:hover {
+  border: 0;
+  box-shadow: none;
+}
+
+.content.social-layout .ss-tiles {
+  gap: var(--space-5) var(--space-4);
+}
+
+/* O botão principal do módulo em pastilha cheia, como o "+ Convidar atendente" da referência. */
+.content.social-layout .btn.primary,
+.content.social-layout .btn.ss-primario {
+  border-radius: 999px;
+}
+
+/* ================= A GRADE DE AUTOMAÇÃO: PISO CINZA, CARTÃO BRANCO =================
+ *
+ * Era o contrário, e por isso não se lia: a grade inteira branca, e o gatilho num azul de 12%
+ * sobre branco. Dois tons quase iguais, e o cartão — que é a única coisa que importa ali —
+ * desaparecia no fundo. Com dez etapas na tela, a pessoa procurava onde havia automação.
+ *
+ * O piso é o AZUL-MARINHO DA MARCA a 5% sobre branco: lê como cinza, mas é um cinza que pertence
+ * à identidade, e não um cinza neutro qualquer. É a mesma receita do quadro de negócios — coluna
+ * recuada, cartão branco flutuando — que é onde ela já funciona há tempo neste produto.
+ */
+.fauto-grade,
+.fauto-cab {
+  background: color-mix(in srgb, var(--navy-marca) 5%, #ffffff);
+}
+
+:root[data-theme="dark"] .fauto-grade,
+:root[data-theme="dark"] .fauto-cab {
+  background: var(--surface);
+}
+
+/* O gatilho vira cartão branco: superfície, contorno fino e uma sombra curta. Os três juntos é
+   que fazem ele FLUTUAR sobre o piso em vez de ser uma mancha de cor dentro da célula. */
+.fauto-gat {
+  background: var(--surface-elevated);
+  border: 1px solid var(--line);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+}
+
+.fauto-gat:hover {
+  border-color: color-mix(in srgb, var(--acao) 50%, var(--line));
+  box-shadow: 0 2px 8px rgba(16, 24, 40, 0.08);
+}
+
+/* Desligado continua se distinguindo por SUPERFÍCIE, e não só por opacidade: um cartão branco
+   com 70% de opacidade sobre piso claro fica quase igual ao ligado. */
+.fauto-gat.desligado {
+  background: var(--surface-2);
+  border-style: dashed;
+  box-shadow: none;
+  opacity: 1;
+  color: var(--text-muted);
+}
+
+/* O "+ Adicionar gatilho" deixa de ter fundo próprio: sobre o piso, o tracejado já diz "vazio",
+   e uma caixa cinza dentro de uma célula cinza era mais uma borda sem função. */
+.fauto-add {
+  background: transparent;
+}
+
+.fauto-add:hover {
+  background: var(--surface-elevated);
+}
