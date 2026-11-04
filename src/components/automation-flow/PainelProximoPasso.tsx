@@ -16,6 +16,7 @@ import {
 import { BLOCOS_DISPONIVEIS, GRUPOS_BIBLIOTECA } from "@/lib/automation-flow/blocos";
 import { blocoApareceNaArea, blocoValeNaArea, type AreaAutomacao } from "@/lib/canais/capacidades";
 import { sugestoesApos } from "@/lib/automation-flow/sugestoes";
+import type { PosicaoDaLista } from "@/lib/automation-flow/posicao-da-lista";
 import type { FlowNodeCategory, FlowNodeType } from "@/lib/automation-flow/types";
 import { useIdioma } from "@/lib/idioma-context";
 
@@ -53,6 +54,7 @@ export function PainelProximoPasso({
   compacto,
   juntoAoInicio,
   posicao,
+  fioVerde,
 }: {
   tipoAnterior?: FlowNodeType;
   categoriaAnterior?: FlowNodeCategory;
@@ -83,7 +85,10 @@ export function PainelProximoPasso({
    */
   juntoAoInicio?: boolean;
   /** Em pixels de tela, quando a lista é chamada por um "+" de bloco. Ver o comentário no editor. */
-  posicao?: { top: number; left: number };
+  /** Onde a caixa nasce, em pixels de tela, e de que lado o fio sai (`posicao-da-lista.ts`). */
+  posicao?: PosicaoDaLista;
+  /** Fio na cor do começo: é o que liga a caixa à pastilha verde "Iniciar robô". */
+  fioVerde?: boolean;
 }) {
   const { t: traduzir } = useIdioma();
   const [busca, setBusca] = useState("");
@@ -155,9 +160,16 @@ export function PainelProximoPasso({
         role="dialog"
         aria-label={traduzir("Adicionar próximo passo")}
       >
-        {/* A LINHA que sai do "+" e chega na caixa: sem ela, a caixa parece ter aparecido do nada
-            e não se sabe de qual saída ela é. Só quando a caixa está ancorada num botão. */}
-        {posicao ? <span className="pp-fio" aria-hidden="true" /> : null}
+        {/* A LINHA que liga a caixa a quem a abriu — o "+" de uma saída ou a pastilha "Iniciar
+            robô". Sem ela, a caixa parece ter aparecido do nada e não se sabe de onde ela saiu.
+            Quando a caixa não coube à direita e virou pra esquerda, o fio troca de lado: do
+            contrário ele apontaria pro lado oposto de quem o chamou. */}
+        {posicao ? (
+          <span
+            className={`pp-fio${posicao.fioNaDireita ? " pp-fio-direita" : ""}${fioVerde ? " pp-fio-inicio" : ""}`}
+            aria-hidden="true"
+          />
+        ) : null}
 
         {/* O título estava só no `aria-label`: a caixa abria com um campo de busca e nenhuma
             palavra dizendo o que se está escolhendo. A referência abre com ele escrito. */}

@@ -25455,7 +25455,17 @@ td.trafego-col-crm:first-of-type {
   border-radius: 12px;
   background: var(--surface);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
-  overflow: hidden;
+  /*
+   * NÃO CORTA O QUE SAI DA CAIXA, e é isto que faz o fio existir.
+   *
+   * Era `overflow: hidden`, pra arredondar o canto de baixo da lista. Só que o fio (`.pp-fio`) é
+   * desenhado 13px FORA da borda, pra encostar em quem abriu a caixa — e ele estava sendo
+   * cortado inteiro. O código do fio estava lá desde que foi escrito, e ele nunca apareceu na
+   * tela uma vez sequer.
+   *
+   * O arredondamento continua: quem rola é a lista de dentro, e ela tem o próprio canto.
+   */
+  overflow: visible;
 }
 
 /*
@@ -25514,6 +25524,34 @@ td.trafego-col-crm:first-of-type {
   background: var(--line-strong);
 }
 
+/*
+ * Perto da borda direita da tela a caixa vira pra ESQUERDA de quem a chamou — e o fio tem que
+ * virar junto. Preso à esquerda, ele apontava pro lado oposto do botão, o que é pior do que não
+ * ter fio: ele vira uma seta pra lugar nenhum.
+ */
+.pp-fio-direita {
+  left: auto;
+  right: -13px;
+}
+
+/* O fio que sai da pastilha "Iniciar robô" tem a cor dela: é a mesma ligação que o canvas desenha
+   em verde entre o começo e o primeiro bloco, e trocar de cor no meio do caminho faria parecer
+   outra coisa. Um pouco mais grosso, porque 1px de cor clara some no fundo branco. */
+.pp-fio-inicio {
+  height: 2px;
+  background: var(--success);
+}
+
+.pp-fio-inicio::before {
+  top: -2px;
+  background: var(--success);
+}
+
+.pp-fio-direita::before {
+  left: auto;
+  right: -2px;
+}
+
 .pp-titulo strong {
   display: block;
   font-size: 13px;
@@ -25566,6 +25604,8 @@ td.trafego-col-crm:first-of-type {
   min-height: 0;
   overflow-y: auto;
   padding: 10px;
+  /* O canto de baixo da caixa agora é responsabilidade da lista: é ela que rola e encosta nele. */
+  border-radius: 0 0 12px 12px;
 }
 
 .pp-item {

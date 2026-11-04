@@ -43,6 +43,8 @@ import { BarraFerramentasSocial } from "./BarraFerramentasSocial";
 import { ArestaSocial } from "./ArestaSocial";
 import { GatilhosDoSocial } from "./GatilhosDoSocial";
 import { ListaDePassos } from "./ListaDePassos";
+import { posicaoDaLista } from "@/lib/automation-flow/posicao-da-lista";
+import { ProximoPassoJuntoAoInicio } from "./ProximoPassoJuntoAoInicio";
 import { PainelProximoPasso } from "./PainelProximoPasso";
 import { nodeTypes } from "./nodes";
 import { IconCheck, IconClose } from "@/components/icons";
@@ -230,19 +232,10 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
    * Os limites são aparados: perto da borda direita a caixa vira pra ESQUERDA do botão, e perto
    * do rodapé ela sobe — senão metade dela fica fora da tela, que é pior que longe.
    */
-  const LARGURA_DA_LISTA = 250;
-  const ALTURA_MAXIMA_DA_LISTA = 430;
-  const posicaoDaLista = (() => {
+  const posicaoDoMais = (() => {
     const r = acaoRapida?.ancora;
-    if (!r) return undefined;
-    const margem = 12;
-    const cabeDireita = r.right + margem + LARGURA_DA_LISTA <= window.innerWidth - margem;
-    const left = cabeDireita ? r.right + margem : Math.max(margem, r.left - margem - LARGURA_DA_LISTA);
-    const top = Math.max(
-      margem,
-      Math.min(r.top - 10, window.innerHeight - margem - ALTURA_MAXIMA_DA_LISTA),
-    );
-    return { top, left };
+    if (!r || typeof window === "undefined") return undefined;
+    return posicaoDaLista(r, { largura: window.innerWidth, altura: window.innerHeight });
   })();
 
   /** Fechar qualquer uma das duas também desliga a abertura automática. */
@@ -1530,6 +1523,43 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     [fluxo, domainNodesAtuais, domainEdgesAtuais],
   );
 
+  /**
+   * As props da caixa de próximo passo, montadas uma vez.
+   *
+   * Um objeto, e não uma função que devolve o JSX: chamar uma função durante o render que lê
+   * `ref` é o que o `react-hooks/refs` proíbe — e os `adicionar…` aqui dentro leem. Como objeto,
+   * eles só são chamados no clique, que é o lugar certo.
+   */
+  const propsDoProximoPasso = {
+    tipoAnterior: noDaAcaoRapida?.type,
+    categoriaAnterior: noDaAcaoRapida?.category,
+    area,
+    rotuloDaSaida: saidaDaAcaoRapida?.label || undefined,
+    onEscolher: (tipo: FlowNodeType) => {
+      // `nodeId` vazio = "primeiro passo" de um robô que começa na etapa do funil: não há bloco
+      // anterior a que conectar, então o passo entra solto no canvas.
+      if (escolhendoProximoPasso?.nodeId)
+        adicionarBlocoConectado(tipo, escolhendoProximoPasso.nodeId, escolhendoProximoPasso.handleId);
+      // Ao lado da pastilha, e não numa coordenada fixa: ver `posicaoDoInicio`.
+      else adicionarBloco(tipo, { x: posicaoDoInicio.x + 260, y: posicaoDoInicio.y - 6 });
+      setAcaoRapida(null);
+    },
+    onFollowUp: () => {
+      if (!escolhendoProximoPasso) return;
+      adicionarFollowUp(escolhendoProximoPasso.nodeId, escolhendoProximoPasso.handleId);
+      setAcaoRapida(null);
+    },
+    onFechar: () => fecharEscolha(),
+    /*
+     * A CAIXINHA TAMBÉM NO FUNIL, e não só no Social Seller.
+     *
+     * A gaveta de altura cheia cobria metade do desenho pra uma escolha de um segundo, e repetia
+     * o título no topo. A caixa mostra a mesma lista inteira, com busca, sem tirar o fluxo da
+     * vista — que é como a referência faz.
+     */
+    compacto: true,
+  };
+
   if (!fluxo) {
     return (
       <div className="flow-shell-empty">
@@ -1818,36 +1848,29 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           ) : null}
 
           {escolhendoProximoPasso ? (
-            <PainelProximoPasso
-              tipoAnterior={noDaAcaoRapida?.type}
-              categoriaAnterior={noDaAcaoRapida?.category}
-              area={area}
-              rotuloDaSaida={saidaDaAcaoRapida?.label || undefined}
-              onEscolher={(tipo) => {
-                // `nodeId` vazio = "primeiro passo" de um robô que começa na etapa do funil: não há
-                // bloco anterior a que conectar, então o passo entra solto no canvas.
-                if (escolhendoProximoPasso.nodeId)
-                  adicionarBlocoConectado(tipo, escolhendoProximoPasso.nodeId, escolhendoProximoPasso.handleId);
-                // Ao lado da pastilha, e não numa coordenada fixa: ver `posicaoDoInicio`.
-                else adicionarBloco(tipo, { x: posicaoDoInicio.x + 260, y: posicaoDoInicio.y - 6 });
-                setAcaoRapida(null);
-              }}
-              onFollowUp={() => {
-                adicionarFollowUp(escolhendoProximoPasso.nodeId, escolhendoProximoPasso.handleId);
-                setAcaoRapida(null);
-              }}
-              onFechar={fecharEscolha}
-              /*
-               * A CAIXINHA TAMBÉM NO FUNIL, e não só no Social Seller.
-               *
-               * A gaveta de altura cheia cobria metade do desenho pra uma escolha de um segundo,
-               * e repetia o título no topo. A caixa mostra a mesma lista inteira, com busca, sem
-               * tirar o fluxo da vista — que é como a referência faz.
-               */
-              compacto
-              juntoAoInicio={!acaoRapida}
-              posicao={posicaoDaLista}
-            />
+            /*
+             * COM ÂNCORA SEMPRE QUE HOUVER UMA, e o fio junto.
+             *
+             * Dois caminhos, e a diferença é só de onde sai o fio: de um retângulo que o clique
+             * entregou (o "+" de uma saída, ou o bloco do menu de contexto) ou da pastilha
+             * "Iniciar robô" — que não é clicada, então o retângulo dela é calculado a partir do
+             * canvas, e por isso mora num componente à parte. O "+" da barra de ferramentas cai
+             * no segundo caso de propósito: o bloco que ele cria nasce ao lado da pastilha, então
+             * é de lá que a linha tem que sair.
+             *
+             * O lugar fixo no meio da tela virou último recurso — é o que sobra quando não há nem
+             * retângulo nem pastilha, e era justamente ele que deixava a caixa solta, sem linha
+             * nenhuma ligando a nada.
+             */
+            inicioDesenhado && !posicaoDoMais ? (
+              <ProximoPassoJuntoAoInicio no={inicioDesenhado.no} {...propsDoProximoPasso} />
+            ) : (
+              <PainelProximoPasso
+                {...propsDoProximoPasso}
+                posicao={posicaoDoMais}
+                juntoAoInicio={!posicaoDoMais}
+              />
+            )
           ) : null}
 
           {menuContexto
@@ -1861,7 +1884,13 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                       <button
                         type="button"
                         onClick={() => {
-                          setAcaoRapida({ nodeId: menuContexto.nodeId, handleId: undefined });
+                          // Com âncora: a caixa nasce colada no bloco e o fio diz de qual bloco
+                          // ela saiu. Sem isso ela abria longe, sem ligação com nada.
+                          setAcaoRapida({
+                            nodeId: menuContexto.nodeId,
+                            handleId: undefined,
+                            ancora: retanguloDoNo(menuContexto.nodeId),
+                          });
                           setMenuContexto(null);
                         }}
                       >
@@ -1972,6 +2001,20 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
 
 /** Id da pastilha verde de começo e da linha que sai dela. */
 const ID_INICIO = "__inicio__";
+
+/**
+ * O retângulo de um bloco NA TELA, pela marcação que o React Flow deixa no DOM.
+ *
+ * Serve pra caixa de próximo passo nascer colada no bloco quando ela não foi aberta por um "+"
+ * (que já entrega o retângulo no clique), e sim pelo menu de contexto. Só é chamado dentro de um
+ * clique: ler o DOM durante o render seria ler um layout que ainda vai mudar.
+ */
+function retanguloDoNo(nodeId: string): DOMRect | undefined {
+  if (typeof document === "undefined") return undefined;
+  const elemento = document.querySelector(`.react-flow__node[data-id="${CSS.escape(nodeId)}"]`);
+  return elemento?.getBoundingClientRect();
+}
+
 
 /** O nó/aresta é apenas desenhado (nunca salvo)? Ver `InicioNode`. */
 function ehDesenhado(id: string): boolean {
