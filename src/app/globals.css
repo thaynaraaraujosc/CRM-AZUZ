@@ -25537,6 +25537,43 @@ td.trafego-col-crm:first-of-type {
 }
 
 /*
+ * A PONTE: o fio desenhado de ponta a ponta, entre quem abriu a caixa e a caixa.
+ *
+ * `position: fixed` como a caixa, e nas mesmas coordenadas de tela: as duas pontas vêm do mesmo
+ * lugar, então não existe conversão no meio pra sair errada. A largura é a distância medida —
+ * não um tracinho de 13px torcendo pra a caixa estar exatamente onde deveria.
+ */
+.pp-ponte {
+  position: fixed;
+  z-index: 29;
+  height: 1px;
+  background: var(--line-strong);
+  pointer-events: none;
+}
+
+.pp-ponte-bolinha {
+  position: absolute;
+  top: -2.5px;
+  left: -3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--line-strong);
+}
+
+/* A ponte que sai da pastilha "Iniciar robô" tem a cor dela, como a ligação que o canvas desenha
+   entre o começo e o primeiro bloco. Um pouco mais grossa: 1px de cor clara some no branco. */
+.pp-ponte-inicio {
+  height: 2px;
+  background: var(--success);
+}
+
+.pp-ponte-inicio .pp-ponte-bolinha {
+  top: -2px;
+  background: var(--success);
+}
+
+/*
  * Perto da borda direita da tela a caixa vira pra ESQUERDA de quem a chamou — e o fio tem que
  * virar junto. Preso à esquerda, ele apontava pro lado oposto do botão, o que é pior do que não
  * ter fio: ele vira uma seta pra lugar nenhum.

@@ -29,18 +29,35 @@ export function ProximoPassoJuntoAoInicio({
   const { zoom } = useViewport();
   const { flowToScreenPosition } = useReactFlow();
 
-  // A pastilha é desenhada exatamente com a medida declarada no nó (ver `inicioDesenhado`, no
-  // FlowEditor, e `.no-inicio` no globals.css), então o retângulo dela na tela é o canto
-  // convertido mais essa medida vezes o zoom.
+  /*
+   * A ÂNCORA SAI DO DESENHO, não de uma conta.
+   *
+   * Calcular "posição no canvas × zoom + medida declarada" tem três lugares pra errar, e errou:
+   * a caixa nascia uma pastilha inteira à direita de onde devia. Medir o elemento resolve de uma
+   * vez — é o mesmo retângulo que os olhos veem. A conta fica só como rede de segurança pro
+   * primeiríssimo quadro, quando o nó ainda pode não estar no DOM.
+   *
+   * Ler o DOM aqui no render é de leitura pura e acontece a cada quadro de arrasto/zoom (é pra
+   * isso que serve o `useViewport` acima), então o fio acompanha o canvas em vez de ficar pra trás.
+   */
+  const noDesenhado =
+    typeof document === "undefined"
+      ? null
+      : document.querySelector(`.react-flow__node[data-id="${CSS.escape(no.id)}"]`);
+  const medido = noDesenhado?.getBoundingClientRect();
   const canto = flowToScreenPosition({ x: no.position.x, y: no.position.y });
-  const largura = (no.width ?? 150) * zoom;
-  const altura = (no.height ?? 40) * zoom;
-  const posicao = posicaoDaLista(
-    { left: canto.x, top: canto.y, right: canto.x + largura, bottom: canto.y + altura },
-    { largura: window.innerWidth, altura: window.innerHeight },
-  );
+  const ancora = medido
+    ? { left: medido.left, top: medido.top, right: medido.right, bottom: medido.bottom }
+    : {
+        left: canto.x,
+        top: canto.y,
+        right: canto.x + (no.width ?? 150) * zoom,
+        bottom: canto.y + (no.height ?? 40) * zoom,
+      };
+
+  const posicao = posicaoDaLista(ancora, { largura: window.innerWidth, altura: window.innerHeight });
 
   // Fio verde: ele sai da pastilha verde, e sair de lá com a cor dela é o que faz a caixa ler
   // como continuação do começo, e não como uma janela que apareceu do lado.
-  return <PainelProximoPasso {...props} posicao={posicao} fioVerde />;
+  return <PainelProximoPasso {...props} posicao={posicao} ancora={ancora} fioVerde />;
 }

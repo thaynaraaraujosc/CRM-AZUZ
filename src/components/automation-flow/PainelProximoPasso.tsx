@@ -16,7 +16,7 @@ import {
 import { BLOCOS_DISPONIVEIS, GRUPOS_BIBLIOTECA } from "@/lib/automation-flow/blocos";
 import { blocoApareceNaArea, blocoValeNaArea, type AreaAutomacao } from "@/lib/canais/capacidades";
 import { separarPrimeirosPassos, sugestoesApos } from "@/lib/automation-flow/sugestoes";
-import type { PosicaoDaLista } from "@/lib/automation-flow/posicao-da-lista";
+import { LARGURA_DA_LISTA, type AncoraDaLista, type PosicaoDaLista } from "@/lib/automation-flow/posicao-da-lista";
 import type { FlowNodeCategory, FlowNodeType } from "@/lib/automation-flow/types";
 import { useIdioma } from "@/lib/idioma-context";
 
@@ -77,6 +77,7 @@ export function PainelProximoPasso({
   compacto,
   juntoAoInicio,
   posicao,
+  ancora,
   fioVerde,
 }: {
   tipoAnterior?: FlowNodeType;
@@ -110,6 +111,8 @@ export function PainelProximoPasso({
   /** Em pixels de tela, quando a lista é chamada por um "+" de bloco. Ver o comentário no editor. */
   /** Onde a caixa nasce, em pixels de tela, e de que lado o fio sai (`posicao-da-lista.ts`). */
   posicao?: PosicaoDaLista;
+  /** O retângulo de quem abriu a caixa, em pixels de tela. É o outro ponto do fio. */
+  ancora?: AncoraDaLista;
   /** Fio na cor do começo: é o que liga a caixa à pastilha verde "Iniciar robô". */
   fioVerde?: boolean;
 }) {
@@ -188,11 +191,40 @@ export function PainelProximoPasso({
         role="dialog"
         aria-label={traduzir("Adicionar próximo passo")}
       >
-        {/* A LINHA que liga a caixa a quem a abriu — o "+" de uma saída ou a pastilha "Iniciar
-            robô". Sem ela, a caixa parece ter aparecido do nada e não se sabe de onde ela saiu.
-            Quando a caixa não coube à direita e virou pra esquerda, o fio troca de lado: do
-            contrário ele apontaria pro lado oposto de quem o chamou. */}
-        {posicao ? (
+        {/*
+          A LINHA QUE LIGA A CAIXA A QUEM A ABRIU — o "+" de uma saída, o bloco do menu de
+          contexto ou a pastilha "Iniciar robô".
+
+          Ela é desenhada ENTRE OS DOIS PONTOS, não como um tracinho de tamanho fixo na borda da
+          caixa. Era fixo em 13px, do tamanho da folga que a conta deveria deixar — e bastava a
+          caixa cair um pouco fora do lugar pra o traço terminar no ar, que foi o que aconteceu.
+          Medindo ponta a ponta, ela encosta nos dois lados sempre, qualquer que seja a distância:
+          é a mesma garantia que as ligações entre blocos têm no canvas.
+
+          As duas pontas estão no mesmo sistema de coordenadas (pixels de tela, `position:
+          fixed`), então não há conversão no meio pra sair errada.
+        */}
+        {posicao && ancora ? (
+          <span
+            className={`pp-ponte${fioVerde ? " pp-ponte-inicio" : ""}`}
+            aria-hidden="true"
+            style={
+              posicao.fioNaDireita
+                ? {
+                    left: posicao.left + LARGURA_DA_LISTA,
+                    top: (ancora.top + ancora.bottom) / 2,
+                    width: Math.max(0, ancora.left - (posicao.left + LARGURA_DA_LISTA)),
+                  }
+                : {
+                    left: ancora.right,
+                    top: (ancora.top + ancora.bottom) / 2,
+                    width: Math.max(0, posicao.left - ancora.right),
+                  }
+            }
+          >
+            <i className="pp-ponte-bolinha" />
+          </span>
+        ) : posicao ? (
           <span
             className={`pp-fio${posicao.fioNaDireita ? " pp-fio-direita" : ""}${fioVerde ? " pp-fio-inicio" : ""}`}
             aria-hidden="true"

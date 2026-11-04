@@ -1868,6 +1868,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
               <PainelProximoPasso
                 {...propsDoProximoPasso}
                 posicao={posicaoDoMais}
+                ancora={acaoRapida?.ancora}
                 juntoAoInicio={!posicaoDoMais}
               />
             )
