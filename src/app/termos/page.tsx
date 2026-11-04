@@ -31,7 +31,7 @@ export default function TermosPage() {
       }}
     >
       <h1 style={{ fontSize: 26, fontWeight: 700, marginBottom: 8 }}>Termos de Uso do Azuz CRM</h1>
-      <p style={{ color: "#5b6478", fontSize: 13, marginBottom: 32 }}>Última atualização: 13 de setembro de 2026</p>
+      <p style={{ color: "#5b6478", fontSize: 14, marginBottom: 32 }}>Última atualização: 13 de setembro de 2026</p>
 
       <p style={ESTILO_P}>
         Estes termos regem o uso do Azuz CRM, plataforma operada pela Azuz Digital. Ao criar uma
@@ -96,7 +96,7 @@ export default function TermosPage() {
         .
       </p>
 
-      <p style={{ marginTop: 36, fontSize: 13, color: "#5b6478" }}>
+      <p style={{ marginTop: 36, fontSize: 14, color: "#5b6478" }}>
         Veja também a{" "}
         <Link href="/politica-de-privacidade" style={{ color: "#2d4a8a" }}>
           Política de Privacidade

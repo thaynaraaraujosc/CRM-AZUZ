@@ -353,7 +353,7 @@ export function Sidebar() {
               <div style={{ display: "flex", gap: 12, alignItems: "center", padding: "14px 14px 10px" }}>
                 <div
                   className="avatar"
-                  style={{ width: 44, height: 44, borderRadius: 12, fontSize: 15 }}
+                  style={{ width: 44, height: 44, borderRadius: 12, fontSize: 16 }}
                 >
                   {(nomeEmpresa || "?")
                     .split(" ")

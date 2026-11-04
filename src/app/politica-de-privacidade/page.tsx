@@ -25,7 +25,7 @@ export default function PoliticaDePrivacidadePage() {
   return (
     <div style={{ maxWidth: 760, margin: "0 auto", padding: "48px 24px 80px", color: "#0b1533", fontFamily: "sans-serif", lineHeight: 1.65 }}>
       <h1 style={{ fontSize: 26, fontWeight: 700, marginBottom: 8 }}>Política de Privacidade do Azuz CRM</h1>
-      <p style={{ color: "#5b6478", fontSize: 13, marginBottom: 32 }}>Última atualização: 14 de setembro de 2026</p>
+      <p style={{ color: "#5b6478", fontSize: 14, marginBottom: 32 }}>Última atualização: 14 de setembro de 2026</p>
 
       <p style={{ marginBottom: 20 }}>
         Esta política descreve como a Azuz Digital (&quot;Azuz CRM&quot;, &quot;nós&quot;) coleta, usa e protege

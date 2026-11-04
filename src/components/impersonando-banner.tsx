@@ -34,7 +34,7 @@ export function ImpersonandoBanner() {
         alignItems: "center",
         justifyContent: "space-between",
         gap: 12,
-        fontSize: 12.5,
+        fontSize: 13.5,
       }}
     >
       <span>
@@ -44,7 +44,7 @@ export function ImpersonandoBanner() {
         type="button"
         onClick={voltar}
         disabled={voltando}
-        style={{ background: "rgba(255,255,255,0.16)", border: "none", color: "#fff", borderRadius: 6, padding: "5px 12px", cursor: "pointer", fontSize: 12, fontWeight: 600 }}
+        style={{ background: "rgba(255,255,255,0.16)", border: "none", color: "#fff", borderRadius: 6, padding: "5px 12px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}
       >
         {voltando ? "Voltando…" : "Voltar pro admin"}
       </button>

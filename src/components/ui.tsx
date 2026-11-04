@@ -721,7 +721,7 @@ export function FilterBar({
                       display: "flex",
                       alignItems: "center",
                       gap: 8,
-                      fontSize: 12,
+                      fontSize: 13,
                       color: "var(--text-muted)",
                     }}
                   >
@@ -809,7 +809,7 @@ export function FilterBar({
             </span>
           ))}
           {(filtrosAtivos.length > 0 || periodoAtivo) && onLimpar ? (
-            <button type="button" className="link" onClick={limparTudo} style={{ fontSize: 11 }}>
+            <button type="button" className="link" onClick={limparTudo} style={{ fontSize: 12 }}>
               {traduzir("Limpar")}
             </button>
           ) : null}

@@ -153,7 +153,7 @@ export default function AdminUsuariosPage() {
                       Admin: {admin.nome} · {g.membros.length} {g.membros.length === 1 ? "membro" : "membros"}
                     </span>
                   </div>
-                  <span style={{ color: "var(--text-faint)", fontSize: 12, transform: aberto ? "rotate(180deg)" : undefined, transition: "transform 0.15s ease" }}>
+                  <span style={{ color: "var(--text-faint)", fontSize: 13, transform: aberto ? "rotate(180deg)" : undefined, transition: "transform 0.15s ease" }}>
                     ▾
                   </span>
                 </button>

@@ -123,7 +123,7 @@ export function SegurancaSecao() {
               <label>{traduzir("Novo e-mail")}</label>
               <input className="input" type="email" value={novoEmail} onChange={(e) => setNovoEmail(e.target.value)} placeholder="novo@email.com" />
             </div>
-            {erroEmail ? <p style={{ gridColumn: "1 / -1", color: "var(--danger)", fontSize: 12.5 }}>{erroEmail}</p> : null}
+            {erroEmail ? <p style={{ gridColumn: "1 / -1", color: "var(--danger)", fontSize: 13.5 }}>{erroEmail}</p> : null}
             <div style={{ display: "flex", gap: 8, gridColumn: "1 / -1" }}>
               <button type="button" className="btn primary" onClick={salvarNovoEmail} disabled={salvandoEmail || !senhaAtual || !novoEmail}>
                 {salvandoEmail ? "Salvando…" : "Confirmar troca"}

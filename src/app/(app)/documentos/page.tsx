@@ -4672,7 +4672,7 @@ function SeletorFonte({
                 key={f.valor}
                 type="button"
                 className={`dropdown-item${f.valor === valorAtual ? " active" : ""}`}
-                style={{ width: "100%", textAlign: "left", fontFamily: f.valor, fontSize: 15 }}
+                style={{ width: "100%", textAlign: "left", fontFamily: f.valor, fontSize: 16 }}
                 onClick={() => {
                   onEscolher(f.valor);
                   fechar();

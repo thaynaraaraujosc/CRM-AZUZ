@@ -37,7 +37,7 @@ function GraficoCrescimento({ crescimento }: { crescimento: Overview["cresciment
           const altura = (c.total / max) * 100;
           return (
             <div key={c.mes} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, height: "100%", justifyContent: "flex-end" }}>
-              <span style={{ fontSize: 11, fontWeight: 700 }}>{c.total}</span>
+              <span style={{ fontSize: 12, fontWeight: 700 }}>{c.total}</span>
               <div
                 style={{
                   width: "100%",
@@ -47,7 +47,7 @@ function GraficoCrescimento({ crescimento }: { crescimento: Overview["cresciment
                   borderRadius: "4px 4px 0 0",
                 }}
               />
-              <span style={{ fontSize: 10.5, color: "var(--text-faint)" }}>
+              <span style={{ fontSize: 11.5, color: "var(--text-faint)" }}>
                 {NOME_MES[Number(mes) - 1]}/{ano.slice(2)}
               </span>
             </div>

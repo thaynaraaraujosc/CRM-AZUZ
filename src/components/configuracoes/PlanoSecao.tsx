@@ -376,7 +376,7 @@ export function PlanoSecao() {
             </p>
           )}
 
-          {erroEnvio ? <p style={{ color: "var(--danger)", padding: "0 17px 14px", fontSize: 12.5 }}>{erroEnvio}</p> : null}
+          {erroEnvio ? <p style={{ color: "var(--danger)", padding: "0 17px 14px", fontSize: 13.5 }}>{erroEnvio}</p> : null}
 
           <div className="section-foot">
             <button type="button" className="btn ghost" style={{ flex: 1 }} onClick={() => setPlanoEmEdicao(null)}>

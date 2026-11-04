@@ -120,7 +120,7 @@ export default function AssinaturaPage() {
           <p className="config-bloco-titulo">{traduzir("Plano {nome}", { nome: traduzir(plano.nome) })}</p>
           <p style={{ fontSize: 26, fontWeight: 600, lineHeight: 1.1 }}>
             R$ {plano.valor}
-            <span style={{ fontSize: 13, fontWeight: 400, color: "var(--text-muted)" }}> {traduzir("/mês")}</span>
+            <span style={{ fontSize: 14, fontWeight: 400, color: "var(--text-muted)" }}> {traduzir("/mês")}</span>
           </p>
           <p className="hint">{plano.recursos.map((recurso) => traduzir(recurso)).join(" · ")}</p>
         </div>

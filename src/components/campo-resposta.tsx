@@ -543,7 +543,7 @@ export function CampoResposta({
       return (
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           {(pergunta.opcoes ?? []).map((op, i) => (
-            <label key={i} style={{ display: "flex", gap: 8, fontSize: 12, alignItems: "center" }}>
+            <label key={i} style={{ display: "flex", gap: 8, fontSize: 13, alignItems: "center" }}>
               <input
                 type="radio"
                 name={interativo ? pergunta.id : undefined}
@@ -558,7 +558,7 @@ export function CampoResposta({
       );
     case "checkbox":
       return (
-        <label style={{ display: "flex", gap: 8, fontSize: 12, alignItems: "center" }}>
+        <label style={{ display: "flex", gap: 8, fontSize: 13, alignItems: "center" }}>
           <input
             type="checkbox"
             disabled={disabled}
@@ -575,7 +575,7 @@ export function CampoResposta({
       return (
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           {(pergunta.opcoes ?? []).map((op, i) => (
-            <label key={i} style={{ display: "flex", gap: 8, fontSize: 12, alignItems: "center" }}>
+            <label key={i} style={{ display: "flex", gap: 8, fontSize: 13, alignItems: "center" }}>
               <input
                 type="checkbox"
                 disabled={disabled}

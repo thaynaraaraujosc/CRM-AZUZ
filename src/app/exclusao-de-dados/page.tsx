@@ -30,7 +30,7 @@ export default function ExclusaoDeDadosPage() {
       }}
     >
       <h1 style={{ fontSize: 26, fontWeight: 700, marginBottom: 8 }}>Exclusão de dados do Azuz CRM</h1>
-      <p style={{ color: "#5b6478", fontSize: 13, marginBottom: 32 }}>Última atualização: 13 de setembro de 2026</p>
+      <p style={{ color: "#5b6478", fontSize: 14, marginBottom: 32 }}>Última atualização: 13 de setembro de 2026</p>
 
       <p style={ESTILO_P}>
         Esta página explica como excluir os dados tratados pelo Azuz CRM, incluindo os dados obtidos
@@ -78,7 +78,7 @@ export default function ExclusaoDeDadosPage() {
         desconexão e deixam de valer.
       </p>
 
-      <p style={{ marginTop: 36, fontSize: 13, color: "#5b6478" }}>
+      <p style={{ marginTop: 36, fontSize: 14, color: "#5b6478" }}>
         Veja também a{" "}
         <Link href="/politica-de-privacidade" style={{ color: "#2d4a8a" }}>
           Política de Privacidade

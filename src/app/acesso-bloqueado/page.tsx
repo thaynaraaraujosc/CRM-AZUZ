@@ -17,7 +17,7 @@ export default function AcessoBloqueadoPage() {
       </Link>
       <div className="auth-card card">
         <h1 className="auth-title">{traduzir("Acesso suspenso")}</h1>
-        <p style={{ color: "var(--text-muted)", fontSize: 13, lineHeight: 1.5, padding: "0 0 20px" }}>
+        <p style={{ color: "var(--text-muted)", fontSize: 14, lineHeight: 1.5, padding: "0 0 20px" }}>
           {traduzir(
             "A assinatura do seu workspace está com o pagamento pendente ou atrasado. Fale com o administrador da sua empresa pra regularizar. Assim que a cobrança for confirmada, o acesso volta ao normal automaticamente.",
           )}

@@ -495,7 +495,7 @@ function JornadaClientePageInner() {
                 </button>
               </span>
             ))}
-            <button type="button" className="link" onClick={limparFiltros} style={{ fontSize: 11 }}>
+            <button type="button" className="link" onClick={limparFiltros} style={{ fontSize: 12 }}>
               {traduzir("Limpar tudo")}
             </button>
           </div>

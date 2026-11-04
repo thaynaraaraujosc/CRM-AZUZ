@@ -43,7 +43,7 @@ export function EmBreveVitrine({
           <span className="nav-badge-em-breve" style={{ marginLeft: 0, marginBottom: 10, display: "inline-block" }}>
             {traduzir("Em breve")}
           </span>
-          <p className="hint" style={{ fontSize: 13, lineHeight: 1.6 }}>
+          <p className="hint" style={{ fontSize: 14, lineHeight: 1.6 }}>
             {texto}
           </p>
         </div>

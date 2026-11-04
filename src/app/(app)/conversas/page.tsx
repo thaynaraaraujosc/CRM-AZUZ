@@ -8416,7 +8416,7 @@ function ConversasPageInner() {
                       <button
                         type="button"
                         className="btn ghost"
-                        style={{ padding: "4px 10px", fontSize: 11, display: "inline-flex", alignItems: "center", gap: 4 }}
+                        style={{ padding: "4px 10px", fontSize: 12, display: "inline-flex", alignItems: "center", gap: 4 }}
                         onClick={() => verificarRastreamento(email)}
                       >
                         <IconRefresh width={11} height={11} /> {traduzir("Verificar")}
@@ -8546,7 +8546,7 @@ function ConversasPageInner() {
               <button
                 type="button"
                 className="btn"
-                style={{ fontSize: 11, padding: "4px 8px" }}
+                style={{ fontSize: 12, padding: "4px 8px" }}
                 disabled={atualizandoParticipantes}
                 onClick={async () => {
                   setAtualizandoParticipantes(true);
@@ -8604,7 +8604,7 @@ function ConversasPageInner() {
                       setParticipanteAberto(p);
                     }}
                   >
-                    <span className="avatar" style={{ width: 32, height: 32, fontSize: 12 }}>
+                    <span className="avatar" style={{ width: 32, height: 32, fontSize: 13 }}>
                       {quem.temNomeReal
                         ? quem.nome
                             .split(" ")
@@ -8766,7 +8766,7 @@ function ConversasPageInner() {
                             setParticipanteAberto(null);
                           }}
                         >
-                          <span className="avatar" style={{ width: 34, height: 34, fontSize: 12 }}>
+                          <span className="avatar" style={{ width: 34, height: 34, fontSize: 13 }}>
                             {g.fotoUrl ? (
                               <img src={g.fotoUrl} alt="" className="wa-avatar-foto" />
                             ) : (

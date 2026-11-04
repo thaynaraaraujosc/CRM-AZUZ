@@ -429,7 +429,7 @@ export function ReportWizard({
                   onClick={() => trocarTipo(t.tipo)}
                 >
                   <span className="report-type-icon">{t.icone}</span>
-                  <strong style={{ fontSize: 13 }}>{t.nome}</strong>
+                  <strong style={{ fontSize: 14 }}>{t.nome}</strong>
                   <span className="hint">{traduzir(t.descricao)}</span>
                 </button>
               ))}
@@ -674,7 +674,7 @@ export function ReportWizard({
                 </div>
               </div>
 
-              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5 }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13.5 }}>
                 <input
                   type="checkbox"
                   checked={incluirLogotipo}
@@ -685,7 +685,7 @@ export function ReportWizard({
                 />
                 {traduzir("Incluir logotipo/marca")}
               </label>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5 }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13.5 }}>
                 <input
                   type="checkbox"
                   checked={incluirCabecalho}
@@ -696,7 +696,7 @@ export function ReportWizard({
                 />
                 {traduzir("Incluir cabeçalho em todas as páginas")}
               </label>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5 }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13.5 }}>
                 <input
                   type="checkbox"
                   checked={incluirRodape}
