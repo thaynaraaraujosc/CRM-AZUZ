@@ -30,6 +30,8 @@ export async function POST(request: Request) {
     responsavel?: string | null;
     funilId?: string;
     etapas?: { id: string; titulo: string }[];
+    /** Onde a etapa entra. Ausente = no fim, que é como sempre foi. */
+    ordem?: number;
   };
 
   if (corpo.tipo === "funil") {
@@ -68,15 +70,41 @@ export async function POST(request: Request) {
       orderBy: { ordem: "desc" },
       select: { ordem: true },
     });
-    await prisma.funilEtapa.create({
-      data: {
-        id: corpo.id,
-        workspaceId,
-        funilId: corpo.funilId,
-        titulo: corpo.nome,
-        ordem: (ultima?.ordem ?? -1) + 1,
-      },
-    });
+    const noFim = (ultima?.ordem ?? -1) + 1;
+
+    /*
+     * ETAPA NO MEIO DO FUNIL, e não só no fim.
+     *
+     * O funil é uma esteira: "Follow up" entre "Novo" e "Qualificado" não é a mesma coisa que
+     * "Follow up" depois de "Fechado". Antes a etapa nascia sempre no fim e a pessoa arrastava —
+     * e na grade de automação, onde não há arraste, ela simplesmente não tinha como pôr no lugar
+     * certo.
+     *
+     * As duas escritas na MESMA transação: abrir espaço e não criar a etapa deixaria o funil com
+     * um buraco na numeração, e criar sem abrir espaço deixaria duas etapas na mesma ordem — as
+     * duas aparecendo em posição imprevisível, porque a leitura ordena por `ordem`.
+     */
+    const posicao = Number.isInteger(corpo.ordem) ? Math.max(0, Math.min(corpo.ordem!, noFim)) : noFim;
+
+    await prisma.$transaction([
+      ...(posicao < noFim
+        ? [
+            prisma.funilEtapa.updateMany({
+              where: { funilId: corpo.funilId, ordem: { gte: posicao } },
+              data: { ordem: { increment: 1 } },
+            }),
+          ]
+        : []),
+      prisma.funilEtapa.create({
+        data: {
+          id: corpo.id,
+          workspaceId,
+          funilId: corpo.funilId,
+          titulo: corpo.nome,
+          ordem: posicao,
+        },
+      }),
+    ]);
     return NextResponse.json({ ok: true });
   }
 

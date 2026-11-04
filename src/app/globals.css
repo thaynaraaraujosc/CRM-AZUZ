@@ -18982,10 +18982,14 @@ table.tbl .name-cell .r {
   border-bottom: 1px solid var(--border);
 }
 
+/* 79px no total: a faixa do nome e, embaixo, a linha de apoio. As duas áreas medidas na
+   referência, pra que a grade comece sempre na mesma altura em qualquer funil. */
 .fauto-cab-cel {
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 6px;
+  min-height: 79px;
   padding: 12px 14px 10px;
   border-right: 1px solid var(--border);
 }
@@ -18997,19 +19001,23 @@ table.tbl .name-cell .r {
 .fauto-cab-nome {
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  /* 1px de espaçamento, medido. Em `em` o valor mudaria junto com o tamanho da fonte e deixaria
+     de ser o da referência. */
+  letter-spacing: 1px;
   text-transform: uppercase;
   color: var(--ink);
 }
 
 /* A barra colorida da etapa, como no topo do quadro de negócios. */
+/* 4px, como a da referência. Com 3px ela lia como um filete de separação em vez da cor da
+   etapa. */
 .fauto-cab-barra {
-  height: 3px;
+  height: 4px;
   border-radius: 2px;
 }
 
 .fauto-cab-sub {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-muted);
 }
 
@@ -19017,9 +19025,11 @@ table.tbl .name-cell .r {
   display: grid;
 }
 
+/* 66px é a altura da linha vazia no Kommo, medida (ver `docs/referencia-kommo-funil.md`). O
+   padding sai de 6 pra 5 porque o cartão de dentro cresceu de padding junto. */
 .fauto-cel {
-  min-height: 62px;
-  padding: 6px;
+  min-height: 66px;
+  padding: 5px;
   border-right: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
 }
@@ -19070,24 +19080,61 @@ table.tbl .name-cell .r {
   min-width: 0;
 }
 
+/*
+ * AS DUAS LINHAS DO CARTÃO, nas medidas da referência.
+ *
+ * 13px/400 com 15,6px de altura no "quando"; 14px/700 com 15,82px no "o que faz". Parecem números
+ * arbitrários e não são: é a proporção que faz a linha de cima ler como legenda e a de baixo como
+ * o conteúdo, dentro de uma célula de 66px. Com os dois no mesmo tamanho, o cartão vira um
+ * parágrafo de duas linhas e a pessoa lê as duas pra achar o nome do robô.
+ */
 .fauto-gat-quando {
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: var(--fw-regular);
   color: var(--text-muted);
-  line-height: 1.3;
+  line-height: 15.6px;
 }
 
 .fauto-gat-acao {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--ink);
-  line-height: 1.35;
+  line-height: 15.82px;
 }
 
+/*
+ * OS BOTÕES DO CARTÃO SÓ APARECEM AO PASSAR O MOUSE.
+ *
+ * Eram três pastilhas sempre à vista em cada gatilho — "Gerenciar", "Ligado", "×" —, e com nove
+ * gatilhos na tela isso são vinte e sete pastilhas competindo com o texto que diz o que a etapa
+ * faz. No Kommo o cartão em repouso não tem botão nenhum: ele é só o ícone e as duas linhas.
+ *
+ * Continuam alcançáveis pelo teclado: `:focus-within` traz o grupo de volta, senão quem navega
+ * por Tab mandaria o foco pra um botão invisível.
+ *
+ * O estado DESLIGADO é a exceção que fica: ele não é uma ação, é o que o gatilho é agora, e
+ * esconder isso faria um gatilho pausado parecer ativo. Ver `.fauto-gat.desligado`.
+ */
 .fauto-gat-acoes {
   display: flex;
   flex-direction: column;
   gap: 4px;
   align-items: flex-end;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.fauto-gat:hover .fauto-gat-acoes,
+.fauto-gat:focus-within .fauto-gat-acoes {
+  opacity: 1;
+}
+
+/* Num aparelho sem ponteiro não existe "passar o mouse": lá os botões ficam sempre visíveis, ou
+   não haveria como desligar um gatilho. */
+@media (hover: none) {
+  .fauto-gat-acoes {
+    opacity: 1;
+  }
 }
 
 .fauto-mini {
@@ -25991,4 +26038,65 @@ td.trafego-col-crm:first-of-type {
 .gat-palavra-nova .input {
   flex: 1;
   min-width: 0;
+}
+
+/*
+ * O "+" DA DIVISA ENTRE ETAPAS.
+ *
+ * 26×26px, ancorado na borda esquerda do cabeçalho e puxado meia largura pra fora, pra ficar
+ * EM CIMA da divisa — e não dentro de uma das duas colunas. A posição é o que diz onde a etapa
+ * vai nascer; centralizado na coluna, ele seria "adicionar etapa" genérico de novo.
+ *
+ * Só aparece ao passar o mouse pela faixa de cabeçalhos: com catorze etapas, quinze círculos
+ * permanentes competiriam com os nomes, que são o que se lê ali.
+ */
+.fauto-cab-cel {
+  position: relative;
+}
+
+.fauto-cab-inserir {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  background: var(--surface-elevated);
+  color: var(--text-muted);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--transition-fast), border-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.fauto-cab-inserir-fim {
+  left: auto;
+  right: 0;
+  transform: translate(50%, -50%);
+}
+
+.fauto-cab:hover .fauto-cab-inserir,
+.fauto-cab-inserir:focus-visible {
+  opacity: 1;
+}
+
+.fauto-cab-inserir:hover {
+  border-color: var(--acao);
+  color: var(--acao);
+}
+
+/* Sem ponteiro não há hover: no celular eles ficam visíveis, senão não haveria como criar etapa
+   por aqui. */
+@media (hover: none) {
+  .fauto-cab-inserir {
+    opacity: 1;
+  }
 }

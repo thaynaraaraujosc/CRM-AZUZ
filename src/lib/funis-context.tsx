@@ -51,7 +51,11 @@ type FunisContextValue = {
   /** Cria um funil gravando no banco antes de aparecer na tela. */
   criarFunilPersistido: (funil: Funil) => Promise<{ ok: boolean; erro?: string }>;
   /** Cria uma etapa gravando no banco antes de aparecer na tela. */
-  criarEtapaPersistida: (funilId: string, etapa: { id: string; titulo: string }) => Promise<{ ok: boolean; erro?: string }>;
+  criarEtapaPersistida: (
+    funilId: string,
+    etapa: { id: string; titulo: string },
+    ordem?: number,
+  ) => Promise<{ ok: boolean; erro?: string }>;
   /** Último erro de gravação, pra tela avisar em vez de fingir que salvou. */
   erroSincronizacao: string | null;
   limparErroSincronizacao: () => void;
@@ -237,12 +241,14 @@ export function FunisProvider({ children }: { children: ReactNode }) {
   async function criarEtapaPersistida(
     funilId: string,
     etapa: { id: string; titulo: string },
+    /** Onde ela entra. Ausente = no fim, que é como o botão "+ Etapa" do quadro sempre fez. */
+    ordem?: number,
   ): Promise<{ ok: boolean; erro?: string }> {
     try {
       const resposta = await fetch("/api/funis/estrutura", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tipo: "etapa", id: etapa.id, nome: etapa.titulo, funilId }),
+        body: JSON.stringify({ tipo: "etapa", id: etapa.id, nome: etapa.titulo, funilId, ordem }),
       });
       const dados = (await resposta.json()) as { erro?: string };
       if (!resposta.ok) {
@@ -250,11 +256,15 @@ export function FunisProvider({ children }: { children: ReactNode }) {
         return { ok: false, erro: dados.erro };
       }
       setFunis((prev) =>
-        prev.map((f) =>
-          f.id === funilId
-            ? { ...f, colunas: [...f.colunas, { id: etapa.id, titulo: etapa.titulo, total: 0, cards: [] }] }
-            : f,
-        ),
+        prev.map((f) => {
+          if (f.id !== funilId) return f;
+          const nova = { id: etapa.id, titulo: etapa.titulo, total: 0, cards: [] };
+          const colunas = [...f.colunas];
+          // A tela espelha o que o servidor acabou de fazer: no meio quando veio posição, no fim
+          // quando não veio. Sem isto a etapa aparecia no fim e pulava de lugar no próximo F5.
+          colunas.splice(ordem === undefined ? colunas.length : Math.max(0, Math.min(ordem, colunas.length)), 0, nova);
+          return { ...f, colunas };
+        }),
       );
       return { ok: true };
     } catch {

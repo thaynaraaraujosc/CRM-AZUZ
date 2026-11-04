@@ -7,6 +7,7 @@ import Link from "next/link";
 import { AcoesNoTopo } from "@/lib/topo-da-pagina";
 import { AutomacaoDoFunil } from "@/components/funil/AutomacaoDoFunil";
 import { useFunis } from "@/lib/funis-context";
+import { slugId } from "@/lib/ids";
 import { useIdioma } from "@/lib/idioma-context";
 
 /**
@@ -25,7 +26,7 @@ import { useIdioma } from "@/lib/idioma-context";
 function AutomacoesConteudo() {
   const { t: traduzir } = useIdioma();
   const params = useSearchParams();
-  const { funis } = useFunis();
+  const { funis, criarEtapaPersistida } = useFunis();
 
   /*
    * QUAL FUNIL, pela URL e só por ela.
@@ -36,6 +37,20 @@ function AutomacoesConteudo() {
    */
   const funilParam = params.get("funil");
   const funil = funis.find((f) => f.id === (funilParam || funis[0]?.id));
+
+  /**
+   * Cria uma etapa na posição clicada, direto da grade.
+   *
+   * O nome vem de um `prompt` do navegador, e isso é uma escolha: a alternativa é um diálogo
+   * próprio, e ele custaria um estado, um foco e um fechar-com-Esc pra uma pergunta de uma linha
+   * que acontece uma vez por mês. Quando a etapa passar a ter cor e dicas — que é o que falta pra
+   * igualar a referência — a caixa própria passa a valer a pena, e entra junto com elas.
+   */
+  async function inserirEtapa(funilId: string, posicao: number) {
+    const titulo = window.prompt(traduzir("Nome da etapa nova"))?.trim();
+    if (!titulo) return;
+    await criarEtapaPersistida(funilId, { id: slugId(titulo), titulo }, posicao);
+  }
 
   return (
     <>
@@ -65,6 +80,7 @@ function AutomacoesConteudo() {
             funilId={funil.id}
             colunas={funil.colunas.map((c) => ({ id: c.id, titulo: c.titulo, total: c.total }))}
             semMoldura
+            aoInserirEtapa={(posicao) => void inserirEtapa(funil.id, posicao)}
           />
         ) : (
           <section className="card">

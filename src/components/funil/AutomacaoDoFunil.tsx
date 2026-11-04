@@ -167,12 +167,16 @@ function linhaDaAcao(g: GatilhoEtapaVisao, colunas: ColunaResumo[]): string {
 
 const paraLista = (texto: string) => texto.split(",").map((t) => t.trim()).filter(Boolean);
 
+/** A largura de uma etapa na grade, medida no Kommo. Ver `docs/referencia-kommo-funil.md`. */
+const LARGURA_COLUNA = 305;
+
 export function AutomacaoDoFunil({
   funilId,
   funilNome,
   colunas,
   onFechar,
   semMoldura = false,
+  aoInserirEtapa,
 }: {
   funilId: string;
   funilNome?: string;
@@ -187,6 +191,8 @@ export function AutomacaoDoFunil({
    * moldura continua — é ela que diz de que funil se está falando.
    */
   semMoldura?: boolean;
+  /** Cria uma etapa na posição dada. Sem isto, os "+" da divisa não aparecem. */
+  aoInserirEtapa?: (posicao: number) => void;
 }) {
   const { t: traduzir } = useIdioma();
   const router = useRouter();
@@ -491,9 +497,42 @@ export function AutomacaoDoFunil({
         ) : null}
 
         <div className="fauto-grade">
-          <div className="fauto-cab" style={{ gridTemplateColumns: `repeat(${colunas.length}, minmax(240px, 1fr))` }}>
+          {/*
+            COLUNA DE LARGURA FIXA, não `1fr`.
+            
+            Com `minmax(240px, 1fr)` a largura da coluna dependia de QUANTAS etapas o funil tem:
+            um funil de três etapas dava colunas gordas de 400px, um de catorze dava 240px. O
+            mesmo cartão de gatilho mudava de forma de um funil pro outro, e a quebra de linha do
+            nome do robô mudava junto. 305px é a medida do Kommo (ver
+            `docs/referencia-kommo-funil.md`), e a grade rola na horizontal quando não cabe — que
+            é o que ela já fazia a partir de seis etapas, só que sem avisar.
+          */}
+          <div className="fauto-cab" style={{ gridTemplateColumns: `repeat(${colunas.length}, ${LARGURA_COLUNA}px)` }}>
             {colunas.map((coluna, i) => (
               <div key={coluna.id} className="fauto-cab-cel">
+                {/*
+                  O "+" NA DIVISA, que cria a etapa ALI.
+                  
+                  Antes a única forma de ter uma etapa nova era o botão do quadro de negócios, que
+                  põe sempre no fim — e aí arrastar pro lugar certo. Mas o funil é uma esteira:
+                  "Follow up" entre "Novo" e "Qualificado" não é a mesma coisa que "Follow up"
+                  depois de "Fechado". Na divisa, o lugar É o clique.
+                  
+                  Um por coluna, ancorado na borda esquerda dela, mais um depois da última: é
+                  assim que se consegue inserir antes da primeira e depois da última sem um
+                  botão de forma diferente em cada ponta.
+                */}
+                {aoInserirEtapa ? (
+                  <button
+                    type="button"
+                    className="fauto-cab-inserir"
+                    title={traduzir("Criar uma etapa aqui")}
+                    aria-label={traduzir("Criar uma etapa antes de {etapa}", { etapa: coluna.titulo })}
+                    onClick={() => aoInserirEtapa(i)}
+                  >
+                    +
+                  </button>
+                ) : null}
                 <span className="fauto-cab-nome">{coluna.titulo}</span>
                 <span className="fauto-cab-barra" style={{ background: CORES_ETAPA[i % CORES_ETAPA.length] }} />
                 <span className="fauto-cab-sub">
@@ -503,13 +542,24 @@ export function AutomacaoDoFunil({
                       ? "1 gatilho"
                       : traduzir("Sem automação")}
                 </span>
+                {aoInserirEtapa && i === colunas.length - 1 ? (
+                  <button
+                    type="button"
+                    className="fauto-cab-inserir fauto-cab-inserir-fim"
+                    title={traduzir("Criar uma etapa aqui")}
+                    aria-label={traduzir("Criar uma etapa no fim do funil")}
+                    onClick={() => aoInserirEtapa(colunas.length)}
+                  >
+                    +
+                  </button>
+                ) : null}
               </div>
             ))}
           </div>
 
           <div
             className="fauto-linhas"
-            style={{ gridTemplateColumns: `repeat(${colunas.length}, minmax(240px, 1fr))` }}
+            style={{ gridTemplateColumns: `repeat(${colunas.length}, ${LARGURA_COLUNA}px)` }}
           >
             {Array.from({ length: linhas }).map((_, linha) =>
               colunas.map((coluna) => {
