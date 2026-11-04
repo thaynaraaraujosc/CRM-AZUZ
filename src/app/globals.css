@@ -12421,33 +12421,82 @@ button.camp-row:hover {
 
 /* Painel do contato com abas (Resumo/Contato/Negociação/Atividades/Histórico) */
 
+/*
+ * AS ABAS DO PAINEL DO CONTATO, com a estética do menu do Social Seller.
+ *
+ * Eram texto com um traço de 2px embaixo — o padrão de aba que o CRM usa desde o começo, e que
+ * some numa coluna de 320px: quatro palavras cinzas em cima de um filete, sem nada que diga que
+ * são alvos. A Thaynara apontou o menu do Social Seller (`.social-menu`) como a referência, e é
+ * a mesma peça: um cartão arredondado com itens que acendem.
+ *
+ * Os VALORES são os mesmos daquele menu de propósito, incluindo o azul e o comportamento no tema
+ * escuro: duas peças "iguais" com tons de azul diferentes de 2% é o tipo de divergência que
+ * ninguém vê e todo mundo sente.
+ *
+ * A barra do item aceso vai embaixo, e não à esquerda, porque aqui a lista corre na horizontal.
+ *
+ * Vale pros DOIS painéis — o da tela do WhatsApp e o que abre pelo card do funil —, que usam as
+ * mesmas classes. Ver `DadosDoContato`.
+ */
 .wa-info-tabs {
   display: flex;
+  gap: 4px;
   flex: 0 0 auto;
   overflow-x: auto;
-  border-bottom: 1px solid var(--line);
+  scrollbar-width: none;
+  margin: var(--space-3) var(--space-3) 0;
+  padding: 6px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
+}
+
+.wa-info-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .wa-info-tab {
-  flex: 1 1 auto;
+  position: relative;
+  flex: 0 0 auto;
   white-space: nowrap;
-  padding: var(--space-3) var(--space-3);
+  min-height: 36px;
+  padding: 7px 12px;
   border: none;
+  border-radius: var(--radius-2);
   background: transparent;
   color: var(--text-muted);
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: var(--fw-semibold);
   cursor: pointer;
-  border-bottom: 2px solid transparent;
 }
 
 .wa-info-tab:hover {
+  background: var(--surface-hover);
   color: var(--ink);
 }
 
 .wa-info-tab.on {
-  color: var(--blue);
-  border-bottom-color: var(--blue);
+  background: var(--ss-azul-suave, #e7e8ff);
+  color: #0020ad;
+}
+
+:root[data-theme="dark"] .wa-info-tab.on {
+  color: var(--ss-azul, #657bff);
+}
+
+.wa-info-tab.on::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 0;
+  height: 3px;
+  border-radius: 999px 999px 0 0;
+  background: #1641ff;
+}
+
+:root[data-theme="dark"] .wa-info-tab.on::after {
+  background: var(--ss-azul, #657bff);
 }
 
 .wa-resumo-card {

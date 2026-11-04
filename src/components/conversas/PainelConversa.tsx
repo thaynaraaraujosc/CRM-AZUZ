@@ -10,11 +10,13 @@ import { BolhaMensagem } from "./BolhaMensagem";
 import { renderizarTrechos } from "./TextoDaMensagem";
 import { interpretarMensagem } from "@/lib/conversas/formatacao-mensagem";
 import { criarResolvedorDeMencao } from "@/lib/conversas/mencoes";
+import { nomeExibido } from "@/lib/conversas/exibicao";
 import { IconClose, IconConfiguracoes, IconDoc, IconEnviar, IconImage, IconLocalizacao, IconUpload } from "@/components/icons";
 import { TransferirNegocio } from "@/components/funil/TransferirNegocio";
 import { useFunis } from "@/lib/funis-context";
 import { ehVazio } from "@/lib/vazio";
 import { useIdioma } from "@/lib/idioma-context";
+import { DadosDoContato } from "@/components/contato/DadosDoContato";
 
 /**
  * Painel de conversa completo, em popup: a janela que abre ao clicar num card do Funil.
@@ -53,7 +55,7 @@ export function PainelConversa({
 }) {
   const { t: traduzir, localeNumero } = useIdioma();
   const { mensagensExtraPorContato, setMensagensExtraPorContato } = useMensagensExtra();
-  const { contatos, salvarDadosContato } = useContatos();
+  const { contatos } = useContatos();
 
   /*
    * O mesmo interpretador da tela de Conversas, e não uma segunda versão dele.
@@ -120,30 +122,12 @@ export function PainelConversa({
     };
   }, [aba, contatoNome]);
 
-  const [nomeEdit, setNomeEdit] = useState(contatoNome);
-  const [whatsappEdit, setWhatsappEdit] = useState(contato?.whatsapp ?? "");
-  const [emailEdit, setEmailEdit] = useState(contato?.email ?? "");
-  const [empresaEdit, setEmpresaEdit] = useState(contato?.empresa ?? "");
-  const [salvo, setSalvo] = useState(false);
 
   // Rola pro fim ao abrir e a cada mensagem nova. Sem isso o painel abre no topo do histórico,
   // longe do que acabou de chegar.
   useEffect(() => {
     fimDaListaRef.current?.scrollIntoView({ block: "end" });
   }, [mensagens.length, contatoNome]);
-
-  // Ajuste durante o render (não num efeito) ao trocar de conversa. É o padrão do React pra
-  // "adjusting state when a prop changes", e evita a cascata de re-render que um `useEffect`
-  // fazendo a mesma coisa provoca. Só dispara na troca: reabrir a mesma conversa não pode
-  // descartar o que está sendo digitado.
-  const [contatoAnterior, setContatoAnterior] = useState(contatoNome);
-  if (contatoNome !== contatoAnterior) {
-    setContatoAnterior(contatoNome);
-    setNomeEdit(contatoNome);
-    setWhatsappEdit(contato?.whatsapp ?? "");
-    setEmailEdit(contato?.email ?? "");
-    setEmpresaEdit(contato?.empresa ?? "");
-  }
 
   useEffect(() => {
     function aoTeclar(e: KeyboardEvent) {
@@ -248,16 +232,6 @@ export function PainelConversa({
     }
   }
 
-  function salvarDados() {
-    salvarDadosContato(contatoNome, {
-      whatsapp: whatsappEdit.trim() || undefined,
-      email: emailEdit.trim() || undefined,
-      empresa: empresaEdit.trim() || undefined,
-    });
-    setSalvo(true);
-    setTimeout(() => setSalvo(false), 2000);
-  }
-
   return (
     <div
       className="painel-conversa-fundo"
@@ -312,7 +286,7 @@ export function PainelConversa({
               )}
             </div>
             <div>
-              <p className="n">{nomeEdit}</p>
+              <p className="n">{nomeExibido(contatoNome, canal)}</p>
               {/* Canal + identificador + responsável numa linha só: é o que o atendente precisa
                   saber antes de escrever, e ocupa o espaço de uma linha em vez de três. */}
               <p className="s">
@@ -527,7 +501,7 @@ export function PainelConversa({
                 type="button"
                 role="tab"
                 aria-selected={aba === t.id}
-                className={`wa-info-tab${aba === t.id ? " active" : ""}`}
+                className={`wa-info-tab${aba === t.id ? " on" : ""}`}
                 onClick={() => setAba(t.id)}
               >
                 {t.label}
@@ -537,27 +511,19 @@ export function PainelConversa({
 
           <div className="painel-conversa-dados-scroll">
             {aba === "contato" ? (
-              <>
-                <div className="field">
-                  <label>{traduzir("Nome")}</label>
-                  <input className="input" value={nomeEdit} disabled />
-                </div>
-                <div className="field">
-                  <label>WhatsApp</label>
-                  <input className="input" value={whatsappEdit} onChange={(e) => setWhatsappEdit(e.target.value)} />
-                </div>
-                <div className="field">
-                  <label>{traduzir("E-mail")}</label>
-                  <input className="input" value={emailEdit} onChange={(e) => setEmailEdit(e.target.value)} />
-                </div>
-                <div className="field">
-                  <label>{traduzir("Empresa")}</label>
-                  <input className="input" value={empresaEdit} onChange={(e) => setEmpresaEdit(e.target.value)} />
-                </div>
-                <button type="button" className="btn primary block" onClick={salvarDados}>
-                  {salvo ? "Salvo!" : "Salvar dados"}
-                </button>
-              </>
+              /*
+                O MESMO PAINEL DA TELA DO WHATSAPP. Ver `DadosDoContato`.
+                
+                Aqui havia quatro campos (nome travado, WhatsApp, e-mail, empresa) contra os treze
+                de lá, mais os campos que a empresa cria e as etiquetas. Mesmo contato, mesma
+                tabela: quem preenchia "cargo" numa e abria a outra achava que o CRM tinha perdido
+                o dado. Agora é um componente só, nos dois lugares.
+              */
+              <DadosDoContato
+                key={contatoNome}
+                nome={contatoNome}
+                canal={canal}
+              />
             ) : null}
 
             {aba === "negociacao" ? (
