@@ -20,12 +20,14 @@ describe("onde a caixa de próximo passo abre", () => {
   });
 
   it("o fio sai do MEIO da âncora, seja ela alta ou baixa", () => {
-    // O fio é desenhado a 26px do topo da caixa. Então o topo da caixa é o centro menos 26 — é
-    // isto que faz o traço encostar no meio da pastilha em vez de perto da quina de cima.
-    expect(posicaoDaLista(pastilha, JANELA).top).toBe(420 - 26);
+    // O fio é desenhado perto do topo da caixa, então o topo da caixa é o centro da âncora menos
+    // essa distância — é isto que faz o traço encostar no meio da pastilha em vez de perto da
+    // quina de cima. O 28 (e não 26) sai da medida no navegador: a borda da caixa e a metade da
+    // espessura do traço somam dois pixels.
+    expect(posicaoDaLista(pastilha, JANELA).top).toBe(420 - 28);
 
     const botaoBaixinho: AncoraDaLista = { left: 300, top: 400, right: 320, bottom: 420 };
-    expect(posicaoDaLista(botaoBaixinho, JANELA).top).toBe(410 - 26);
+    expect(posicaoDaLista(botaoBaixinho, JANELA).top).toBe(410 - 28);
   });
 
   it("perto da borda direita, vira pra esquerda e o fio troca de lado", () => {

@@ -21631,14 +21631,6 @@ table.tbl .name-cell .r {
   color: var(--danger);
 }
 
-/* A lista de passos colada no "+" que a chamou: posição em pixels de tela, vinda do editor. */
-.pp-caixa-ancorada {
-  position: fixed;
-  right: auto;
-  transform: none;
-  max-height: 430px;
-}
-
 /*
  * NENHUM BLOCO FICA CONTORNADO DE VERMELHO.
  *
@@ -25466,6 +25458,26 @@ td.trafego-col-crm:first-of-type {
    * O arredondamento continua: quem rola é a lista de dentro, e ela tem o próprio canto.
    */
   overflow: visible;
+}
+
+/*
+ * A CAIXA ANCORADA: posição em pixels de TELA, vinda do editor.
+ *
+ * `.pp-caixa.pp-caixa-ancorada`, com as duas classes, e isso é o conserto de um defeito que durou
+ * meses: a regra morava 3.800 linhas ACIMA de `.pp-caixa` e tinha a mesma especificidade, então
+ * `position: absolute` vencia por vir depois. A caixa ficava posicionada em relação ao canvas,
+ * enquanto as coordenadas eram da JANELA — ou seja, deslocada pra baixo e pra direita exatamente
+ * pela altura da barra de cima e pela largura do menu lateral. Era por isso que a caixa abria
+ * longe da pastilha e o fio nunca encontrava nada.
+ *
+ * Com as duas classes a regra vence independentemente da ordem, e ela fica aqui, ao lado da
+ * caixa, onde quem mexer numa vai ver a outra.
+ */
+.pp-caixa.pp-caixa-ancorada {
+  position: fixed;
+  right: auto;
+  transform: none;
+  max-height: 430px;
 }
 
 /*

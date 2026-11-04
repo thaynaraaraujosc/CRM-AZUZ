@@ -17,12 +17,13 @@ const MARGEM = 12;
 /**
  * A ALTURA DO FIO DENTRO DA CAIXA, em pixels a partir do topo dela.
  *
- * O fio é desenhado na borda da caixa, nessa altura fixa (ver `.pp-fio` no globals.css). Pra ele
- * sair exatamente do meio da pastilha/do botão, é a CAIXA que se desloca: o topo dela é o centro
- * da âncora menos esta distância. Era "topo da âncora menos 10", que acertava por acaso num botão
- * de 20px e errava em tudo que fosse mais alto.
+ * O fio é desenhado na borda da caixa, a 26px do topo dela (ver `.pp-fio` no globals.css), e são
+ * 28 aqui por causa dos 2px que a borda da caixa e a metade da espessura do traço somam — medidos
+ * no navegador, não deduzidos. Pra o fio sair exatamente do meio da pastilha/do botão, é a CAIXA
+ * que se desloca: o topo dela é o centro da âncora menos esta distância. Era "topo da âncora menos
+ * 10", que acertava por acaso num botão de 20px e errava em tudo que fosse mais alto.
  */
-const ALTURA_DO_FIO = 26;
+const ALTURA_DO_FIO = 28;
 
 export type AncoraDaLista = { top: number; left: number; right: number; bottom: number };
 
