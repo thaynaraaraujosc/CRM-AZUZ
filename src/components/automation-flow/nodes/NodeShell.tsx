@@ -139,6 +139,15 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
     });
   });
 
+  /** "1h", "30min", "2d": o prazo da pergunta, curto o bastante pra caber ao lado da saída. */
+  const prazoDeEspera = (() => {
+    const minutos = ((flowNode.data ?? {}) as { esperaMinutos?: number }).esperaMinutos;
+    if (!minutos) return null;
+    if (minutos % 1440 === 0) return `${minutos / 1440}d`;
+    if (minutos % 60 === 0) return `${minutos / 60}h`;
+    return `${minutos}min`;
+  })();
+
   const canaisPossiveis = canaisDaAreaParaBloco(area ?? "comercial");
   const canalDoBloco = ((flowNode.data ?? {}) as { canal?: string }).canal;
 
@@ -766,7 +775,14 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
                 className={`flow-node-handle-row${corBifurcacao ? ` is-bifurcacao-${corBifurcacao}` : ""}${ehOpcaoDePergunta ? " is-opcao-pergunta" : ""}${ehFalha ? " is-falha" : ""}`}
                 key={chave}
               >
-                <span className="flow-handle-label">{traduzir(s.label)}</span>
+                <span className="flow-handle-label">
+                  {traduzir(s.label)}
+                  {/* O prazo escrito ao lado de "Sem resposta": sem ele, quanto tempo o robô
+                      espera antes de desistir é uma informação que só existe no painel. */}
+                  {chave === "nao_respondeu" && prazoDeEspera ? (
+                    <em className="flow-handle-prazo">{prazoDeEspera}</em>
+                  ) : null}
+                </span>
                 {!conectada && onAdicionarApos ? (
                   <button
                     type="button"

@@ -437,8 +437,10 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
       markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16 },
     };
     const novoEdges = addEdge(novaEdge, rfEdges);
+    const novoNodes = garantirPrazoDeEspera(rfNodes, novaEdge.source, novaEdge.sourceHandle);
     setRfEdges(novoEdges);
-    persist(rfNodes, novoEdges);
+    if (novoNodes !== rfNodes) setRfNodes(novoNodes);
+    persist(novoNodes, novoEdges);
   }
   function onNodeDragStop(_evento: unknown, node?: { id: string; position: { x: number; y: number } }) {
     // Soltar o início grava a posição nas CONFIGURAÇÕES, não entre os blocos: ele continua fora
@@ -645,6 +647,38 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     persist(novoNodes, novoEdges);
   }
 
+  /**
+   * LIGAR UM CAMINHO EM "SEM RESPOSTA" PRECISA DE UM PRAZO, senão ele nunca é seguido.
+   *
+   * Uma pergunta sem prazo espera pra sempre: o motor só marca a hora de desistir quando
+   * `esperaMinutos` existe (ver `motor-estado.ts`). A saída aparece sempre no cartão, como na
+   * referência — e é aqui que ela deixa de ser promessa vazia: no instante em que um caminho é
+   * ligado nela, o bloco ganha uma hora de prazo, se ainda não tiver um.
+   *
+   * UMA HORA e não cinco minutos: a pessoa do outro lado está vivendo a vida dela, e desistir
+   * em cinco minutos trata "ainda não viu" como "não quer". Quem precisar de outro prazo troca
+   * no painel do bloco; o que não pode é o caminho existir e nunca acontecer.
+   */
+  const PRAZO_PADRAO_SEM_RESPOSTA = 60;
+  function garantirPrazoDeEspera(nodes: FlowRFNode[], nodeId: string, handleId?: string | null) {
+    if (handleId !== "nao_respondeu") return nodes;
+    return nodes.map((n) => {
+      if (n.id !== nodeId) return n;
+      const dados = (n.data.flowNode.data ?? {}) as { esperaMinutos?: number };
+      if (dados.esperaMinutos) return n;
+      return {
+        ...n,
+        data: {
+          ...n.data,
+          flowNode: {
+            ...n.data.flowNode,
+            data: { ...dados, esperaMinutos: PRAZO_PADRAO_SEM_RESPOSTA },
+          },
+        },
+      };
+    });
+  }
+
   /** Grava um campo solto nos dados do bloco (canal, por ora). */
   function editarCampoDoBloco(nodeId: string, campo: string, valor: unknown) {
     const novoNodes = rfNodes.map((n) =>
@@ -730,7 +764,8 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
       type: "smoothstep",
       markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16 },
     };
-    const novoNodes = [...rfNodes, novoRF];
+    // O prazo entra junto: ver `garantirPrazoDeEspera`.
+    const novoNodes = garantirPrazoDeEspera([...rfNodes, novoRF], nodeOrigemId, handleId);
     const novoEdges = [...rfEdges, novaEdge];
     setRfNodes(novoNodes);
     setRfEdges(novoEdges);

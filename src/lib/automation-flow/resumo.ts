@@ -86,9 +86,16 @@ export function saidasDoNo(node: FlowNode): SaidaNo[] {
     return [
       ...opcoes,
       { handleId: "outra_resposta", label: "↺ Outra resposta" },
-      // Só aparece quando a pergunta tem prazo: sem prazo ela espera pra sempre e este caminho
-      // nunca seria seguido. Oferecer uma saída que não acontece é pior do que não ter.
-      ...(data.esperaMinutos ? [{ handleId: "nao_respondeu", label: "⏱ Sem resposta" }] : []),
+      /*
+       * "SEM RESPOSTA" APARECE SEMPRE numa pergunta, como na referência.
+       *
+       * Ela só aparecia com prazo configurado, pelo motivo certo: sem prazo a pergunta espera
+       * pra sempre e o caminho nunca seria seguido — oferecer uma saída que não acontece é pior
+       * do que não ter. O que mudou é que o editor passou a RESOLVER isso: ligar um caminho aqui
+       * grava um prazo padrão no bloco (ver `garantirPrazoDeEspera` no FlowEditor). Então a
+       * saída deixou de ser uma promessa vazia e virou uma que o motor cumpre.
+       */
+      { handleId: "nao_respondeu", label: "⏱ Sem resposta" },
       // Idem: só com limite de tentativas configurado é que existe "acabaram as tentativas".
       ...(data.tentativasMaximas ? [{ handleId: "tentativas_esgotadas", label: "✕ Errou demais" }] : []),
       { handleId: "falha", label: "✕ Falha ao enviar a mensagem" },

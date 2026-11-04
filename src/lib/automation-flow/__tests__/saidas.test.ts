@@ -37,7 +37,7 @@ describe("saídas de um bloco", () => {
     const saidas = saidasDoNo(
       no("mensagem_botoes", "mensagem", { opcoes: [{ id: "o1", rotulo: "Sim" }] }),
     );
-    expect(saidas.map((s) => s.handleId)).toEqual(["o1", "outra_resposta", "falha"]);
+    expect(saidas.map((s) => s.handleId)).toEqual(["o1", "outra_resposta", "nao_respondeu", "falha"]);
   });
 
   it("botão de URL não vira saída: quem clica sai e não responde", () => {
@@ -49,15 +49,22 @@ describe("saídas de um bloco", () => {
         ],
       }),
     );
-    expect(saidas.map((s) => s.handleId)).toEqual(["o1", "outra_resposta", "falha"]);
+    expect(saidas.map((s) => s.handleId)).toEqual(["o1", "outra_resposta", "nao_respondeu", "falha"]);
     // A numeração segue a posição real na lista, não a posição depois de tirar os de URL: é o
     // número que o contato vê na mensagem.
     expect(saidas[0].label).toBe("1 · Falar com atendente");
   });
 
-  it("a pergunta só oferece \"sem resposta\" quando tem prazo", () => {
+  /*
+   * "Sem resposta" passou a aparecer SEMPRE numa pergunta, como na referência que a Thaynara
+   * usa. Antes ela dependia de já haver prazo configurado, pelo motivo certo: sem prazo a
+   * pergunta espera pra sempre e o caminho nunca seria seguido. O que mudou é que o editor passa
+   * a gravar um prazo padrão quando se liga um caminho aqui — a saída deixou de ser uma promessa
+   * vazia. Ver `garantirPrazoDeEspera` no FlowEditor.
+   */
+  it("a pergunta sempre oferece \"sem resposta\", com ou sem prazo configurado", () => {
     const semPrazo = saidasDoNo(no("mensagem_botoes", "mensagem", { opcoes: [{ id: "o1", rotulo: "Sim" }] }));
-    expect(semPrazo.some((s) => s.handleId === "nao_respondeu")).toBe(false);
+    expect(semPrazo.some((s) => s.handleId === "nao_respondeu")).toBe(true);
 
     const comPrazo = saidasDoNo(
       no("mensagem_botoes", "mensagem", { opcoes: [{ id: "o1", rotulo: "Sim" }], esperaMinutos: 30 }),

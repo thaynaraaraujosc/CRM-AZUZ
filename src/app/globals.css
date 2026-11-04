@@ -21831,6 +21831,17 @@ table.tbl .name-cell .r {
   border-bottom-color: var(--ink);
 }
 
+/* O prazo ao lado de "Sem resposta". */
+.flow-handle-prazo {
+  margin-left: 6px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--surface-hover);
+  font-style: normal;
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+
 /* "×" no lugar do "+" quando a saída já tem caminho: ele desfaz a ligação. */
 .msg-opcao-tirar-ligacao,
 .flow-node-tirar-ligacao {
