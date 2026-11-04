@@ -739,6 +739,17 @@ export function AutomacaoDoFunil({
         </div>
 
         {escolhendoAcao ? (
+          <>
+          {/*
+            O VÉU ATRÁS DO PAINEL.
+            
+            O painel é uma folha fixa na direita, e sem véu ele ficava disputando a tela com a
+            grade: numa janela estreita sobrava uma faixa de colunas ao lado, e dava a impressão
+            de que a informação do painel continuava ali — a Thaynara chegou a arrastar a grade
+            pro lado procurando o resto. O véu diz que, enquanto isso está aberto, é isso que
+            importa. E clicar nele fecha, que é o gesto que todo mundo tenta primeiro.
+          */}
+          <div className="fauto-veu" role="presentation" onClick={() => setEscolhendoAcao(null)} />
           <div className="fauto-painel">
             <div className="fauto-painel-topo">
               <strong>{traduzir("O que esta etapa faz?")}</strong>
@@ -764,9 +775,12 @@ export function AutomacaoDoFunil({
               ))}
             </div>
           </div>
+          </>
         ) : null}
 
         {rascunho ? (
+          <>
+          <div className="fauto-veu" role="presentation" onClick={() => setRascunho(null)} />
           <div className="fauto-painel">
             <div className="fauto-painel-topo">
               <strong>{rascunho.id ? "Editar gatilho" : ACAO_ROTULO[rascunho.tipoAcao]}</strong>
@@ -1077,6 +1091,7 @@ export function AutomacaoDoFunil({
               </button>
             </div>
           </div>
+          </>
         ) : null}
       </div>
     </div>

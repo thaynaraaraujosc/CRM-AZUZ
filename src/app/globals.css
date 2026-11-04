@@ -19202,19 +19202,37 @@ table.tbl .name-cell .r {
 }
 
 /* ---------------------------------------------------------------- painel -- */
+/*
+ * O PAINEL DO GATILHO, e o véu atrás dele.
+ *
+ * `92vw` deixava uma nesga de grade do lado numa janela estreita — e nesga de grade ao lado de um
+ * painel parece "tem mais informação pra lá", que é exatamente o que fez a Thaynara arrastar a
+ * grade procurando o resto do formulário. Numa janela larga o painel é uma folha de 360px; numa
+ * estreita ele toma a largura toda menos uma margem, e o véu cobre o que sobra.
+ *
+ * A largura em `min()` e não em `max-width`: assim a conta é uma só e não depende de qual das
+ * duas regras ganha.
+ */
 .fauto-painel {
   position: fixed;
   top: 0;
   right: 0;
   bottom: 0;
-  z-index: 60;
-  width: 340px;
-  max-width: 92vw;
+  z-index: 61;
+  width: min(360px, 100vw - 16px);
   overflow-y: auto;
   background: var(--surface);
   border-left: 1px solid var(--border);
   box-shadow: -8px 0 24px rgba(0, 0, 0, 0.1);
   padding: var(--space-3);
+}
+
+.fauto-veu {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(0, 32, 55, 0.28);
+  animation: modal-fade-in var(--transition-fast);
 }
 
 .fauto-painel-topo {
@@ -19281,10 +19299,22 @@ table.tbl .name-cell .r {
   cursor: pointer;
 }
 
+/*
+ * O DIA MARCADO SOMIA NO TEMA CLARO.
+ *
+ * Era `background: var(--navy)` com `color: #fff`. O nome engana: `--navy` não é o azul-marinho,
+ * é o token de SUPERFÍCIE de fundo — e no tema claro ele vale `#f6f7f9`. Branco sobre quase
+ * branco: o botão continuava lá, clicável, invisível. No tema escuro `--navy` é `#002037` e o
+ * mesmo código funcionava, que é o que fez isso passar.
+ *
+ * Agora usa o par de ação (`--acao`/`--acao-texto`), que é o mesmo das pastilhas de etapa logo
+ * acima neste painel e existe com contraste nos dois temas, por definição.
+ */
 .fauto-dia.on {
-  background: var(--navy);
-  border-color: var(--navy);
-  color: #fff;
+  background: var(--acao);
+  border-color: var(--acao);
+  color: var(--acao-texto);
+  font-weight: var(--fw-semibold);
 }
 
 .fauto-horas {
