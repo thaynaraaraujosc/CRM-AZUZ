@@ -120,7 +120,16 @@ function posicionarFlyoutLateral(
   return { top, left };
 }
 
-const CHAVE_SIDEBAR_RECOLHIDA = "azuz-crm-sidebar-recolhida";
+/*
+ * CHAVE NOVA, DE PROPÓSITO.
+ *
+ * A antiga (`azuz-crm-sidebar-recolhida`) já estava gravada com "0" no navegador de quem usou o
+ * CRM com o menu aberto — e "0" significa "deixe aberto". Mudar só o padrão não mudava nada pra
+ * essas pessoas: o valor guardado ganhava do padrão, e o menu continuava aberto. Com chave nova,
+ * ninguém tem preferência gravada ainda, e o padrão novo vale pra todo mundo até alguém escolher
+ * outra coisa.
+ */
+const CHAVE_SIDEBAR_RECOLHIDA = "azuz-crm-menu-recolhido-v2";
 
 /**
  * A marca de "estou indo" dentro do item do menu.
@@ -303,6 +312,9 @@ export function Sidebar() {
   }, [gestaoAtividadeAberta]);
 
   return (
+    <>
+    {/* O vão que segura a coluna enquanto o menu está fixo. Ver `.sidebar-vao` no globals.css. */}
+    {recolhida ? <div className="sidebar-vao" aria-hidden="true" /> : null}
     <aside
       className={`sidebar${recolhida ? " recolhida" : ""}${recolhida && sobreposta ? " sobreposta" : ""}`}
       onMouseEnter={() => recolhida && setSobreposta(true)}
@@ -653,5 +665,6 @@ export function Sidebar() {
           : null}
       </div>
     </aside>
+    </>
   );
 }

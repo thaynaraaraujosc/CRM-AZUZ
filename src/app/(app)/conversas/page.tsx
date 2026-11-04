@@ -632,10 +632,20 @@ function ConversasPageInner() {
       }
     }
   }
-  const [infoAberto, setInfoAberto] = useState(false);
+  /*
+   * O PAINEL DO CONTATO NASCE ABERTO.
+   *
+   * Ele ficava atrás da engrenagem, e quem atende precisa do que está lá — responsável, origem,
+   * valor, agendamento — enquanto lê a mensagem, não depois de dois cliques. Fechado por padrão
+   * ele virava "aquela aba que ninguém sabe que existe".
+   *
+   * A engrenagem continua, pra fechar quando a conversa precisar de largura (uma imagem grande,
+   * um texto longo).
+   */
+  const [infoAberto, setInfoAberto] = useState(true);
   const [abaInfo, setAbaInfo] = useState<
     "resumo" | "contato" | "negociacao" | "atividades" | "historico"
-  >("resumo");
+  >("contato");
   const [resultadoMenuAberto, setResultadoMenuAberto] = useState(false);
   const [resultadoMenuRect, setResultadoMenuRect] = useState<DOMRect | null>(null);
   const [formResultado, setFormResultado] = useState<
@@ -7442,11 +7452,19 @@ function ConversasPageInner() {
           <div className="wa-info-tabs" role="tablist" aria-label={traduzir("Painel do contato")}>
             {(
               [
-                { id: "resumo", label: "Resumo" },
+                /*
+                 * CONTATO PRIMEIRO, RESUMO POR ÚLTIMO.
+                 *
+                 * O Resumo é leitura: foto, nome, uns números. Quem atende passa o dia em CONTATO
+                 * — responsável, origem, valor, agendamento — e era a segunda aba, ou seja, um
+                 * clique a mais em toda conversa. A primeira aba é a que abre; ela tem que ser a
+                 * de trabalho, não a de vitrine.
+                 */
                 { id: "contato", label: "Contato" },
                 { id: "negociacao", label: "Negociação" },
                 { id: "atividades", label: "Atividades" },
                 { id: "historico", label: "Histórico" },
+                { id: "resumo", label: "Resumo" },
               ] as const
             ).map((t) => (
               <button

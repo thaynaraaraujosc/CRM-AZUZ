@@ -45,6 +45,22 @@ model Contato {
   canalPreferido String?
   melhorHorario  String?
 
+  /// OS CAMPOS QUE CADA EMPRESA CRIA, como `{ "<id do campo>": "valor" }`.
+  ///
+  /// As colunas acima são as que TODO CRM tem. O que varia de cliente pra cliente — "paciente
+  /// novo ou antigo" numa clínica, "placa do veículo" numa oficina, "turma" num curso — não cabe
+  /// em coluna fixa: ou o produto vira uma lista interminável de campos que 90% das empresas
+  /// deixam vazios, ou cada cliente novo pede uma migração.
+  ///
+  /// É JSON e não tabela de propósito. A DEFINIÇÃO dos campos (nome, tipo, opções) mora em
+  /// `Preferencia`, chave `campos-do-contato`, que é onde já vive toda configuração de workspace;
+  /// aqui ficam só os VALORES de um contato. Uma tabela de valores seria mais consultável, e
+  /// pagaria por isso duas tabelas novas e um join em toda leitura de contato — pra um dado que
+  /// se lê junto com o contato e nunca sozinho.
+  ///
+  /// Nulo é "nenhum campo preenchido", que é o estado de todo contato que já existe.
+  camposExtras Json?
+
   /// CONSENTIMENTO DE WHATSAPP, declarado pela pessoa num formulário.
   ///
   /// Nulo é "não se sabe", e é por isso que as três colunas são opcionais: todo contato que já

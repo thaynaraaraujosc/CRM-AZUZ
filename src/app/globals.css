@@ -695,9 +695,13 @@ table {
   transition: width var(--transition-base);
 }
 
-/* Recolhida: só os ícones, largura fixa pequena; abre por padrão pra quem entra, guardado por
-   navegador (`localStorage`, ver `sidebar.tsx`), não é preferência de conta. */
-.sidebar.recolhida {
+/* Recolhida: só os ícones, largura fixa pequena. É o PADRÃO de quem entra; quem preferir o menu
+   largo fixo clica na setinha, e a escolha fica guardada por navegador (`localStorage`, ver
+   `sidebar.tsx`), não é preferência de conta.
+
+   O `:not(.sobreposta)` é o que faz a abertura por hover funcionar sem desfazer nada: ver o bloco
+   do `.sidebar.recolhida.sobreposta`, lá embaixo. */
+.sidebar.recolhida:not(.sobreposta) {
   width: 68px;
   padding-left: 10px;
   padding-right: 10px;
@@ -710,7 +714,7 @@ table {
   padding: var(--space-1) var(--space-2) var(--space-5);
 }
 
-.sidebar.recolhida .sb-brand {
+.sidebar.recolhida:not(.sobreposta) .sb-brand {
   justify-content: center;
   padding-left: 0;
   padding-right: 0;
@@ -735,7 +739,7 @@ table {
   background: var(--blue-soft-2);
   color: var(--ink);
 }
-.sidebar.recolhida .sb-recolher {
+.sidebar.recolhida:not(.sobreposta) .sb-recolher {
   margin-left: 0;
 }
 
@@ -877,12 +881,12 @@ table {
   flex: 0 0 auto;
 }
 
-.sidebar.recolhida .nav-item {
+.sidebar.recolhida:not(.sobreposta) .nav-item {
   justify-content: center;
   padding-left: 0;
   padding-right: 0;
 }
-.sidebar.recolhida .sb-workspace {
+.sidebar.recolhida:not(.sobreposta) .sb-workspace {
   display: flex;
   justify-content: center;
   padding: var(--space-2);
@@ -1027,12 +1031,12 @@ table {
   font-size: 11px;
 }
 
-.sidebar.recolhida .sb-foot {
+.sidebar.recolhida:not(.sobreposta) .sb-foot {
   justify-content: center;
   padding-left: 0;
   padding-right: 0;
 }
-.sidebar.recolhida .sb-foot-info {
+.sidebar.recolhida:not(.sobreposta) .sb-foot-info {
   flex: 0 0 auto;
   justify-content: center;
 }
@@ -25283,17 +25287,53 @@ td.trafego-col-crm:first-of-type {
  * isso move a coluna que a pessoa estava lendo. Com `position: absolute`, o espaço reservado
  * continua sendo os 68px do recolhido e o painel aberto passa por cima.
  */
-.sidebar.recolhida.sobreposta {
-  position: absolute;
+/*
+ * `fixed`, E NÃO `absolute`.
+ *
+ * Com `absolute` ele se posiciona contra o primeiro ancestral posicionado — e como o shell do app
+ * não tem nenhum, ele caía contra a página inteira e subia por cima da lista de conversas, com os
+ * rótulos atravessando o conteúdo. `fixed` não depende de ancestral nenhum: ele ocupa a coluna da
+ * esquerda, de cima a baixo da janela, e o espaço reservado no fluxo continua sendo os 68px.
+ */
+/*
+ * O MENU RECOLHIDO É FIXO, E UM VÃO SEGURA O LUGAR DELE.
+ *
+ * Fixo porque, ao abrir no hover, ele precisa passar POR CIMA do conteúdo — se empurrasse, a tela
+ * inteira deslizaria a cada vez que o ponteiro encostasse na borda esquerda, movendo a coluna que
+ * a pessoa está lendo. Mas `fixed` tira o elemento do fluxo, e sem nada no lugar o conteúdo
+ * escorregava pra debaixo dele. Daí o `.sidebar-vao`: um bloco de 68px que não desenha nada e só
+ * ocupa a coluna, SEMPRE com a mesma largura — abrindo ou fechando, o fluxo não muda um pixel.
+ */
+.sidebar.recolhida {
+  position: fixed;
   top: 0;
-  bottom: 0;
   left: 0;
+  height: 100vh;
   z-index: 60;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.sidebar-vao {
+  flex: 0 0 68px;
+  width: 68px;
+}
+
+.sidebar.recolhida.sobreposta {
   width: 216px;
   padding-left: var(--space-3);
   padding-right: var(--space-3);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
 }
+
+/*
+ * ABERTO É ABERTO: as regras do recolhido simplesmente NÃO SE APLICAM no hover.
+ *
+ * A primeira tentativa desfazia uma por uma (`justify-content`, `padding`, …), e isso erra por
+ * construção: toda regra nova de `.recolhida` nasceria valendo no menu já largo, e os nomes
+ * voltariam a empilhar em cima dos ícones. Com `:not(.sobreposta)` nos seletores do recolhido, o
+ * estado aberto volta a ser o estado NORMAL do menu, sem nada pra desfazer.
+ */
 
 /* A transição é só da largura e da sombra. Opacidade no conteúdo faria o texto "piscar" a cada
    passada de mouse, que é pior do que aparecer de uma vez. */
