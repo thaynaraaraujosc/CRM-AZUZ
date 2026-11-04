@@ -609,6 +609,42 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     persist(novoNodes, rfEdges);
   }
 
+  /**
+   * Mexer nos botões de resposta pela própria bolha.
+   *
+   * O TIPO DO BLOCO ACOMPANHA: um `mensagem_texto` não tem onde guardar opção, e um
+   * `mensagem_botoes` sem nenhuma opção é uma pergunta que não pergunta nada. Então o primeiro
+   * botão promove o bloco e o último rebaixa — sem isso, "adicionar botão" salvaria num campo
+   * que o motor não lê, e o robô mandaria o texto sem botão nenhum, calado.
+   *
+   * As arestas das opções apagadas vão junto: uma ligação saindo de um botão que não existe mais
+   * é um caminho que nunca é tomado e que ninguém consegue ver pra apagar.
+   */
+  function mudarOpcoesDoBloco(nodeId: string, opcoes: { id: string; rotulo: string; url?: string }[]) {
+    const atual = rfNodes.find((n) => n.id === nodeId);
+    if (!atual) return;
+    const tipo = opcoes.length ? "mensagem_botoes" : "mensagem_texto";
+    const dados = (atual.data.flowNode.data ?? {}) as Record<string, unknown>;
+    const novoNodes = rfNodes.map((n) =>
+      n.id === nodeId
+        ? ({
+            ...n,
+            data: {
+              ...n.data,
+              flowNode: { ...n.data.flowNode, type: tipo, data: { ...dados, opcoes } },
+            },
+          } as typeof n)
+        : n,
+    );
+    const idsVivos = new Set(opcoes.map((o) => o.id));
+    const novoEdges = rfEdges.filter(
+      (e) => e.source !== nodeId || !e.sourceHandle || idsVivos.has(e.sourceHandle) || !e.sourceHandle.startsWith("op-"),
+    );
+    setRfNodes(novoNodes);
+    setRfEdges(novoEdges);
+    persist(novoNodes, novoEdges);
+  }
+
   function onEdgesDelete(deleted: FlowRFEdge[]) {
     const idsSet = new Set(deleted.map((e) => e.id));
     const novoEdges = rfEdges.filter((e) => !idsSet.has(e.id));
@@ -1209,6 +1245,11 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
               ? (arquivo: { dataUrl: string; nome: string; mimeType: string; bytes: number }) =>
                   void anexarNoBloco(n.id, arquivo)
               : undefined,
+          aoMudarOpcoes:
+            modoConstrucao &&
+            (n.data.flowNode.type === "mensagem_texto" || n.data.flowNode.type === "mensagem_botoes")
+              ? (opcoes: { id: string; rotulo: string; url?: string }[]) => mudarOpcoesDoBloco(n.id, opcoes)
+              : undefined,
         },
       })),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `duplicarUm` e `removerNodes` são
@@ -1268,6 +1309,16 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
        */
       width: 210,
       height: inicioNoFunil ? 56 : 40,
+      /*
+       * `measured` À MÃO, e é isto que faz o FIO aparecer.
+       *
+       * O React Flow calcula o ponto de onde a linha sai a partir de `measured` — que ele mesmo
+       * preenche medindo o DOM e avisando por `onNodesChange`. Como a gente descarta as mudanças
+       * dos nós desenhados (pra eles não virarem bloco salvo), este nó nunca tinha medida, e a
+       * aresta que sai dele não tinha de onde partir: o "Iniciar robô" ficava solto, sem ligação
+       * com o primeiro bloco. Declarar a medida resolve sem reabrir a porta do salvamento.
+       */
+      measured: { width: 210, height: inicioNoFunil ? 56 : 40 },
       draggable: modoConstrucao,
       selectable: false,
       deletable: false,

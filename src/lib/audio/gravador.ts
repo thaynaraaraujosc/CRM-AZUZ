@@ -26,11 +26,22 @@ export function useGravadorDeAudio(aoTerminar: (audio: AudioGravado) => void) {
   const [estado, setEstado] = useState<EstadoDaGravacao>("parado");
   const [segundos, setSegundos] = useState(0);
   const [erro, setErro] = useState<string | null>(null);
+  /*
+   * OS TRACINHOS ENQUANTO GRAVA, e eles são o volume DE VERDADE.
+   *
+   * Uma animação de barras subindo e descendo sozinha seria mais fácil e mentiria: ela continua
+   * dançando com o microfone mudo, e aí a figura deixa de responder "está me ouvindo?" — que é a
+   * única pergunta que ela existe pra responder. Aqui cada barra é a média do sinal naquele
+   * instante, lida de um `AnalyserNode`.
+   */
+  const [niveis, setNiveis] = useState<number[]>([]);
 
   const gravadorRef = useRef<MediaRecorder | null>(null);
   const fluxoRef = useRef<MediaStream | null>(null);
   const pedacosRef = useRef<Blob[]>([]);
   const relogioRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const contextoRef = useRef<AudioContext | null>(null);
+  const quadroRef = useRef<number | null>(null);
   /*
    * QUANDO A GRAVAÇÃO COMEÇOU, e não quantos segundos já se passaram.
    *
@@ -44,6 +55,10 @@ export function useGravadorDeAudio(aoTerminar: (audio: AudioGravado) => void) {
   const encerrarTudo = useCallback(() => {
     if (relogioRef.current) clearInterval(relogioRef.current);
     relogioRef.current = null;
+    if (quadroRef.current) cancelAnimationFrame(quadroRef.current);
+    quadroRef.current = null;
+    contextoRef.current?.close().catch(() => {});
+    contextoRef.current = null;
     fluxoRef.current?.getTracks().forEach((t) => t.stop());
     fluxoRef.current = null;
     gravadorRef.current = null;
@@ -58,6 +73,31 @@ export function useGravadorDeAudio(aoTerminar: (audio: AudioGravado) => void) {
     try {
       const fluxo = await navigator.mediaDevices.getUserMedia({ audio: true });
       fluxoRef.current = fluxo;
+
+      const Ctx =
+        window.AudioContext ||
+        (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      const contexto = new Ctx();
+      const analisador = contexto.createAnalyser();
+      analisador.fftSize = 256;
+      contexto.createMediaStreamSource(fluxo).connect(analisador);
+      contextoRef.current = contexto;
+      const amostra = new Uint8Array(analisador.frequencyBinCount);
+      /* Uma barra a cada ~100ms, e no máximo 36 na tela: mais que isso elas ficam com menos de um
+         pixel e viram uma mancha. */
+      let ultimaBarra = 0;
+      const medir = () => {
+        quadroRef.current = requestAnimationFrame(medir);
+        const agora = performance.now();
+        if (agora - ultimaBarra < 100) return;
+        ultimaBarra = agora;
+        analisador.getByteTimeDomainData(amostra);
+        let soma = 0;
+        for (const v of amostra) soma += Math.abs(v - 128);
+        const nivel = Math.min(1, soma / amostra.length / 40);
+        setNiveis((atual) => [...atual, Math.max(0.08, nivel)].slice(-36));
+      };
+      medir();
       const tipo = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
         ? "audio/webm;codecs=opus"
         : "audio/webm";
@@ -67,6 +107,7 @@ export function useGravadorDeAudio(aoTerminar: (audio: AudioGravado) => void) {
         if (e.data.size > 0) pedacosRef.current.push(e.data);
       };
       gravador.onstop = () => {
+        setNiveis([]);
         const blob = new Blob(pedacosRef.current, { type: "audio/webm" });
         const duracao = Math.round((Date.now() - comecouEmRef.current) / 1000);
         encerrarTudo();
@@ -87,6 +128,7 @@ export function useGravadorDeAudio(aoTerminar: (audio: AudioGravado) => void) {
       comecouEmRef.current = Date.now();
       gravador.start();
       setSegundos(0);
+      setNiveis([]);
       setEstado("gravando");
       relogioRef.current = setInterval(() => setSegundos((s) => s + 1), 1000);
     } catch {
@@ -115,9 +157,10 @@ export function useGravadorDeAudio(aoTerminar: (audio: AudioGravado) => void) {
     encerrarTudo();
     setEstado("parado");
     setSegundos(0);
+    setNiveis([]);
   }, [encerrarTudo]);
 
-  return { estado, segundos, erro, comecar, parar, cancelar };
+  return { estado, segundos, niveis, erro, comecar, parar, cancelar };
 }
 
 /** "0:07" — o cronômetro curto que aparece ao lado do botão enquanto grava. */

@@ -1,10 +1,13 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 
 import { useFecharMenuDeLinha } from "@/lib/menu-de-linha";
 import { relogioDaGravacao, useGravadorDeAudio } from "@/lib/audio/gravador";
+import { VARIAVEIS_MENSAGEM, inserirTokenNoTexto } from "../forms/variaveis";
+import { useBibliotecaDocumentos } from "@/lib/biblioteca-documentos-context";
+import { PlayerDeAudio } from "./PlayerDeAudio";
 
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
 import { resumoIndicaIncompleto, resumoNo, saidasDoNo, temEntrada } from "@/lib/automation-flow/resumo";
@@ -108,12 +111,20 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
     aoRenomear,
     aoTestar,
     aoAnexar,
+    aoMudarOpcoes,
   } = data;
 
   const [menuAberto, setMenuAberto] = useState(false);
   const [renomeando, setRenomeando] = useState(false);
+  const [variaveisAbertas, setVariaveisAbertas] = useState(false);
   const entradaDeArquivo = useRef<HTMLInputElement>(null);
-  useFecharMenuDeLinha(menuAberto, () => setMenuAberto(false));
+  const campoDoTexto = useRef<HTMLTextAreaElement>(null);
+  const { documentos } = useBibliotecaDocumentos();
+  const fecharMenus = useCallback(() => {
+    setMenuAberto(false);
+    setVariaveisAbertas(false);
+  }, []);
+  useFecharMenuDeLinha(menuAberto || variaveisAbertas, fecharMenus);
 
   const gravador = useGravadorDeAudio((audio) => {
     aoAnexar?.({
@@ -124,6 +135,24 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
       bytes: Math.round((audio.dataUrl.length - audio.dataUrl.indexOf(",") - 1) * 0.75),
     });
   });
+
+  /** Os botões gravados no bloco, do jeito que a bolha os edita. */
+  const opcoesDoBloco = (((flowNode.data ?? {}) as Record<string, unknown>).opcoes ?? []) as {
+    id: string;
+    rotulo: string;
+    url?: string;
+  }[];
+
+  function trocarOpcao(indice: number, mudanca: Partial<{ rotulo: string; url: string }>) {
+    aoMudarOpcoes?.(opcoesDoBloco.map((o, i) => (i === indice ? { ...o, ...mudanca } : o)));
+  }
+
+  function acrescentarOpcao(comUrl: boolean) {
+    // O id precisa ser único e ESTÁVEL: é ele que amarra a aresta que sai deste botão. O prefixo
+    // "op-" é o que deixa o editor saber, ao apagar, quais arestas eram de opção.
+    const id = `op-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+    aoMudarOpcoes?.([...opcoesDoBloco, comUrl ? { id, rotulo: "", url: "" } : { id, rotulo: "" }]);
+  }
 
   function escolherArquivo(arquivo: File | undefined) {
     if (!arquivo || !aoAnexar) return;
@@ -376,6 +405,7 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
               editor inteiro e deixar um campo editável no meio dele seria mentir sobre o modo.
             */}
             <textarea
+              ref={campoDoTexto}
               className="msg-texto nodrag nowheel"
               value={textoDoBloco}
               readOnly={!aoEditarTexto}
@@ -399,6 +429,13 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
                   <>
                     <span className="msg-gravando">
                       <span className="msg-gravando-ponto" aria-hidden="true" />
+                      {/* Os tracinhos são o volume de verdade, lido do microfone: ver o
+                          comentário em `gravador.ts` sobre por que não é uma animação solta. */}
+                      <span className="msg-gravando-onda" aria-hidden="true">
+                        {gravador.niveis.map((n, i) => (
+                          <span key={i} style={{ height: `${Math.round(n * 100)}%` }} />
+                        ))}
+                      </span>
                       {relogioDaGravacao(gravador.segundos)}
                     </span>
                     <button type="button" onClick={(e) => { e.stopPropagation(); gravador.parar(); }}>
@@ -427,6 +464,44 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
                     >
                       <IconMic width={14} height={14} />
                     </button>
+                    {/*
+                      INSERIR VARIÁVEL sem sair do cartão.
+                      
+                      O token entra na POSIÇÃO DO CURSOR e não no fim: quem quer "Oi {nome}, tudo
+                      bem?" não quer "Oi , tudo bem?{nome}".
+                    */}
+                    {aoEditarTexto ? (
+                      <div className="msg-vars-caixa" data-menu-de-linha="">
+                        <button
+                          type="button"
+                          title={traduzir("Inserir variável")}
+                          aria-label={traduzir("Inserir variável")}
+                          aria-expanded={variaveisAbertas}
+                          onClick={(e) => { e.stopPropagation(); setVariaveisAbertas((v) => !v); }}
+                        >
+                          {"{ }"}
+                        </button>
+                        {variaveisAbertas ? (
+                          <div className="msg-menu msg-vars" role="menu">
+                            {VARIAVEIS_MENSAGEM.map((v) => (
+                              <button
+                                key={v.token}
+                                type="button"
+                                role="menuitem"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setVariaveisAbertas(false);
+                                  aoEditarTexto(inserirTokenNoTexto(textoDoBloco, v.token, campoDoTexto.current));
+                                }}
+                              >
+                                {v.label}
+                                <em>{v.token}</em>
+                              </button>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
                   </>
                 )}
                 <input
@@ -442,31 +517,122 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
             ) : null}
             {gravador.erro ? <p className="msg-erro">{gravador.erro}</p> : null}
 
-            {saidasDeOpcao.map((sa) => {
-              const chave = sa.handleId ?? "__default__";
-              const conectada = saidasConectadas?.has(chave) ?? false;
+            {/*
+              A IMAGEM (ou o arquivo) APARECE NO CARTÃO.
+              
+              Depois do upload o bloco só dizia "Enviar imagem": pra saber QUAL imagem era preciso
+              abrir o painel da direita e ler o nome do arquivo. Com três blocos de imagem no
+              fluxo, isso é abrir três painéis. A miniatura responde de relance, que é a mesma
+              razão de a mensagem de texto aparecer escrita na bolha.
+            */}
+            {flowNode.type === "mensagem_imagem" || flowNode.type === "mensagem_video" || flowNode.type === "mensagem_documento" ? (
+              (() => {
+                const dados = (flowNode.data ?? {}) as { arquivoId?: string; arquivoNome?: string; arquivoTamanho?: string };
+                const doc = documentos.find((d) => d.id === dados.arquivoId);
+                if (!dados.arquivoId) return null;
+                return (
+                  <div className="msg-arquivo">
+                    {flowNode.type === "mensagem_imagem" && doc?.url ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- a fonte é uma data URL da biblioteca, não uma URL remota que o otimizador do Next saiba buscar.
+                      <img src={doc.url} alt="" className="msg-arquivo-mini" />
+                    ) : (
+                      <span className="msg-arquivo-mini msg-arquivo-icone" aria-hidden="true">
+                        <IconAnexo width={16} height={16} />
+                      </span>
+                    )}
+                    <span className="msg-arquivo-textos">
+                      <strong>{dados.arquivoNome ?? doc?.nome ?? traduzir("Arquivo")}</strong>
+                      {dados.arquivoTamanho ? <span>{dados.arquivoTamanho}</span> : null}
+                    </span>
+                  </div>
+                );
+              })()
+            ) : null}
+
+            {/* O ÁUDIO TOCA AQUI DENTRO: ver `PlayerDeAudio`. A fonte é o arquivo da biblioteca,
+                que é o mesmo que o motor envia — ouvir aqui é ouvir o que vai sair. */}
+            {flowNode.type === "mensagem_audio" ? (
+              (() => {
+                const dados = (flowNode.data ?? {}) as { arquivoId?: string; arquivoNome?: string };
+                const doc = documentos.find((d) => d.id === dados.arquivoId);
+                return doc?.url ? <PlayerDeAudio src={doc.url} nome={dados.arquivoNome} /> : null;
+              })()
+            ) : null}
+
+            {/*
+              OS BOTÕES DE RESPOSTA, editáveis na própria bolha.
+              
+              Cada um tem o seu ponto de ligação à direita, porque cada um abre um caminho
+              próprio. O botão de URL não tem: quem clica sai pro site e não volta com resposta,
+              então não existe "o que acontece depois" pra ligar.
+            */}
+            {opcoesDoBloco.map((opcao, indice) => {
+              const saida = saidasDeOpcao.find((sa) => sa.handleId === opcao.id);
+              const conectada = saidasConectadas?.has(opcao.id) ?? false;
               return (
-                <div className="msg-opcao" key={chave}>
-                  {/* O rótulo vem de `saidasDoNo` numerado ("1 · Quero agendar"); na pastilha o
-                      número é ruído, porque a ordem já é a de cima pra baixo. */}
-                  <span>{traduzir(sa.label).replace(/^\d+ · /, "")}</span>
-                  {!conectada && onAdicionarApos ? (
+                <div className={`msg-opcao${opcao.url !== undefined ? " msg-opcao-url" : ""}`} key={opcao.id}>
+                  <input
+                    className="msg-opcao-campo nodrag"
+                    value={opcao.rotulo}
+                    placeholder={traduzir(opcao.url !== undefined ? "Texto do botão" : "Resposta do contato")}
+                    readOnly={!aoMudarOpcoes}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => trocarOpcao(indice, { rotulo: e.target.value })}
+                  />
+                  {opcao.url !== undefined ? (
+                    <input
+                      className="msg-opcao-campo msg-opcao-link nodrag"
+                      value={opcao.url}
+                      placeholder="https://…"
+                      readOnly={!aoMudarOpcoes}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => trocarOpcao(indice, { url: e.target.value })}
+                    />
+                  ) : null}
+                  {aoMudarOpcoes ? (
+                    <button
+                      type="button"
+                      className="msg-opcao-tirar nodrag"
+                      aria-label={traduzir("Tirar este botão")}
+                      title={traduzir("Tirar este botão")}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        aoMudarOpcoes(opcoesDoBloco.filter((_, i) => i !== indice));
+                      }}
+                    >
+                      <IconLixeira width={12} height={12} />
+                    </button>
+                  ) : null}
+                  {saida && !conectada && onAdicionarApos ? (
                     <button
                       type="button"
                       className="msg-opcao-add"
                       title={traduzir("O que acontece quando clicam aqui?")}
                       onClick={(e) => {
                         e.stopPropagation();
-                        onAdicionarApos(sa.handleId, e.currentTarget.getBoundingClientRect());
+                        onAdicionarApos(opcao.id, e.currentTarget.getBoundingClientRect());
                       }}
                     >
                       +
                     </button>
                   ) : null}
-                  <Handle type="source" position={Position.Right} id={sa.handleId} className="flow-handle msg-handle" />
+                  {saida ? (
+                    <Handle type="source" position={Position.Right} id={opcao.id} className="flow-handle msg-handle" />
+                  ) : null}
                 </div>
               );
             })}
+
+            {aoMudarOpcoes ? (
+              <div className="msg-novos-botoes nodrag">
+                <button type="button" onClick={(e) => { e.stopPropagation(); acrescentarOpcao(false); }}>
+                  + {traduzir("Botão de ação")}
+                </button>
+                <button type="button" onClick={(e) => { e.stopPropagation(); acrescentarOpcao(true); }}>
+                  + {traduzir("Botão de URL")}
+                </button>
+              </div>
+            ) : null}
           </div>
         </>
       ) : (

@@ -68,6 +68,14 @@ export type FlowRFNodeData = {
    * entrega o arquivo e o que ele é.
    */
   aoAnexar?: (arquivo: { dataUrl: string; nome: string; mimeType: string; bytes: number }) => void;
+  /**
+   * Os botões de resposta rápida, editados DENTRO da bolha.
+   *
+   * Acrescentar o primeiro muda o tipo do bloco (`mensagem_texto` vira `mensagem_botoes`) e tirar
+   * o último desfaz a mudança — quem faz isso é o editor, porque é ele que conhece o formato do
+   * fluxo. Aqui só se diz qual é a lista nova.
+   */
+  aoMudarOpcoes?: (opcoes: { id: string; rotulo: string; url?: string }[]) => void;
 };
 
 /**
