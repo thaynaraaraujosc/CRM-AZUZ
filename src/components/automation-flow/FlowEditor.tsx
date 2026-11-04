@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Background,
   ControlButton,
   Controls,
   MarkerType,
@@ -1294,9 +1293,15 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
             fitView
             proOptions={{ hideAttribution: true }}
           >
-            {/* O pontilhado é do editor do funil. A referência do Social Seller é papel liso, e o
-                ponto a cada 18px disputa com os cartões num canvas de seis blocos. */}
-            {ehSocial ? null : <Background gap={18} />}
+            {/*
+              SEM PONTILHADO, em nenhum dos dois editores.
+              
+              Ele já tinha saído do Social Seller, onde a referência é papel liso. A Thaynara pediu
+              a mesma coisa no editor do funil: "esse pontilhado causa muita estranheza". É um
+              padrão de ferramenta de diagrama — ele serve pra sugerir uma malha onde as peças
+              encaixam, e aqui nada encaixa em malha nenhuma. O que fica é papel, e a atenção vai
+              pros blocos.
+            */}
             {/*
               No Social Seller a coluna da direita substitui estes controles: ter os dois seria
               zoom em dois lugares, e o de baixo-à-esquerda é o que ninguém acha.

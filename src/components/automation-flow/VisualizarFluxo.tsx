@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Background,
   Controls,
   MiniMap,
   ReactFlow,
@@ -62,7 +61,6 @@ function CanvasPreview({ fluxo }: { fluxo: FluxoAutomacao }) {
       fitView
       proOptions={{ hideAttribution: true }}
     >
-      <Background gap={18} />
       <Controls showInteractive={false} />
       <MiniMap pannable zoomable nodeColor={(n) => CORES_CATEGORIA[String(n.type)] ?? "#94a3b8"} />
     </ReactFlow>

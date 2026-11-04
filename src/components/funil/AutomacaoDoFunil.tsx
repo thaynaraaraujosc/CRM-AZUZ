@@ -1,10 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { IconAutomacoes, IconClose } from "@/components/icons";
+import { IconAutomacoes, IconClose, IconRestaurar } from "@/components/icons";
+import { Ajuda } from "@/components/ui";
+import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
+import { HORARIOS, SeletorDeHora } from "./SeletorDeHora";
 import { CondicaoForm } from "@/components/automation-flow/forms/CondicaoForm";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { MigrarGatilhos } from "./MigrarGatilhos";
@@ -258,6 +262,41 @@ export function AutomacaoDoFunil({
   const [etapaArrastada, setEtapaArrastada] = useState<string | null>(null);
   /** As OUTRAS etapas que este gatilho novo também cobre. Vazio = só a dele. */
   const [etapasExtras, setEtapasExtras] = useState<string[]>([]);
+  /** O nome que o robô novo vai ter. `null` enquanto o campo não foi aberto. */
+  const [nomeDoRoboNovo, setNomeDoRoboNovo] = useState<string | null>(null);
+
+  /*
+   * ONDE O PAINEL ABRE.
+   *
+   * Era uma folha fixa na direita, com véu por cima da grade. A Thaynara pediu o jeito do Kommo:
+   * a caixa abre COLADA no cartão em que se clicou. A diferença não é estética — na folha da
+   * direita o cartão que se está editando fica do outro lado da tela, escondido atrás do véu, e
+   * é justamente ele que dá o contexto do que se está mexendo.
+   *
+   * Guardamos o elemento, não só a medida dele: a grade rola de lado, e uma medida tirada no
+   * clique aponta pro lugar onde o cartão ESTAVA (ver `use-floating-position.ts`).
+   */
+  const ancoraRef = useRef<HTMLElement | null>(null);
+  const [ancora, setAncora] = useState<AnchorRect | null>(null);
+  const fecharPainel = useCallback(() => {
+    setEscolhendoAcao(null);
+    setRascunho(null);
+    ancoraRef.current = null;
+  }, []);
+  const painelAberto = escolhendoAcao !== null || rascunho !== null;
+  const { ref: painelRef, posicao: posicaoDoPainel } = useFloatingPosition(
+    ancora,
+    painelAberto,
+    8,
+    fecharPainel,
+    ancoraRef,
+  );
+
+  /** Guarda quem abriu o painel, pra caixa nascer colada nele e continuar colada ao rolar. */
+  function ancorarEm(elemento: HTMLElement) {
+    ancoraRef.current = elemento;
+    setAncora(elemento.getBoundingClientRect());
+  }
 
   /**
    * Solta a etapa arrastada na posição `destino`.
@@ -493,15 +532,22 @@ export function AutomacaoDoFunil({
    * perderia o que ela acabou de configurar. Salva o gatilho primeiro, depois ela abre o robô
    * pela lista, que é onde ele passa a estar.
    */
+  /** O nome que o campo de criação já vem preenchido: o da etapa, que serve na maioria das vezes. */
+  function nomeSugeridoDoRobo(): string {
+    const etapa = colunas.find((c) => c.id === rascunho?.etapaId)?.titulo ?? "etapa";
+    return `Robô de ${etapa}`;
+  }
+
   async function criarRobo() {
     if (!rascunho) return;
+    const nome = (nomeDoRoboNovo ?? "").trim() || nomeSugeridoDoRobo();
     setCriandoRobo(true);
     setErro(null);
     try {
       const resposta = await fetch("/api/funis/gatilhos/robo-novo", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nome: `Robô de ${colunas.find((c) => c.id === rascunho.etapaId)?.titulo ?? "etapa"}` }),
+        body: JSON.stringify({ nome }),
       });
       if (!resposta.ok) throw new Error(String(resposta.status));
       const robo = (await resposta.json()) as RoboResumo;
@@ -510,7 +556,8 @@ export function AutomacaoDoFunil({
       // pro editor até a página inteira ser recarregada.
       await recarregarFluxos().catch(() => {});
       setRascunho({ ...rascunho, fluxoId: robo.id });
-      setAviso(`"${robo.nome}" criado. Salve o gatilho e depois monte o robô na aba Automações.`);
+      setNomeDoRoboNovo(null);
+      setAviso(`"${robo.nome}" criado e já escolhido aqui.`);
     } catch {
       setErro("Não deu pra criar o robô. Tente de novo.");
     } finally {
@@ -518,15 +565,20 @@ export function AutomacaoDoFunil({
     }
   }
 
+  /** Sem dia marcado e sem faixa de hora: o gatilho vale o tempo todo. */
+  const semJanela = !!rascunho && !rascunho.diasAtivos.length && !rascunho.horaInicio && !rascunho.horaFim;
+
   function mudarDados(patch: Partial<AcaoDados>) {
     if (!rascunho) return;
     setRascunho({ ...rascunho, acaoDados: { ...rascunho.acaoDados, ...patch } });
   }
 
-  function abrirNovo(etapaId: string) {
+  function abrirNovo(etapaId: string, elemento: HTMLElement) {
     setErro(null);
     setAviso(null);
     setRascunho(null);
+    setNomeDoRoboNovo(null);
+    ancorarEm(elemento);
     setEscolhendoAcao(etapaId);
   }
 
@@ -668,11 +720,13 @@ export function AutomacaoDoFunil({
                         <button
                           type="button"
                           className="fauto-gat-corpo"
-                          onClick={() => {
+                          onClick={(e) => {
                             setErro(null);
                             setAviso(null);
                             setEscolhendoAcao(null);
                             setEtapasExtras([]);
+                            setNomeDoRoboNovo(null);
+                            ancorarEm(e.currentTarget);
                             setRascunho(doGatilho(gatilho));
                           }}
                         >
@@ -726,7 +780,7 @@ export function AutomacaoDoFunil({
                         className={`fauto-add${
                           (porEtapa.get(coluna.id)?.length ?? 0) === linha ? "" : " ao-passar"
                         }`}
-                        onClick={() => abrirNovo(coluna.id)}
+                        onClick={(e) => abrirNovo(coluna.id, e.currentTarget)}
                       >
                         <span aria-hidden="true">+</span> {traduzir("Adicionar gatilho")}
                       </button>
@@ -738,53 +792,63 @@ export function AutomacaoDoFunil({
           </div>
         </div>
 
-        {escolhendoAcao ? (
-          <>
-          {/*
-            O VÉU ATRÁS DO PAINEL.
-            
-            O painel é uma folha fixa na direita, e sem véu ele ficava disputando a tela com a
-            grade: numa janela estreita sobrava uma faixa de colunas ao lado, e dava a impressão
-            de que a informação do painel continuava ali — a Thaynara chegou a arrastar a grade
-            pro lado procurando o resto. O véu diz que, enquanto isso está aberto, é isso que
-            importa. E clicar nele fecha, que é o gesto que todo mundo tenta primeiro.
-          */}
-          <div className="fauto-veu" role="presentation" onClick={() => setEscolhendoAcao(null)} />
-          <div className="fauto-painel">
-            <div className="fauto-painel-topo">
-              <strong>{traduzir("O que esta etapa faz?")}</strong>
-              <button type="button" className="fauto-mini" onClick={() => setEscolhendoAcao(null)}>
-                <IconClose width={11} height={11} />
-              </button>
-            </div>
-            <div className="fauto-acoes">
-              {ACOES.map((a) => (
-                <button
-                  key={a.tipo}
-                  type="button"
-                  className="fauto-acao"
-                  onClick={() => {
-                    setEtapasExtras([]);
-                    setRascunho(rascunhoNovo(escolhendoAcao, a.tipo));
-                    setEscolhendoAcao(null);
-                  }}
-                >
-                  <strong>{ACAO_ROTULO[a.tipo]}</strong>
-                  <span>{traduzir(a.descricao)}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-          </>
-        ) : null}
+        {/*
+          AS DUAS CAIXAS ABREM COLADAS NO CARTÃO, por portal em `document.body`.
+          
+          Por portal e não dentro da célula: a grade tem rolagem própria, e uma caixa desenhada
+          dentro dela seria cortada na borda e ainda esticaria a área de rolagem. Fora dela, a
+          caixa flutua por cima de tudo e continua grudada no cartão porque o posicionamento mede
+          o elemento vivo a cada rolagem.
+          
+          O VÉU SAIU junto com a folha da direita. Ele existia porque a folha ficava longe do que
+          se estava editando e sobrava uma faixa de grade ao lado, que parecia ter mais informação.
+          Colada no cartão não há essa dúvida — e clicar fora, ou Esc, fecha do mesmo jeito.
+        */}
+        {escolhendoAcao && posicaoDoPainel
+          ? createPortal(
+              <div
+                className="fauto-painel"
+                ref={painelRef}
+                style={{ top: posicaoDoPainel.top, left: posicaoDoPainel.left }}
+              >
+                <div className="fauto-painel-topo">
+                  <strong>{traduzir("O que esta etapa faz?")}</strong>
+                  <button type="button" className="fauto-mini" onClick={fecharPainel} aria-label={traduzir("Fechar")}>
+                    <IconClose width={11} height={11} />
+                  </button>
+                </div>
+                <div className="fauto-acoes">
+                  {ACOES.map((a) => (
+                    <button
+                      key={a.tipo}
+                      type="button"
+                      className="fauto-acao"
+                      onClick={() => {
+                        setEtapasExtras([]);
+                        setRascunho(rascunhoNovo(escolhendoAcao, a.tipo));
+                        setEscolhendoAcao(null);
+                      }}
+                    >
+                      <strong>{ACAO_ROTULO[a.tipo]}</strong>
+                      <span>{traduzir(a.descricao)}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>,
+              document.body,
+            )
+          : null}
 
-        {rascunho ? (
-          <>
-          <div className="fauto-veu" role="presentation" onClick={() => setRascunho(null)} />
-          <div className="fauto-painel">
+        {rascunho && posicaoDoPainel
+          ? createPortal(
+          <div
+            className="fauto-painel"
+            ref={painelRef}
+            style={{ top: posicaoDoPainel.top, left: posicaoDoPainel.left }}
+          >
             <div className="fauto-painel-topo">
               <strong>{rascunho.id ? "Editar gatilho" : ACAO_ROTULO[rascunho.tipoAcao]}</strong>
-              <button type="button" className="fauto-mini" onClick={() => setRascunho(null)}>
+              <button type="button" className="fauto-mini" onClick={fecharPainel} aria-label={traduzir("Fechar")}>
                 <IconClose width={11} height={11} />
               </button>
             </div>
@@ -873,21 +937,32 @@ export function AutomacaoDoFunil({
                 ))}
               </select>
               {rascunho.quando === "diariamente" ? (
-                <>
-                  <input
-                    type="time"
-                    className="input mt8"
-                    value={rascunho.horarioDiario}
-                    onChange={(e) => setRascunho({ ...rascunho, horarioDiario: e.target.value })}
+                <div className="fauto-horas mt8">
+                  <SeletorDeHora
+                    valor={rascunho.horarioDiario}
+                    aoMudar={(v) => setRascunho({ ...rascunho, horarioDiario: v })}
+                    rotuloVazio="Escolha a hora"
+                    aria-label={traduzir("Hora da varredura diária")}
                   />
-                  <p className="hint mt8">{traduzir("Todo dia nessa hora, para cada lead que estiver nesta etapa. Serve pra cobrança e lembrete de quem está parado.")}</p>
-                </>
+                  <Ajuda
+                    texto={traduzir(
+                      "Todo dia nessa hora, para cada lead que estiver nesta etapa. Serve pra cobrança e lembrete de quem está parado.",
+                    )}
+                  />
+                </div>
               ) : null}
             </div>
 
             {rascunho.tipoAcao === "robo" ? (
               <div className="field">
-                <label>{traduzir("Robô")}</label>
+                <label>
+                  {traduzir("Robô")}
+                  <Ajuda
+                    texto={traduzir(
+                      "O mesmo robô pode ser executado por várias etapas. O robô novo entra na lista aqui e também na aba Automações: é o mesmo registro, não uma cópia.",
+                    )}
+                  />
+                </label>
                 <select
                   className="input"
                   value={rascunho.fluxoId}
@@ -901,20 +976,65 @@ export function AutomacaoDoFunil({
                     </option>
                   ))}
                 </select>
-                <button type="button" className="fauto-add mt8" onClick={criarRobo} disabled={criandoRobo}>
-                  <span aria-hidden="true">+</span> {criandoRobo ? "Criando…" : traduzir("Criar um novo robô")}
-                </button>
+                {/*
+                  O ROBÔ NOVO NASCE COM NOME, e o nome é escolhido aqui.
+                  
+                  Ele nascia como "Robô de <etapa>", sem pergunta. Com três robôs na mesma etapa a
+                  lista virava "Robô de Novo", "Robô de Novo" e "Robô de Novo" — e a única forma
+                  de saber qual era qual era abrir um por um. O nome sugerido continua sendo o da
+                  etapa, porque na maioria das vezes serve; a diferença é poder trocar antes.
+                */}
+                {nomeDoRoboNovo === null ? (
+                  <button
+                    type="button"
+                    className="fauto-add mt8"
+                    onClick={() => setNomeDoRoboNovo(nomeSugeridoDoRobo())}
+                  >
+                    <span aria-hidden="true">+</span> {traduzir("Criar um novo robô")}
+                  </button>
+                ) : (
+                  <div className="fauto-robo-novo mt8">
+                    <input
+                      className="input"
+                      autoFocus
+                      value={nomeDoRoboNovo}
+                      maxLength={80}
+                      placeholder={traduzir("Nome do robô")}
+                      onChange={(e) => setNomeDoRoboNovo(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          void criarRobo();
+                        }
+                        if (e.key === "Escape") {
+                          e.preventDefault();
+                          setNomeDoRoboNovo(null);
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="btn primary"
+                      disabled={criandoRobo || !nomeDoRoboNovo.trim()}
+                      onClick={() => void criarRobo()}
+                    >
+                      {criandoRobo ? traduzir("Criando…") : traduzir("Criar")}
+                    </button>
+                    <button type="button" className="btn ghost" onClick={() => setNomeDoRoboNovo(null)}>
+                      {traduzir("Cancelar")}
+                    </button>
+                  </div>
+                )}
                 {rascunho.fluxoId ? (
                   <button
                     type="button"
-                    className="btn primary mt8"
+                    className="fauto-gerenciar mt8"
                     disabled={salvando}
                     onClick={() => void salvar(true)}
                   >
-                    {traduzir("Gerenciar")}
+                    {traduzir("Abrir e montar este robô")} <span aria-hidden="true">→</span>
                   </button>
                 ) : null}
-                <p className="hint mt8">{traduzir("O mesmo robô pode ser executado por várias etapas. O robô novo entra na lista aqui e também na aba Automações: é o mesmo registro, não uma cópia.")}</p>
               </div>
             ) : null}
 
@@ -1001,7 +1121,10 @@ export function AutomacaoDoFunil({
             ) : null}
 
             <div className="field">
-              <label>{traduzir("Para todos os leads com")}</label>
+              <label>
+                {traduzir("Para todos os leads com")}
+                <Ajuda texto={traduzir("Sem condição, vale pra todo lead que entrar nesta etapa.")} />
+              </label>
               {rascunho.condicao ? (
                 <>
                   <CondicaoForm
@@ -1025,12 +1148,34 @@ export function AutomacaoDoFunil({
                   <span aria-hidden="true">+</span> {traduzir("Adicionar uma condição")}
                 </button>
               )}
-              <p className="hint mt8">{traduzir("Sem condição, vale pra todo lead que entrar nesta etapa.")}</p>
             </div>
 
+            {/*
+              QUANDO O GATILHO FICA DE PLANTÃO.
+              
+              "Sempre" deixou de ser um estado invisível. Antes, valer o tempo todo era o que
+              acontecia quando nada estava marcado — e "nada marcado" é igualzinho a "esqueci de
+              marcar". Agora é uma opção que acende sozinha quando não há dia nem hora, e clicável
+              pra voltar a ela de uma vez: é o mesmo botão que a Thaynara pediu como "restaurar".
+            */}
             <div className="field">
-              <label>{traduzir("Ativo")}</label>
+              <label>
+                {traduzir("Ativo")}
+                <Ajuda
+                  texto={traduzir(
+                    "Fora da janela o lead entra na etapa normalmente, só não dispara o gatilho. O horário é o de Brasília.",
+                  )}
+                />
+              </label>
               <div className="fauto-dias">
+                <button
+                  type="button"
+                  className={`fauto-dia fauto-dia-sempre${semJanela ? " on" : ""}`}
+                  aria-pressed={semJanela}
+                  onClick={() => setRascunho({ ...rascunho, diasAtivos: [], horaInicio: "", horaFim: "" })}
+                >
+                  {traduzir("Sempre")}
+                </button>
                 {DIAS.map((d) => {
                   const marcado = rascunho.diasAtivos.includes(d.valor);
                   return (
@@ -1038,6 +1183,7 @@ export function AutomacaoDoFunil({
                       key={d.valor}
                       type="button"
                       className={`fauto-dia${marcado ? " on" : ""}`}
+                      aria-pressed={marcado}
                       onClick={() =>
                         setRascunho({
                           ...rascunho,
@@ -1053,21 +1199,33 @@ export function AutomacaoDoFunil({
                 })}
               </div>
               <div className="fauto-horas">
-                <input
-                  type="time"
-                  className="input"
-                  value={rascunho.horaInicio}
-                  onChange={(e) => setRascunho({ ...rascunho, horaInicio: e.target.value })}
+                <SeletorDeHora
+                  valor={rascunho.horaInicio}
+                  aoMudar={(v) => setRascunho({ ...rascunho, horaInicio: v })}
+                  rotuloVazio="A partir de…"
+                  aria-label={traduzir("Hora de início")}
                 />
-                <span>às</span>
-                <input
-                  type="time"
-                  className="input"
-                  value={rascunho.horaFim}
-                  onChange={(e) => setRascunho({ ...rascunho, horaFim: e.target.value })}
+                <span>{traduzir("às")}</span>
+                <SeletorDeHora
+                  valor={rascunho.horaFim}
+                  aoMudar={(v) => setRascunho({ ...rascunho, horaFim: v })}
+                  rotuloVazio="…até"
+                  aria-label={traduzir("Hora de fim")}
                 />
+                {/* Só aparece quando há o que desfazer: um "restaurar" permanente em cima de
+                    campos vazios é um botão que não faz nada. */}
+                {semJanela ? null : (
+                  <button
+                    type="button"
+                    className="fauto-mini fauto-restaurar"
+                    onClick={() => setRascunho({ ...rascunho, diasAtivos: [], horaInicio: "", horaFim: "" })}
+                    title={traduzir("Voltar para sempre ativo")}
+                  >
+                    <IconRestaurar width={12} height={12} aria-hidden="true" />
+                    {traduzir("Restaurar")}
+                  </button>
+                )}
               </div>
-              <p className="hint mt8">{traduzir("Sem dia e sem horário, o gatilho vale sempre. Fora da janela o lead entra na etapa normalmente, só não dispara.")}</p>
             </div>
 
             <label className="fauto-caixa">
@@ -1083,16 +1241,17 @@ export function AutomacaoDoFunil({
             {aviso ? <p className="hint">{aviso}</p> : null}
 
             <div className="fauto-painel-fim">
+              <button type="button" className="btn ghost" onClick={fecharPainel}>
+                {traduzir("Cancelar")}
+              </button>
               <button type="button" className="btn primary" onClick={() => void salvar()} disabled={salvando}>
                 {salvando ? "Salvando…" : "Pronto"}
               </button>
-              <button type="button" className="btn ghost" onClick={() => setRascunho(null)}>
-                {traduzir("Cancelar")}
-              </button>
             </div>
-          </div>
-          </>
-        ) : null}
+          </div>,
+          document.body,
+            )
+          : null}
       </div>
     </div>
   );

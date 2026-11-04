@@ -19213,39 +19213,74 @@ table.tbl .name-cell .r {
  * A largura em `min()` e não em `max-width`: assim a conta é uma só e não depende de qual das
  * duas regras ganha.
  */
+/*
+ * O PAINEL DO GATILHO: uma caixa flutuante COLADA no cartão, no jeito do Kommo.
+ *
+ * Era uma folha fixa na borda direita, com véu escuro por cima da grade. O problema não era o
+ * desenho: era que o cartão sendo editado ficava do outro lado da tela, atrás do véu — e é ele
+ * que diz de qual etapa e de qual gatilho se está falando. Colada, a caixa e o cartão se leem
+ * juntos.
+ *
+ * `position: fixed` com top/left calculados em `use-floating-position.ts`: o hook mede o cartão
+ * de verdade a cada rolagem, vira a caixa pra cima quando não cabe embaixo e a prende dentro da
+ * janela quando ela encostaria na borda.
+ *
+ * A altura máxima é da JANELA, não do conteúdo: o painel do "executar robô" é comprido, e sem
+ * teto ele passava do rodapé e as ações "Pronto / Cancelar" ficavam fora de alcance.
+ */
 .fauto-painel {
   position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
   z-index: 61;
-  width: min(360px, 100vw - 16px);
+  width: min(380px, 100vw - 16px);
+  max-height: min(78vh, 760px);
   overflow-y: auto;
-  background: var(--surface);
-  border-left: 1px solid var(--border);
-  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.1);
-  padding: var(--space-3);
-}
-
-.fauto-veu {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  background: rgba(0, 32, 55, 0.28);
+  background: var(--surface-elevated);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow:
+    0 2px 6px rgba(16, 24, 40, 0.06),
+    0 16px 40px rgba(16, 24, 40, 0.16);
+  padding: var(--space-4);
   animation: modal-fade-in var(--transition-fast);
 }
 
+/*
+ * O CABEÇALHO GRUDA NO TOPO enquanto o conteúdo rola: num painel de 700px de altura, o botão de
+ * fechar some assim que se rola, e a saída vira adivinhação.
+ */
 .fauto-painel-topo {
+  position: sticky;
+  top: calc(var(--space-4) * -1);
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--space-2);
+  gap: var(--space-2);
+  margin: calc(var(--space-4) * -1) calc(var(--space-4) * -1) var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-elevated);
+  border-bottom: 1px solid var(--line);
+  border-radius: 14px 14px 0 0;
 }
 
+.fauto-painel-topo strong {
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--ink);
+}
+
+/* As ações também grudam, no rodapé: decidir "pronto" não pode depender de rolar até o fim. */
 .fauto-painel-fim {
+  position: sticky;
+  bottom: calc(var(--space-4) * -1);
   display: flex;
+  justify-content: flex-end;
   gap: 8px;
-  margin-top: var(--space-2);
+  margin: var(--space-4) calc(var(--space-4) * -1) calc(var(--space-4) * -1);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-elevated);
+  border-top: 1px solid var(--line);
+  border-radius: 0 0 14px 14px;
 }
 
 .fauto-acoes {
@@ -19319,6 +19354,7 @@ table.tbl .name-cell .r {
 
 .fauto-horas {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   margin-top: 8px;
@@ -19326,6 +19362,96 @@ table.tbl .name-cell .r {
 
 .fauto-horas .input {
   flex: 1;
+}
+
+/*
+ * "SEMPRE" é o estado de quem não marcou dia nenhum, agora escrito.
+ *
+ * Valer o tempo todo era o que acontecia com tudo em branco — e "em branco" é indistinguível de
+ * "esqueci". A pastilha acende sozinha nesse caso e, clicada, devolve tudo pro vazio: é também o
+ * "restaurar" que a Thaynara pediu, no gesto mais curto.
+ */
+/* O "?" ao lado do rótulo: o rótulo é `display: block`, então a linha vira flex só quando há um. */
+.fauto-painel .field label:has(.ajuda) {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fauto-dia-sempre {
+  margin-right: 4px;
+  font-weight: var(--fw-semibold);
+}
+
+.fauto-dia-sempre::after {
+  content: "";
+  display: inline-block;
+  width: 1px;
+  height: 12px;
+  margin-left: 8px;
+  vertical-align: -2px;
+  background: var(--line-strong);
+}
+
+.fauto-dia-sempre.on::after {
+  background: color-mix(in srgb, var(--acao-texto) 30%, transparent);
+}
+
+/* O campo de hora é uma lista; quando está vazio, o rótulo é convite e não valor. */
+.fauto-hora.vazio {
+  color: var(--text-faint);
+}
+
+.fauto-restaurar {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: none;
+}
+
+/* Nome do robô novo: o campo cresce, os dois botões ficam do tamanho deles. */
+.fauto-robo-novo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.fauto-robo-novo .input {
+  flex: 1 1 140px;
+  min-width: 0;
+}
+
+/*
+ * "Abrir e montar este robô" não é o botão principal deste painel: o principal é "Pronto", que
+ * salva o gatilho. Este leva pra OUTRA tela, então é uma pastilha de contorno — a mesma leitura
+ * que o resto do CRM dá pra ação que troca de lugar.
+ */
+.fauto-gerenciar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  justify-content: center;
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+}
+
+.fauto-gerenciar:hover {
+  border-color: var(--acao);
+  background: color-mix(in srgb, var(--acao) 10%, var(--surface));
+}
+
+.fauto-gerenciar:disabled {
+  opacity: 0.55;
+  cursor: default;
 }
 
 .fauto-caixa {

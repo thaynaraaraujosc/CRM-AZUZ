@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useEffect, useRef, useState, type RefObject } from "react";
 
 export type AnchorRect = Pick<DOMRect, "top" | "bottom" | "left" | "right" | "width" | "height">;
 
@@ -21,12 +21,21 @@ type Posicao = { top: number; left: number };
  * flutuante ficava por conta própria pra fechar sozinho, e boa parte não implementava nada (menu
  * ficava aberto até um clique manual no próprio botão que abriu). Centralizando aqui, todo
  * consumidor do hook ganha o comportamento padrão de propósito só de passar o callback.
+ *
+ * `ancoraViva` (opcional): a referência pro ELEMENTO que abriu o flutuante.
+ *
+ * Sem ela, o `anchorRect` é uma fotografia tirada no clique. Em tela que não rola, tanto faz; em
+ * cima de uma grade que rola de lado — a automação do funil — o cartão anda e o flutuante fica,
+ * apontando pro lugar onde o cartão estava. Com a referência, cada recálculo volta a medir o
+ * elemento de verdade. Ela também conserta o clique no próprio botão que abriu: sem isso o
+ * mousedown fecharia e o clique reabriria, e o painel piscava em vez de fechar.
  */
 export function useFloatingPosition(
   anchorRect: AnchorRect | null,
   aberto: boolean,
   margem = 8,
   aoFechar?: () => void,
+  ancoraViva?: RefObject<HTMLElement | null>,
 ) {
   const ref = useRef<HTMLDivElement>(null);
   const [posicao, setPosicao] = useState<Posicao | null>(null);
@@ -35,7 +44,9 @@ export function useFloatingPosition(
     if (!aberto || !aoFechar) return;
 
     function aoClicar(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) aoFechar!();
+      const alvo = e.target as Node;
+      if (ancoraViva?.current?.contains(alvo)) return;
+      if (ref.current && !ref.current.contains(alvo)) aoFechar!();
     }
     function aoTeclar(e: KeyboardEvent) {
       if (e.key === "Escape") aoFechar!();
@@ -47,7 +58,7 @@ export function useFloatingPosition(
       document.removeEventListener("mousedown", aoClicar);
       document.removeEventListener("keydown", aoTeclar);
     };
-  }, [aberto, aoFechar]);
+  }, [aberto, aoFechar, ancoraViva]);
 
   useLayoutEffect(() => {
     if (!aberto || !anchorRect) {
@@ -61,17 +72,19 @@ export function useFloatingPosition(
 
     function calcular() {
       const el = ref.current;
-      if (!el || !anchorRect) return;
+      // A medida do elemento vivo tem precedência: é a de agora, não a do clique.
+      const alvo = ancoraViva?.current?.getBoundingClientRect() ?? anchorRect;
+      if (!el || !alvo) return;
       const largura = el.offsetWidth;
       const altura = el.offsetHeight;
 
-      let top = anchorRect.bottom + margem;
+      let top = alvo.bottom + margem;
       if (top + altura > window.innerHeight - margem) {
-        const acima = anchorRect.top - altura - margem;
+        const acima = alvo.top - altura - margem;
         top = acima >= margem ? acima : Math.max(margem, window.innerHeight - altura - margem);
       }
 
-      let left = anchorRect.left;
+      let left = alvo.left;
       if (left + largura > window.innerWidth - margem) {
         left = window.innerWidth - largura - margem;
       }
