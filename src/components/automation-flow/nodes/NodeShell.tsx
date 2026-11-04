@@ -241,7 +241,20 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
           !["outra_resposta", "nao_respondeu", "tentativas_esgotadas", "falha"].includes(sa.handleId),
       )
     : [];
-  const saidasDeCaminho = saidas.filter((sa) => !saidasDeOpcao.includes(sa));
+  /*
+   * A SAÍDA PADRÃO ("mandou e seguiu") NÃO É UMA LINHA, é o "+" na beirada da bolha.
+   *
+   * Ela aparecia como uma linha escrita "Enviou", embaixo das outras. Na referência ela não
+   * existe como linha: o que continua o fluxo é um "+" colado na bolha, e as linhas de baixo são
+   * só os desvios — outra resposta, sem resposta, falha. Faz sentido: "mandou" não é um desvio,
+   * é o caminho normal, e dar a ele uma linha igual às outras põe no mesmo peso o que acontece
+   * sempre e o que acontece de vez em quando.
+   *
+   * Pro motor nada muda: é a mesma saída sem `handleId`, com o mesmo ponto de ligação — só saiu
+   * de baixo do cartão e foi pra dentro da bolha.
+   */
+  const saidaPadrao = ehCartaoDeMensagem ? saidas.find((sa) => sa.handleId === undefined) : undefined;
+  const saidasDeCaminho = saidas.filter((sa) => !saidasDeOpcao.includes(sa) && sa !== saidaPadrao);
   const temErro = problemas.some((p) => p.severidade === "erro");
   const temAviso = !temErro && problemas.some((p) => p.severidade === "aviso");
   const classes = [
@@ -716,6 +729,39 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
                 </div>
               );
             })}
+
+            {saidaPadrao ? (
+              <>
+                {saidasConectadas?.has("__default__") ? (
+                  aoDesligarSaida ? (
+                    <button
+                      type="button"
+                      className="msg-seguir nodrag"
+                      title={traduzir("Tirar a ligação do próximo passo")}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        aoDesligarSaida(undefined);
+                      }}
+                    >
+                      ×
+                    </button>
+                  ) : null
+                ) : onAdicionarApos ? (
+                  <button
+                    type="button"
+                    className="msg-seguir nodrag"
+                    title={traduzir("O que acontece depois de mandar?")}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onAdicionarApos(undefined, e.currentTarget.getBoundingClientRect());
+                    }}
+                  >
+                    +
+                  </button>
+                ) : null}
+                <Handle type="source" position={Position.Right} className="flow-handle msg-handle-padrao" />
+              </>
+            ) : null}
 
             {aoMudarOpcoes ? (
               <div className="msg-novos-botoes nodrag">

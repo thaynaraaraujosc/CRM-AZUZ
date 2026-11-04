@@ -21420,6 +21420,45 @@ table.tbl .name-cell .r {
   cursor: pointer;
 }
 
+/*
+ * O "+" DO PRÓXIMO PASSO, grudado na beirada direita da bolha.
+ *
+ * É a saída padrão — "mandou e seguiu" —, que antes era uma linha escrita "Enviou" embaixo do
+ * cartão. Aqui ela some do empilhamento de desvios e vira o que é: o caminho normal, saindo do
+ * corpo da mensagem.
+ */
+.msg-seguir {
+  position: absolute;
+  top: 50%;
+  right: -11px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  background: var(--surface-elevated);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.msg-seguir:hover {
+  border-color: var(--acao);
+  background: color-mix(in srgb, var(--acao) 14%, var(--surface-elevated));
+}
+
+/* O ponto de ligação fica embaixo do botão, na mesma altura: é dele que a linha parte. */
+.msg-handle-padrao {
+  top: 50% !important;
+  right: -11px !important;
+}
+
 /* O ponto sai da borda DIREITA DO CARTÃO, e não da pastilha: é de lá que a linha parte, e a
    pastilha está 12px pra dentro. */
 .msg-opcao .msg-handle {
