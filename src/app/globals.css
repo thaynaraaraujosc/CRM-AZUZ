@@ -11119,7 +11119,15 @@ button.camp-row:hover {
   /* A cor da categoria vive numa barra fina, não no cartão. O cartão é branco com texto
      azul-marinho; a cor serve pra identificar o tipo de bloco de relance, não pra pintar a tela
      inteira de sete cores diferentes. */
-  border-left: 3px solid var(--flow-cor-categoria, var(--line));
+  /*
+   * SEM A FAIXA COLORIDA NA LATERAL.
+   *
+   * Eram 3px de uma cor por categoria. Com o cartão de mensagem já tendo contorno fino e canto
+   * discreto, a faixa fazia os outros blocos parecerem de outro produto — "eu preciso que esse
+   * quadrado seja igual aos outros". O tipo do bloco passou a ser dito pelo ÍCONE no cabeçalho,
+   * que informa o mesmo sem pintar a peça.
+   */
+  border-left: 1px solid var(--line);
   box-shadow: var(--shadow-sm);
   font-size: 14px;
   overflow: visible;
@@ -11182,7 +11190,7 @@ button.camp-row:hover {
 
 .flow-node.is-selected {
   border-color: var(--blue);
-  border-left-color: var(--flow-cor-categoria, var(--blue));
+  border-left-color: var(--line-strong);
   box-shadow: 0 0 0 3px var(--blue-soft);
 }
 
@@ -21844,6 +21852,54 @@ table.tbl .name-cell .r {
 .msg-canal:hover {
   color: var(--ink);
   border-bottom-color: var(--ink);
+}
+
+/* O ícone da categoria no cabeçalho, no lugar da faixa colorida. */
+.msg-cat {
+  display: inline-flex;
+  flex: none;
+  color: var(--text-faint);
+}
+
+/*
+ * O CRONÔMETRO EDITÁVEL do bloco de espera: "Cronômetro: 0 horas 5 min".
+ *
+ * Os números são campos de verdade, com sublinhado tracejado pra dizer que se clica — a mesma
+ * marca do canal no cabeçalho. Sem segundos: quem acorda as execuções é uma varredura de minuto
+ * em minuto, e um campo de segundos prometeria precisão que o motor não tem.
+ */
+.no-cronometro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  margin: 0 12px 12px;
+  padding: 9px 11px;
+  border-radius: 9px;
+  background: var(--surface-hover);
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.no-cronometro > svg {
+  color: var(--text-faint);
+}
+
+.no-cronometro input {
+  width: 42px;
+  padding: 1px 2px;
+  border: 0;
+  border-bottom: 1px dashed var(--line-strong);
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  text-align: center;
+}
+
+.no-cronometro input:focus {
+  outline: none;
+  border-bottom-color: var(--acao);
 }
 
 /* O prazo ao lado de "Sem resposta". */

@@ -116,6 +116,7 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
     aoDesligarSaida,
     aoMudarCanal,
     aoAlternarEsperarResposta,
+    aoMudarCronometro,
   } = data;
 
   const [menuAberto, setMenuAberto] = useState(false);
@@ -147,6 +148,27 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
     if (minutos % 1440 === 0) return `${minutos / 1440}d`;
     if (minutos % 60 === 0) return `${minutos / 60}h`;
     return `${minutos}min`;
+  })();
+
+  /** O tempo do bloco de espera em minutos, quando ele é um cronômetro simples. */
+  const minutosDaEspera = (() => {
+    const d = (flowNode.data ?? {}) as {
+      modo?: string;
+      valor?: number;
+      tempoMaximo?: { valor?: number; unidade?: string };
+    };
+    const emMinutos = (valor: number, unidade?: string) =>
+      unidade === "horas" ? valor * 60 : unidade === "dias" ? valor * 1440 : valor;
+    // "Até a resposta" também tem cronômetro: é o prazo máximo de espera, e ele vive em
+    // `tempoMaximo` em vez de `valor`. É o bloco do follow-up — espera a resposta, e se ela não
+    // vier dentro do prazo, segue pela outra saída.
+    if (d.modo === "ate_resposta") {
+      return d.tempoMaximo?.valor ? emMinutos(d.tempoMaximo.valor, d.tempoMaximo.unidade) : 0;
+    }
+    if (d.modo === "minutos" || d.modo === "horas" || d.modo === "dias") {
+      return emMinutos(d.valor ?? 0, d.modo);
+    }
+    return null;
   })();
 
   const canaisPossiveis = canaisDaAreaParaBloco(area ?? "comercial");
@@ -190,7 +212,6 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
    * — marcá-las com a marca da rede faria a marca querer dizer "bloco", e aí ela não diria nada.
    */
   const caraDoInstagram = area === "social" && (flowNode.category === "gatilho" || flowNode.category === "mensagem");
-  const bolha = area === "social" ? textoDaMensagem(flowNode) : null;
   const { funis } = useFunis();
   const bloco = BLOCOS_DISPONIVEIS.find((b) => b.tipo === flowNode.type);
   const saidas = saidasDoNo(flowNode);
@@ -321,12 +342,25 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
         </div>
       ) : null}
 
-      {ehCartaoDeMensagem ? (
-        <>
-          {/* O cabeçalho do cartão: o número do bloco e o nome dele. O número é da referência e
-              serve pra conversar sobre o fluxo ("o bloco 5 está errado"). */}
-          <div className="msg-cab" data-menu-de-linha="">
+      {/*
+        O MESMO CABEÇALHO EM TODO BLOCO.
+        
+        Era só do cartão de mensagem; os outros ficaram com o desenho antigo — faixa colorida na
+        lateral, categoria escrita em cima do nome, sem número e sem "⋯". "Eu preciso que esse
+        quadrado seja igual aos outros", e tinha razão: duas linguagens no mesmo canvas fazem o
+        olho procurar diferença onde não há nenhuma.
+      */}
+      <div className="msg-cab" data-menu-de-linha="">
             {numero ? <span className="msg-num">{numero}</span> : null}
+            {/* O ícone da categoria substitui a faixa colorida que ficava na lateral: diz o tipo
+                do bloco sem pintar o cartão inteiro nem gastar uma linha escrevendo. */}
+            <span className="msg-cat" aria-hidden="true">
+              {(() => {
+                if (caraDoInstagram) return <IconInstagram width={13} height={13} />;
+                const IconeCategoria = ICONE_CATEGORIA[flowNode.category];
+                return <IconeCategoria width={13} height={13} />;
+              })()}
+            </span>
             {renomeando && aoRenomear ? (
               <input
                 className="msg-nome-input nodrag"
@@ -433,8 +467,10 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
                 ) : null}
               </div>
             ) : null}
-          </div>
+      </div>
 
+      {ehCartaoDeMensagem ? (
+        <>
           <div className="msg-bolha">
             <span className="msg-avatar" aria-hidden="true">
               {caraDoInstagram ? <IconInstagram width={14} height={14} /> : <IconAutomacoes width={14} height={14} />}
@@ -713,36 +749,38 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
             ) : null}
           </div>
         </>
-      ) : (
-        <>
-      <div className="flow-node-header">
-        <span className={`flow-node-icon${caraDoInstagram ? " is-instagram" : ""}`} aria-hidden="true">
-          {(() => {
-            if (caraDoInstagram) return <IconInstagram width={16} height={16} />;
-            const IconeCategoria = ICONE_CATEGORIA[flowNode.category];
-            return <IconeCategoria width={14} height={14} />;
-          })()}
-        </span>
-        <span className="flow-node-textos">
-          <span className="flow-node-categoria">{NOME_CATEGORIA[flowNode.category]}</span>
-          <span className="flow-node-label">{flowNode.titulo || (bloco?.label ? traduzir(bloco.label) : flowNode.type)}</span>
-        </span>
-        {flowNode.desativado ? <span className="flow-node-pausado-badge">{traduzir("Pausado")}</span> : null}
-        {temErro || temAviso ? (
-          <span
-            className="flow-node-warn"
-            title={problemas.map((p) => p.mensagem).join(" · ")}
-            aria-label={`Problema: ${problemas[0]?.mensagem ?? ""}`}
-          >
-            <IconAlerta width={13} height={13} />
-          </span>
-        ) : null}
-      </div>
-
-      {bolha ? (
-        /* A mensagem como ela chega no Direct: bolha, texto cru, quebras de linha preservadas. */
-        <div className="flow-node-body">
-          <p className="flow-bolha">{bolha}</p>
+      ) : flowNode.type === "aguardar" && aoMudarCronometro ? (
+        /*
+          O CRONÔMETRO EDITÁVEL NO CARTÃO, como na referência.
+          
+          "Aguardar 5 minutos" era uma frase de resumo: pra trocar o tempo era preciso abrir o
+          painel da direita. Aqui os números são campos.
+          
+          SEM SEGUNDOS, e isso não é esquecimento: quem acorda as execuções paradas é uma varredura
+          que roda de minuto em minuto. Um prazo de trinta segundos seria arredondado pra cima sem
+          avisar, e o campo prometeria uma precisão que o motor não tem.
+        */
+        <div className="no-cronometro nodrag" onClick={(e) => e.stopPropagation()}>
+          <IconRelogio width={13} height={13} aria-hidden="true" />
+          <span>{traduzir("Cronômetro")}:</span>
+          <input
+            type="number"
+            min={0}
+            max={720}
+            value={Math.floor((minutosDaEspera ?? 0) / 60)}
+            aria-label={traduzir("Horas")}
+            onChange={(e) => aoMudarCronometro(Number(e.target.value) * 60 + ((minutosDaEspera ?? 0) % 60))}
+          />
+          <span>{traduzir("horas")}</span>
+          <input
+            type="number"
+            min={0}
+            max={59}
+            value={(minutosDaEspera ?? 0) % 60}
+            aria-label={traduzir("Minutos")}
+            onChange={(e) => aoMudarCronometro(Math.floor((minutosDaEspera ?? 0) / 60) * 60 + Number(e.target.value))}
+          />
+          <span>{traduzir("min")}</span>
         </div>
       ) : (
         (() => {
@@ -759,8 +797,6 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
             </div>
           );
         })()
-      )}
-        </>
       )}
 
       {explicacao ? (
