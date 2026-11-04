@@ -26521,9 +26521,12 @@ td.trafego-col-crm:first-of-type {
  * à identidade, e não um cinza neutro qualquer. É a mesma receita do quadro de negócios — coluna
  * recuada, cartão branco flutuando — que é onde ela já funciona há tempo neste produto.
  */
+/* 5% dava um piso a 3% de distância do cartão branco — tecnicamente diferente, visualmente o
+   mesmo plano, que é a reclamação de sempre. Em 8% o degrau se vê sem o piso virar uma área
+   escura competindo com o conteúdo. */
 .fauto-grade,
 .fauto-cab {
-  background: color-mix(in srgb, var(--navy-marca) 5%, #ffffff);
+  background: color-mix(in srgb, var(--navy-marca) 8%, #ffffff);
 }
 
 :root[data-theme="dark"] .fauto-grade,
@@ -26536,7 +26539,9 @@ td.trafego-col-crm:first-of-type {
 .fauto-gat {
   background: var(--surface-elevated);
   border: 1px solid var(--line);
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+  /* Duas sombras: uma curta que cola o cartão no piso e uma longa e fraca que o levanta. Com só
+     a curta, o cartão fica "colado"; com só a longa, flutua sem apoio. */
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 4px 12px rgba(16, 24, 40, 0.05);
 }
 
 .fauto-gat:hover {
@@ -26544,14 +26549,29 @@ td.trafego-col-crm:first-of-type {
   box-shadow: 0 2px 8px rgba(16, 24, 40, 0.08);
 }
 
-/* Desligado continua se distinguindo por SUPERFÍCIE, e não só por opacidade: um cartão branco
-   com 70% de opacidade sobre piso claro fica quase igual ao ligado. */
+/*
+ * DESLIGADO TAMBÉM É CARTÃO BRANCO.
+ *
+ * Eu tinha pintado o desligado de cinza pra diferenciar, e o efeito foi o oposto do pretendido:
+ * num funil em que a maioria dos gatilhos está desligada, a tela inteira ficava de cartões
+ * cinzas sobre piso cinza — que foi exatamente o "o cartão não está branco" da Thaynara.
+ *
+ * A diferença passa a ser o CONTORNO TRACEJADO e o texto apagado, que é como o resto do produto
+ * já mostra "existe, mas não está valendo" (o "+ Adicionar gatilho" da célula vazia, o rascunho
+ * de formulário). O fundo fica branco nos dois: a superfície diz "isto é um cartão", não "isto
+ * está ligado".
+ */
 .fauto-gat.desligado {
-  background: var(--surface-2);
+  background: var(--surface-elevated);
   border-style: dashed;
+  border-color: var(--line-strong);
   box-shadow: none;
   opacity: 1;
+}
+
+.fauto-gat.desligado .fauto-gat-acao {
   color: var(--text-muted);
+  font-weight: var(--fw-medium);
 }
 
 /* O "+ Adicionar gatilho" deixa de ter fundo próprio: sobre o piso, o tracejado já diz "vazio",
