@@ -108,3 +108,50 @@ export function nosDeFollowUp(params: { horas: number; mensagem: string }): {
     saidaDaEspera: "timeout",
   };
 }
+
+/**
+ * O QUE APARECE PRIMEIRO na caixa "Adicionar próximo passo".
+ *
+ * A lista nascia na ordem em que os blocos estão declarados na biblioteca, e essa ordem é de
+ * CATÁLOGO: começa pelas decisões e pelo sorteio, e as mensagens ficavam lá embaixo, depois de
+ * rolar. Só que a conta é outra: "o que eu mando pro contato" é o que se escolhe quase toda vez, e
+ * "separar caminhos" é o que se escolhe de vez em quando.
+ *
+ * Escolhido pela Thaynara, na ordem em que ela pediu: "enviar mensagem, enviar texto, enviar
+ * imagem, enviar vídeo, enviar contato, localização, mensagem com botões, mensagem com listas,
+ * modelo aprovado pelo WhatsApp". Áudio e documento entram junto com os outros envios de mídia,
+ * porque é a mesma família — deixá-los depois de "Distribuir" seria uma ordem que só faz sentido
+ * pra quem escreveu a lista.
+ */
+export const PRIMEIROS_NO_PROXIMO_PASSO: FlowNodeType[] = [
+  "mensagem_texto",
+  "mensagem_imagem",
+  "mensagem_video",
+  "mensagem_audio",
+  "mensagem_documento",
+  "mensagem_contato",
+  "mensagem_localizacao",
+  "mensagem_botoes",
+  "mensagem_lista",
+  "mensagem_modelo_whatsapp",
+];
+
+const POSICAO_DOS_PRIMEIROS = new Map(PRIMEIROS_NO_PROXIMO_PASSO.map((tipo, i) => [tipo, i]));
+
+/**
+ * Separa a lista em "os de sempre" e "o resto", preservando a ordem dentro de cada parte.
+ *
+ * Duas listas, e não uma lista ordenada: entre elas entra o atalho de follow-up, que não é um
+ * bloco da biblioteca e por isso não cabe numa ordenação só. E o resto continua na ordem da
+ * biblioteca de propósito — ela agrupa por assunto, e reordenar tudo faria blocos parentes se
+ * separarem sem motivo.
+ */
+export function separarPrimeirosPassos<T extends { tipo: FlowNodeType }>(
+  blocos: T[],
+): { primeiros: T[]; resto: T[] } {
+  const primeiros = blocos
+    .filter((b) => POSICAO_DOS_PRIMEIROS.has(b.tipo))
+    .sort((a, b) => POSICAO_DOS_PRIMEIROS.get(a.tipo)! - POSICAO_DOS_PRIMEIROS.get(b.tipo)!);
+  const resto = blocos.filter((b) => !POSICAO_DOS_PRIMEIROS.has(b.tipo));
+  return { primeiros, resto };
+}

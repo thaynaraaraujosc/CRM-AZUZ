@@ -15,7 +15,7 @@ import {
 } from "@/components/icons";
 import { BLOCOS_DISPONIVEIS, GRUPOS_BIBLIOTECA } from "@/lib/automation-flow/blocos";
 import { blocoApareceNaArea, blocoValeNaArea, type AreaAutomacao } from "@/lib/canais/capacidades";
-import { sugestoesApos } from "@/lib/automation-flow/sugestoes";
+import { separarPrimeirosPassos, sugestoesApos } from "@/lib/automation-flow/sugestoes";
 import type { PosicaoDaLista } from "@/lib/automation-flow/posicao-da-lista";
 import type { FlowNodeCategory, FlowNodeType } from "@/lib/automation-flow/types";
 import { useIdioma } from "@/lib/idioma-context";
@@ -42,6 +42,29 @@ const ICONE_CATEGORIA: Record<FlowNodeCategory, typeof IconAutomacoes> = {
   integracao: IconPlug,
   fim: IconBandeira,
 };
+
+/** Uma linha da lista. Em componente porque agora ela é desenhada em dois lugares: os envios que
+ * vêm primeiro e o resto da biblioteca, com o atalho de follow-up entre os dois. */
+function ItemDoPasso({
+  bloco,
+  onEscolher,
+}: {
+  bloco: (typeof BLOCOS_DISPONIVEIS)[number];
+  onEscolher: (tipo: FlowNodeType) => void;
+}) {
+  const Icone = ICONE_CATEGORIA[bloco.categoria];
+  return (
+    <button type="button" className="pp-item" onClick={() => onEscolher(bloco.tipo)}>
+      <span className="pp-item-icone">
+        <Icone width={16} height={16} />
+      </span>
+      <span className="pp-item-textos">
+        <strong>{bloco.label}</strong>
+        {bloco.descricao ? <span>{bloco.descricao}</span> : null}
+      </span>
+    </button>
+  );
+}
 
 export function PainelProximoPasso({
   tipoAnterior,
@@ -149,6 +172,11 @@ export function PainelProximoPasso({
     return filtrados;
   }, [candidatos, termo]);
 
+  const { primeiros: itensPrimeiros, resto: itensRestantes } = useMemo(
+    () => separarPrimeirosPassos(corridos),
+    [corridos],
+  );
+
   if (compacto) {
     const estilo = posicao
       ? { top: posicao.top + arrastado.y, left: posicao.left + arrastado.x }
@@ -211,7 +239,18 @@ export function PainelProximoPasso({
           </button>
         </div>
 
+        {/*
+          OS ENVIOS PRIMEIRO, depois o atalho de follow-up, depois o resto.
+
+          A lista vinha na ordem da biblioteca, que é ordem de catálogo: começava nas decisões e no
+          sorteio, e "enviar uma mensagem" — o que se escolhe quase toda vez — ficava depois de
+          rolar. Ver `separarPrimeirosPassos`.
+        */}
         <div className="pp-lista">
+          {itensPrimeiros.map((bloco) => (
+            <ItemDoPasso key={bloco.tipo} bloco={bloco} onEscolher={onEscolher} />
+          ))}
+
           {sugeridos.length ? (
             <button type="button" className="pp-item" onClick={onFollowUp}>
               <span className="pp-item-icone">
@@ -224,20 +263,9 @@ export function PainelProximoPasso({
             </button>
           ) : null}
 
-          {corridos.map((bloco) => {
-            const Icone = ICONE_CATEGORIA[bloco.categoria];
-            return (
-              <button key={bloco.tipo} type="button" className="pp-item" onClick={() => onEscolher(bloco.tipo)}>
-                <span className="pp-item-icone">
-                  <Icone width={16} height={16} />
-                </span>
-                <span className="pp-item-textos">
-                  <strong>{bloco.label}</strong>
-                  {bloco.descricao ? <span>{bloco.descricao}</span> : null}
-                </span>
-              </button>
-            );
-          })}
+          {itensRestantes.map((bloco) => (
+            <ItemDoPasso key={bloco.tipo} bloco={bloco} onEscolher={onEscolher} />
+          ))}
 
           {!corridos.length ? <p className="hint pp-vazio">{traduzir("Nada com esse nome.")}</p> : null}
         </div>
