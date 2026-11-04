@@ -85,8 +85,6 @@ export type FlowRFNodeData = {
   aoDesligarSaida?: (handleId: string | undefined) => void;
   /** Trocar o canal da mensagem pelo cabeçalho do cartão. */
   aoMudarCanal?: (canal: string) => void;
-  /** Ligar e desligar o "esperar resposta" do bloco de texto, pelo próprio cartão. */
-  aoAlternarEsperarResposta?: () => void;
   /** O tempo do cronômetro, em minutos, editado no próprio cartão do bloco de espera. */
   aoMudarCronometro?: (minutos: number) => void;
 };

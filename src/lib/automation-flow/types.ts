@@ -291,14 +291,14 @@ export type MensagemTextoData = {
   anexos?: string[];
   templateId?: string;
   /**
-   * DEPOIS DE MANDAR, O ROBÔ PARA E ESPERA a pessoa escrever.
+   * Resquício de um interruptor que existiu por algumas horas no cartão.
    *
-   * Sem isto um bloco de texto manda e segue na mesma hora — e é o certo na maioria das vezes:
-   * "já recebemos seu pedido" não é pergunta. Mas há o caso em que é: "me conta o que você
-   * precisa". Aí o bloco precisa das mesmas duas saídas da pergunta com botões — qualquer
-   * resposta, e ninguém respondeu —, senão a única forma de esperar é inventar um botão.
+   * Quem decide se o bloco espera é o DESENHO: havendo um caminho ligado em "Outra resposta" ou
+   * "Sem resposta", ele para e espera; sem nenhum, manda e segue. Um interruptor dizia de novo o
+   * que a ligação já dizia. O campo fica no tipo pra não invalidar fluxo gravado com ele; ninguém
+   * mais lê.
    *
-   * Desligado (o padrão) nada muda: o bloco continua com "Enviou" e "Falha ao enviar".
+   * @deprecated Não tem efeito nenhum.
    */
   esperarResposta?: boolean;
   /**

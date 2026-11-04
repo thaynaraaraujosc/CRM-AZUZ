@@ -11113,7 +11113,8 @@ button.camp-row:hover {
   position: relative;
   min-width: 240px;
   max-width: 280px;
-  border-radius: var(--radius-lg);
+  /* Canto de cartão, não de pastilha: ver `.flow-node.msg-cartao`. */
+  border-radius: 8px;
   background: var(--navy);
   border: 1.5px solid var(--line);
   /* A cor da categoria vive numa barra fina, não no cartão. O cartão é branco com texto
@@ -21280,10 +21281,13 @@ table.tbl .name-cell .r {
  *
  * As saídas já existiam todas no motor: o que faltava era vê-las.
  */
+/* Mais quadrado que redondo: "eu quero os retângulos das automações mais quadradinho". 16px
+   davam a uma peça de 320px a silhueta de uma pastilha; 8px é canto de cartão. */
 .flow-node.msg-cartao {
   width: 320px;
   padding: 0;
   overflow: visible;
+  border-radius: 8px;
 }
 
 .msg-cab {
@@ -21335,7 +21339,7 @@ table.tbl .name-cell .r {
   gap: 8px;
   margin: 0 10px 10px;
   padding: 10px 12px;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--msg-bolha-fundo, #4a6cf7);
   color: #fff;
 }
@@ -21576,18 +21580,26 @@ table.tbl .name-cell .r {
 }
 
 /*
- * O CARTÃO DE MENSAGEM NÃO FICA VERMELHO.
+ * NENHUM BLOCO FICA CONTORNADO DE VERMELHO.
  *
- * "A margem do meu bloco tá vermelha, o que não faz sentido." Faz sentido pro CRM e não pra quem
- * está montando: todo bloco de mensagem nasce com o texto vazio, então nasce com problema — e
- * contornar de vermelho o bloco que a pessoa ACABOU de criar transforma o aviso em ruído, e
- * depois ninguém olha mais pra vermelho nenhum. O triângulo no cabeçalho continua, e é ele que
- * diz o que falta ao passar o mouse.
+ * "Ainda está aparecendo pra mim enquadrado com um traçado vermelho, colorido. Eu não quero que
+ * fique dessa forma." Fazia sentido pro CRM e não pra quem está montando: um bloco nasce vazio,
+ * logo nasce com problema — e contornar de vermelho o bloco que a pessoa ACABOU de criar
+ * transforma o aviso em ruído, e depois ninguém olha mais pra vermelho nenhum.
+ *
+ * O aviso não sumiu: o triângulo no cabeçalho continua, dizendo o que falta ao passar o mouse, e
+ * a aba "Problemas" continua listando tudo antes de publicar. O que saiu foi o alarme constante.
  */
-.flow-node.msg-cartao.has-error,
-.flow-node.msg-cartao.has-warning {
+.flow-node.has-error,
+.flow-node.has-warning {
   border-color: var(--line);
   box-shadow: none;
+}
+
+.flow-node.has-error,
+.flow-node.has-warning,
+.flow-node.flow-cat-fim {
+  border-left-color: var(--line);
 }
 
 /* O arquivo preso ao bloco: miniatura quando é imagem, ícone quando não dá pra ver. */
@@ -21683,21 +21695,6 @@ table.tbl .name-cell .r {
 .msg-opcao-tirar:hover {
   background: rgba(255, 255, 255, 0.2);
   color: #fff;
-}
-
-/* "Esperar a resposta do contato": o interruptor que transforma o aviso em pergunta. */
-.msg-esperar {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.92);
-  cursor: pointer;
-}
-
-.msg-esperar input {
-  accent-color: #fff;
-  cursor: pointer;
 }
 
 /* "+ Botão de ação" e "+ Botão de URL", tracejados dentro da bolha como na referência. */

@@ -17,7 +17,6 @@ import type {
   FlowNodeCategory,
   GrupoCondicoes,
   MensagemBotoesData,
-  MensagemTextoData,
 } from "./types";
 
 function nomeFunil(funis: Funil[] | undefined, funilId: unknown): string | undefined {
@@ -104,15 +103,23 @@ export function saidasDoNo(node: FlowNode): SaidaNo[] {
   }
 
   /*
-   * O TEXTO QUE ESPERA RESPOSTA tem as saídas de uma pergunta, e não as de um aviso.
+   * A MENSAGEM DE TEXTO TEM AS QUATRO SAÍDAS, sempre.
    *
-   * Ligado o "esperar resposta", o bloco para depois de mandar: não existe mais "Enviou e
-   * seguiu". O que existe é "a pessoa escreveu" e "a pessoa não escreveu" — exatamente as duas
-   * saídas da pergunta com botões, pela mesma razão.
+   * "Enviou" é o caminho normal: mandou e seguiu. "Outra resposta" e "Sem resposta" são os dois
+   * caminhos de quem espera. E é o DESENHO que decide qual dos dois comportamentos vale: se a
+   * pessoa ligar alguma coisa numa das saídas de resposta, o bloco passa a esperar; se não ligar
+   * nada, ele manda e segue, como sempre fez.
+   *
+   * Era um interruptor "esperar a resposta do contato" dentro da bolha — um controle a mais pra
+   * dizer o que a própria ligação já diz. Ligar um caminho em "Sem resposta" só pode querer
+   * dizer uma coisa: espere, e se não vier, siga por aqui.
+   *
+   * Fluxo antigo não muda de comportamento: sem aresta nessas saídas, nada espera.
    */
-  if (node.type === "mensagem_texto" && (node.data as MensagemTextoData | undefined)?.esperarResposta) {
+  if (node.type === "mensagem_texto") {
     return [
-      { handleId: "outra_resposta", label: "↺ Respondeu" },
+      { handleId: undefined, label: "Enviou" },
+      { handleId: "outra_resposta", label: "↺ Outra resposta" },
       { handleId: "nao_respondeu", label: "⏱ Sem resposta" },
       { handleId: "falha", label: "✕ Falha ao enviar a mensagem" },
     ];

@@ -680,39 +680,6 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   }
 
   /**
-   * Liga e desliga o "esperar resposta" do bloco de texto.
-   *
-   * DESLIGAR LIMPA AS LIGAÇÕES das saídas que deixam de existir. Sem isso, as arestas de
-   * "Respondeu" e "Sem resposta" ficariam penduradas num bloco que não tem mais essas saídas:
-   * invisíveis no desenho e vivas no arquivo, prontas pra reaparecer quando alguém religasse a
-   * espera meses depois, apontando pra blocos que podem nem existir mais.
-   */
-  function alternarEsperaDoTexto(nodeId: string, ligar: boolean) {
-    const novoNodes = rfNodes.map((n) =>
-      n.id === nodeId
-        ? {
-            ...n,
-            data: {
-              ...n.data,
-              flowNode: {
-                ...n.data.flowNode,
-                data: { ...(n.data.flowNode.data ?? {}), esperarResposta: ligar || undefined },
-              },
-            },
-          }
-        : n,
-    );
-    const novoEdges = ligar
-      ? rfEdges
-      : rfEdges.filter(
-          (e) => e.source !== nodeId || !["outra_resposta", "nao_respondeu"].includes(e.sourceHandle ?? ""),
-        );
-    setRfNodes(novoNodes);
-    if (novoEdges !== rfEdges) setRfEdges(novoEdges);
-    persist(novoNodes, novoEdges);
-  }
-
-  /**
    * O tempo do cronômetro, gravado SEMPRE EM MINUTOS.
    *
    * O bloco aceita "minutos", "horas" e "dias" como unidade, e o cartão edita horas e minutos
@@ -963,6 +930,16 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     // O Social Seller lê da esquerda pra direita; o funil, de cima pra baixo. Ver `autoLayout`.
     const novo = autoLayout(rfNodes, rfEdges, ehSocial ? "LR" : "TB");
     setRfNodes(novo);
+    /*
+     * ORGANIZAR TAMBÉM SOLTA A PASTILHA DE INÍCIO.
+     *
+     * Ela fica onde a pessoa a largou (posição gravada nas configurações), e isso é certo no dia
+     * a dia. Mas depois de reorganizar tudo, a posição guardada vira a única peça fora de lugar:
+     * o resto se arruma e ela fica sozinha do outro lado, ligada por uma linha atravessando a
+     * tela. "Organizar" quer dizer tudo.
+     */
+    setPosicaoInicioArrastada(null);
+    if (fluxo?.configuracoes?.posicaoInicio) updateConfiguracoes({ posicaoInicio: undefined });
     persist(novo, rfEdges);
     requestAnimationFrame(() => centralizarTudo());
   }
@@ -1380,14 +1357,6 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
             )
               ? (minutos: number) => definirCronometro(n.id, minutos)
               : undefined,
-          aoAlternarEsperarResposta:
-            modoConstrucao && n.data.flowNode.type === "mensagem_texto"
-              ? () =>
-                  alternarEsperaDoTexto(
-                    n.id,
-                    !((n.data.flowNode.data ?? {}) as { esperarResposta?: boolean }).esperarResposta,
-                  )
-              : undefined,
           aoMudarOpcoes:
             modoConstrucao &&
             (n.data.flowNode.type === "mensagem_texto" || n.data.flowNode.type === "mensagem_botoes")
@@ -1429,12 +1398,22 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
    * centralizado POR CIMA do canvas — que não se movia, não fazia parte do desenho, e sumia no
    * instante em que o primeiro bloco entrava.
    */
+  /**
+   * ONDE A PASTILHA DE INÍCIO ESTÁ AGORA.
+   *
+   * Serve pra duas coisas, e é por isso que mora fora do memo: desenhar a pastilha, e colocar o
+   * PRIMEIRO bloco ao lado dela. Sem a segunda, o primeiro bloco nascia numa coordenada fixa e a
+   * ligação entre os dois virava um "L" atravessando meia tela — que foi exatamente a
+   * reclamação. Com ela, o bloco nasce colado e a linha é um traço curto.
+   */
+  const posicaoDoInicio = posicaoInicioArrastada ?? fluxo?.configuracoes?.posicaoInicio ?? { x: 120, y: 120 };
+
   const inicioDesenhado = useMemo(() => {
     const alvo = rfNodes.find((n) => n.id === idDoPrimeiroBloco);
     if (!alvo && !modoConstrucao) return null;
 
     const posicaoPadrao = alvo
-      ? { x: alvo.position.x - 230, y: alvo.position.y + 8 }
+      ? { x: alvo.position.x - 200, y: alvo.position.y + 6 }
       : { x: 120, y: 120 };
     const no: FlowRFNode = {
       id: ID_INICIO,
@@ -1489,6 +1468,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     idDoPrimeiroBloco,
     inicioNoFunil,
     modoConstrucao,
+    posicaoDoInicio,
     posicaoInicioArrastada,
     fluxo?.configuracoes?.posicaoInicio,
   ]);
@@ -1818,7 +1798,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                       key={bloco.tipo}
                       className="flow-escolher-gatilho-item"
                       onClick={() => {
-                        adicionarBloco(bloco.tipo, { x: 120, y: 120 });
+                        adicionarBloco(bloco.tipo, { x: posicaoDoInicio.x + 260, y: posicaoDoInicio.y - 6 });
                         fecharEscolha();
                       }}
                     >
@@ -1842,7 +1822,8 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                 // bloco anterior a que conectar, então o passo entra solto no canvas.
                 if (escolhendoProximoPasso.nodeId)
                   adicionarBlocoConectado(tipo, escolhendoProximoPasso.nodeId, escolhendoProximoPasso.handleId);
-                else adicionarBloco(tipo, { x: 420, y: 120 });
+                // Ao lado da pastilha, e não numa coordenada fixa: ver `posicaoDoInicio`.
+                else adicionarBloco(tipo, { x: posicaoDoInicio.x + 260, y: posicaoDoInicio.y - 6 });
                 setAcaoRapida(null);
               }}
               onFollowUp={() => {

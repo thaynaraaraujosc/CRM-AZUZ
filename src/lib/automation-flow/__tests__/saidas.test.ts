@@ -15,7 +15,9 @@ function no(tipo: string, categoria: string, data: Record<string, unknown> = {})
 
 describe("saídas de um bloco", () => {
   it("mensagem ganha o caminho de falha, e o de sucesso continua sem handle", () => {
-    const saidas = saidasDoNo(no("mensagem_texto", "mensagem", { texto: "oi" }));
+    // Mídia, e não texto: o texto tem quatro saídas desde que ganhou os caminhos de resposta
+    // (ver o bloco "saídas da mensagem de texto" no fim deste arquivo).
+    const saidas = saidasDoNo(no("mensagem_imagem", "mensagem", { arquivoId: "a1" }));
     expect(saidas).toHaveLength(2);
     // Sem handle no sucesso de propósito: é o que mantém ligada a seta dos fluxos que já existem.
     expect(saidas[0].handleId).toBeUndefined();
@@ -115,30 +117,27 @@ describe("espera com cronômetro que a resposta interrompe", () => {
 });
 
 /*
- * O TEXTO QUE ESPERA RESPOSTA.
+ * A MENSAGEM DE TEXTO TEM AS QUATRO SAÍDAS, sempre.
  *
- * Um bloco de texto manda e segue, e é o certo na maioria das vezes: "já recebemos seu pedido"
- * não é pergunta. Ligado o "esperar resposta", ele para depois de mandar e passa a ter as duas
- * saídas de uma pergunta — a pessoa escreveu, ou não escreveu. Deixa de ter "Enviou", porque não
- * existe mais "enviou e seguiu".
+ * "Enviou" é mandar e seguir; "Outra resposta" e "Sem resposta" são os caminhos de quem espera.
+ * Quem decide qual comportamento vale é o DESENHO — havendo aresta numa das saídas de resposta,
+ * o motor para e espera (ver `motor-estado.ts`). As saídas existirem sempre é o que permite
+ * ligar uma delas; esconder até configurar era o problema do ovo e da galinha.
  */
-describe("texto que espera resposta", () => {
-  it("sem esperar, tem só 'Enviou' e a falha", () => {
+describe("saídas da mensagem de texto", () => {
+  it("tem Enviou, Outra resposta, Sem resposta e Falha", () => {
     expect(saidasDoNo(no("mensagem_texto", "mensagem", { texto: "oi" })).map((s) => s.handleId)).toEqual([
       undefined,
+      "outra_resposta",
+      "nao_respondeu",
       "falha",
     ]);
   });
 
-  it("esperando, troca 'Enviou' por 'Respondeu' e 'Sem resposta'", () => {
-    expect(
-      saidasDoNo(no("mensagem_texto", "mensagem", { texto: "oi", esperarResposta: true })).map((s) => s.handleId),
-    ).toEqual(["outra_resposta", "nao_respondeu", "falha"]);
-  });
-
-  it("a espera não afeta outros tipos de mensagem", () => {
-    expect(
-      saidasDoNo(no("mensagem_imagem", "mensagem", { arquivoId: "a1", esperarResposta: true })).map((s) => s.handleId),
-    ).toEqual([undefined, "falha"]);
+  it("as saídas de resposta são só do texto: mídia continua com Enviou e Falha", () => {
+    expect(saidasDoNo(no("mensagem_imagem", "mensagem", { arquivoId: "a1" })).map((s) => s.handleId)).toEqual([
+      undefined,
+      "falha",
+    ]);
   });
 });

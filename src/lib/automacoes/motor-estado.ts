@@ -452,7 +452,6 @@ async function executarNo(params: {
         texto?: string;
         mensagem?: string;
         canal?: string;
-        esperarResposta?: boolean;
         esperaMinutos?: number;
       };
       const texto = preencher((data.texto ?? data.mensagem ?? "").trim(), contato);
@@ -461,13 +460,20 @@ async function executarNo(params: {
       if (!envio.ok) return falhaDeEnvio(no, edges, envio);
 
       /*
-       * COM "ESPERAR RESPOSTA" LIGADO, o bloco para aqui — igual a uma pergunta com botões.
+       * ESPERA SE O DESENHO PEDIR, e não por causa de um interruptor.
        *
-       * A diferença entre os dois é só o que a pessoa vê: lá ela escolhe de uma lista, aqui ela
-       * escreve o que quiser. Pro motor é o mesmo compasso: mandou, parou, e quem acorda a
-       * execução é a resposta (ou o prazo).
+       * O que diz que este bloco espera é haver um caminho ligado em "Outra resposta" ou "Sem
+       * resposta". Ligar alguma coisa ali só pode querer dizer uma coisa: pare e veja se a
+       * pessoa responde. Sem nenhum dos dois ligado, ele manda e segue, como sempre fez — então
+       * fluxo antigo não muda de comportamento.
+       *
+       * Daí pra frente é o mesmo compasso da pergunta com botões: mandou, parou, e quem acorda
+       * a execução é a resposta (ou o prazo).
        */
-      if (data.esperarResposta) {
+      const esperaPeloDesenho = edges.some(
+        (e) => e.source === no.id && (e.sourceHandle === "outra_resposta" || e.sourceHandle === "nao_respondeu"),
+      );
+      if (esperaPeloDesenho) {
         const ate = data.esperaMinutos ? new Date(agora.getTime() + data.esperaMinutos * 60_000) : undefined;
         return {
           tipo: "aguardar_evento",

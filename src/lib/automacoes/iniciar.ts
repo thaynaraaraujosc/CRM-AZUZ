@@ -365,9 +365,13 @@ export async function retomarEsperasVencidas(limite = 50): Promise<{ retomadas: 
       const ehPergunta =
         noParado?.type === "mensagem_botoes" ||
         noParado?.type === "mensagem_lista" ||
-        // O texto com "esperar resposta" é uma pergunta pro motor, mesmo sem botão nenhum.
+        // O texto vira pergunta pro motor quando o desenho liga um caminho de resposta nele.
         (noParado?.type === "mensagem_texto" &&
-          !!(noParado.data as { esperarResposta?: boolean } | undefined)?.esperarResposta);
+          versao.edges.some(
+            (e) =>
+              e.source === noParado.id &&
+              (e.sourceHandle === "outra_resposta" || e.sourceHandle === "nao_respondeu"),
+          ));
       const nomeDaSaida = ehPergunta ? "nao_respondeu" : "timeout";
       const saida = temSaida(versao.edges, execucao.aguardandoNoId, nomeDaSaida) ? nomeDaSaida : undefined;
       await continuarDeDepoisDe({ execucao, versao, noId: execucao.aguardandoNoId, saida, contexto: execucao.contexto });
