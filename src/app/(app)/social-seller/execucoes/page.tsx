@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { Topbar } from "@/components/ui";
+import { AcoesNoTopo } from "@/lib/topo-da-pagina";
 import { AbasSocial } from "@/components/social/AbasSocial";
 import { TabelaExecucoes } from "@/components/automacoes/TabelaExecucoes";
 import type { PainelExecucoes } from "@/app/api/automacoes/execucoes/route";
@@ -45,19 +45,16 @@ export default function ExecucoesSociaisPage() {
 
   return (
     <>
-      <Topbar
-        title={traduzir("Execuções")}
-        actions={
-          <div className="social-periodo">
-            <button type="button" className={`seg-chip${soErros ? "" : " on"}`} onClick={() => setSoErros(false)}>
-              {traduzir("Todas")}
-            </button>
-            <button type="button" className={`seg-chip${soErros ? " on" : ""}`} onClick={() => setSoErros(true)}>
-              {traduzir("Só erros")}
-            </button>
-          </div>
-        }
-      />
+      <AcoesNoTopo>
+        <div className="social-periodo">
+          <button type="button" className={`seg-chip${soErros ? "" : " on"}`} onClick={() => setSoErros(false)}>
+            {traduzir("Todas")}
+          </button>
+          <button type="button" className={`seg-chip${soErros ? " on" : ""}`} onClick={() => setSoErros(true)}>
+            {traduzir("Só erros")}
+          </button>
+        </div>
+      </AcoesNoTopo>
 
       <div className="content social-layout">
         <AbasSocial />

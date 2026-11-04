@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { Topbar } from "@/components/ui";
+import { AcoesNoTopo } from "@/lib/topo-da-pagina";
 import { AbasSocial } from "@/components/social/AbasSocial";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
@@ -143,13 +143,14 @@ export default function AutomacoesSociaisPage() {
 
   return (
     <>
-      <Topbar
-        title={traduzir("Automações")}
-        sub="Social Seller"
-        actions={
-          <button type="button" className="btn ss-primario" onClick={() => router.push("/social-seller/novo")}>{traduzir("+ Criar automação")}</button>
-        }
-      />
+      {/* Na barra do CRM, e em `btn primary`: ali o botão é do CRM, não do módulo, e fica ao lado
+          dos mesmos controles de todas as outras telas. O azul próprio do Social Seller (
+          `.ss-primario`) continua valendo dentro do conteúdo. */}
+      <AcoesNoTopo>
+        <button type="button" className="btn primary" onClick={() => router.push("/social-seller/novo")}>
+          {traduzir("+ Criar automação")}
+        </button>
+      </AcoesNoTopo>
 
       <div className="content social-layout">
         <AbasSocial />

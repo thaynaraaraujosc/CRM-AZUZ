@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 
-import { Topbar } from "@/components/ui";
+import { AcoesNoTopo } from "@/lib/topo-da-pagina";
 import { AbasSocial } from "@/components/social/AbasSocial";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { useIdioma } from "@/lib/idioma-context";
@@ -95,14 +95,11 @@ export default function RespostasAutomaticasPage() {
 
   return (
     <>
-      <Topbar
-        title={traduzir("Respostas automáticas")}
-        actions={
-          <button type="button" className="btn primary" onClick={() => abrir(null)}>
-            + Nova resposta
-          </button>
-        }
-      />
+      <AcoesNoTopo>
+        <button type="button" className="btn primary" onClick={() => abrir(null)}>
+          + Nova resposta
+        </button>
+      </AcoesNoTopo>
 
       <div className="content social-layout">
         <AbasSocial />

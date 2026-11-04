@@ -20349,24 +20349,21 @@ table.tbl .name-cell .r {
 }
 
 /*
- * A TRILHA DE PRIMEIROS PASSOS: o único bloco colorido da tela.
+ * A TRILHA DE PRIMEIROS PASSOS, no mesmo cartão branco das outras seções.
  *
- * Chapado no navy da marca, e não em gradiente. A referência que inspirou a tela usa um degradê
- * roxo-azul de ponta a ponta; o produto evita gradiente pesado, e o efeito pretendido — "este
- * cartão é diferente de todos os outros" — se consegue igual com uma cor só, que ainda por cima
- * é a da identidade.
+ * Era um bloco chapado no navy, com texto branco por cima. Quando a tela ganhou o acabamento do
+ * Umbler, `.ss-passos` entrou na regra que pinta toda seção de cartão branco — e o texto branco
+ * continuou branco, em cima de branco. Sobravam na tela três linhas douradas e três ✓, sem uma
+ * palavra. A correção não é devolver o fundo navy: é parar de escrever cor fixa aqui e deixar o
+ * texto nos tokens, como no resto da página. O destaque de "este bloco é diferente" fica por
+ * conta do ouro da trilha e do botão, que já o davam.
  */
 .ss-passos {
   margin-bottom: var(--space-4);
   padding: var(--space-4);
   border-radius: var(--radius-3);
-  background: #002037;
-  color: #fff;
-}
-
-:root[data-theme="dark"] .ss-passos {
-  background: var(--navy-raised-2);
-  border: 1px solid var(--line);
+  background: var(--surface-elevated);
+  color: var(--ink);
 }
 
 .ss-passos-topo {
@@ -20387,7 +20384,7 @@ table.tbl .name-cell .r {
 .ss-passos-topo p {
   margin: 2px 0 0;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--text-muted);
 }
 
 /* O botão aponta pro PRÓXIMO passo em aberto, não pro primeiro da lista: quem já conectou a conta
@@ -20426,7 +20423,7 @@ table.tbl .name-cell .r {
   align-items: flex-start;
   gap: 8px;
   padding-top: 10px;
-  border-top: 2px solid rgba(255, 255, 255, 0.16);
+  border-top: 2px solid var(--line-strong);
   counter-increment: passo;
 }
 
@@ -20444,10 +20441,10 @@ table.tbl .name-cell .r {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  border: 1.5px solid rgba(255, 255, 255, 0.28);
+  border: 1.5px solid var(--line-strong);
   font-size: 11px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-muted);
 }
 
 .ss-passo-marca::before {
@@ -20465,8 +20462,8 @@ table.tbl .name-cell .r {
 }
 
 .ss-passo.agora .ss-passo-marca {
-  border-color: #fff;
-  color: #fff;
+  border-color: var(--ink);
+  color: var(--ink);
 }
 
 .ss-passo-textos {
@@ -20485,14 +20482,17 @@ table.tbl .name-cell .r {
 .ss-passo-textos > span {
   font-size: 12px;
   line-height: 1.4;
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--text-muted);
 }
 
 
 
+/* O passo já feito recua um tom, e para no tom APAGADO do produto: diluir mais que isso deixava
+   um rótulo de 13px em 2,9:1 sobre o cartão branco, que é ilegível. Quem está no passo da vez
+   continua se destacando porque o título dele é tinta cheia, não porque o resto sumiu. */
 .ss-passo.feito .ss-passo-textos strong,
 .ss-passo.feito .ss-passo-textos > span {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-muted);
 }
 
 .ss-objetivos {
@@ -24144,6 +24144,14 @@ td.trafego-col-crm:first-of-type {
   --border: rgba(255, 255, 255, 0.1);
   --ink: #fafafa;
   --text-muted: rgba(255, 255, 255, 0.62);
+  /* ESTES DOIS FALTAVAM, e é por isso que o módulo NÃO voltava inteiro às superfícies do tema:
+     o bloco de cima redefine `--surface-elevated` e `--text-faint` para os dois sem distinção de
+     tema, então o branco e o cinza claros do modo claro continuavam valendo aqui. Resultado: todo
+     cartão do Social Seller ficava branco no escuro, com `--ink: #fafafa` por cima — quase nada
+     se lia. Os valores são escritos à mão porque `var(--surface-elevated)` aqui dentro leria o
+     branco do próprio bloco de cima, não o do tema. */
+  --surface-elevated: #003053;
+  --text-faint: rgba(250, 250, 250, 0.56);
 }
 
 :root[data-theme="dark"] .content.social-layout {
@@ -26431,33 +26439,6 @@ td.trafego-col-crm:first-of-type {
 
 :root[data-theme="dark"] .content.social-layout {
   background: var(--canvas);
-}
-
-/*
- * O CABEÇALHO DA PÁGINA: nome grande, uma linha explicando.
- *
- * Substituiu "Olá, Emilly! Que bom ter você aqui." — saudação é o que faz uma ferramenta soar
- * como assistente. Quem entrou já está escrito no rodapé do menu, o tempo todo.
- */
-.ss-cabeca {
-  margin-bottom: var(--space-5);
-}
-
-.ss-cabeca h2 {
-  margin: 0;
-  font-size: 28px;
-  line-height: 1.2;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--ink);
-}
-
-.ss-cabeca p {
-  margin: 6px 0 0;
-  max-width: 68ch;
-  font-size: 15px;
-  line-height: 1.5;
-  color: var(--text-muted);
 }
 
 /*

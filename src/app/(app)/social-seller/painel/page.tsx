@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-import { Topbar } from "@/components/ui";
+import { AcoesNoTopo } from "@/lib/topo-da-pagina";
 import { AbasSocial } from "@/components/social/AbasSocial";
 import { useIdioma } from "@/lib/idioma-context";
 import type { PainelSocial } from "@/app/api/social/metricas/route";
@@ -63,23 +63,20 @@ export default function SocialPage() {
 
   return (
     <>
-      <Topbar
-        title={traduzir("Social Seller")}
-        actions={
-          <div className="social-periodo">
-            {PERIODOS.map((p) => (
-              <button
-                key={p.dias}
-                type="button"
-                className={`seg-chip${dias === p.dias ? " on" : ""}`}
-                onClick={() => setDias(p.dias)}
-              >
-                {traduzir(p.label)}
-              </button>
-            ))}
-          </div>
-        }
-      />
+      <AcoesNoTopo>
+        <div className="social-periodo">
+          {PERIODOS.map((p) => (
+            <button
+              key={p.dias}
+              type="button"
+              className={`seg-chip${dias === p.dias ? " on" : ""}`}
+              onClick={() => setDias(p.dias)}
+            >
+              {traduzir(p.label)}
+            </button>
+          ))}
+        </div>
+      </AcoesNoTopo>
 
       <div className="content social-layout">
         <AbasSocial />

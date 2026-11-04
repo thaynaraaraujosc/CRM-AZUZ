@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
-import { Topbar } from "@/components/ui";
+import { AcoesNoTopo } from "@/lib/topo-da-pagina";
 import { AbasSocial } from "@/components/social/AbasSocial";
 import { MODELOS_AZUZ, type ModeloAzuz } from "@/lib/social/modelos-azuz";
 import { LIMITES } from "@/lib/templates/regras";
@@ -76,14 +76,11 @@ export default function ModelosSociaisPage() {
 
   return (
     <>
-      <Topbar
-        title={traduzir("Modelos do Social Seller")}
-        actions={
-          <Link className="btn primary" href="/automacoes/templates">
-            {traduzir("Abrir editor de templates")}
-          </Link>
-        }
-      />
+      <AcoesNoTopo>
+        <Link className="btn primary" href="/automacoes/templates">
+          {traduzir("Abrir editor de templates")}
+        </Link>
+      </AcoesNoTopo>
 
       <div className="content social-layout">
         <AbasSocial />

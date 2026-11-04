@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { Topbar } from "@/components/ui";
+import { AcoesNoTopo } from "@/lib/topo-da-pagina";
 import { AbasSocial } from "@/components/social/AbasSocial";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { MODELOS_SOCIAIS } from "@/lib/social/modelos-rapidos";
@@ -170,37 +170,31 @@ export default function ResumoSocialPage() {
 
   return (
     <>
-      {/* Sem subtítulo: o nome do módulo já diz o que ele é, e a saudação logo abaixo dá o resto. */}
-      <Topbar
-        title={traduzir("Social Seller")}
-        actions={
-          <Link className="btn primary" href="/social-seller/novo">
-            {traduzir("+ Criar automação")}
-          </Link>
-        }
-      />
+      {/*
+        O BOTÃO VAI PRA BARRA DO CRM, e a faixa do módulo deixa de existir.
+
+        Eram duas faixas empilhadas: a do CRM, com a busca e metade vazia, e logo abaixo uma só
+        pra escrever "Social Seller" — o nome que o menu lateral já mostra marcado — e segurar um
+        botão. Juntas tiravam uns 120px do alto da tela. O botão é o único conteúdo que a segunda
+        faixa tinha de próprio, então ele sobe e ela some. Ver `topo-da-pagina.tsx`.
+      */}
+      <AcoesNoTopo>
+        <Link className="btn primary" href="/social-seller/novo">
+          {traduzir("+ Criar automação")}
+        </Link>
+      </AcoesNoTopo>
 
       <div className="content social-layout">
         <AbasSocial />
         <div className="social-conteudo">
           {/*
-            TÍTULO DE PÁGINA, e não saudação.
-            
-            Era "Olá, Emilly! Que bom ter você aqui." — e é justamente esse tipo de frase que dá à
-            tela a cara de assistente, não de ferramenta. A referência que a Thaynara escolheu
-            (Umbler Talk) abre toda tela do mesmo jeito: o nome do que você está vendo, grande, e
-            uma linha dizendo o que dá pra fazer ali. O nome de quem entrou já está no menu, no
-            rodapé da barra lateral, o tempo todo.
-          */}
-          <header className="ss-cabeca">
-            <h2>{traduzir("Resumo")}</h2>
-            <p>
-              {traduzir(
-                "Como o Instagram se comportou no período, e o que falta para o atendimento rodar sozinho.",
-              )}
-            </p>
-          </header>
+            SEM CABEÇALHO DE PÁGINA.
 
+            Aqui houve uma saudação ("Olá, Emilly!"), depois um título grande "Resumo" com uma
+            linha explicando. Os dois saíram pelo mesmo motivo: o menu à esquerda já mostra
+            "Resumo" marcado, e repetir o nome da tela dentro dela empurra os números — que são o
+            conteúdo — pra baixo da dobra. A tela abre no que ela tem a dizer.
+          */}
           {/*
             A CONTA DESCONECTADA É A PRIMEIRA COISA, e não um aviso no rodapé: com ela fora do ar
             todo número desta tela é zero por falta de conexão, não por falta de movimento, e os
