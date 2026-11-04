@@ -169,6 +169,20 @@ export function AppHeader() {
   // fundo em vez de manter a faixa branca com linha embaixo.
   const naTelaInicio = pathname === "/inicio";
 
+  /*
+   * O CABEÇALHO GLOBAL SOME NA TELA DE CONVERSAS.
+   *
+   * Ali a tela inteira é uma conversa: lista à esquerda, mensagens no meio, dados do contato à
+   * direita. Três colunas que só funcionam com altura, e o cabeçalho tirava 64px do topo pra
+   * mostrar uma busca que ninguém usa com o WhatsApp aberto e um sino que a própria conversa já
+   * substitui. Em tela cheia cabem mais seis ou sete mensagens antes de rolar, que é o que de
+   * fato se faz nessa tela.
+   *
+   * A busca global e o sino continuam em TODAS as outras telas — e o atalho de teclado da busca
+   * continua funcionando aqui, porque ele não depende deste componente estar montado.
+   */
+  if (pathname === "/conversas") return null;
+
   return (
     <header className={`app-header${naTelaInicio ? " app-header-transparente" : ""}`}>
       <GlobalSearch />

@@ -3961,8 +3961,15 @@ function ConversasPageInner() {
           }
         />
       ) : null}
+      {/*
+        SEM O TÍTULO "WhatsApp", só os controles.
+        
+        O menu lateral já diz em que tela você está, e o título ocupava a mesma faixa que os
+        filtros — numa tela que é três colunas de conversa, cada linha de moldura no topo é uma
+        mensagem a menos à vista. Os controles ficam, porque eles mudam o que a lista mostra.
+      */}
       <Topbar
-        title="WhatsApp"
+        title=""
         actions={
           <>
             <button

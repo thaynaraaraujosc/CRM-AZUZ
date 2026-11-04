@@ -81,7 +81,18 @@ export function PainelConversa({
    */
   const [previa, setPrevia] = useState<{ arquivo: File; dataUrl: string; tipo: "image" | "file" } | null>(null);
   const [legendaPrevia, setLegendaPrevia] = useState("");
-  const [dadosAberto, setDadosAberto] = useState(false);
+  /*
+   * O PAINEL DO CONTATO NASCE ABERTO.
+   *
+   * Ele ficava escondido atrás da engrenagem, e quem atende precisa justamente do que está lá —
+   * responsável, origem, valor, agendamento — enquanto lê a mensagem, não depois de dois cliques.
+   * Fechado por padrão, ele viraria "aquela aba que ninguém sabe que existe", que é o que estava
+   * acontecendo.
+   *
+   * A engrenagem continua: dá pra fechar quando a conversa precisa de largura (uma imagem grande,
+   * um texto longo), e a escolha vale só pra sessão — abrir de novo é um clique.
+   */
+  const [dadosAberto, setDadosAberto] = useState(true);
   const [aba, setAba] = useState<"contato" | "negociacao" | "atividades" | "historico">("contato");
   const [linhaDoTempo, setLinhaDoTempo] = useState<
     { id: string; tipo: string; canal: string; descricao: string; criadoEm: string }[]

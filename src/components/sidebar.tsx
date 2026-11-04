@@ -141,16 +141,36 @@ export function Sidebar() {
   const { t: traduzir } = useIdioma();
   const pathname = usePathname();
   const { data: sessao } = useSession();
-  // Aberta por padrão pra quem entra. Só recolhe se a própria pessoa pedir (guardado por
-  // navegador, não é preferência de conta). Lazy-init lê `localStorage` uma vez, sem flash.
+  /*
+   * RECOLHIDA POR PADRÃO, E ABRE AO PASSAR O MOUSE.
+   *
+   * Ela era aberta por padrão e comia 216px de todas as telas o tempo todo — num CRM que é tabela,
+   * funil e conversa, essa faixa é largura que faltava pro conteúdo. Recolhida ela ocupa 68px, e
+   * o nome de cada item volta assim que o ponteiro encosta: ninguém precisa decorar ícone, e
+   * ninguém paga a largura pra isso.
+   *
+   * Quem preferir a antiga fixa um clique na setinha, e a escolha fica guardada no navegador. O
+   * padrão mudou; a opção não sumiu.
+   */
   const [recolhida, setRecolhida] = useState(() => {
-    if (typeof window === "undefined") return false;
+    if (typeof window === "undefined") return true;
     try {
-      return localStorage.getItem(CHAVE_SIDEBAR_RECOLHIDA) === "1";
+      const guardado = localStorage.getItem(CHAVE_SIDEBAR_RECOLHIDA);
+      return guardado === null ? true : guardado === "1";
     } catch {
-      return false;
+      return true;
     }
   });
+
+  /*
+   * A ABERTURA POR HOVER É SÓ VISUAL: `recolhida` não muda.
+   *
+   * Se o hover mexesse no estado de verdade, passar o mouse gravaria preferência e empurraria o
+   * conteúdo da tela pra direita a cada vez — a tela inteira pulando porque o ponteiro passou por
+   * cima. Aqui o menu ABRE POR CIMA do conteúdo e devolve o espaço ao sair.
+   */
+  const [sobreposta, setSobreposta] = useState(false);
+  const mostrandoNomes = !recolhida || sobreposta;
   function alternarRecolhida() {
     setRecolhida((prev) => {
       const proximo = !prev;
@@ -283,11 +303,15 @@ export function Sidebar() {
   }, [gestaoAtividadeAberta]);
 
   return (
-    <aside className={`sidebar${recolhida ? " recolhida" : ""}`}>
+    <aside
+      className={`sidebar${recolhida ? " recolhida" : ""}${recolhida && sobreposta ? " sobreposta" : ""}`}
+      onMouseEnter={() => recolhida && setSobreposta(true)}
+      onMouseLeave={() => setSobreposta(false)}
+    >
       <div className="sb-brand">
         {/* O quadradinho e o nome vêm do mesmo componente que a prévia em Configurações usa: é o
             que garante que a logo enviada apareça aqui exatamente como foi mostrada lá. */}
-        <MarcaDoTopo mostrarNome={!recolhida} />
+        <MarcaDoTopo mostrarNome={mostrandoNomes} />
         <button
           type="button"
           className="sb-recolher"
@@ -314,7 +338,7 @@ export function Sidebar() {
             }
           }}
         >
-          {!recolhida ? (
+          {mostrandoNomes ? (
             <>
               <p className="l">{traduzir("Workspace")}</p>
               <p className="v">{nomeEmpresa}</p>
@@ -424,7 +448,7 @@ export function Sidebar() {
                   style={{ width: "100%", textAlign: "left", cursor: "pointer" }}
                   aria-haspopup="true"
                   aria-expanded={gestaoAtividadeAberta}
-                  title={recolhida ? traduzir("Inteligência comercial") : undefined}
+                  title={mostrandoNomes ? undefined : traduzir("Inteligência comercial")}
                   // O submenu só abria no `onMouseEnter` do <div> de fora. Quem navega por teclado
                   // chegava neste botão com Tab, apertava Enter e nada acontecia: o menu inteiro de
                   // Inteligência comercial era inalcançável sem mouse. O clique não atrapalha o
@@ -432,7 +456,7 @@ export function Sidebar() {
                   onClick={() => (gestaoAtividadeAberta ? setGestaoAtividadeAberta(false) : abrirGestaoAtividade())}
                 >
                   <IconRelatorios />
-                  {!recolhida ? (
+                  {mostrandoNomes ? (
                     <>
                       {traduzir("Inteligência comercial")}
                       <span className="r" style={{ marginLeft: "auto" }}>▸</span>
@@ -455,10 +479,10 @@ export function Sidebar() {
                 prefetch
                 className={`nav-item${href === "/conversas" ? " nav-item-whatsapp" : ""}${active ? " active" : ""}`}
                 aria-current={active ? "page" : undefined}
-                title={recolhida ? traduzir(label) : undefined}
+                title={mostrandoNomes ? undefined : traduzir(label)}
               >
                 <Icon />
-                {!recolhida ? (
+                {mostrandoNomes ? (
                   <>
                     {traduzir(label)}
                     {href === "/azuz-ia" ? <span className="nav-badge-em-breve">{traduzir("Em breve")}</span> : null}
@@ -466,7 +490,7 @@ export function Sidebar() {
                 ) : null}
                 <IndoPara />
               </Link>
-              {href === "/funil" && !recolhida ? (
+              {href === "/funil" && mostrandoNomes ? (
                 <div className="nav-sublist">
                   {funis.map((f) => {
                     const subAtivo = active && f.id === funilAtivoId;
@@ -559,8 +583,8 @@ export function Sidebar() {
             }
           }}
         >
-          <div className="avatar sm" title={recolhida ? currentUser.name : undefined}>{currentUser.initials}</div>
-          {!recolhida ? (
+          <div className="avatar sm" title={mostrandoNomes ? undefined : currentUser.name}>{currentUser.initials}</div>
+          {mostrandoNomes ? (
             <div>
               <p className="who">
                 {currentUser.name}

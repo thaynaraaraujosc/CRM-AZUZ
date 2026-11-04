@@ -25274,3 +25274,50 @@ td.trafego-col-crm:first-of-type {
   color: var(--text-muted);
   white-space: pre-wrap;
 }
+
+/*
+ * O MENU RECOLHIDO QUE ABRE POR CIMA, no hover.
+ *
+ * Ele abre SOBRE o conteúdo, e não empurrando: se empurrasse, a tela inteira deslizaria pra
+ * direita toda vez que o ponteiro encostasse na borda esquerda — num CRM que é tabela e funil,
+ * isso move a coluna que a pessoa estava lendo. Com `position: absolute`, o espaço reservado
+ * continua sendo os 68px do recolhido e o painel aberto passa por cima.
+ */
+.sidebar.recolhida.sobreposta {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 60;
+  width: 216px;
+  padding-left: var(--space-3);
+  padding-right: var(--space-3);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+}
+
+/* A transição é só da largura e da sombra. Opacidade no conteúdo faria o texto "piscar" a cada
+   passada de mouse, que é pior do que aparecer de uma vez. */
+.sidebar {
+  transition: width 0.16s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar {
+    transition: none;
+  }
+}
+
+/*
+ * A TELA DE CONVERSAS SEM O CABEÇALHO GLOBAL.
+ *
+ * Com ele fora, a faixa de controles encosta no topo e a conversa ganha os 64px. O título da
+ * Topbar também saiu (fica `title=""`), então a faixa não precisa da altura de um título.
+ */
+.topbar:has(h2:empty) {
+  padding-top: var(--space-3);
+  padding-bottom: var(--space-3);
+}
+
+.topbar h2:empty {
+  display: none;
+}
