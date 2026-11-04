@@ -22026,8 +22026,23 @@ table.tbl .name-cell .r {
  * parecer uma etiqueta solta; na referência ele é uma peça do desenho, com o mesmo canto dos
  * blocos. Arrasta, então o cursor é de pegar.
  */
+/*
+ * A PASTILHA OCUPA O NÓ INTEIRO, e é isto que faz o fio encostar nela.
+ *
+ * Era `inline-flex`: a pastilha tinha a largura do TEXTO (~130px) dentro de um nó declarado com
+ * 210px. O React Flow não mede este nó (as mudanças dele são descartadas pra ele não virar bloco
+ * salvo, ver `inicioDesenhado` no FlowEditor), então ele calcula o começo da linha pela medida
+ * declarada — a 210px. Resultado: a linha verde nascia no vazio, uns 80px à direita da pastilha,
+ * que foi exatamente o que apareceu na tela.
+ *
+ * Com a pastilha preenchendo o nó, a borda direita dela É o ponto de saída. Não há conta pra
+ * errar: o DOM tem a largura que foi declarada.
+ */
 .no-inicio {
-  display: inline-flex;
+  display: flex;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
   align-items: center;
   gap: 8px;
   padding: 7px 12px 7px 10px;
@@ -22051,6 +22066,16 @@ table.tbl .name-cell .r {
   display: flex;
   flex-direction: column;
   gap: 1px;
+  /* `min-width: 0` é o que permite o corte com reticências: dentro de um flex, a largura mínima
+     padrão é a do conteúdo, e sem isto a frase da etapa esticaria a pastilha pra fora do nó. */
+  min-width: 0;
+}
+
+.no-inicio-texto strong,
+.no-inicio-texto span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .no-inicio-texto strong {

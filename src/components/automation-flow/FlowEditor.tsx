@@ -1429,7 +1429,13 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
        * qualquer: a pastilha existia e ficava fora da tela. Era exatamente o "não aparece iniciar
        * robô". Com a medida declarada, o enquadramento acha a peça.
        */
-      width: 210,
+      /*
+       * A MEDIDA DECLARADA É A MEDIDA DESENHADA: a pastilha preenche o nó (ver `.no-inicio` no
+       * globals.css), então estes números são, ao pé da letra, o tamanho dela na tela. Dois
+       * valores porque no funil ela tem uma segunda linha ("Lead entra em …") e precisa de mais
+       * largura pra frase caber sem reticências.
+       */
+      width: inicioNoFunil ? 230 : 150,
       height: inicioNoFunil ? 56 : 40,
       /*
        * `measured` À MÃO, e é isto que faz o FIO aparecer.
@@ -1440,7 +1446,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
        * aresta que sai dele não tinha de onde partir: o "Iniciar robô" ficava solto, sem ligação
        * com o primeiro bloco. Declarar a medida resolve sem reabrir a porta do salvamento.
        */
-      measured: { width: 210, height: inicioNoFunil ? 56 : 40 },
+      measured: { width: inicioNoFunil ? 230 : 150, height: inicioNoFunil ? 56 : 40 },
       draggable: modoConstrucao,
       selectable: false,
       deletable: false,
