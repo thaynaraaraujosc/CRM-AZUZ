@@ -300,7 +300,7 @@ export default function InstagramConversasPage() {
 
   return (
     <>
-      <Topbar title="Instagram" sub={traduzir("Direct, respostas a story e comentários")} />
+      <Topbar title="Instagram" />
 
       <div className="content ig-layout">
         <aside className="ig-lista">

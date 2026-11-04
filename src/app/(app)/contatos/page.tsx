@@ -303,14 +303,6 @@ function ContatosPageInner() {
     <>
       <Topbar
         title={traduzir("Contatos")}
-        sub={
-          filtroOrigem === "Todos" && !busca.trim()
-            ? traduzir("{total} contatos · visão 360° de cada lead", { total: contatos.length })
-            : traduzir("{filtrados} de {total} contatos", {
-                filtrados: contatosFiltrados.length,
-                total: contatos.length,
-              })
-        }
         actions={
           <>
             <label className="search">

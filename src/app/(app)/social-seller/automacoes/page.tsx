@@ -223,11 +223,7 @@ export default function AutomacoesSociaisPage() {
               </button>
             </div>
 
-            {!pastas.length ? (
-              <p className="hint">
-                {traduzir("Nenhuma pasta. Com poucos robôs isso não faz falta; a partir de uma dezena, faz.")}
-              </p>
-            ) : (
+            {!pastas.length ? null : (
               <div className="social-pastas">
                 <button
                   type="button"

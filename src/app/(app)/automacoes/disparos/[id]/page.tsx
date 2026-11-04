@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Topbar } from "@/components/ui";
 import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
 import { PreviaMensagem } from "@/components/automacoes/PreviaMensagem";
-import { descreverAudiencia, type Audiencia } from "@/lib/campanhas/audiencia-tipos";
+import { type Audiencia } from "@/lib/campanhas/audiencia-tipos";
 import { STATUS_CAMPANHA, STATUS_DESTINATARIO, formatarData } from "@/lib/campanhas/apresentacao";
 import type { MapeamentoVariavel } from "@/lib/campanhas/variaveis";
 import { LIMITES } from "@/lib/templates/regras";
@@ -113,7 +113,6 @@ export default function DetalheDisparoPage() {
     <>
       <Topbar
         title={campanha?.titulo ?? "Disparo"}
-        sub={campanha ? `${LIMITES[campanha.canal]?.label ?? campanha.canal} · ${descreverAudiencia(campanha.audiencia)}` : undefined}
         actions={
           <div className="disp-controles">
             <Link href="/automacoes/disparos" className="btn ghost">

@@ -528,11 +528,6 @@ function FunilPageInner() {
       ) : null}
       <Topbar
         title={traduzir("Funil comercial")}
-        sub={`${funilAtivo?.nome ?? ""} · ${
-          filtroAtivo
-            ? traduzir(totalVisivel === 1 ? "{n} negócio encontrado" : "{n} negócios encontrados", { n: totalVisivel })
-            : traduzir(totalVisivel === 1 ? "{n} negócio no funil" : "{n} negócios no funil", { n: totalVisivel })
-        }`}
         actions={
           <>
             {/* "Alinhar com Conversas" e "Mensagens recentes no topo" saíram da barra.

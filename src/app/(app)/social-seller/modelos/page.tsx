@@ -78,7 +78,6 @@ export default function ModelosSociaisPage() {
     <>
       <Topbar
         title={traduzir("Modelos do Social Seller")}
-        sub={traduzir("Mensagens reutilizáveis do Direct")}
         actions={
           <Link className="btn primary" href="/automacoes/templates">
             {traduzir("Abrir editor de templates")}
@@ -95,64 +94,78 @@ export default function ModelosSociaisPage() {
           </section>
         ) : null}
 
-        <section className="card">
-          <h3>{traduzir("Modelos AZUZ")}</h3>
-          <p className="hint">
-            Escritos aqui, prontos pra copiar. Copiar cria um modelo SEU, que você edita antes de
-            usar. {LIMITES.instagram.explicacao}
+        {/*
+          OS MODELOS DA AZUZ COMO CARTÕES, com a mensagem numa bolha.
+          
+          Eram parágrafos soltos dentro de um cartão só, e a mensagem — que é o conteúdo — tinha o
+          mesmo peso do "quando usar" e do nome. Na bolha ela aparece como o contato vai ver no
+          Direct, que é a única forma de julgar um modelo sem copiá-lo antes.
+        */}
+        <section className="ssl-secao">
+          <div className="social-secao-topo">
+            <h3>
+              {traduzir("Modelos AZUZ")} <span className="social-contador">{MODELOS_AZUZ.length}</span>
+            </h3>
+          </div>
+          <p className="mod-nota">
+            {traduzir("Copiar cria um modelo SEU, que você edita antes de usar.")} {LIMITES.instagram.explicacao}
           </p>
-          <div className="social-modelos">
+          <div className="mod-grade">
             {MODELOS_AZUZ.map((m) => (
-              <div key={m.id} className="social-modelo" style={{ cursor: "default" }}>
+              <article key={m.id} className="mod-cartao">
                 <strong>{m.nome}</strong>
-                <em>{m.quando}</em>
-                <span style={{ whiteSpace: "pre-wrap" }}>{m.corpo}</span>
+                <span className="mod-quando">{m.quando}</span>
+                <p className="flow-bolha">{m.corpo}</p>
                 {m.botoes?.length ? (
-                  <span>
-                    Respostas rápidas: {m.botoes.map((b) => b.texto).join(" · ")}
+                  <span className="mod-botoes">
+                    {m.botoes.map((b) => (
+                      <span key={b.texto} className="mod-botao">
+                        {b.texto}
+                      </span>
+                    ))}
                   </span>
                 ) : null}
-                <button
-                  type="button"
-                  className="btn mt8"
-                  disabled={copiando === m.id}
-                  onClick={() => copiar(m)}
-                >
-                  {copiando === m.id ? "Copiando…" : "Copiar pros meus"}
+                <button type="button" className="btn ss-primario mod-copiar" disabled={copiando === m.id} onClick={() => copiar(m)}>
+                  {copiando === m.id ? traduzir("Copiando…") : traduzir("Copiar pros meus")}
                 </button>
-              </div>
+              </article>
             ))}
           </div>
         </section>
 
-        <section className="card mt16">
-          <h3>{traduzir("Meus modelos")}</h3>
+        <section className="ssl-secao">
+          <div className="social-secao-topo">
+            <h3>
+              {traduzir("Meus modelos")}{" "}
+              <span className="social-contador">{meus?.length ?? 0}</span>
+            </h3>
+            <Link className="btn ghost pequeno" href="/automacoes/templates">
+              {traduzir("Editor de templates")}
+            </Link>
+          </div>
           {meus === null ? (
             <p className="hint">{traduzir("Carregando…")}</p>
           ) : !meus.length ? (
-            <p className="hint">
+            <p className="fflow-vazio">
               {traduzir("Nenhum ainda. Copie um da AZUZ acima, ou crie do zero no editor de templates.")}
             </p>
           ) : (
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>{traduzir("Nome")}</th>
-                  <th>{traduzir("Mensagem")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {meus.map((t) => (
-                  <tr key={t.id}>
-                    <td>{t.nome}</td>
-                    <td className="hint" style={{ whiteSpace: "pre-wrap" }}>
-                      {t.corpo.slice(0, 180)}
-                      {t.corpo.length > 180 ? "…" : ""}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            /* A mesma linha-cartão da lista de automações: é a mesma pergunta — "qual deles?" —
+               e duas formas diferentes pro mesmo tipo de lista é o que faz um módulo parecer
+               montado por duas pessoas. */
+            <ul className="ssl-lista">
+              {meus.map((t) => (
+                <li key={t.id} className="ssl-item mod-item">
+                  <span className="ssl-nome">
+                    <strong>{t.nome}</strong>
+                  </span>
+                  <span className="mod-previa">
+                    {t.corpo.slice(0, 180)}
+                    {t.corpo.length > 180 ? "…" : ""}
+                  </span>
+                </li>
+              ))}
+            </ul>
           )}
         </section>
         </div>

@@ -32,7 +32,6 @@ import { PerguntaVisualizacao } from "@/components/campo-resposta";
 import { classesDoCartao, estiloDoBanner, estiloDoCartao } from "@/components/formularios/FormularioPublico";
 import { LogicaCanvas } from "@/components/formularios/LogicaCanvas";
 import { AGENDA_PADRAO } from "@/lib/formularios/agendamento";
-import { MODELOS_DE_FORMULARIO } from "@/lib/formularios/modelos";
 import { nomeDoArquivo, respostasEmCsv } from "@/lib/formularios/planilha";
 import { escolhasMarcadas } from "@/lib/formularios/escolhas";
 import { pixelMetaValido, tagGoogleValida } from "@/lib/formularios/rastreamento";
@@ -102,7 +101,6 @@ export default function FormulariosPage() {
   const {
     formularios,
     criarFormulario,
-    criarFormularioDeModelo,
     duplicarFormulario,
     atualizarFormulario,
     excluirFormulario,
@@ -189,9 +187,6 @@ export default function FormulariosPage() {
     abrirFormulario(id);
   }
 
-  function abrirDeModelo(modeloId: string) {
-    abrirFormulario(criarFormularioDeModelo(modeloId));
-  }
 
   function voltarParaLista() {
     setFormularioAbertoId(null);
@@ -273,7 +268,7 @@ export default function FormulariosPage() {
     <div className="painel-formularios">
       {!formularioAberto ? (
         <>
-          <Topbar title={traduzir("Formulários")} sub={`${formularios.length} formulário(s) criado(s)`} />
+          <Topbar title={traduzir("Formulários")} />
           <div className="content">
             <button type="button" className="form-scratch-card" onClick={abrirNovoFormulario}>
               <span className="form-scratch-icon">+</span>
@@ -284,29 +279,6 @@ export default function FormulariosPage() {
                 </span>
               </span>
             </button>
-
-            {/* OS MODELOS. Ficam quietos até alguém escolher: criar quatro formulários na conta
-                de uma empresa sem ela pedir é encher a tela dela. O que nasce daqui é um
-                formulário comum, em rascunho, que se edita e se apaga como qualquer outro. */}
-            <p className="int-group-h" style={{ marginTop: 22 }}>
-              {traduzir("Começar de um modelo")}
-            </p>
-            <div className="form-modelos">
-              {MODELOS_DE_FORMULARIO.map((modelo) => (
-                <button
-                  key={modelo.id}
-                  type="button"
-                  className="form-modelo-card"
-                  onClick={() => abrirDeModelo(modelo.id)}
-                >
-                  <span className="form-modelo-nome">{modelo.nome}</span>
-                  <span className="form-modelo-quando">{modelo.quando}</span>
-                  <span className="form-modelo-conta">
-                    {modelo.secoes.reduce((soma, s) => soma + s.campos.length, 0)} {traduzir("perguntas")}
-                  </span>
-                </button>
-              ))}
-            </div>
 
             <p className="int-group-h" style={{ marginTop: 22 }}>
               {traduzir("Seus formulários")}

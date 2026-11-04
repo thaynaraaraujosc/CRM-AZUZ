@@ -350,7 +350,6 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
     <>
       <Topbar
         title={traduzir("Documentos")}
-        sub={traduzir("Crie, edite e organize documentos de texto. Com páginas, formatação e histórico")}
       />
       <div className="content">
         <div className="filters-row mb14">

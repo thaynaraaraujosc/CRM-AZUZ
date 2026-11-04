@@ -65,7 +65,6 @@ export default function SocialPage() {
     <>
       <Topbar
         title={traduzir("Social Seller")}
-        sub={traduzir("Instagram: o que chegou, o que os robôs fizeram e o que a Meta informa")}
         actions={
           <div className="social-periodo">
             {PERIODOS.map((p) => (

@@ -25098,3 +25098,167 @@ td.trafego-col-crm:first-of-type {
   font-size: 12px;
   line-height: 1.45;
 }
+
+/*
+ * A BARRA DE BUSCA E FILTROS DO MÓDULO, nas medidas da referência.
+ *
+ * A busca tem 40px de altura e 48px de recuo à esquerda — o recuo é o que impede o texto digitado
+ * de encostar na lupa, que é o defeito de quase toda busca com ícone dentro. Os filtros têm 44px
+ * e largura própria, e deixam de ser `<select>` cru: com a seta do sistema e sem altura definida,
+ * eles ficavam 8px mais baixos que a busca ao lado e a fileira inteira parecia desalinhada.
+ */
+.content.social-layout .social-filtros {
+  gap: 12px;
+  margin-bottom: var(--space-4);
+}
+
+.content.social-layout .social-busca .input {
+  height: 40px;
+  padding-left: 48px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.content.social-layout .social-busca svg {
+  left: 18px;
+}
+
+.content.social-layout .social-filtros > .input {
+  height: 44px;
+  min-width: 144px;
+  padding: 0 36px 0 14px;
+  border: 1px solid var(--ss-linha, #e2e8f0);
+  border-radius: 8px;
+  background-color: #fff;
+  font-size: 14px;
+  color: var(--ss-tinta, #1e293b);
+  cursor: pointer;
+}
+
+:root[data-theme="dark"] .content.social-layout .social-filtros > .input {
+  background-color: var(--surface);
+  color: var(--ink);
+}
+
+.content.social-layout .social-filtros > .input:hover {
+  border-color: var(--ss-cinza-300, #cbd5e1);
+}
+
+.content.social-layout .social-filtros > .input:focus-visible {
+  outline: 2px solid var(--ss-azul, #0028fe);
+  outline-offset: -1px;
+}
+
+/* O alternador lista/grade como um par, e não dois ícones soltos. */
+.content.social-layout .social-visao {
+  gap: 0;
+  padding: 3px;
+  border: 1px solid var(--ss-linha, #e2e8f0);
+  border-radius: 8px;
+  background: #fff;
+}
+
+:root[data-theme="dark"] .content.social-layout .social-visao {
+  background: var(--surface);
+}
+
+.content.social-layout .social-visao .icon-btn {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+}
+
+.content.social-layout .social-visao .icon-btn.on {
+  background: var(--ss-suave, #f1f5f9);
+  color: var(--ss-tinta, #1e293b);
+}
+
+/* O título de seção à esquerda e a ação à direita, sem cartão em volta. */
+.ss-secao-topo-solta {
+  justify-content: flex-end;
+  margin-bottom: var(--space-3);
+}
+
+/* A tela de modelos: cartões brancos sobre o papel, com a mensagem na mesma bolha do canvas. */
+.mod-nota {
+  margin: 0 0 var(--space-3);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.mod-grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.mod-cartao {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: var(--space-4);
+  border: 1px solid var(--ss-linha, #e2e8f0);
+  border-radius: 12px;
+  background: #fff;
+}
+
+:root[data-theme="dark"] .mod-cartao {
+  background: var(--surface);
+}
+
+.mod-cartao strong {
+  font-size: 15px;
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+.mod-quando {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+/* A bolha aqui não tem teto de altura: o modelo inteiro precisa ser lido antes de copiar, e
+   cortar a mensagem obrigaria a copiar pra descobrir o que ela diz. */
+.mod-cartao .flow-bolha {
+  max-height: none;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+.mod-botoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.mod-botao {
+  padding: 4px 10px;
+  border: 1px solid var(--ss-linha, #e2e8f0);
+  border-radius: 999px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.mod-copiar {
+  margin-top: auto;
+  align-self: stretch;
+  justify-content: center;
+}
+
+.mod-item {
+  align-items: flex-start;
+}
+
+.mod-previa {
+  flex: 2 1 320px;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  white-space: pre-wrap;
+}

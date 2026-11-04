@@ -58,14 +58,6 @@ function primeiroNome(nome?: string | null): string | null {
   return limpo.split(/\s+/)[0] ?? null;
 }
 
-/** O começo e o fim do período, em números, pra pessoa conferir de que janela são os números. */
-function periodoEmDatas(dias: number, locale: string): string {
-  const ate = new Date();
-  const desde = new Date(ate.getTime() - dias * 24 * 60 * 60 * 1000);
-  const f = (d: Date) => d.toLocaleDateString(locale, { day: "2-digit", month: "2-digit", year: "numeric" });
-  return `${f(desde)} – ${f(ate)}`;
-}
-
 type Icone = typeof IconAutomacoes;
 
 /**
@@ -90,7 +82,7 @@ function Tile({ Icone, valor, label, ajuda }: { Icone: Icone; valor: number; lab
 }
 
 export default function ResumoSocialPage() {
-  const { t: traduzir, localeNumero } = useIdioma();
+  const { t: traduzir } = useIdioma();
   const { data: sessao } = useSession();
   const router = useRouter();
   const { criarFluxo } = useAutomationFlows();
@@ -233,9 +225,16 @@ export default function ResumoSocialPage() {
             </section>
           ) : null}
 
+          {/*
+            SEM TÍTULO E SEM A LINHA DE PERÍODO.
+            
+            "Resumo da sua conta" dizia o que os quatro números logo abaixo já dizem, e a linha
+            "Período 27/10 – 03/11 · Horário de Brasília" repetia em texto o que o seletor ao lado
+            mostra escolhido. Duas linhas de moldura em cima de quatro números: a tela abria com
+            mais explicação do que conteúdo.
+          */}
           <section className="ss-secao">
-            <div className="ss-secao-topo">
-              <h3>{traduzir("Resumo da sua conta")}</h3>
+            <div className="ss-secao-topo ss-secao-topo-solta">
               <div className="ss-seg" role="group" aria-label={traduzir("Período")}>
                 {PERIODOS.map((p) => (
                   <button
@@ -250,12 +249,6 @@ export default function ResumoSocialPage() {
                 ))}
               </div>
             </div>
-
-            <p className="ss-meta">
-              {traduzir("Período")} <strong>{periodoEmDatas(dias, localeNumero)}</strong>
-              <span aria-hidden="true">·</span>
-              {traduzir("Horário de Brasília")}
-            </p>
 
             {carregando || !painel ? (
               <p className="hint">{traduzir("Carregando…")}</p>

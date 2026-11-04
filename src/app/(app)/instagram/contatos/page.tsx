@@ -111,7 +111,7 @@ export default function InstagramContatosPage() {
 
   return (
     <>
-      <Topbar title={traduzir("Contatos do Instagram")} sub={traduzir("Quem chegou pelo Direct, por comentário ou por story")} />
+      <Topbar title={traduzir("Contatos do Instagram")} />
 
       <div className="content">
         <section className="card ig-contatos-card">

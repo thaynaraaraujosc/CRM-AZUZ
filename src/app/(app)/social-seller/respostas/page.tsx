@@ -97,7 +97,6 @@ export default function RespostasAutomaticasPage() {
     <>
       <Topbar
         title={traduzir("Respostas automáticas")}
-        sub={traduzir("Uma frase que o robô responde sozinho, sem abrir o construtor")}
         actions={
           <button type="button" className="btn primary" onClick={() => abrir(null)}>
             + Nova resposta

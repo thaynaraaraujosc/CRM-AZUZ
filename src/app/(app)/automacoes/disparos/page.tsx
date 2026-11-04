@@ -66,7 +66,6 @@ export default function DisparosPage() {
     <>
       <Topbar
         title={traduzir("Disparo em massa")}
-        sub={traduzir("Uma mensagem para muitos contatos, enviada aos poucos")}
         actions={
           <button type="button" className="btn primary" onClick={() => setAssistente(true)}>
             + Novo disparo

@@ -79,7 +79,6 @@ export default function TemplatesPage() {
     <>
       <Topbar
         title={traduzir("Templates")}
-        sub={traduzir("Mensagens reutilizáveis para disparos e automações")}
         actions={
           <button type="button" className="btn primary" onClick={() => setEditando("novo")} disabled={!algumCanal} title={!algumCanal ? traduzir("Conecte um canal em Configurações → Outras integrações") : undefined}>
             + Novo template

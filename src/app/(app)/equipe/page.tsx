@@ -44,7 +44,6 @@ export default function EquipePage() {
     <>
       <Topbar
         title={traduzir("Equipe")}
-        sub={traduzir("{n} pessoas · controle de acesso por papel", { n: equipe.length })}
         actions={
           <Link className="btn primary" href="/equipe/convidar">
             + Convidar

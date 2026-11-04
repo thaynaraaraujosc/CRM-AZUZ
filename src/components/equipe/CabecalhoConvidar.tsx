@@ -17,7 +17,6 @@ export function CabecalhoConvidar() {
   return (
     <Topbar
       title={traduzir("Convidar membro")}
-      sub={traduzir("A pessoa recebe um e-mail e cria a própria senha. Vocês nunca digitam a senha de ninguém")}
       actions={
         <Link className="btn ghost" href="/equipe">
           ← {traduzir("Voltar pra equipe")}

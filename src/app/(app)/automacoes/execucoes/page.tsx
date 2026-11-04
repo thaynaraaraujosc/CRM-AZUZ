@@ -43,7 +43,6 @@ export default function ExecucoesDoFunilPage() {
     <>
       <Topbar
         title={traduzir("Execuções")}
-        sub={traduzir("O que cada robô do funil fez, lead por lead, passo por passo")}
         actions={
           <div className="social-periodo">
             <button type="button" className={`seg-chip${soErros ? "" : " on"}`} onClick={() => setSoErros(false)}>
