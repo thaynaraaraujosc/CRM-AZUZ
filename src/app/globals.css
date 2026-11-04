@@ -23812,17 +23812,27 @@ td.trafego-col-crm:first-of-type {
  * É por isso que ela leva `padding: 8px 12px 20px`: os 20px de baixo são o pedaço que some atrás
  * do bloco. Desenhá-la com a altura só do que se vê deixaria o texto colado na borda do cartão.
  */
+/*
+ * A ABA ENCOSTA NA PARTE RETA DO CARTÃO, não no canto arredondado.
+ *
+ * Com `left: 0` a aba terminava exatamente em cima do canto de 12px do cartão — e canto
+ * arredondado é canto que NÃO existe: entre a base da aba e a borda visível do cartão sobrava uma
+ * cunha de fundo, que é o "parece que está faltando uma parte". Recuando 12px, a aba cai sobre a
+ * aresta reta e as duas peças viram uma só.
+ *
+ * E ela desce 1px a mais do que a própria altura: a emenda de dois retângulos de cores diferentes
+ * costuma deixar uma linha clara de meio pixel, dependendo do zoom do canvas. Um pixel de
+ * sobreposição some com ela em qualquer zoom.
+ */
 .flow-node-aba {
   position: absolute;
   top: -32px;
-  left: 0;
+  left: 12px;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  /* Na referência a aba tem 44px e 12px dela somem atrás do cartão; desenhada assim, de fora, o
-     que se vê é o mesmo e não depende de ordem de pintura entre pai e filho. */
-  height: 32px;
-  padding: 0 12px;
+  height: 33px;
+  padding: 0 12px 1px;
   border-radius: 8px 8px 0 0;
   background: var(--ss-tinta-fraca, #64748b);
   color: #fafafa;
@@ -23863,8 +23873,14 @@ td.trafego-col-crm:first-of-type {
 /* O miolo é uma caixa clara encostada nas bordas de dentro, com 44px de respiro embaixo pro
    rodapé "Próximo passo" caber sem empurrar o conteúdo. */
 .flow-shell-social .flow-node-body {
+  /* 16px dos dois lados, igual ao cabeçalho: era 20px por dentro e 16 por fora, e a diferença de
+     4px fazia o miolo parecer desalinhado com o título logo acima. */
   margin: 0 16px;
-  padding: 20px;
+  padding: 16px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 8px;
   background: var(--ss-suave, #f1f5f9);
   box-shadow: var(--ss-cinza-300, #cbd5e1) 0 0 0 1px inset;
@@ -25755,4 +25771,76 @@ td.trafego-col-crm:first-of-type {
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
+}
+
+/* ---------------- O rodapé do bloco social: o ponto e o "+" ----------------
+ *
+ * O "+" ficava em `bottom: -20px`, centralizado na largura: ele cortava a borda de baixo do
+ * cartão pela metade e caía no meio de lugar nenhum, longe do "Próximo passo" que ele continua.
+ * Na referência os três são uma coisa só, na mesma linha e à direita: o texto, o ponto de saída e
+ * o botão que escolhe o bloco seguinte.
+ *
+ * O ponto é movido por CSS, e é de propósito: o React Flow lê a posição real do elemento no DOM
+ * pra saber onde a linha começa. Mexer aqui move o ponto E a ligação junto, sem tocar no cálculo
+ * de rota de nenhuma aresta.
+ */
+.flow-shell-social .flow-node-saida-unica {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  position: relative;
+  min-height: 28px;
+  margin-top: 16px;
+  padding: 0 16px;
+}
+
+/* O ponto de saída deixa de ser o do rodapé centralizado e passa a viver nesta linha. */
+.flow-shell-social .flow-node-saida-unica .react-flow__handle {
+  position: relative;
+  top: auto;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  transform: none;
+  width: 12px;
+  height: 12px;
+  border-width: 2px;
+  flex: none;
+}
+
+/* O "+" sai de cima da borda e vira um quadrado ao lado do ponto, como na referência. */
+.flow-shell-social .flow-node-saida-unica .flow-node-add-btn {
+  position: static;
+  transform: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1px solid var(--ss-cinza-300, #cbd5e1);
+  background: var(--ss-suave, #f1f5f9);
+  color: var(--ss-tinta-fraca, #64748b);
+  font-size: 15px;
+  flex: none;
+}
+
+.flow-shell-social .flow-node-saida-unica .flow-node-add-btn:hover {
+  border-color: var(--ss-azul);
+  color: var(--ss-azul);
+  background: var(--ss-azul-suave, #e7e8ff);
+}
+
+/*
+ * O PONTO DE SAÍDA VAZIO quando ainda não leva a lugar nenhum.
+ *
+ * No ManyChat a diferença entre "este bloco continua" e "este bloco termina aqui" está no ponto:
+ * cheio quando há ligação, oco quando não há. É a informação que o fluxo mais precisa dar de
+ * relance — num canvas de oito blocos, achar a ponta solta é o que se faz antes de publicar.
+ *
+ * O "+" só é renderizado quando a saída está desconectada (ver `NodeShell`), então ele serve de
+ * sinal: se ele está na linha, o ponto é oco.
+ */
+.flow-shell-social .flow-node-saida-unica:has(.flow-node-add-btn) .react-flow__handle {
+  background: #fff;
+  border: 2px solid var(--ss-cinza-400, #94a3b8);
+  box-shadow: none;
 }

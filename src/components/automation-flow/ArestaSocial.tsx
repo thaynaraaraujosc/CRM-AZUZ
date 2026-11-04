@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath, type EdgeProps } from "@xyflow/react";
+import { BaseEdge, EdgeLabelRenderer, getBezierPath, type EdgeProps } from "@xyflow/react";
 
 import { IconLixeira } from "@/components/icons";
 import { useIdioma } from "@/lib/idioma-context";
@@ -25,13 +25,20 @@ export function ArestaSocial({
   targetY,
   sourcePosition,
   targetPosition,
-  markerEnd,
   style,
   data,
 }: EdgeProps) {
   const { t: traduzir } = useIdioma();
   const [sobre, setSobre] = useState(false);
-  const [caminho, meioX, meioY] = getSmoothStepPath({
+  /*
+   * CURVA, E NÃO DEGRAU.
+   *
+   * Era `getSmoothStepPath`: a linha saía reta, dobrava em ângulo e entrava reta — o desenho de um
+   * diagrama de circuito. A Thaynara apontou o ManyChat, e a diferença que ela viu é essa: lá a
+   * ligação é uma curva contínua, que atravessa o espaço entre os dois blocos como um traço só.
+   * Num canvas com oito blocos, curva se segue com o olho; degrau obriga a acompanhar cada canto.
+   */
+  const [caminho, meioX, meioY] = getBezierPath({
     sourceX,
     sourceY,
     targetX,
@@ -41,14 +48,43 @@ export function ArestaSocial({
   });
 
   const aoApagar = (data as { aoApagar?: (id: string) => void } | undefined)?.aoApagar;
+  /*
+   * Valor literal, e não `var(--ss-cinza-400)`: isto vira o ATRIBUTO `stroke` de um elemento SVG,
+   * e atributo de apresentação não resolve variável de CSS. Escrito como `var(...)` o traço
+   * simplesmente não teria cor. É o mesmo `#94a3b8` do token.
+   *
+   * Vermelho no hover avisa QUAL das dez ligações da tela a lixeira vai desfazer.
+   */
+  const cor = sobre ? "#ef4444" : "#94a3b8";
 
   return (
     <>
+      {/*
+        A PONTA DE SETA É DESENHADA AQUI, e não herdada do `markerEnd` padrão.
+        
+        A seta diz a DIREÇÃO: sem ela, uma curva entre dois blocos não conta qual deles vem
+        primeiro, e num fluxo que volta pra trás (uma condição que reencaminha) isso é a diferença
+        entre entender e adivinhar. O marcador é por aresta porque ele muda de cor junto com o
+        traço quando o mouse passa — um marcador global ficaria cinza com a linha vermelha.
+      */}
+      <defs>
+        <marker
+          id={`seta-${id}`}
+          markerWidth={10}
+          markerHeight={10}
+          refX={8}
+          refY={5}
+          orient="auto"
+          markerUnits="userSpaceOnUse"
+        >
+          <path d="M1,1 L8,5 L1,9" fill="none" stroke={cor} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
+        </marker>
+      </defs>
       <BaseEdge
         id={id}
         path={caminho}
-        markerEnd={markerEnd}
-        style={{ ...style, stroke: sobre ? "#ef4444" : undefined, strokeWidth: sobre ? 2 : undefined }}
+        markerEnd={`url(#seta-${id})`}
+        style={{ ...style, stroke: cor, strokeWidth: 2 }}
       />
       {/*
         UM TRAÇO DE 1px NÃO SE ACERTA COM O MOUSE. Este caminho invisível de 18px é a área de
