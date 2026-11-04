@@ -818,3 +818,30 @@ export function FilterBar({
     </div>
   );
 }
+
+/**
+ * O "?" QUE GUARDA A EXPLICAÇÃO.
+ *
+ * Telas de configuração acumulam frases que explicam quando uma opção vale, o que ela não faz, o
+ * que acontece se estiver desligada. Cada uma é útil UMA vez — na primeira leitura — e depois
+ * vira ruído permanente entre a pessoa e o controle que ela veio mexer. Quatro delas empilhadas
+ * fazem a tela parecer documentação, e o que é botão deixa de saltar.
+ *
+ * Então a frase sai da tela e fica aqui: o "?" é discreto, e a explicação aparece ao passar o
+ * mouse ou ao focar pelo teclado. Nada se perde; só deixa de estar sempre aberto.
+ *
+ * É um `<button>` e não um `<span>` de propósito: assim o teclado chega nele, e quem usa leitor
+ * de tela ouve o texto pelo `aria-label` em vez de passar direto por um enfeite.
+ */
+export function Ajuda({ texto }: { texto: string }) {
+  return (
+    <span className="ajuda">
+      <button type="button" className="ajuda-alvo" aria-label={texto}>
+        ?
+      </button>
+      <span className="ajuda-balao" role="tooltip">
+        {texto}
+      </span>
+    </span>
+  );
+}

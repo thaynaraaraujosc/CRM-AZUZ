@@ -15,6 +15,7 @@ import { IconBell, IconSearch } from "@/components/icons";
 import { navEntries } from "@/components/sidebar";
 import { SeletorIdioma } from "@/components/seletor-idioma";
 import { useIdioma } from "@/lib/idioma-context";
+import { useDestinoDoTopo } from "@/lib/topo-da-pagina";
 
 type SearchResult = { label: string; sub: string; href: string };
 
@@ -161,6 +162,7 @@ function NotificationsBell() {
 
 /** Menu horizontal fixo no topo do CRM. Busca global e notificações. */
 export function AppHeader() {
+  const destino = useDestinoDoTopo();
   const { toasts } = useNotificacoes();
   const { toasts: toastsCentralDia } = useCentralDia();
   const pathname = usePathname();
@@ -186,6 +188,13 @@ export function AppHeader() {
   return (
     <header className={`app-header${naTelaInicio ? " app-header-transparente" : ""}`}>
       <GlobalSearch />
+      {/*
+        O ESPAÇO QUE A PÁGINA OCUPA NESTA BARRA.
+        
+        Fica entre a busca e os controles do CRM, e cresce pra empurrar os dois pras pontas. O que
+        aparece aqui é renderizado pela própria página, por portal — ver `topo-da-pagina.tsx`.
+      */}
+      <div className="app-header-acoes" ref={destino?.definirAlvo} />
       <div className="app-header-right">
         <SeletorIdioma />
         <NotificationsBell />

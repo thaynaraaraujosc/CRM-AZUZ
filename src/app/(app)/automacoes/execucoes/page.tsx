@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 
 import { Topbar } from "@/components/ui";
-import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
 import { TabelaExecucoes } from "@/components/automacoes/TabelaExecucoes";
 import type { PainelExecucoes } from "@/app/api/automacoes/execucoes/route";
 import { useIdioma } from "@/lib/idioma-context";
@@ -54,7 +53,6 @@ export default function ExecucoesDoFunilPage() {
           </div>
         }
       />
-      <AbasAutomacoes />
 
       <div className="content">
         <section className="card" style={{ padding: "var(--space-4)" }}>

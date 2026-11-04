@@ -6,6 +6,7 @@ import { ImpersonandoBanner } from "@/components/impersonando-banner";
 import { MainShell } from "@/components/main-shell";
 import { NotificacoesPonte } from "@/components/notificacoes-ponte";
 import { Sidebar } from "@/components/sidebar";
+import { TopoDaPaginaProvider } from "@/lib/topo-da-pagina";
 import { SessionProvider } from "@/components/session-provider";
 import { AutomationFlowProvider } from "@/lib/automation-flow-context";
 import { BibliotecaDocumentosProvider } from "@/lib/biblioteca-documentos-context";
@@ -54,6 +55,7 @@ export default async function AppLayout({
                             <MensagensExtraProvider>
                               <CentralDiaProvider>
                                 <ConfiguracoesProvider>
+                                  <TopoDaPaginaProvider>
                                   <div className="shell">
                                     <NotificacoesPonte />
                                     <Sidebar />
@@ -63,6 +65,7 @@ export default async function AppLayout({
                                       {children}
                                     </MainShell>
                                   </div>
+                                  </TopoDaPaginaProvider>
                                 </ConfiguracoesProvider>
                               </CentralDiaProvider>
                             </MensagensExtraProvider>

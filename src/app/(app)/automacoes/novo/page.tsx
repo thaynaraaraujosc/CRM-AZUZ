@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { Topbar } from "@/components/ui";
-import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
 import { NovaAutomacao } from "@/components/automacoes/NovaAutomacao";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { useFunis } from "@/lib/funis-context";
@@ -109,7 +108,6 @@ export default function NovaAutomacaoComercialPage() {
   return (
     <>
       <Topbar title={traduzir("Nova automação")} />
-      <AbasAutomacoes />
 
       <div className="content">
         <nav className="social-migalhas" aria-label={traduzir("Onde você está")}>

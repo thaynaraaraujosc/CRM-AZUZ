@@ -172,11 +172,21 @@ export function AutomacaoDoFunil({
   funilNome,
   colunas,
   onFechar,
+  semMoldura = false,
 }: {
   funilId: string;
   funilNome?: string;
   colunas: ColunaResumo[];
   onFechar?: () => void;
+  /**
+   * A GRADE SOZINHA, sem o nome do funil em cima nem a coluna de fontes ao lado.
+   *
+   * É como a tela de Automações a usa: lá as duas coisas já estão na barra do topo, e repeti-las
+   * aqui gastaria uma faixa e 260px de largura pra dizer de novo o que está escrito logo acima.
+   * No funil (onde este componente abre dentro da tela do quadro) não há barra nenhuma, então a
+   * moldura continua — é ela que diz de que funil se está falando.
+   */
+  semMoldura?: boolean;
 }) {
   const { t: traduzir } = useIdioma();
   const router = useRouter();
@@ -443,19 +453,22 @@ export function AutomacaoDoFunil({
   }
 
   return (
-    <div className="fauto">
-      <div className="fauto-topo">
-        <strong>{funilNome ?? "Automação do funil"}</strong>
-        {onFechar ? (
-          <button type="button" className="btn ghost" onClick={onFechar}>
-            {traduzir("Voltar")}
-          </button>
-        ) : null}
-      </div>
+    <div className={`fauto${semMoldura ? " fauto-nua" : ""}`}>
+      {!semMoldura ? (
+        <div className="fauto-topo">
+          <strong>{funilNome ?? "Automação do funil"}</strong>
+          {onFechar ? (
+            <button type="button" className="btn ghost" onClick={onFechar}>
+              {traduzir("Voltar")}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
       <MigrarGatilhos aoMigrar={() => void recarregar()} />
 
       <div className="fauto-corpo">
+        {!semMoldura ? (
         <aside className="fauto-lado">
           <h4>{traduzir("Fontes de lead")}</h4>
           {canais.length ? (
@@ -475,6 +488,7 @@ export function AutomacaoDoFunil({
             + Adicionar fonte
           </Link>
         </aside>
+        ) : null}
 
         <div className="fauto-grade">
           <div className="fauto-cab" style={{ gridTemplateColumns: `repeat(${colunas.length}, minmax(240px, 1fr))` }}>

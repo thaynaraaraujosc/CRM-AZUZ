@@ -312,9 +312,6 @@ export function Sidebar() {
   }, [gestaoAtividadeAberta]);
 
   return (
-    <>
-    {/* O vão que segura a coluna enquanto o menu está fixo. Ver `.sidebar-vao` no globals.css. */}
-    {recolhida ? <div className="sidebar-vao" aria-hidden="true" /> : null}
     <aside
       className={`sidebar${recolhida ? " recolhida" : ""}${recolhida && sobreposta ? " sobreposta" : ""}`}
       onMouseEnter={() => recolhida && setSobreposta(true)}
@@ -665,6 +662,5 @@ export function Sidebar() {
           : null}
       </div>
     </aside>
-    </>
   );
 }

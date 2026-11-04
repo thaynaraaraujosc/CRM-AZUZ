@@ -5,7 +5,6 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Topbar } from "@/components/ui";
-import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
 import { PreviaMensagem } from "@/components/automacoes/PreviaMensagem";
 import { type Audiencia } from "@/lib/campanhas/audiencia-tipos";
 import { STATUS_CAMPANHA, STATUS_DESTINATARIO, formatarData } from "@/lib/campanhas/apresentacao";
@@ -136,7 +135,6 @@ export default function DetalheDisparoPage() {
           </div>
         }
       />
-      <AbasAutomacoes />
 
       <div className="content">
         {erro ? <p className="modelo-erro">{erro}</p> : null}

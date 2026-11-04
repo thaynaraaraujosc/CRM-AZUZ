@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
-import { Topbar } from "@/components/ui";
-import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
+import { AcoesNoTopo } from "@/lib/topo-da-pagina";
 import { AssistenteDisparo } from "@/components/automacoes/AssistenteDisparo";
 import { descreverAudiencia } from "@/lib/campanhas/audiencia-tipos";
 import { STATUS_CAMPANHA, contagens, formatarData, type CampanhaResumo } from "@/lib/campanhas/apresentacao";
@@ -64,15 +63,11 @@ export default function DisparosPage() {
 
   return (
     <>
-      <Topbar
-        title={traduzir("Disparo em massa")}
-        actions={
-          <button type="button" className="btn primary" onClick={() => setAssistente(true)}>
-            + Novo disparo
-          </button>
-        }
-      />
-      <AbasAutomacoes />
+      <AcoesNoTopo>
+        <button type="button" className="btn primary" onClick={() => setAssistente(true)}>
+          + Novo disparo
+        </button>
+      </AcoesNoTopo>
 
       <div className="content">
         {aviso ? <div className="tpl-toast">{aviso}</div> : null}

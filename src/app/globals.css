@@ -21577,14 +21577,6 @@ table.tbl .name-cell .r {
   margin-top: var(--space-2);
 }
 
-/* "segue a regra geral": o formulário que ainda não tem regra própria. Em texto miúdo ao lado do
-   botão, e não em etiqueta no cabeçalho — é o estado NORMAL (a maioria segue a geral), e uma
-   etiqueta a mais em cada linha fechada só faz o cabeçalho ficar mais difícil de ler. */
-.fflow-herdado {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
 /*
  * AS PROTEÇÕES DO NÚMERO, agrupadas por assunto.
  *
@@ -21736,7 +21728,7 @@ table.tbl .name-cell .r {
   align-items: center;
   gap: var(--space-3);
   width: 100%;
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-4) var(--space-5);
   border: 0;
   background: none;
   font: inherit;
@@ -21772,13 +21764,16 @@ table.tbl .name-cell .r {
   min-width: 0;
 }
 
+/* 14px era o mesmo corpo do nome de cada formulário lá dentro: título de grupo e item da lista
+   liam-se como o mesmo nível. O título do grupo é o maior texto desta tela. */
 .fgrupo-titulo {
-  font-size: 14px;
-  font-weight: 650;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.3;
 }
 
 .fgrupo-explicacao {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-muted);
 }
 
@@ -21787,13 +21782,13 @@ table.tbl .name-cell .r {
   align-items: center;
   justify-content: center;
   flex: none;
-  min-width: 22px;
-  height: 20px;
-  padding: 0 7px;
+  min-width: 26px;
+  height: 24px;
+  padding: 0 8px;
   border-radius: 999px;
   background: var(--fgrupo-fundo);
   color: var(--fgrupo-cor);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
 }
 
@@ -21807,19 +21802,33 @@ table.tbl .name-cell .r {
   transform: rotate(180deg);
 }
 
+/*
+ * O PISO CINZA EM QUE OS CARTÕES FLUTUAM.
+ *
+ * Grupo branco, formulário quase branco e bloco quase branco eram três degraus dentro de 2% de
+ * luminosidade: nada se destacava de nada, e a tela inteira parecia da mesma cor. É a mesma
+ * receita que o funil usa — coluna cinza, cartão branco — e aqui ela faz cada formulário virar
+ * visivelmente uma coisa separada em que se clica.
+ */
 .fgrupo-corpo {
-  padding: 0 var(--space-3) var(--space-3);
+  padding: var(--space-4) var(--space-4) var(--space-5);
   border-top: 1px solid var(--line-soft);
+  background: var(--surface-1);
 }
 
 .fgrupo-corpo > .fflow-lista {
-  padding-top: var(--space-3);
+  padding-top: 0;
+}
+
+/* Os dois grupos são de origens diferentes, e estavam encostados. */
+.fgrupo + .fgrupo {
+  margin-top: var(--space-5);
 }
 
 .fflow-vazio {
   margin: 0;
   padding: var(--space-4) var(--space-2);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-muted);
   text-align: center;
 }
@@ -21858,7 +21867,8 @@ table.tbl .name-cell .r {
 .fflow-lista {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  /* 6px era quase nada: cinco linhas coladas voltavam a parecer uma tabela. */
+  gap: var(--space-3);
   list-style: none;
   margin: 0;
   padding: 0;
@@ -21869,9 +21879,10 @@ table.tbl .name-cell .r {
    ninguém espera que a linha abra. Com borda e cantos, cada formulário é visivelmente uma coisa
    em que se clica. */
 .fflow-item {
-  border: 1px solid var(--line-soft);
-  border-radius: var(--radius-2);
-  background: var(--surface-1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-3);
+  background: var(--surface-elevated);
+  box-shadow: var(--shadow-sm);
   transition: border-color 0.14s ease, box-shadow 0.14s ease;
 }
 
@@ -21889,7 +21900,7 @@ table.tbl .name-cell .r {
   align-items: center;
   gap: var(--space-3);
   width: 100%;
-  padding: var(--space-3);
+  padding: var(--space-4);
   border: 0;
   border-radius: inherit;
   background: none;
@@ -21906,8 +21917,8 @@ table.tbl .name-cell .r {
 .fflow-nome {
   flex: 1 1 auto;
   min-width: 0;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 650;
   overflow-wrap: anywhere;
 }
 
@@ -21933,8 +21944,8 @@ table.tbl .name-cell .r {
 .fflow-corpo {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
-  padding: 0 var(--space-3) var(--space-3);
+  gap: var(--space-4);
+  padding: 0 var(--space-4) var(--space-4);
 }
 
 /*
@@ -21945,13 +21956,16 @@ table.tbl .name-cell .r {
  * robôs", cada pergunta tem onde ser respondida, e o que é explicação fica visivelmente menor
  * do que o que é controle.
  */
+/* Dentro do cartão branco, o bloco é o degrau recuado; o campo de texto, lá dentro, volta a ser
+   branco. Piso, cartão, bloco, campo: quatro níveis que se distinguem sem nenhuma linha extra. */
 .fflow-bloco {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: var(--space-3);
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--line-soft);
   border-radius: var(--radius-2);
-  background: var(--surface-2);
+  background: var(--surface-1);
 }
 
 .fflow-bloco-topo {
@@ -21966,14 +21980,17 @@ table.tbl .name-cell .r {
 }
 
 .fflow-bloco-titulo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   margin: 0;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 650;
 }
 
 .fflow-bloco-nota {
   margin: 2px 0 0;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.45;
   color: var(--text-muted);
 }
@@ -21986,7 +22003,7 @@ table.tbl .name-cell .r {
   border-radius: var(--radius-2);
   border: 1px solid color-mix(in srgb, var(--danger) 28%, transparent);
   background: color-mix(in srgb, var(--danger) 8%, transparent);
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.45;
 }
 
@@ -21994,9 +22011,13 @@ table.tbl .name-cell .r {
   margin: 0;
 }
 
+/* BRANCO. Era `--surface-1`, o mesmo cinza do bloco em volta: o campo não tinha onde começar, e
+   o texto da mensagem — que é o conteúdo desta tela — flutuava sem moldura. */
 .fflow-mensagem {
-  min-height: 130px;
-  background: var(--surface-1);
+  min-height: 150px;
+  background: var(--surface-elevated);
+  font-size: 14px;
+  line-height: 1.5;
   resize: vertical;
 }
 
@@ -22011,10 +22032,11 @@ table.tbl .name-cell .r {
 
 .fflow-variavel code {
   display: inline-block;
-  padding: 2px 6px;
+  padding: 3px 8px;
   border-radius: var(--radius-2);
   background: var(--surface-2);
-  font-size: 12px;
+  border: 1px solid var(--line-soft);
+  font-size: 13px;
   cursor: help;
 }
 
@@ -25288,42 +25310,21 @@ td.trafego-col-crm:first-of-type {
  * continua sendo os 68px do recolhido e o painel aberto passa por cima.
  */
 /*
- * `fixed`, E NÃO `absolute`.
+ * O MENU EMPURRA O CONTEÚDO AO ABRIR — não passa por cima dele.
  *
- * Com `absolute` ele se posiciona contra o primeiro ancestral posicionado — e como o shell do app
- * não tem nenhum, ele caía contra a página inteira e subia por cima da lista de conversas, com os
- * rótulos atravessando o conteúdo. `fixed` não depende de ancestral nenhum: ele ocupa a coluna da
- * esquerda, de cima a baixo da janela, e o espaço reservado no fluxo continua sendo os 68px.
- */
-/*
- * O MENU RECOLHIDO É FIXO, E UM VÃO SEGURA O LUGAR DELE.
+ * A primeira versão fazia o contrário: o menu era `fixed`, um vão de 68px segurava a coluna e o
+ * painel aberto flutuava sobre a tela, pra que nada se mexesse quando o ponteiro encostasse na
+ * borda. A Thaynara olhou e decidiu o oposto — abrindo por cima, ele tapa a conversa que está
+ * sendo lida, e tapar conteúdo é pior do que deslocá-lo.
  *
- * Fixo porque, ao abrir no hover, ele precisa passar POR CIMA do conteúdo — se empurrasse, a tela
- * inteira deslizaria a cada vez que o ponteiro encostasse na borda esquerda, movendo a coluna que
- * a pessoa está lendo. Mas `fixed` tira o elemento do fluxo, e sem nada no lugar o conteúdo
- * escorregava pra debaixo dele. Daí o `.sidebar-vao`: um bloco de 68px que não desenha nada e só
- * ocupa a coluna, SEMPRE com a mesma largura — abrindo ou fechando, o fluxo não muda um pixel.
+ * Então ele voltou a ser um elemento normal do fluxo: a largura anima de 68px para 216px e o
+ * conteúdo acompanha. É por isso que não há `position` nem `z-index` aqui — a ausência deles é a
+ * decisão.
  */
-.sidebar.recolhida {
-  position: fixed;
-  top: 0;
-  left: 0;
-  height: 100vh;
-  z-index: 60;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-.sidebar-vao {
-  flex: 0 0 68px;
-  width: 68px;
-}
-
 .sidebar.recolhida.sobreposta {
   width: 216px;
   padding-left: var(--space-3);
   padding-right: var(--space-3);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
 }
 
 /*
@@ -25428,4 +25429,250 @@ td.trafego-col-crm:first-of-type {
   margin: 0 0 var(--space-2);
   font-size: 12px;
   color: var(--text-muted);
+}
+
+/* ================= A BARRA DE CIMA DE AUTOMAÇÕES =================
+ *
+ * A tela tinha quatro faixas antes do conteúdo (cabeçalho do CRM, faixa "Automações", abas e a
+ * linha "qual funil você quer automatizar") e um painel lateral de 260px com as fontes de lead.
+ * Sobrava uma janelinha pra grade, que é a única coisa que se vem fazer aqui. Agora é UMA faixa,
+ * e a grade ocupa todo o resto. Ver `BarraDeAutomacoes.tsx`.
+ */
+
+/* O espaço que a página ocupa na faixa do CRM, entre a busca e os controles. `flex: 1` com
+   `justify-content: flex-end` mantém os botões encostados nos controles do CRM, e não soltos no
+   meio: eles pertencem à página, não à barra. */
+.app-header-acoes {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1 1 auto;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.autom-barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: 0 var(--space-6);
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  flex: 0 0 auto;
+}
+
+/* As abas perdem a linha e o respiro próprios: quem os dá agora é a barra. Elas também param de
+   quebrar em duas fileiras — numa faixa de altura fixa, quebrar é empurrar o resto pra fora. */
+/* As abas NÃO encolhem: são a navegação do módulo, e meia palavra cortada ("Disparo em mas…") é
+   pior do que um chip de fonte a menos. Quem cede espaço é o grupo da direita, logo abaixo. */
+.autom-barra .automacoes-abas {
+  border-bottom: none;
+  background: transparent;
+  padding: var(--space-2) 0;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+}
+.autom-barra .automacoes-abas .tab {
+  white-space: nowrap;
+  padding: var(--space-2) var(--space-3);
+}
+.autom-barra-dir {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  /* Encolhe antes das abas, e rola em vez de empurrar: numa janela estreita as fontes somem pra
+     dentro e voltam com um arrasto, sem quebrar a faixa em duas fileiras. */
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: var(--space-2) 0;
+}
+.autom-barra-dir::-webkit-scrollbar {
+  display: none;
+}
+
+/* ---- qual funil a grade mostra ---- */
+.autom-funil {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.autom-funil > span {
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Um botão, não um campo de formulário: aqui não se PREENCHE nada, se troca de visão. Daí a
+   superfície elevada e o cursor de clique em vez da moldura de input. */
+.autom-funil-sel {
+  appearance: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: var(--fw-semibold);
+  padding: 6px 28px 6px 10px;
+  cursor: pointer;
+  max-width: 200px;
+  text-overflow: ellipsis;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 15px) calc(50% + 1px), calc(100% - 10px) calc(50% + 1px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.autom-funil-sel:hover {
+  background-color: var(--surface-hover);
+}
+
+/* ---- de onde chega o lead ---- */
+.autom-fontes {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-left: var(--space-3);
+  border-left: 1px solid var(--line);
+  flex: 0 0 auto;
+}
+
+.autom-fontes-rotulo {
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* O detalhe da conexão (o número, por exemplo) fica no `title`: ele se lê uma vez por mês e não
+   justifica duas linhas de texto permanentes no topo de toda a tela. */
+.autom-fonte-chip {
+  font-size: 12px;
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+.autom-fonte-vazia {
+  color: var(--text-muted);
+  font-weight: var(--fw-regular);
+}
+
+.autom-fonte-mais {
+  font-size: 12px;
+  font-weight: var(--fw-semibold);
+  color: var(--blue);
+  white-space: nowrap;
+}
+
+/* ---- a grade ocupando o que sobrou ---- */
+
+/* Sem respiro e sem rolagem própria: quem rola é a grade lá dentro, e ela vai até a borda. */
+.content-grade {
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.content-grade .fauto,
+.content-grade .fauto-corpo,
+.content-grade .fauto-grade {
+  min-height: 0;
+  height: 100%;
+}
+
+/* Sem o painel lateral, a grade é a única coluna. */
+.fauto-nua .fauto-corpo {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+
+/* A moldura arredondada era o que separava a grade do respiro em volta. Sem respiro, ela vira um
+   contorno solto encostado na borda da janela. */
+.fauto-nua .fauto-grade {
+  border: none;
+  border-radius: 0;
+}
+
+/* ---------------- O "?" que guarda a explicação ----------------
+ *
+ * Ver `Ajuda` em `ui.tsx`. A frase sai da tela e fica aqui dentro: aparece ao passar o mouse ou
+ * ao focar pelo teclado, e some de novo. O balão é posicionado pelo próprio "?" (`absolute`
+ * dentro de um `relative`), sem JavaScript nenhum.
+ */
+.ajuda {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+}
+
+.ajuda-alvo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: none;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  line-height: 1;
+  cursor: help;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.ajuda-alvo:hover,
+.ajuda-alvo:focus-visible {
+  background: var(--surface-active);
+  color: var(--ink);
+}
+
+/* `visibility` e não `display`: assim a transição funciona, e o balão continua fora da árvore de
+   acessibilidade enquanto está escondido. */
+.ajuda-balao {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 80;
+  width: max-content;
+  max-width: 280px;
+  padding: 8px 10px;
+  border-radius: var(--radius-2);
+  background: var(--navy-marca);
+  color: #fff;
+  font-size: 12px;
+  font-weight: var(--fw-regular);
+  line-height: 1.45;
+  text-align: left;
+  white-space: normal;
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--transition-fast), visibility var(--transition-fast);
+  pointer-events: none;
+}
+
+.ajuda:hover .ajuda-balao,
+.ajuda-alvo:focus-visible + .ajuda-balao {
+  opacity: 1;
+  visibility: visible;
 }

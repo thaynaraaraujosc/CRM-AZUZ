@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
-import { Topbar, Toggle } from "@/components/ui";
-import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
+import { Ajuda, Toggle } from "@/components/ui";
+import { AcoesNoTopo } from "@/lib/topo-da-pagina";
 import { ProtecoesDoNumero } from "@/components/automacoes/ProtecoesDoNumero";
 import { IconExpandir } from "@/components/icons";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
@@ -192,20 +192,22 @@ function LinhaDoFormulario({
           <section className="fflow-bloco">
             <div className="fflow-bloco-topo">
               <div>
-                <p className="fflow-bloco-titulo">{traduzir("Confirmação de reunião")}</p>
                 {/*
-                  QUANDO ELA SAI, dito aqui porque nem todo formulário tem reunião.
+                  QUANDO ELA SAI, no "?" e não numa linha cinza fixa.
                   
-                  Um formulário de pesquisa, de inscrição ou de contato não marca horário nenhum — e
-                  nele este interruptor ligado não manda nada. Sem esta linha, "ligada" num
-                  formulário desses é uma promessa que a tela faz e o CRM não cumpre, e não há como
-                  a pessoa descobrir por quê. Mandar mensagem a quem respondeu SEM reunião é outra
-                  coisa, e ela se monta como robô: ver o bloco de baixo.
+                  Nem todo formulário tem reunião: num de pesquisa ou de contato este interruptor
+                  ligado não manda nada, e sem o aviso "ligada" vira uma promessa que o CRM não
+                  cumpre. Mas é explicação de primeira leitura — fixa na tela, ela empilhava com as
+                  outras três e fazia a tela parecer documentação. Mandar mensagem a quem respondeu
+                  SEM reunião é outra coisa, e se monta como robô: ver o bloco de baixo.
                 */}
-                <p className="fflow-bloco-nota">
-                  {traduzir(
-                    "Sai só quando o formulário tiver um campo de agendamento preenchido e a pessoa tiver aceitado receber mensagem.",
-                  )}
+                <p className="fflow-bloco-titulo">
+                  {traduzir("Confirmação de reunião")}
+                  <Ajuda
+                    texto={traduzir(
+                      "Sai só quando o formulário tiver um campo de agendamento preenchido e a pessoa tiver aceitado receber mensagem.",
+                    )}
+                  />
                 </p>
               </div>
               <Toggle defaultOn={ativa} label={traduzir("Confirmação de reunião")} onToggle={setAtiva} />
@@ -252,14 +254,19 @@ function LinhaDoFormulario({
                 >
                   {traduzir("Voltar a seguir a geral")}
                 </button>
-              ) : (
-                <span className="fflow-herdado">{traduzir("Hoje este formulário segue a regra geral.")}</span>
-              )}
+              ) : null}
             </div>
           </section>
 
           <section className="fflow-bloco">
-            <p className="fflow-bloco-titulo">{traduzir("Robôs que respondem a este formulário")}</p>
+            <p className="fflow-bloco-titulo">
+              {traduzir("Robôs que respondem a este formulário")}
+              <Ajuda
+                texto={traduzir(
+                  "É por aqui que se manda mensagem a quem respondeu SEM marcar reunião: um robô com o gatilho “Formulário preenchido”, com este formulário escolhido.",
+                )}
+              />
+            </p>
             {robos.length ? (
               <ul className="fflow-robos">
                 {robos.map((f) => (
@@ -268,9 +275,7 @@ function LinhaDoFormulario({
               </ul>
             ) : (
               <p className="fflow-bloco-nota">
-                {traduzir(
-                  "Nenhum ainda. É por aqui que se manda mensagem a quem respondeu SEM marcar reunião: um robô com o gatilho “Formulário preenchido”, com este formulário escolhido.",
-                )}{" "}
+                {traduzir("Nenhum ainda.")}{" "}
                 <Link href="/automacoes/novo">{traduzir("Criar um")}</Link>
               </p>
             )}
@@ -350,12 +355,12 @@ export default function FormulariosPage() {
 
   return (
     <>
-      {/* Sem subtítulo: o nome da tela já diz de que ela trata, e cada linha diz o resto. */}
-      <Topbar
-        title={traduzir("Formulários")}
-        actions={<Link className="btn primary" href="/automacoes/novo">{traduzir("+ Nova automação")}</Link>}
-      />
-      <AbasAutomacoes />
+      {/* Sem faixa de título: a aba acesa na barra de cima já diz em que tela se está. */}
+      <AcoesNoTopo>
+        <Link className="btn primary" href="/automacoes/novo">
+          {traduzir("+ Nova automação")}
+        </Link>
+      </AcoesNoTopo>
 
       <div className="content">
         {/* As proteções do número vêm antes dos formulários porque valem para todos eles. */}

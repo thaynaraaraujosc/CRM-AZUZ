@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { Topbar } from "@/components/ui";
-import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
+import { AcoesNoTopo } from "@/lib/topo-da-pagina";
 import { EditorTemplate, type TemplateSalvo } from "@/components/automacoes/EditorTemplate";
 import { PreviaMensagem } from "@/components/automacoes/PreviaMensagem";
 import { CANAIS_TEMPLATE_OFERECIDOS, LIMITES, STATUS_LABEL, type CanalTemplate } from "@/lib/templates/regras";
@@ -77,15 +76,17 @@ export default function TemplatesPage() {
 
   return (
     <>
-      <Topbar
-        title={traduzir("Templates")}
-        actions={
-          <button type="button" className="btn primary" onClick={() => setEditando("novo")} disabled={!algumCanal} title={!algumCanal ? traduzir("Conecte um canal em Configurações → Outras integrações") : undefined}>
-            + Novo template
-          </button>
-        }
-      />
-      <AbasAutomacoes />
+      <AcoesNoTopo>
+        <button
+          type="button"
+          className="btn primary"
+          onClick={() => setEditando("novo")}
+          disabled={!algumCanal}
+          title={!algumCanal ? traduzir("Conecte um canal em Configurações → Outras integrações") : undefined}
+        >
+          + Novo template
+        </button>
+      </AcoesNoTopo>
 
       <div className="content">
         {aviso ? <div className="tpl-toast">{aviso}</div> : null}
