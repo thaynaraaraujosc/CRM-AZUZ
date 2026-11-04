@@ -24,6 +24,7 @@ import { podeIniciar } from "./limites";
 import { proximaAresta, rodarExecucao, saidaDaResposta, type FimDaRodada } from "./motor-estado";
 import { publicarVersao, versaoAtualPublicada, versaoPorId, type VersaoPublicada } from "./versoes";
 import { carregarExpediente } from "@/lib/expediente-servidor";
+import { gatilhoDaExecucao } from "@/lib/automation-flow/gatilhos-do-fluxo";
 
 /**
  * A porta de entrada do motor com estado: começar uma execução, continuar uma que esperava
@@ -35,9 +36,22 @@ import { carregarExpediente } from "@/lib/expediente-servidor";
  */
 
 
-/** O bloco de gatilho e a primeira aresta que sai dele. Onde a execução realmente começa. */
-function primeiroNoDepoisDoGatilho(versao: VersaoPublicada): { gatilho: FlowNode | null; alvoId: string } | null {
-  const gatilho = versao.nodes.find((n) => n.category === "gatilho");
+/**
+ * O bloco de gatilho e a primeira aresta que sai dele. Onde a execução realmente começa.
+ *
+ * COM VÁRIOS GATILHOS no mesmo fluxo, qual deles é não é detalhe: dois blocos do mesmo tipo
+ * (dois comentários filtrando palavras diferentes) podem levar a passos diferentes. Quem decidiu
+ * foi o disparo, que conhecia o evento inteiro; aqui o id vem pronto (`noId`). Sem ele — porque a
+ * versão publicada é antiga, ou porque quem chamou não sabia —, o tipo serve de pista, e o
+ * primeiro bloco é o último recurso: com um gatilho só, que é a esmagadora maioria, é o certo.
+ */
+function primeiroNoDepoisDoGatilho(
+  versao: VersaoPublicada,
+  tipoGravado?: string,
+  noId?: string,
+): { gatilho: FlowNode | null; alvoId: string } | null {
+  const porId = noId ? versao.nodes.find((n) => n.id === noId && n.category === "gatilho") : undefined;
+  const gatilho = porId ?? gatilhoDaExecucao(versao.nodes, tipoGravado);
   if (gatilho) {
     const aresta = versao.edges.find((e) => e.source === gatilho.id);
     return aresta ? { gatilho, alvoId: aresta.target } : null;
@@ -61,6 +75,8 @@ export async function iniciarFluxoComEstado(params: {
   workspaceId: string;
   fluxoId: string;
   gatilho: string;
+  /** O id do bloco de gatilho por onde o evento entrou, quando quem disparou já sabe qual é. */
+  gatilhoNoId?: string;
   /** Configurações do fluxo: dizem se ele pode rodar de novo pra este contato. */
   configuracoes?: ConfiguracoesFluxo | null;
   /** Estado atual do fluxo, pra publicar uma versão quando ele ainda não tem nenhuma. */
@@ -91,7 +107,7 @@ export async function iniciarFluxoComEstado(params: {
   }
   if (!versao) return null;
 
-  const inicio = primeiroNoDepoisDoGatilho(versao);
+  const inicio = primeiroNoDepoisDoGatilho(versao, params.gatilho, params.gatilhoNoId);
   if (!inicio) return null;
 
   // As regras de "uma vez por contato", "não iniciar se já está no fluxo" e "cancelar a execução

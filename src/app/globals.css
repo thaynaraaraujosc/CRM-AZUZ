@@ -25844,3 +25844,151 @@ td.trafego-col-crm:first-of-type {
   border: 2px solid var(--ss-cinza-400, #94a3b8);
   box-shadow: none;
 }
+
+/* ---------------- A gaveta de gatilhos: caixas, etapas e palavras ----------------
+ *
+ * Ver `GatilhosDoSocial`. A escolha virou múltipla, e o que vem depois dela é uma etapa por
+ * pergunta em aberto. O que está aqui é só o que a versão de um gatilho só não precisava.
+ */
+
+/* Caixa de marcar, e não bolinha: a forma conta a regra antes do primeiro clique, e agora a regra
+   é "pode marcar quantos quiser". */
+.gat-marca-caixa {
+  border-radius: 6px;
+}
+
+.gat-item.on .gat-marca-caixa {
+  border-width: 1.5px;
+  border-color: var(--ss-azul, #0028fe);
+  background: var(--ss-azul, #0028fe);
+  /* O "✓" como desenho de borda: duas linhas giradas, sem depender de fonte de ícone. */
+  position: relative;
+}
+
+.gat-item.on .gat-marca-caixa::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  width: 5px;
+  height: 9px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* --- A barra de etapas --- */
+.gat-progresso {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: var(--space-3) var(--space-4) 0;
+}
+
+.gat-progresso-texto {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.gat-progresso-trilho {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--ss-suave, #f1f5f9);
+  overflow: hidden;
+}
+
+.gat-progresso-barra {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--ss-azul, #0028fe);
+  /* A barra ANDA entre uma etapa e outra. Saltar de 25% pra 50% não diz que houve avanço; a
+     transição diz, e é ela que faz a gaveta parecer um caminho e não quatro telas soltas. */
+  transition: width var(--transition-base);
+}
+
+/*
+ * CADA ETAPA ENTRA DESLIZANDO DA DIREITA.
+ *
+ * Sem isso, trocar de etapa é a tela inteira se substituindo num quadro — e a pessoa não sabe se
+ * avançou, voltou ou se a gaveta recarregou. O movimento curto diz a direção. A `key` da etapa no
+ * React remonta o bloco, que é o que faz a animação tocar a cada troca.
+ */
+.gat-etapa {
+  animation: gat-entra var(--transition-base) ease-out;
+}
+
+@keyframes gat-entra {
+  from {
+    opacity: 0;
+    transform: translateX(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* --- Palavras-chave --- */
+.gat-nota {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.gat-palavras {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: var(--space-3) 0;
+}
+
+.gat-palavra {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px 5px 10px;
+  border-radius: 999px;
+  background: var(--ss-azul-suave, #e7e8ff);
+  color: #0020ad;
+  font-size: 13px;
+  font-weight: var(--fw-semibold);
+}
+
+.gat-palavra button {
+  display: inline-flex;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.gat-palavra button:hover {
+  opacity: 1;
+}
+
+/* "Qualquer palavra-chave" é o estado padrão, e é informação: sem palavra nenhuma a automação
+   vale pra qualquer texto. Escrito como pastilha apagada, e não como texto solto, ele ocupa o
+   mesmo lugar que as palavras ocupariam — a lista não "pula" ao receber a primeira. */
+.gat-palavra-vazia {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border: 1px dashed var(--ss-cinza-300, #cbd5e1);
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.gat-palavra-nova {
+  display: flex;
+  gap: 6px;
+  margin-bottom: var(--space-3);
+}
+
+.gat-palavra-nova .input {
+  flex: 1;
+  min-width: 0;
+}

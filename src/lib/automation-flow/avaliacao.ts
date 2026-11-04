@@ -18,6 +18,7 @@ import type {
   FluxoAutomacao,
   GrupoCondicoes,
 } from "./types";
+import { nosDeGatilho, tipoDoGatilhoQueCasa } from "./gatilhos-do-fluxo";
 
 /* -------------------------------------------------------------------------- */
 /* Contrato de execução                                                      */
@@ -211,10 +212,27 @@ export function textoCasaComPalavras(texto: string, config: ConfiguracaoDePalavr
   });
 }
 
+/**
+ * O evento aciona ESTE fluxo?
+ *
+ * Com vários blocos de gatilho, basta UM deles aceitar: a automação responde a comentário E a
+ * resposta de story, e quem chega por qualquer um dos dois entra no mesmo primeiro passo.
+ *
+ * Quem precisa saber POR QUAL deles o evento entrou (o disparo, pra achar a aresta certa) usa
+ * `avaliarNoDeGatilho` direto, com o bloco em mãos.
+ */
 export function avaliarGatilho(fluxo: FluxoAutomacao, evento: EventoAutomacao): boolean {
-  const noGatilho = fluxo.nodes.find((n) => n.category === "gatilho");
-  if (!noGatilho) return false;
-  if (noGatilho.type !== evento.tipo) return false;
+  return nosDeGatilho(fluxo.nodes).some((no) => avaliarNoDeGatilho(fluxo, no, evento));
+}
+
+/** O mesmo teste, para UM bloco de gatilho escolhido. */
+export function avaliarNoDeGatilho(
+  fluxo: FluxoAutomacao,
+  noGatilho: FlowNode,
+  evento: EventoAutomacao,
+): boolean {
+  if (noGatilho.category !== "gatilho") return false;
+  if (!tipoDoGatilhoQueCasa(evento.tipo, noGatilho.type)) return false;
 
   const data = noGatilho.data as {
     funilId?: string;

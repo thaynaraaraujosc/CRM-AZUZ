@@ -111,8 +111,20 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
 
   return (
     <div className={classes} data-node-id={id}>
+      {/*
+        O LADO POR ONDE A LIGAÇÃO ENTRA depende do sentido do canvas.
+        
+        O funil lê de cima pra baixo: a ligação entra por cima. O Social Seller lê da esquerda pra
+        direita, como no ManyChat — a conversa acontece numa linha, e o passo seguinte fica ao
+        lado. Mudar o lado do ponto muda também por onde a curva sai e entra, porque é dele que o
+        React Flow tira a direção da aresta.
+      */}
       {temEntrada(flowNode.category) ? (
-        <Handle type="target" position={Position.Top} className="flow-handle" />
+        <Handle
+          type="target"
+          position={area === "social" ? Position.Left : Position.Top}
+          className="flow-handle"
+        />
       ) : null}
 
       {/*
@@ -284,7 +296,11 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
           {/* "Próximo passo" escrito: o ponto de conexão sozinho não diz o que ele é, e quem
               nunca montou um fluxo não descobre que se arrasta dali pra ligar no bloco seguinte. */}
           <span className="flow-node-proximo">{traduzir("Próximo passo")}</span>
-          <Handle type="source" position={Position.Bottom} className="flow-handle" />
+          <Handle
+            type="source"
+            position={area === "social" ? Position.Right : Position.Bottom}
+            className="flow-handle"
+          />
           {!(saidasConectadas?.has("__default__") ?? false) && onAdicionarApos ? (
             <button
               type="button"

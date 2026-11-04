@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { TIPOS_DE_GATILHO_DE_TEMPO } from "@/lib/automacoes/gatilho-tipo";
 import { dispararAutomacoesDoCrm } from "@/lib/automation-flow/disparar-no-servidor";
 import type { FluxoAutomacao } from "@/lib/automation-flow/types";
 import { ehVazio } from "../vazio";
@@ -20,14 +21,9 @@ import { tipoDoGatilhoDosNodes } from "./gatilho-tipo";
  * não uma vez por minuto. Mesmo a varredura passando 1.440 vezes por dia por cima do mesmo
  * contato.
  */
-const TIPOS_DE_TEMPO = [
-  "aniversario",
-  "data_personalizada",
-  "horario_programado",
-  "lead_parado_etapa",
-  "tarefa_vencida",
-  "lead_nao_respondeu",
-] as const;
+/* A lista mora em `gatilho-tipo.ts`, que é o outro lado desta moeda: lá ela decide o que vai pra
+   coluna `gatilhoTipo`, aqui decide o que a varredura procura nela. Separadas, divergiriam. */
+const TIPOS_DE_TEMPO = TIPOS_DE_GATILHO_DE_TEMPO;
 
 type GatilhoDeTempo = (typeof TIPOS_DE_TEMPO)[number];
 
@@ -99,8 +95,12 @@ export async function rodarGatilhosDeTempo(agora = new Date()): Promise<{ dispar
 
   for (const linha of fluxos) {
     const fluxo = linha as unknown as FluxoAutomacao;
-    const gatilho = fluxo.nodes?.find((n) => n.category === "gatilho");
-    if (!gatilho || !TIPOS_DE_TEMPO.includes(gatilho.type as GatilhoDeTempo)) continue;
+    /* O fluxo pode ter vários gatilhos; o que interessa aqui é o de RELÓGIO. Pegar o primeiro
+       faria um fluxo "comentário + todo dia às 12h" ser descartado nesta linha. */
+    const gatilho = fluxo.nodes?.find(
+      (n) => n.category === "gatilho" && TIPOS_DE_TEMPO.includes(n.type as GatilhoDeTempo),
+    );
+    if (!gatilho) continue;
 
     const data = (gatilho.data ?? {}) as Record<string, unknown>;
     // Só os gatilhos de HORA DO DIA respeitam o horário marcado. "Lead não respondeu em 2 horas" e

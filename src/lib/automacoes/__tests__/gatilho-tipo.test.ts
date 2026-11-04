@@ -35,3 +35,26 @@ describe("tipo do gatilho a partir dos nodes", () => {
     expect(tipoDoGatilhoDosNodes([{ category: "gatilho" }])).toBe("");
   });
 });
+
+/**
+ * Com vários gatilhos, a coluna tem que carregar o de RELÓGIO — ela serve só pra varredura de
+ * minuto em minuto decidir se olha este fluxo. Guardar "comentário" num fluxo que também dispara
+ * às 12h faria a varredura pular o fluxo, e o disparo das 12h não aconteceria.
+ */
+describe("tipoDoGatilhoDosNodes com vários gatilhos", () => {
+  it("o gatilho de tempo ganha do que vem primeiro", () => {
+    const nodes = [
+      { id: "g1", category: "gatilho", type: "comentario_instagram" },
+      { id: "g2", category: "gatilho", type: "horario_programado" },
+    ];
+    expect(tipoDoGatilhoDosNodes(nodes)).toBe("horario_programado");
+  });
+
+  it("sem gatilho de tempo, continua sendo o primeiro", () => {
+    const nodes = [
+      { id: "g1", category: "gatilho", type: "comentario_instagram" },
+      { id: "g2", category: "gatilho", type: "instagram_story_respondido" },
+    ];
+    expect(tipoDoGatilhoDosNodes(nodes)).toBe("comentario_instagram");
+  });
+});

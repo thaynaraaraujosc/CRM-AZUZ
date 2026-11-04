@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { idDeCardSemChave, idDoCard } from "@/lib/funis/id-do-card";
 import { ehChaveDuplicada } from "@/lib/prisma-erros";
-import { avaliarGatilho, type EventoAutomacao } from "@/lib/automation-flow/avaliacao";
+import { avaliarNoDeGatilho, type EventoAutomacao } from "@/lib/automation-flow/avaliacao";
+import { gatilhosQueCasam } from "@/lib/automation-flow/gatilhos-do-fluxo";
 import { anotarNaLinhaDoTempo, marcarExecucaoDeAutomacao } from "@/lib/integracoes/instagram-eventos";
 import type { FluxoAutomacao } from "@/lib/automation-flow/types";
 import { enviarTextoPeloCanal } from "@/lib/conversas/enviar-pelo-canal";
@@ -173,22 +174,20 @@ async function dispararAutomacoes(params: {
     // uma conversa pensada pra outro canal.
     if (!areaCombina(fluxo, areaDoEvento)) continue;
 
-    // Um evento pode casar com mais de um bloco de gatilho. Uma mensagem que chega serve pra
-    // "Mensagem recebida", pra "Palavra-chave recebida" (a filtragem por palavra é do próprio
-    // bloco) e pra "Lead respondeu". São três formas de dizer a mesma coisa, e quem monta o fluxo
-    // escolhe a que faz sentido pra ela. Sem isto, um fluxo com o bloco "Palavra-chave recebida"
-    // simplesmente nunca disparava: o tipo do evento não batia com o tipo do bloco.
-    const noGatilhoDoFluxo = fluxo.nodes.find((n) => n.category === "gatilho");
-    const tipoAceito = tipoDoGatilhoQueCasa(params.tipoGatilho, noGatilhoDoFluxo?.type);
-    if (!tipoAceito) continue;
-
     /*
-     * DE QUAL FORMULÁRIO. O bloco "Formulário preenchido" sempre teve este campo e ninguém o lia,
-     * porque o disparo não mandava de qual formulário o evento vinha — então todo robô de
-     * formulário respondia a todo formulário, do CRM e do Flow. Ver `formulario-do-gatilho.ts`.
+     * QUAL DOS BLOCOS DE GATILHO este evento aciona.
+     *
+     * Dois motivos para haver mais de um candidato. Um evento pode casar com tipos diferentes —
+     * uma mensagem que chega serve pra "Mensagem recebida", "Palavra-chave recebida" e "Lead
+     * respondeu", três formas de dizer a mesma coisa. E o fluxo pode ter VÁRIOS blocos de gatilho
+     * (ver `gatilhos-do-fluxo.ts`): a mesma automação responde a comentário e a resposta de story.
+     *
+     * Os filtros abaixo são por BLOCO, não por fluxo: o formulário escolhido, as palavras, a
+     * publicação, o story. Por isso a busca é um laço que para no primeiro bloco que aceita tudo,
+     * em vez de pegar o primeiro bloco e testar o fluxo inteiro contra ele.
      */
-    const formularioDoBloco = (noGatilhoDoFluxo?.data as { formularioId?: string } | undefined)?.formularioId;
-    if (!gatilhoServeAoFormulario(formularioDoBloco, params.formularioId)) continue;
+    const candidatos = gatilhosQueCasam(fluxo.nodes, params.tipoGatilho);
+    if (!candidatos.length) continue;
 
     // A etapa é a dona do gatilho quando existe um gatilho de etapa apontando pra este fluxo.
     // Sem esta checagem, um fluxo com bloco de gatilho E linha em GatilhoEtapa dispararia DUAS
@@ -197,7 +196,7 @@ async function dispararAutomacoes(params: {
       continue;
     }
 
-    const evento = {
+    const evento = (tipoAceito: string) => ({
       tipo: tipoAceito as EventoAutomacao["tipo"],
       contatoNome,
       canal: canalDoGatilho(canal),
@@ -206,22 +205,39 @@ async function dispararAutomacoes(params: {
       ...(params.etapaId ? { etapaId: params.etapaId } : {}),
       ...(params.publicacaoId ? { publicacaoId: params.publicacaoId } : {}),
       ...(params.storyId ? { storyId: params.storyId } : {}),
-    };
-    if (!avaliarGatilho(fluxo, evento)) continue;
+    });
 
-    // O gatilho tem um canal escolhido no bloco; um fluxo de WhatsApp não pode responder no
-    // Instagram só porque chegou mensagem de lá.
-    //
-    // A comparação normaliza os dois lados, e isso NÃO é preciosismo: os blocos de gatilho do
-    // Instagram guardam `canal: "Instagram"` com maiúscula, e a conversa chega em minúscula. Com
-    // a comparação crua, todo fluxo de Instagram criado pela biblioteca era descartado aqui, em
-    // silêncio: o gatilho existia, o evento chegava, e nada acontecia.
-    const noGatilho = fluxo.nodes.find((n) => n.category === "gatilho");
-    const canalDoFluxo = (noGatilho?.data as { canal?: string } | undefined)?.canal;
-    if (canal !== "CRM" && canalDoFluxo && !mesmoCanal(canalDoFluxo, canal)) continue;
+    /*
+     * O PRIMEIRO BLOCO QUE ACEITA TUDO, e é ele que decide por onde a execução começa.
+     *
+     * Cada checagem aqui é do bloco, não do fluxo:
+     *
+     * - DE QUAL FORMULÁRIO. O bloco "Formulário preenchido" sempre teve este campo e ninguém o
+     *   lia, porque o disparo não mandava de qual formulário o evento vinha — então todo robô de
+     *   formulário respondia a todo formulário, do CRM e do Flow.
+     * - AS CONDIÇÕES DO BLOCO (palavras, publicação, story, janela de horário).
+     * - O CANAL escrito no bloco: um fluxo de WhatsApp não pode responder no Instagram só porque
+     *   chegou mensagem de lá. A comparação normaliza os dois lados, e isso NÃO é preciosismo: os
+     *   blocos do Instagram guardam `canal: "Instagram"` com maiúscula e a conversa chega em
+     *   minúscula — com a comparação crua, todo fluxo de Instagram da biblioteca era descartado
+     *   aqui, em silêncio.
+     * - TER SAÍDA. Bloco de gatilho sem aresta não leva a passo nenhum.
+     */
+    let escolhido: { no: (typeof fluxo.nodes)[number]; tipoAceito: string; aresta: (typeof fluxo.edges)[number] } | null =
+      null;
+    for (const { no, tipoAceito } of candidatos) {
+      const dadosDoBloco = no.data as { formularioId?: string; canal?: string } | undefined;
+      if (!gatilhoServeAoFormulario(dadosDoBloco?.formularioId, params.formularioId)) continue;
+      if (!avaliarNoDeGatilho(fluxo, no, evento(tipoAceito))) continue;
+      const canalDoBloco = dadosDoBloco?.canal;
+      if (canal !== "CRM" && canalDoBloco && !mesmoCanal(canalDoBloco, canal)) continue;
+      const aresta = fluxo.edges.find((e) => e.source === no.id);
+      if (!aresta) continue;
+      escolhido = { no, tipoAceito, aresta };
+      break;
+    }
+    if (!escolhido) continue;
 
-    const primeiraAresta = fluxo.edges.find((e) => e.source === noGatilho?.id);
-    if (!primeiraAresta) continue;
 
     // Trava de idempotência: o mesmo comentário nunca executa o mesmo fluxo duas vezes. A Meta
     // reenvia webhook rotineiramente, e sem isto a pessoa receberia a mesma resposta repetida.
@@ -243,6 +259,15 @@ async function dispararAutomacoes(params: {
         workspaceId,
         fluxoId: linha.id,
         gatilho: params.tipoGatilho,
+        /*
+         * POR QUAL BLOCO o evento entrou.
+         *
+         * Com vários gatilhos no mesmo fluxo, o tipo já não identifica o bloco: dois gatilhos de
+         * comentário filtrando palavras diferentes têm o mesmo tipo e saídas que podem ir pra
+         * passos diferentes. Quem acabou de escolher o bloco foi o laço acima, e passar o id é o
+         * que impede a execução de recomeçar essa decisão com menos informação do que ela tinha.
+         */
+        gatilhoNoId: escolhido.no.id,
         configuracoes: linha.configuracoes as never,
         publicarSeFaltar: {
           versao: Math.max(1, Number(linha.versaoAtual ?? 1)),
@@ -298,29 +323,6 @@ export function areaCombina(fluxo: FluxoAutomacao, areaDoEvento: AreaAutomacao):
   return fluxo.area === areaDoEvento;
 }
 
-/**
- * Que tipo de gatilho este evento consegue acionar neste fluxo.
- *
- * Devolve o tipo a usar na avaliação, ou `null` quando o bloco de gatilho do fluxo não tem nada a
- * ver com o evento. Existe porque "chegou uma mensagem" é o mesmo acontecimento para três blocos
- * diferentes, e antes só um deles era considerado.
- */
-function tipoDoGatilhoQueCasa(tipoDoEvento: string, tipoDoBloco: string | undefined): string | null {
-  if (!tipoDoBloco) return null;
-  if (tipoDoBloco === tipoDoEvento) return tipoDoEvento;
-
-  const equivalentes: Record<string, string[]> = {
-    // "Lead respondeu" só vale quando a conversa já existia, mas o CRM não distingue isso hoje.
-    // E deixar de fora seria pior: o bloco existe na biblioteca e nunca dispararia.
-    //
-    // `instagram_direct_recebido` é o mesmo acontecimento visto pela área social: chegou mensagem.
-    // Ele existe como bloco separado porque na biblioteca do Instagram os gatilhos genéricos do
-    // funil não aparecem, e sem ele não haveria como montar um robô que responde um Direct comum.
-    // A filtragem por palavra é do próprio bloco, igual à de "Palavra-chave recebida".
-    mensagem_recebida: ["palavra_chave", "lead_respondeu", "instagram_direct_recebido"],
-  };
-  return equivalentes[tipoDoEvento]?.includes(tipoDoBloco) ? tipoDoBloco : null;
-}
 
 /** O gatilho guarda o canal em minúsculas ("whatsapp"/"instagram"); a conversa guarda o rótulo. */
 function canalDoGatilho(canalDaConversa: string): string {

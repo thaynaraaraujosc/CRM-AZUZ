@@ -138,11 +138,34 @@ function alturaDoNo(node: FlowRFNode): number {
 }
 
 /** Recalcula a posição de todo mundo em camadas (dagre, topo→baixo): usado pelo botão "organizar automaticamente". */
-export function autoLayout(nodes: FlowRFNode[], edges: FlowRFEdge[]): FlowRFNode[] {
+/**
+ * Organiza o fluxo. `direcao` escolhe o sentido da leitura.
+ *
+ * "TB" (de cima pra baixo) é o do funil, e sempre foi o único. "LR" (da esquerda pra direita) é o
+ * do Social Seller, e veio da referência: no ManyChat o passo seguinte fica ao LADO, e a ligação
+ * sai pela lateral do bloco. Num fluxo de atendimento, que é uma conversa, ler na horizontal é
+ * ler na ordem em que as mensagens acontecem.
+ */
+export function autoLayout(
+  nodes: FlowRFNode[],
+  edges: FlowRFEdge[],
+  direcao: "TB" | "LR" = "TB",
+): FlowRFNode[] {
   const g = new dagre.graphlib.Graph();
   // `nodesep` sobe junto: com blocos altos lado a lado, 70px de folga lateral fazia dois ramos
   // vizinhos parecerem colados mesmo sem se sobrepor.
-  g.setGraph({ rankdir: "TB", nodesep: 90, ranksep: 140, marginx: 40, marginy: 40 });
+  //
+  // Na horizontal os papéis se invertem: `ranksep` passa a ser a distância ENTRE um passo e o
+  // seguinte (que precisa caber a curva da ligação) e `nodesep` a distância entre dois ramos
+  // paralelos (que são blocos altos, e por isso pedem mais folga).
+  const horizontal = direcao === "LR";
+  g.setGraph({
+    rankdir: direcao,
+    nodesep: horizontal ? 60 : 90,
+    ranksep: horizontal ? 120 : 140,
+    marginx: 40,
+    marginy: 40,
+  });
   g.setDefaultEdgeLabel(() => ({}));
 
   nodes.forEach((n) => g.setNode(n.id, { width: LARGURA_NO, height: alturaDoNo(n) }));

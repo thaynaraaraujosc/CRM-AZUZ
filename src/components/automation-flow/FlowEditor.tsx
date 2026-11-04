@@ -465,7 +465,11 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     const bloco = BLOCOS_DISPONIVEIS.find((b) => b.tipo === tipo);
     const origem = rfNodes.find((n) => n.id === nodeOrigemId);
     if (!bloco || !origem) return;
-    const pos = { x: origem.position.x, y: origem.position.y + 170 };
+    /* O passo seguinte nasce AO LADO no Social Seller e ABAIXO no funil: no mesmo sentido em que
+       a pessoa lê o fluxo. Nascer no sentido errado obriga a arrastar todo bloco criado. */
+    const pos = ehSocial
+      ? { x: origem.position.x + 380, y: origem.position.y }
+      : { x: origem.position.x, y: origem.position.y + 170 };
     const novoDomain: DomainFlowNode = {
       id: novoIdNo(),
       type: tipo,
@@ -618,7 +622,8 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   }
 
   function organizarAutomaticamente() {
-    const novo = autoLayout(rfNodes, rfEdges);
+    // O Social Seller lê da esquerda pra direita; o funil, de cima pra baixo. Ver `autoLayout`.
+    const novo = autoLayout(rfNodes, rfEdges, ehSocial ? "LR" : "TB");
     setRfNodes(novo);
     persist(novo, rfEdges);
     requestAnimationFrame(() => centralizarTudo());
@@ -688,6 +693,74 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
    * As setas que SAEM são descartadas de propósito: as saídas do tipo novo são outras, e uma
    * seta apontando pra um handle que não existe mais é um caminho que nunca é seguido.
    */
+  /**
+   * TROCA O CONJUNTO INTEIRO DE GATILHOS DO FLUXO.
+   *
+   * A gaveta devolve a lista marcada, e não uma mudança: "estes são os gatilhos desta automação".
+   * Reconciliar aqui é o que permite marcar dois e desmarcar um sem a gaveta precisar saber o que
+   * havia antes.
+   *
+   * O QUE É PRESERVADO: o bloco de um gatilho que continua marcado mantém o MESMO id. Trocar o id
+   * cortaria a aresta que sai dele, e com ela o caminho inteiro montado depois — a automação
+   * perderia os passos por causa de uma caixinha desmarcada do lado.
+   *
+   * O QUE É LIGADO: todo gatilho novo recebe uma aresta pro mesmo primeiro passo dos que já
+   * existiam. É isso que faz "responde a comentário E a story" ser uma automação só em vez de
+   * duas: dois começos, um caminho.
+   */
+  function aplicarGatilhos(escolhas: { tipo: FlowNodeType; data: Record<string, unknown> }[]) {
+    const antigos = rfNodes.filter((n) => n.data.flowNode.category === "gatilho");
+    const primeiroPasso = rfEdges.find((e) => antigos.some((g) => g.id === e.source))?.target;
+
+    const porTipo = new Map(antigos.map((n) => [n.data.flowNode.type, n]));
+    const usados = new Set<string>();
+
+    const novosGatilhos: FlowRFNode[] = escolhas.map((escolha, i) => {
+      const bloco = BLOCOS_DISPONIVEIS.find((b) => b.tipo === escolha.tipo);
+      const reaproveitado = porTipo.get(escolha.tipo);
+      if (reaproveitado) usados.add(reaproveitado.id);
+      const id = reaproveitado?.id ?? novoIdNo();
+      // Empilhados numa coluna à esquerda: todos são começos, e começo que fica no meio do
+      // desenho faz a pessoa procurar por onde o fluxo entra.
+      const position = reaproveitado?.position ?? { x: 80, y: 80 + i * 190 };
+      const domain: DomainFlowNode = {
+        id,
+        type: escolha.tipo,
+        category: "gatilho",
+        position,
+        data: { ...(bloco?.dataPadrao() as Record<string, unknown> | undefined), ...escolha.data },
+      };
+      return { id, type: "gatilho", position, data: { flowNode: domain, problemas: [] } };
+    });
+
+    const idsNovos = new Set(novosGatilhos.map((n) => n.id));
+    const semGatilhos = rfNodes.filter((n) => n.data.flowNode.category !== "gatilho");
+    const novoNodes = [...novosGatilhos, ...semGatilhos];
+
+    // Arestas de gatilhos que saíram do conjunto vão junto com eles.
+    const edgesMantidas = rfEdges.filter(
+      (e) => !antigos.some((g) => g.id === e.source) || idsNovos.has(e.source),
+    );
+    const novoEdges = [...edgesMantidas];
+    if (primeiroPasso) {
+      novosGatilhos.forEach((g) => {
+        if (novoEdges.some((e) => e.source === g.id)) return;
+        novoEdges.push({
+          id: novoIdAresta(),
+          source: g.id,
+          target: primeiroPasso,
+          type: "smoothstep",
+          markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16 },
+        });
+      });
+    }
+
+    setRfNodes(novoNodes);
+    setRfEdges(novoEdges);
+    setSelectedNodeIds(novosGatilhos.length ? [novosGatilhos[0].id] : []);
+    persist(novoNodes, novoEdges);
+  }
+
   function trocarTipoDoNode(nodeId: string, tipo: FlowNodeType, data: Record<string, unknown>) {
     const bloco = BLOCOS_DISPONIVEIS.find((b) => b.tipo === tipo);
     if (!bloco) return;
@@ -1394,12 +1467,12 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
 
           {escolherGatilhoAberto && ehSocial ? (
             <GatilhosDoSocial
-              gatilhoAtual={domainNodesAtuais.find((n) => n.category === "gatilho")?.type}
+              gatilhosAtuais={domainNodesAtuais
+                .filter((n) => n.category === "gatilho")
+                .map((n) => ({ tipo: n.type, data: (n.data ?? {}) as Record<string, unknown> }))}
               onFechar={() => setEscolherGatilhoAberto(false)}
-              onEscolher={(tipo) => {
-                const atual = rfNodes.find((n) => n.data.flowNode.category === "gatilho");
-                if (atual) trocarTipoDoNode(atual.id, tipo, {});
-                else adicionarBloco(tipo, { x: 80, y: 80 });
+              onEscolher={(escolhas) => {
+                aplicarGatilhos(escolhas);
                 setEscolherGatilhoAberto(false);
               }}
             />
