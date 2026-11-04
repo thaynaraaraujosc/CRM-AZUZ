@@ -645,6 +645,32 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     persist(novoNodes, novoEdges);
   }
 
+  /** Grava um campo solto nos dados do bloco (canal, por ora). */
+  function editarCampoDoBloco(nodeId: string, campo: string, valor: unknown) {
+    const novoNodes = rfNodes.map((n) =>
+      n.id === nodeId
+        ? {
+            ...n,
+            data: {
+              ...n.data,
+              flowNode: { ...n.data.flowNode, data: { ...(n.data.flowNode.data ?? {}), [campo]: valor } },
+            },
+          }
+        : n,
+    );
+    setRfNodes(novoNodes);
+    persist(novoNodes, rfEdges);
+  }
+
+  /** Tira a ligação que sai desta saída. Uma saída tem no máximo um caminho. */
+  function desligarSaida(nodeId: string, handleId: string | undefined) {
+    const novoEdges = rfEdges.filter(
+      (e) => !(e.source === nodeId && (e.sourceHandle ?? undefined) === handleId),
+    );
+    setRfEdges(novoEdges);
+    persist(rfNodes, novoEdges);
+  }
+
   function onEdgesDelete(deleted: FlowRFEdge[]) {
     const idsSet = new Set(deleted.map((e) => e.id));
     const novoEdges = rfEdges.filter((e) => !idsSet.has(e.id));
@@ -1244,6 +1270,11 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
             modoConstrucao && n.data.flowNode.category === "mensagem"
               ? (arquivo: { dataUrl: string; nome: string; mimeType: string; bytes: number }) =>
                   void anexarNoBloco(n.id, arquivo)
+              : undefined,
+          aoDesligarSaida: modoConstrucao ? (handleId: string | undefined) => desligarSaida(n.id, handleId) : undefined,
+          aoMudarCanal:
+            modoConstrucao && n.data.flowNode.category === "mensagem"
+              ? (canal: string) => editarCampoDoBloco(n.id, "canal", canal)
               : undefined,
           aoMudarOpcoes:
             modoConstrucao &&

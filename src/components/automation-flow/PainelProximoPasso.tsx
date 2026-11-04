@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 import {
   IconAutomacoes,
@@ -87,6 +87,18 @@ export function PainelProximoPasso({
 }) {
   const { t: traduzir } = useIdioma();
   const [busca, setBusca] = useState("");
+  /*
+   * A CAIXA SE MOVE.
+   *
+   * Ela nasce colada no "+" que a chamou, e às vezes é justamente ali que está o bloco que a
+   * pessoa precisa ver pra decidir. Arrastar pelo cabeçalho tira a caixa da frente sem fechá-la
+   * — fechar e reabrir noutro lugar não é possível, porque o lugar é sempre o do botão.
+   *
+   * O deslocamento é guardado À PARTE da posição de origem: assim reabrir num outro "+" volta a
+   * nascer colada nele, em vez de herdar o arrasto da vez passada.
+   */
+  const [arrastado, setArrastado] = useState({ x: 0, y: 0 });
+  const arrasteRef = useRef<{ x: number; y: number; baseX: number; baseY: number } | null>(null);
   const termo = busca.trim().toLowerCase();
 
   const sugeridos = useMemo(
@@ -133,16 +145,44 @@ export function PainelProximoPasso({
   }, [candidatos, termo]);
 
   if (compacto) {
+    const estilo = posicao
+      ? { top: posicao.top + arrastado.y, left: posicao.left + arrastado.x }
+      : undefined;
     return (
       <aside
         className={`pp-caixa${juntoAoInicio ? " pp-caixa-inicio" : ""}${posicao ? " pp-caixa-ancorada" : ""}`}
-        style={posicao ? { top: posicao.top, left: posicao.left } : undefined}
+        style={estilo}
         role="dialog"
         aria-label={traduzir("Adicionar próximo passo")}
       >
+        {/* A LINHA que sai do "+" e chega na caixa: sem ela, a caixa parece ter aparecido do nada
+            e não se sabe de qual saída ela é. Só quando a caixa está ancorada num botão. */}
+        {posicao ? <span className="pp-fio" aria-hidden="true" /> : null}
+
         {/* O título estava só no `aria-label`: a caixa abria com um campo de busca e nenhuma
             palavra dizendo o que se está escolhendo. A referência abre com ele escrito. */}
-        <div className="pp-titulo">
+        <div
+          className={`pp-titulo${posicao ? " pp-titulo-arrastavel" : ""}`}
+          onPointerDown={
+            posicao
+              ? (e) => {
+                  e.currentTarget.setPointerCapture(e.pointerId);
+                  arrasteRef.current = { x: e.clientX, y: e.clientY, baseX: arrastado.x, baseY: arrastado.y };
+                }
+              : undefined
+          }
+          onPointerMove={(e) => {
+            const inicio = arrasteRef.current;
+            if (!inicio) return;
+            setArrastado({
+              x: inicio.baseX + (e.clientX - inicio.x),
+              y: inicio.baseY + (e.clientY - inicio.y),
+            });
+          }}
+          onPointerUp={() => {
+            arrasteRef.current = null;
+          }}
+        >
           <strong>{traduzir("Adicionar próximo passo")}</strong>
           {rotuloDaSaida ? <span>depois de &quot;{rotuloDaSaida}&quot;</span> : null}
         </div>

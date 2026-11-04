@@ -76,6 +76,15 @@ export type FlowRFNodeData = {
    * fluxo. Aqui só se diz qual é a lista nova.
    */
   aoMudarOpcoes?: (opcoes: { id: string; rotulo: string; url?: string }[]) => void;
+  /**
+   * Desligar a saída: o "×" no lugar do "+" quando ela já tem um caminho.
+   *
+   * Sem isto, desfazer uma ligação exigia achar a linha no meio do desenho, clicar nela e apertar
+   * Delete — e num fluxo com vinte linhas que se cruzam, clicar na linha certa é sorte.
+   */
+  aoDesligarSaida?: (handleId: string | undefined) => void;
+  /** Trocar o canal da mensagem pelo cabeçalho do cartão. */
+  aoMudarCanal?: (canal: string) => void;
 };
 
 /**

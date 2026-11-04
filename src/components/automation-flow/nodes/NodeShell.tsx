@@ -6,6 +6,7 @@ import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { useFecharMenuDeLinha } from "@/lib/menu-de-linha";
 import { relogioDaGravacao, useGravadorDeAudio } from "@/lib/audio/gravador";
 import { VARIAVEIS_MENSAGEM, inserirTokenNoTexto } from "../forms/variaveis";
+import { canaisDaAreaParaBloco } from "../forms/canais";
 import { useBibliotecaDocumentos } from "@/lib/biblioteca-documentos-context";
 import { PlayerDeAudio } from "./PlayerDeAudio";
 
@@ -112,6 +113,8 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
     aoTestar,
     aoAnexar,
     aoMudarOpcoes,
+    aoDesligarSaida,
+    aoMudarCanal,
   } = data;
 
   const [menuAberto, setMenuAberto] = useState(false);
@@ -135,6 +138,9 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
       bytes: Math.round((audio.dataUrl.length - audio.dataUrl.indexOf(",") - 1) * 0.75),
     });
   });
+
+  const canaisPossiveis = canaisDaAreaParaBloco(area ?? "comercial");
+  const canalDoBloco = ((flowNode.data ?? {}) as { canal?: string }).canal;
 
   /** Os botões gravados no bloco, do jeito que a bolha os edita. */
   const opcoesDoBloco = (((flowNode.data ?? {}) as Record<string, unknown>).opcoes ?? []) as {
@@ -331,6 +337,34 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
                 {flowNode.titulo || (bloco?.label ? traduzir(bloco.label) : flowNode.type)}
               </span>
             )}
+            {/*
+              O CANAL NO CABEÇALHO, como na referência ("Canais: Todos").
+              
+              Ele morava só no painel da direita, e é a primeira coisa que muda a mensagem: o
+              mesmo texto sai diferente no WhatsApp e no Direct. Quando a área tem um canal só,
+              ele é informação e não escolha — e aí não vira um seletor que não escolhe nada.
+            */}
+            {canalDoBloco ? (
+              canaisPossiveis.length > 1 && aoMudarCanal ? (
+                <select
+                  className="msg-canal nodrag"
+                  value={canalDoBloco}
+                  aria-label={traduzir("Canal da mensagem")}
+                  onClick={(e) => e.stopPropagation()}
+                  onChange={(e) => aoMudarCanal(e.target.value)}
+                >
+                  {canaisPossiveis.map((c) => (
+                    <option key={c.valor} value={c.valor}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <span className="msg-canal-fixo">
+                  {canaisPossiveis.find((c) => c.valor === canalDoBloco)?.label ?? canalDoBloco}
+                </span>
+              )
+            ) : null}
             {flowNode.desativado ? <span className="flow-node-pausado-badge">{traduzir("Pausado")}</span> : null}
             {temErro || temAviso ? (
               <span className="flow-node-warn" title={problemas.map((p) => p.mensagem).join(" · ")}>
@@ -616,6 +650,21 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
                       +
                     </button>
                   ) : null}
+                  {/* Já ligada: o "+" vira "×", que desfaz a ligação. Achar a linha certa no meio
+                      de vinte que se cruzam pra apertar Delete era sorte. */}
+                  {saida && conectada && aoDesligarSaida ? (
+                    <button
+                      type="button"
+                      className="msg-opcao-add msg-opcao-tirar-ligacao"
+                      title={traduzir("Tirar a ligação desta saída")}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        aoDesligarSaida(opcao.id);
+                      }}
+                    >
+                      ×
+                    </button>
+                  ) : null}
                   {saida ? (
                     <Handle type="source" position={Position.Right} id={opcao.id} className="flow-handle msg-handle" />
                   ) : null}
@@ -731,6 +780,19 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
                     +
                   </button>
                 ) : null}
+                {conectada && aoDesligarSaida ? (
+                  <button
+                    type="button"
+                    className="flow-node-add-inline flow-node-tirar-ligacao"
+                    title={traduzir("Tirar a ligação desta saída")}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      aoDesligarSaida(s.handleId);
+                    }}
+                  >
+                    ×
+                  </button>
+                ) : null}
                 <Handle
                   type="source"
                   position={Position.Right}
@@ -762,6 +824,18 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
               }}
             >
               +
+            </button>
+          ) : (saidasConectadas?.has("__default__") ?? false) && aoDesligarSaida ? (
+            <button
+              type="button"
+              className="flow-node-add-btn flow-node-tirar-ligacao"
+              title={traduzir("Tirar a ligação desta saída")}
+              onClick={(e) => {
+                e.stopPropagation();
+                aoDesligarSaida(undefined);
+              }}
+            >
+              ×
             </button>
           ) : null}
         </div>
