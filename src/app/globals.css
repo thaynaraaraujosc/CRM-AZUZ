@@ -21928,6 +21928,23 @@ table.tbl .name-cell .r {
   gap: var(--space-5);
 }
 
+/*
+ * OS CARTÕES NÃO ENCOLHEM. Esta linha é o conserto de um defeito de verdade.
+ *
+ * Em coluna flex, todo filho nasce com `flex-shrink: 1` — quando a soma das alturas passa da
+ * altura disponível, o navegador ESPREME os três. E como `.fgrupo` tem `overflow: hidden`, o que
+ * não coube foi cortado: o cartão das Proteções ficava com 46px de altura pra 62px de conteúdo,
+ * e o grupo do Flow aberto perdia os últimos formulários por baixo da própria borda. Lia-se como
+ * "um cartão passando por cima do outro".
+ *
+ * Medido: com a janela em 520px de altura, os três cartões eram cortados ao mesmo tempo. Com
+ * `flex: 0 0 auto` cada um fica do tamanho do que tem dentro e a coluna rola, que é o que uma
+ * pilha de cartões deve fazer.
+ */
+.fform-pilha > * {
+  flex: 0 0 auto;
+}
+
 .fflow-vazio {
   margin: 0;
   padding: var(--space-4) var(--space-2);
@@ -25826,6 +25843,12 @@ td.trafego-col-crm:first-of-type {
   gap: var(--space-3);
 }
 
+/* Mesma armadilha da `.fform-pilha`: em coluna flex o filho encolhe por padrão, e aqui ele tem
+   campo de formulário dentro — espremido, o campo fica cortado pela metade. */
+.prot-blocos > * {
+  flex: 0 0 auto;
+}
+
 /* Em telas largas, horário e limites cabem lado a lado: são duas perguntas curtas, e empilhá-las
    faz o cartão aberto ocupar o dobro da altura por nada. */
 @media (min-width: 900px) {
@@ -26347,4 +26370,43 @@ td.trafego-col-crm:first-of-type {
   background: var(--acao);
   border-color: var(--acao);
   color: var(--acao-texto);
+}
+
+/*
+ * O PAINEL NÃO ROLA PRO LADO. Nunca.
+ *
+ * Era isto que fazia metade dos rótulos ficar fora da tela: um `<select>` se dimensiona pela
+ * OPÇÃO MAIS COMPRIDA dele, e "Imediatamente quando movido para ou criado nesta etapa" dá 418px
+ * dentro de um painel de 359px. Como o painel tem `overflow-y: auto`, o outro eixo deixa de ser
+ * `visible` e vira `auto` sozinho — então ele ganhava barra de rolagem horizontal, e quem rolava
+ * perdia os rótulos à esquerda.
+ *
+ * O conserto é no CONTEÚDO, não na barra: os campos passam a caber. Esconder a rolagem e deixar o
+ * campo largo só trocaria "rola pro lado" por "o campo está cortado e não dá pra rolar".
+ *
+ * `min-width: 0` no campo também é obrigatório: dentro de um flex/grid, a largura mínima padrão é
+ * a do conteúdo, e `width: 100%` sozinho não vence isso.
+ */
+.fauto-painel {
+  overflow-x: hidden;
+}
+
+.fauto-painel .field,
+.fauto-painel .fauto-caixa {
+  min-width: 0;
+}
+
+.fauto-painel .input,
+.fauto-painel select.input,
+.fauto-painel textarea.input {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* As duas caixas de horário dividem a linha: com `width: 100%` em cada uma elas estourariam. */
+.fauto-painel .fauto-horas .input {
+  width: auto;
+  flex: 1 1 0;
 }
