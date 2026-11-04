@@ -1093,6 +1093,18 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
       id: ID_INICIO,
       type: "inicio",
       position: posicaoInicioArrastada ?? fluxo?.configuracoes?.posicaoInicio ?? posicaoPadrao,
+      /*
+       * O TAMANHO VAI ESCRITO, e isto não é enfeite.
+       *
+       * O React Flow descobre o tamanho de cada nó medindo o DOM e avisando por `onNodesChange`
+       * — e este nó é desenhado, então a gente DESCARTA as mudanças dele pra ele não ser salvo.
+       * Resultado: o React Flow nunca aprendia o tamanho dele. Com ele sozinho no canvas (fluxo
+       * novo), o `fitView` calculava um retângulo vazio e jogava a viewport pra um lugar
+       * qualquer: a pastilha existia e ficava fora da tela. Era exatamente o "não aparece iniciar
+       * robô". Com a medida declarada, o enquadramento acha a peça.
+       */
+      width: 210,
+      height: inicioNoFunil ? 56 : 40,
       draggable: modoConstrucao,
       selectable: false,
       deletable: false,
@@ -1310,6 +1322,10 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
             onPaneClick={() => setMenuContexto(null)}
             multiSelectionKeyCode={["Shift", "Meta", "Control"]}
             fitView
+            /* Com um nó só no canvas, o enquadramento sem teto estoura o zoom até `maxZoom` (4) e
+               a pastilha vira um cartaz. 1.1 deixa o fluxo novo abrir no tamanho em que ele vai
+               ser editado. */
+            fitViewOptions={{ padding: 0.35, minZoom: 0.05, maxZoom: 1.1 }}
             proOptions={{ hideAttribution: true }}
           >
             {/*
@@ -1485,6 +1501,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                * tirar o fluxo da vista — que é como a referência faz.
                */
               compacto
+              juntoAoInicio={!acaoRapida}
             />
           ) : null}
 

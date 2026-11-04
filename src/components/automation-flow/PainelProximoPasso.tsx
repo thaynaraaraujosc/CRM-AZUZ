@@ -51,6 +51,7 @@ export function PainelProximoPasso({
   onFollowUp,
   onFechar,
   compacto,
+  juntoAoInicio,
 }: {
   tipoAnterior?: FlowNodeType;
   categoriaAnterior?: FlowNodeCategory;
@@ -71,6 +72,15 @@ export function PainelProximoPasso({
    * de grupo, que com três blocos por grupo ocupa mais linha que os próprios blocos.
    */
   compacto?: boolean;
+  /**
+   * AO LADO DA PASTILHA DE INÍCIO, e não no canto da tela.
+   *
+   * Vale pro quadro vazio: ali o enquadramento centraliza a única peça que existe, a pastilha
+   * "Iniciar robô", e a lista precisa nascer colada nela — que é o desenho da referência. No
+   * resto do tempo a caixa fica no canto, longe do bloco que se está editando de propósito, pra
+   * não cobrir justamente a saída de onde o passo novo vai sair.
+   */
+  juntoAoInicio?: boolean;
 }) {
   const { t: traduzir } = useIdioma();
   const [busca, setBusca] = useState("");
@@ -121,7 +131,11 @@ export function PainelProximoPasso({
 
   if (compacto) {
     return (
-      <aside className="pp-caixa" role="dialog" aria-label={traduzir("Adicionar próximo passo")}>
+      <aside
+        className={`pp-caixa${juntoAoInicio ? " pp-caixa-inicio" : ""}`}
+        role="dialog"
+        aria-label={traduzir("Adicionar próximo passo")}
+      >
         {/* O título estava só no `aria-label`: a caixa abria com um campo de busca e nenhuma
             palavra dizendo o que se está escolhendo. A referência abre com ele escrito. */}
         <div className="pp-titulo">

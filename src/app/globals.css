@@ -24641,6 +24641,21 @@ td.trafego-col-crm:first-of-type {
   overflow: hidden;
 }
 
+/*
+ * A LISTA COLADA NA PASTILHA, no quadro vazio.
+ *
+ * Com um nó só no canvas, o enquadramento o centraliza — então "ao lado da pastilha" é o centro
+ * da tela deslocado pra direita pela metade da largura dela mais um respiro. É o desenho da
+ * referência: "Iniciar robô", a linha, e as opções logo ali.
+ */
+.pp-caixa-inicio {
+  top: 50%;
+  right: auto;
+  left: calc(50% + 125px);
+  transform: translateY(-50%);
+  max-height: min(430px, calc(100% - 40px));
+}
+
 .pp-titulo {
   padding: 12px 12px 0;
 }
