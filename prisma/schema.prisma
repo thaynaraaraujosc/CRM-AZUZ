@@ -688,6 +688,24 @@ model FunilEtapa {
 
   titulo   String
   ordem    Int
+
+  /// A COR DA ETAPA, como `#RRGGBB`. Nula = a cor automática, pela posição.
+  ///
+  /// Era só automática: a primeira etapa azul, a segunda vermelha, e assim por diante. Funciona
+  /// enquanto ninguém mexe na ordem — aí todas trocam de cor de uma vez, e quem já tinha decorado
+  /// "a verde é a de proposta" perde a referência. Escolhida, ela fica.
+  cor String?
+
+  /// AS DICAS DA ETAPA: `{ "iniciante": "…", "intermediario": "…", "expert": "…" }`.
+  ///
+  /// O que fazer quando um lead chega aqui, em três níveis de profundidade. É o que transforma o
+  /// funil de um desenho numa instrução para quem atende — e é por isso que mora na ETAPA, e não
+  /// num documento à parte que ninguém abre.
+  ///
+  /// Json e não três colunas: são três textos livres que só se leem juntos, e um quarto nível (se
+  /// um dia houver) não deve custar uma migração.
+  dicas Json?
+
   cards    NegocioCard[]
   gatilhos GatilhoEtapa[]
 }
@@ -1632,6 +1650,21 @@ model GatilhoEtapa {
 
   // Condição extra ("Para todos os leads com:"), no mesmo formato do bloco de condição do editor.
   condicao Json?
+
+  /// O MESMO GATILHO VALENDO PARA VÁRIAS ETAPAS.
+  ///
+  /// No Kommo um gatilho pode atravessar várias colunas como uma faixa só — "diariamente às 12h"
+  /// vale para o funil inteiro, e repetir a mesma linha catorze vezes seria catorze coisas para
+  /// manter em vez de uma.
+  ///
+  /// A forma escolhida é UMA LINHA POR ETAPA, todas com o mesmo `grupoId`. A alternativa seria uma
+  /// lista de etapas dentro de uma linha só — e ela obrigaria o motor a mudar: hoje ele encontra
+  /// os gatilhos de uma etapa por `etapaId`, e passaria a precisar procurar dentro de um Json em
+  /// toda linha do workspace. Com linhas irmãs, o motor não muda NADA; quem agrupa é a tela, que é
+  /// onde o agrupamento significa alguma coisa.
+  ///
+  /// Nulo = gatilho de uma etapa só, que é o caso de todos os que já existem.
+  grupoId String?
 
   // Janela em que o gatilho vale. Lista vazia/ausente = todos os dias. Horas em "HH:MM".
   // Fora da janela o gatilho não dispara: é o "Ativo: sempre" do Kommo com dias e horário.

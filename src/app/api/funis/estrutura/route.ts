@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@/generated/prisma/client";
+import { lerCorDaEtapa, lerDicas } from "@/lib/funil/etapa-aparencia";
 
 /**
  * Criar e apagar funil/etapa: gravado na hora, e não pelo PUT de estado inteiro.
@@ -164,4 +166,88 @@ export async function DELETE(request: Request) {
   }
 
   return NextResponse.json({ ok: true, movidos: negocios });
+}
+
+/**
+ * MUDA O QUE A ETAPA É, sem mexer no que ela contém.
+ *
+ * Três coisas, e as três são de quem MONTA o funil, não de quem o usa no dia: a ordem das etapas,
+ * a cor de uma etapa e as dicas dela. Ficam aqui, junto de criar e apagar, porque são todas
+ * ESTRUTURA — o `PUT /api/funis` reconcilia o conteúdo (os negócios, suas posições) e misturar as
+ * duas coisas foi o que já tornou a criação frágil uma vez.
+ */
+export async function PATCH(request: Request) {
+  const sessao = await auth();
+  if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
+  const workspaceId = sessao.user.workspaceId;
+
+  const corpo = (await request.json().catch(() => null)) as {
+    tipo?: "ordem-etapas" | "aparencia-etapa";
+    funilId?: string;
+    ids?: unknown;
+    etapaId?: string;
+    cor?: unknown;
+    dicas?: unknown;
+  } | null;
+
+  if (corpo?.tipo === "ordem-etapas") {
+    const ids = Array.isArray(corpo.ids) ? corpo.ids.filter((x): x is string => typeof x === "string") : [];
+    if (!corpo.funilId || !ids.length) {
+      return NextResponse.json({ erro: "funilId e ids são obrigatórios" }, { status: 400 });
+    }
+
+    /*
+     * SÓ AS ETAPAS DESTE FUNIL, E TODAS ELAS.
+     *
+     * Gravar uma lista parcial deixaria as que ficaram de fora com a ordem antiga, colidindo com
+     * as novas — duas etapas na mesma posição aparecem em ordem imprevisível, porque a leitura
+     * ordena por `ordem`. E um id de outro funil (ou de outra empresa) reordenaria o funil errado.
+     */
+    const doFunil = await prisma.funilEtapa.findMany({
+      where: { workspaceId, funilId: corpo.funilId },
+      select: { id: true },
+    });
+    const conhecidas = new Set(doFunil.map((e) => e.id));
+    const limpos = ids.filter((id) => conhecidas.has(id));
+    if (limpos.length !== doFunil.length) {
+      return NextResponse.json(
+        { erro: "A lista precisa ter exatamente as etapas deste funil." },
+        { status: 400 },
+      );
+    }
+
+    await prisma.$transaction(
+      limpos.map((id, ordem) =>
+        prisma.funilEtapa.update({ where: { id }, data: { ordem } }),
+      ),
+    );
+    return NextResponse.json({ ok: true });
+  }
+
+  if (corpo?.tipo === "aparencia-etapa") {
+    if (!corpo.etapaId) return NextResponse.json({ erro: "etapaId é obrigatório" }, { status: 400 });
+
+    // A etapa precisa ser desta empresa: sem esta linha, um id adivinhado pintaria o funil de
+    // outro cliente.
+    const etapa = await prisma.funilEtapa.findFirst({
+      where: { id: corpo.etapaId, workspaceId },
+      select: { id: true },
+    });
+    if (!etapa) return NextResponse.json({ erro: "Etapa não encontrada." }, { status: 404 });
+
+    const dados: Prisma.FunilEtapaUpdateInput = {};
+    // `null` explícito é "volte pra cor automática"; ausente é "não mexa nisso".
+    if (corpo.cor !== undefined) dados.cor = corpo.cor === null ? null : lerCorDaEtapa(corpo.cor);
+    // `DbNull` e não `null`: numa coluna Json, `null` do Prisma significa o VALOR nulo do JSON, e
+    // `DbNull` significa a coluna vazia. Apagar as dicas é a segunda coisa.
+    if (corpo.dicas !== undefined) {
+      const limpas = lerDicas(corpo.dicas);
+      dados.dicas = limpas ? (limpas as Prisma.InputJsonValue) : Prisma.DbNull;
+    }
+
+    await prisma.funilEtapa.update({ where: { id: corpo.etapaId }, data: dados });
+    return NextResponse.json({ ok: true });
+  }
+
+  return NextResponse.json({ erro: "tipo inválido" }, { status: 400 });
 }

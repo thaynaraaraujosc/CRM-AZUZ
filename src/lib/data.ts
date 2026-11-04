@@ -354,12 +354,19 @@ export type NegocioCard = {
   dataFechamento?: string | null;
 };
 
+/** As três profundidades da dica de uma etapa. Todas opcionais: escrever uma já vale. */
+export type DicasDaEtapa = { iniciante?: string; intermediario?: string; expert?: string };
+
 export type ColunaFunil = {
   /** Identificador estável da etapa: é nele que a automação se prende, não no título (que pode ser renomeado). */
   id: string;
   titulo: string;
   total: number;
   cards: NegocioCard[];
+  /** `#RRGGBB` escolhido por quem montou o funil. Ausente = a cor automática, pela posição. */
+  cor?: string;
+  /** O que fazer quando um lead chega nesta etapa, em três níveis. */
+  dicas?: DicasDaEtapa;
 };
 
 export type Funil = {

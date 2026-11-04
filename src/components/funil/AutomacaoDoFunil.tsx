@@ -8,6 +8,8 @@ import { IconAutomacoes, IconClose } from "@/components/icons";
 import { CondicaoForm } from "@/components/automation-flow/forms/CondicaoForm";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { MigrarGatilhos } from "./MigrarGatilhos";
+import { CabecalhoDaEtapa } from "./CabecalhoDaEtapa";
+import type { DicasDaEtapa } from "@/lib/data";
 import type { GrupoCondicoes } from "@/lib/automation-flow/types";
 import { useIdioma } from "@/lib/idioma-context";
 import {
@@ -32,7 +34,15 @@ import {
  * "encolher" pra caber só o que existe.
  */
 
-type ColunaResumo = { id: string; titulo: string; total?: number };
+type ColunaResumo = {
+  id: string;
+  titulo: string;
+  total?: number;
+  /** A cor escolhida pra etapa. Ausente = a automática, pela posição. */
+  cor?: string;
+  /** O que fazer quando um lead chega nesta etapa, em três profundidades. */
+  dicas?: DicasDaEtapa;
+};
 type RoboResumo = { id: string; nome: string; status?: string; area?: string };
 type CanalConectado = { canal: string; label: string; conectado: boolean; detalhe?: string | null };
 
@@ -170,6 +180,38 @@ const paraLista = (texto: string) => texto.split(",").map((t) => t.trim()).filte
 /** A largura de uma etapa na grade, medida no Kommo. Ver `docs/referencia-kommo-funil.md`. */
 const LARGURA_COLUNA = 305;
 
+/**
+ * Uma fileira da grade, com as faixas já juntadas.
+ *
+ * Devolve uma entrada por CÉLULA DESENHADA (não por coluna): quando um gatilho de grupo ocupa
+ * colunas vizinhas, sai uma entrada só, com `largura` maior que 1, e as colunas cobertas não
+ * aparecem de novo. É o que transforma catorze linhas iguais no banco num retângulo só na tela.
+ */
+function expandirLinha(
+  colunas: ColunaResumo[],
+  porEtapa: Map<string, GatilhoEtapaVisao[]>,
+  linha: number,
+): { coluna: ColunaResumo; gatilho?: GatilhoEtapaVisao; largura: number }[] {
+  const saida: { coluna: ColunaResumo; gatilho?: GatilhoEtapaVisao; largura: number }[] = [];
+  let i = 0;
+  while (i < colunas.length) {
+    const coluna = colunas[i];
+    const gatilho = porEtapa.get(coluna.id)?.[linha];
+    let largura = 1;
+    if (gatilho?.grupoId) {
+      // Anda pra direita enquanto a coluna vizinha tiver, na MESMA fileira, uma irmã do grupo.
+      while (i + largura < colunas.length) {
+        const vizinho = porEtapa.get(colunas[i + largura].id)?.[linha];
+        if (vizinho?.grupoId !== gatilho.grupoId) break;
+        largura += 1;
+      }
+    }
+    saida.push({ coluna, gatilho, largura });
+    i += largura;
+  }
+  return saida;
+}
+
 export function AutomacaoDoFunil({
   funilId,
   funilNome,
@@ -177,6 +219,8 @@ export function AutomacaoDoFunil({
   onFechar,
   semMoldura = false,
   aoInserirEtapa,
+  aoReordenarEtapas,
+  aoMudarAparencia,
 }: {
   funilId: string;
   funilNome?: string;
@@ -193,6 +237,10 @@ export function AutomacaoDoFunil({
   semMoldura?: boolean;
   /** Cria uma etapa na posição dada. Sem isto, os "+" da divisa não aparecem. */
   aoInserirEtapa?: (posicao: number) => void;
+  /** Grava a ordem nova das etapas. Sem isto, a alça de arraste não aparece. */
+  aoReordenarEtapas?: (ids: string[]) => void;
+  /** Grava cor e dicas de uma etapa. */
+  aoMudarAparencia?: (etapaId: string, mudanca: { cor?: string | null; dicas?: DicasDaEtapa }) => void;
 }) {
   const { t: traduzir } = useIdioma();
   const router = useRouter();
@@ -206,6 +254,28 @@ export function AutomacaoDoFunil({
   const [criandoRobo, setCriandoRobo] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
+  /** Qual etapa está sendo arrastada agora. `null` fora do arraste. */
+  const [etapaArrastada, setEtapaArrastada] = useState<string | null>(null);
+  /** As OUTRAS etapas que este gatilho novo também cobre. Vazio = só a dele. */
+  const [etapasExtras, setEtapasExtras] = useState<string[]>([]);
+
+  /**
+   * Solta a etapa arrastada na posição `destino`.
+   *
+   * Tira e recoloca na mesma lista, e manda a ordem INTEIRA pro servidor: mandar só "esta foi pra
+   * terceira posição" deixaria o resto da numeração pro servidor adivinhar, e duas etapas na
+   * mesma posição aparecem em ordem imprevisível.
+   */
+  function soltarEtapaEm(destino: number) {
+    if (!etapaArrastada || !aoReordenarEtapas) return;
+    const origem = colunas.findIndex((c) => c.id === etapaArrastada);
+    setEtapaArrastada(null);
+    if (origem < 0 || origem === destino) return;
+    const ids = colunas.map((c) => c.id);
+    const [movida] = ids.splice(origem, 1);
+    ids.splice(destino, 0, movida);
+    aoReordenarEtapas(ids);
+  }
 
   const recarregar = useCallback(async () => {
     const resposta = await fetch(`/api/funis/gatilhos?funilId=${encodeURIComponent(funilId)}`);
@@ -305,6 +375,8 @@ export function AutomacaoDoFunil({
     try {
       const corpo = {
         etapaId: rascunho.etapaId,
+        // A etapa do rascunho sempre entra: as "extras" somam a ela, não a substituem.
+        ...(etapasExtras.length ? { etapasIds: [rascunho.etapaId, ...etapasExtras] } : {}),
         quando: rascunho.quando,
         tipoAcao: rascunho.tipoAcao,
         fluxoId: rascunho.tipoAcao === "robo" ? rascunho.fluxoId : null,
@@ -509,7 +581,7 @@ export function AutomacaoDoFunil({
           */}
           <div className="fauto-cab" style={{ gridTemplateColumns: `repeat(${colunas.length}, ${LARGURA_COLUNA}px)` }}>
             {colunas.map((coluna, i) => (
-              <div key={coluna.id} className="fauto-cab-cel">
+              <div key={coluna.id} className="fauto-cab-envoltorio">
                 {/*
                   O "+" NA DIVISA, que cria a etapa ALI.
                   
@@ -517,10 +589,6 @@ export function AutomacaoDoFunil({
                   põe sempre no fim — e aí arrastar pro lugar certo. Mas o funil é uma esteira:
                   "Follow up" entre "Novo" e "Qualificado" não é a mesma coisa que "Follow up"
                   depois de "Fechado". Na divisa, o lugar É o clique.
-                  
-                  Um por coluna, ancorado na borda esquerda dela, mais um depois da última: é
-                  assim que se consegue inserir antes da primeira e depois da última sem um
-                  botão de forma diferente em cada ponta.
                 */}
                 {aoInserirEtapa ? (
                   <button
@@ -533,15 +601,22 @@ export function AutomacaoDoFunil({
                     +
                   </button>
                 ) : null}
-                <span className="fauto-cab-nome">{coluna.titulo}</span>
-                <span className="fauto-cab-barra" style={{ background: CORES_ETAPA[i % CORES_ETAPA.length] }} />
-                <span className="fauto-cab-sub">
-                  {(porEtapa.get(coluna.id)?.length ?? 0) > 1
-                    ? `${porEtapa.get(coluna.id)!.length} gatilhos, nesta ordem`
-                    : (porEtapa.get(coluna.id)?.length ?? 0) === 1
-                      ? "1 gatilho"
-                      : traduzir("Sem automação")}
-                </span>
+
+                <CabecalhoDaEtapa
+                  titulo={coluna.titulo}
+                  cor={coluna.cor}
+                  corAutomatica={CORES_ETAPA[i % CORES_ETAPA.length]}
+                  dicas={coluna.dicas}
+                  totalDeGatilhos={porEtapa.get(coluna.id)?.length ?? 0}
+                  arrastando={etapaArrastada === coluna.id}
+                  podeEditar={Boolean(aoReordenarEtapas)}
+                  aoComecarArraste={() => setEtapaArrastada(coluna.id)}
+                  aoTerminarArraste={() => setEtapaArrastada(null)}
+                  aoSoltarAqui={() => soltarEtapaEm(i)}
+                  aoTrocarCor={(cor) => aoMudarAparencia?.(coluna.id, { cor })}
+                  aoSalvarDicas={(dicas) => aoMudarAparencia?.(coluna.id, { dicas })}
+                />
+
                 {aoInserirEtapa && i === colunas.length - 1 ? (
                   <button
                     type="button"
@@ -562,10 +637,23 @@ export function AutomacaoDoFunil({
             style={{ gridTemplateColumns: `repeat(${colunas.length}, ${LARGURA_COLUNA}px)` }}
           >
             {Array.from({ length: linhas }).map((_, linha) =>
-              colunas.map((coluna) => {
-                const gatilho = porEtapa.get(coluna.id)?.[linha];
+              /*
+                A FAIXA QUE ATRAVESSA ETAPAS é desenhada aqui, e não no banco.
+                
+                No banco cada etapa tem a sua linha; o que as irmãs compartilham é o `grupoId`.
+                Esta varredura olha a fileira da esquerda pra direita e, quando acha um grupo que
+                segue por colunas vizinhas, desenha UMA célula com `grid-column: span N` e pula as
+                que ela cobriu. Com as colunas reordenadas de um jeito que parta o grupo ao meio,
+                cada pedaço vira sua própria faixa — o que é honesto: o retângulo passa a mostrar
+                exatamente as etapas contíguas que ele cobre.
+              */
+              expandirLinha(colunas, porEtapa, linha).map(({ coluna, gatilho, largura }) => {
                 return (
-                  <div key={`${coluna.id}-${linha}`} className="fauto-cel">
+                  <div
+                    key={`${coluna.id}-${linha}`}
+                    className={`fauto-cel${largura > 1 ? " fauto-cel-faixa" : ""}`}
+                    style={largura > 1 ? { gridColumn: `span ${largura}` } : undefined}
+                  >
                     {gatilho ? (
                       <div className={`fauto-gat${gatilho.ativo ? "" : " desligado"}`}>
                         {/* Quando a etapa tem mais de um gatilho, eles rodam NA ORDEM da coluna,
@@ -584,6 +672,7 @@ export function AutomacaoDoFunil({
                             setErro(null);
                             setAviso(null);
                             setEscolhendoAcao(null);
+                            setEtapasExtras([]);
                             setRascunho(doGatilho(gatilho));
                           }}
                         >
@@ -664,6 +753,7 @@ export function AutomacaoDoFunil({
                   type="button"
                   className="fauto-acao"
                   onClick={() => {
+                    setEtapasExtras([]);
                     setRascunho(rascunhoNovo(escolhendoAcao, a.tipo));
                     setEscolhendoAcao(null);
                   }}
@@ -699,6 +789,54 @@ export function AutomacaoDoFunil({
                 ))}
               </select>
             </div>
+
+            {/*
+              O MESMO GATILHO EM MAIS DE UMA ETAPA.
+              
+              "Diariamente às 12h" costuma valer pro funil inteiro, e montar catorze gatilhos
+              iguais é catorze coisas pra manter — e pra esquecer de corrigir junto. Marcando
+              outras etapas, o CRM grava uma linha em cada uma (é assim que o motor acha gatilho:
+              pela etapa) e a grade desenha as irmãs como uma faixa só.
+              
+              Só na CRIAÇÃO: transformar um gatilho que já existe numa faixa significaria criar
+              linhas novas com o histórico de execução da antiga pendurado numa delas só, e isso
+              não tem resposta certa. Pra estender, apaga e cria de novo.
+            */}
+            {!rascunho.id && colunas.length > 1 ? (
+              <div className="field">
+                <label>{traduzir("Vale também para")}</label>
+                <div className="fauto-etapas-extra">
+                  {colunas
+                    .filter((c) => c.id !== rascunho.etapaId)
+                    .map((c) => {
+                      const marcada = etapasExtras.includes(c.id);
+                      return (
+                        <button
+                          key={c.id}
+                          type="button"
+                          role="checkbox"
+                          aria-checked={marcada}
+                          className={`fauto-etapa-chip${marcada ? " on" : ""}`}
+                          onClick={() =>
+                            setEtapasExtras((atual) =>
+                              atual.includes(c.id) ? atual.filter((x) => x !== c.id) : [...atual, c.id],
+                            )
+                          }
+                        >
+                          {c.titulo}
+                        </button>
+                      );
+                    })}
+                </div>
+                <span className="hint">
+                  {etapasExtras.length
+                    ? traduzir("Vira uma faixa só, atravessando {n} etapas.", {
+                        n: String(etapasExtras.length + 1),
+                      })
+                    : traduzir("Deixe em branco para valer só nesta etapa.")}
+                </span>
+              </div>
+            ) : null}
 
             <div className="field">
               <label>{traduzir("Executar")}</label>

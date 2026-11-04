@@ -26100,3 +26100,221 @@ td.trafego-col-crm:first-of-type {
     opacity: 1;
   }
 }
+
+/* ================= O CABEÇALHO DA ETAPA, NA GRADE DE AUTOMAÇÃO =================
+ *
+ * Alça pra reordenar, círculo de cor e link de dicas — as três coisas do Kommo que faltavam
+ * (ver `docs/referencia-kommo-funil.md`). O `+` da divisa agora vive no envoltório, que é o que
+ * permite ele ficar EM CIMA da linha entre duas colunas em vez de dentro de uma delas.
+ */
+.fauto-cab-envoltorio {
+  position: relative;
+  display: flex;
+  min-width: 0;
+}
+
+.fauto-cab-envoltorio > .fauto-cab-cel {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.fauto-cab-linha {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.fauto-cab-linha .fauto-cab-nome {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A ALÇA: seis pontos, 7×14px, como a medida da referência. Desenhada com um gradiente repetido
+   em vez de seis elementos — é o mesmo desenho com um nó só. */
+.fauto-cab-alca {
+  flex: none;
+  width: 7px;
+  height: 14px;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  opacity: 0.45;
+  transition: opacity var(--transition-fast);
+}
+
+.fauto-cab-alca > span {
+  width: 7px;
+  height: 14px;
+  background-image: radial-gradient(circle, var(--text-muted) 1px, transparent 1px);
+  background-size: 4px 5px;
+}
+
+.fauto-cab-envoltorio:hover .fauto-cab-alca {
+  opacity: 1;
+}
+
+.fauto-cab-alca:active {
+  cursor: grabbing;
+}
+
+/* A etapa sendo arrastada apaga; a que está sob o ponteiro acende a borda de destino. Sem os
+   dois, arrastar é mover uma coisa invisível pra um lugar que não se sabe qual é. */
+.fauto-cab-cel.arrastando {
+  opacity: 0.4;
+}
+
+.fauto-cab-cel.alvo {
+  box-shadow: inset 3px 0 0 var(--acao);
+}
+
+/* O círculo de cor: pequeno, redondo e com contorno, porque cor clara sobre fundo claro sem
+   contorno não se vê. */
+.fauto-cab-cor {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  cursor: pointer;
+}
+
+.fauto-cab-cor-anchor {
+  position: relative;
+  display: inline-flex;
+}
+
+.fauto-paleta {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: repeat(3, 22px);
+  gap: 6px;
+  padding: 10px;
+  border-radius: var(--radius-2);
+  border: 1px solid var(--line);
+  background: var(--surface-elevated);
+  box-shadow: var(--shadow-md);
+}
+
+.fauto-paleta-cor {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  cursor: pointer;
+}
+
+.fauto-paleta-cor.on {
+  box-shadow: 0 0 0 2px var(--surface-elevated), 0 0 0 4px var(--acao);
+}
+
+.fauto-paleta-auto {
+  grid-column: 1 / -1;
+  border: 0;
+  background: none;
+  padding: 4px 0 0;
+  font: inherit;
+  font-size: 12px;
+  color: var(--blue);
+  cursor: pointer;
+  text-align: left;
+}
+
+/* O pé do cabeçalho: a contagem de gatilhos à esquerda, as dicas à direita. */
+.fauto-cab-pe {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.fauto-cab-dicas {
+  flex: none;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.fauto-cab-dicas:hover {
+  color: var(--acao);
+}
+
+.fauto-dicas {
+  width: min(560px, 100%);
+}
+
+.fauto-dicas-corpo {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.fauto-dicas-corpo .input {
+  width: 100%;
+  resize: vertical;
+}
+
+/*
+ * A FAIXA QUE ATRAVESSA ETAPAS.
+ *
+ * Um gatilho que vale pro funil inteiro ("diariamente às 12h") é UMA coisa, e tem que parecer
+ * uma: sem divisórias internas, com o texto escrito uma vez só. As linhas irmãs continuam
+ * existindo no banco, uma por etapa — ver `grupoId` no schema —, mas a grade junta.
+ */
+.fauto-cel-faixa {
+  border-right: 1px solid var(--border);
+}
+
+.fauto-cel-faixa .fauto-gat {
+  /* O texto fica ancorado no começo da faixa, e não centralizado nela: numa faixa de catorze
+     colunas, centralizado ele ficaria no meio da tela, longe da etapa em que a pessoa clicou. */
+  justify-content: flex-start;
+}
+
+/* As outras etapas que o gatilho novo também cobre: pastilhas marcáveis, não um `select` de
+   múltipla escolha — num painel estreito, `select multiple` esconde metade da lista atrás de uma
+   rolagem de 60px e não diz o que está marcado sem rolar. */
+.fauto-etapas-extra {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.fauto-etapa-chip {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-muted);
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.fauto-etapa-chip:hover {
+  border-color: var(--acao);
+  color: var(--ink);
+}
+
+.fauto-etapa-chip.on {
+  background: var(--acao);
+  border-color: var(--acao);
+  color: var(--acao-texto);
+}

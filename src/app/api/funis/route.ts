@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import type { Prisma } from "@/generated/prisma/client";
 import type { Funil } from "@/lib/data";
 import { auth } from "@/lib/auth";
+import { lerDicas } from "@/lib/funil/etapa-aparencia";
 import { dispararGatilhosDaEtapa } from "@/lib/funil/gatilhos-etapa";
 import { emSegundoPlano } from "@/lib/automacoes/segundo-plano";
 import { prisma } from "@/lib/prisma";
@@ -35,6 +36,8 @@ export async function GET() {
       id: e.id,
       titulo: e.titulo,
       total: e.cards.length,
+      cor: e.cor ?? undefined,
+      dicas: lerDicas(e.dicas),
       cards: e.cards.map((c) => ({
         id: c.id,
         nome: c.nome,

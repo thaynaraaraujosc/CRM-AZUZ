@@ -11,7 +11,7 @@ import {
   type SetStateAction,
 } from "react";
 
-import type { Funil, NegocioCard } from "@/lib/data";
+import type { ColunaFunil, DicasDaEtapa, Funil, NegocioCard } from "@/lib/data";
 
 type FunisContextValue = {
   funis: Funil[];
@@ -55,6 +55,14 @@ type FunisContextValue = {
     funilId: string,
     etapa: { id: string; titulo: string },
     ordem?: number,
+  ) => Promise<{ ok: boolean; erro?: string }>;
+  /** Grava a ordem das etapas de um funil. A lista precisa conter TODAS elas. */
+  reordenarEtapas: (funilId: string, ids: string[]) => Promise<{ ok: boolean; erro?: string }>;
+  /** Cor e/ou dicas de uma etapa. `cor: null` volta pra cor automática. */
+  salvarAparenciaDaEtapa: (
+    funilId: string,
+    etapaId: string,
+    mudanca: { cor?: string | null; dicas?: DicasDaEtapa },
   ) => Promise<{ ok: boolean; erro?: string }>;
   /** Último erro de gravação, pra tela avisar em vez de fingir que salvou. */
   erroSincronizacao: string | null;
@@ -273,6 +281,88 @@ export function FunisProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  /**
+   * A ORDEM DAS ETAPAS, gravada de uma vez.
+   *
+   * A tela muda na hora e a requisição vai junto: arrastar uma coluna e esperar o servidor pra ver
+   * ela sair do lugar é o tipo de atraso que faz a pessoa arrastar de novo. Se falhar, a ordem
+   * volta ao que estava — ordem errada em funil é pior do que arraste que não pegou, porque ela
+   * muda o que a equipe entende do processo.
+   */
+  async function reordenarEtapas(funilId: string, ids: string[]): Promise<{ ok: boolean; erro?: string }> {
+    const antes = funis;
+    setFunis((prev) =>
+      prev.map((f) =>
+        f.id === funilId
+          ? { ...f, colunas: ids.map((id) => f.colunas.find((c) => c.id === id)).filter((c): c is ColunaFunil => Boolean(c)) }
+          : f,
+      ),
+    );
+    try {
+      const resposta = await fetch("/api/funis/estrutura", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tipo: "ordem-etapas", funilId, ids }),
+      });
+      if (!resposta.ok) {
+        const dados = (await resposta.json().catch(() => null)) as { erro?: string } | null;
+        setFunis(antes);
+        setErroSincronizacao(dados?.erro ?? "Não foi possível reordenar as etapas.");
+        return { ok: false, erro: dados?.erro };
+      }
+      return { ok: true };
+    } catch {
+      setFunis(antes);
+      setErroSincronizacao("Falha de conexão ao reordenar as etapas.");
+      return { ok: false, erro: "Falha de conexão." };
+    }
+  }
+
+  /** Cor e dicas de uma etapa. Mesma ideia: muda na tela, grava, e volta atrás se falhar. */
+  async function salvarAparenciaDaEtapa(
+    funilId: string,
+    etapaId: string,
+    mudanca: { cor?: string | null; dicas?: DicasDaEtapa },
+  ): Promise<{ ok: boolean; erro?: string }> {
+    const antes = funis;
+    setFunis((prev) =>
+      prev.map((f) =>
+        f.id === funilId
+          ? {
+              ...f,
+              colunas: f.colunas.map((c) =>
+                c.id === etapaId
+                  ? {
+                      ...c,
+                      ...(mudanca.cor !== undefined ? { cor: mudanca.cor ?? undefined } : {}),
+                      ...(mudanca.dicas !== undefined ? { dicas: mudanca.dicas } : {}),
+                    }
+                  : c,
+              ),
+            }
+          : f,
+      ),
+    );
+    try {
+      const resposta = await fetch("/api/funis/estrutura", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tipo: "aparencia-etapa", etapaId, ...mudanca }),
+      });
+      if (!resposta.ok) {
+        const dados = (await resposta.json().catch(() => null)) as { erro?: string } | null;
+        setFunis(antes);
+        setErroSincronizacao(dados?.erro ?? "Não foi possível salvar a etapa.");
+        return { ok: false, erro: dados?.erro };
+      }
+      return { ok: true };
+    } catch {
+      setFunis(antes);
+      setErroSincronizacao("Falha de conexão ao salvar a etapa.");
+      return { ok: false, erro: "Falha de conexão." };
+    }
+  }
+
   function atribuirContatoAoFunil(
     funilId: string,
     etapaTitulo: string,
@@ -352,6 +442,8 @@ export function FunisProvider({ children }: { children: ReactNode }) {
         moverNegocio,
         criarFunilPersistido,
         criarEtapaPersistida,
+        reordenarEtapas,
+        salvarAparenciaDaEtapa,
         recarregar,
         erroSincronizacao,
         limparErroSincronizacao: () => setErroSincronizacao(null),

@@ -26,7 +26,7 @@ import { useIdioma } from "@/lib/idioma-context";
 function AutomacoesConteudo() {
   const { t: traduzir } = useIdioma();
   const params = useSearchParams();
-  const { funis, criarEtapaPersistida } = useFunis();
+  const { funis, criarEtapaPersistida, reordenarEtapas, salvarAparenciaDaEtapa } = useFunis();
 
   /*
    * QUAL FUNIL, pela URL e só por ela.
@@ -78,9 +78,19 @@ function AutomacoesConteudo() {
         {funil ? (
           <AutomacaoDoFunil
             funilId={funil.id}
-            colunas={funil.colunas.map((c) => ({ id: c.id, titulo: c.titulo, total: c.total }))}
+            colunas={funil.colunas.map((c) => ({
+              id: c.id,
+              titulo: c.titulo,
+              total: c.total,
+              cor: c.cor,
+              dicas: c.dicas,
+            }))}
             semMoldura
             aoInserirEtapa={(posicao) => void inserirEtapa(funil.id, posicao)}
+            aoReordenarEtapas={(ids) => void reordenarEtapas(funil.id, ids)}
+            aoMudarAparencia={(etapaId, mudanca) =>
+              void salvarAparenciaDaEtapa(funil.id, etapaId, mudanca)
+            }
           />
         ) : (
           <section className="card">

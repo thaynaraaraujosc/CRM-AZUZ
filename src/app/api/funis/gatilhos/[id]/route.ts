@@ -13,16 +13,24 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const existe = await prisma.gatilhoEtapa.findFirst({
     where: { id, workspaceId: sessao.user.workspaceId },
-    select: { id: true },
+    select: { id: true, grupoId: true },
   });
   // Mesma resposta pra "não existe" e "não é seu": a diferença entre as duas contaria a quem
   // tentou que o id existe em algum lugar.
   if (!existe) return NextResponse.json({ erro: "Gatilho não encontrado" }, { status: 404 });
 
   const patch = (await request.json()) as Partial<GatilhoEtapaVisao>;
-  const linha = await prisma.gatilhoEtapa.update({
-    where: { id },
-    data: {
+  /*
+   * NUMA FAIXA, A EDIÇÃO VALE PRA TODAS AS IRMÃS.
+   *
+   * A faixa é UMA coisa na tela — um retângulo com um texto —, e desligar só o pedaço de uma
+   * etapa daria uma faixa meio ligada meio desligada, que não tem como ser desenhada nem
+   * explicada. Quem quiser etapas com comportamentos diferentes cria gatilhos separados.
+   */
+  const alvo = existe.grupoId
+    ? { workspaceId: sessao.user.workspaceId, grupoId: existe.grupoId }
+    : { id };
+  const dadosDoPatch = {
       ...(patch.quando ? { quando: patch.quando } : {}),
       ...(patch.tipoAcao ? { tipoAcao: patch.tipoAcao } : {}),
       // `fluxoId` entra como null quando a ação deixa de ser de robô: sem isso o gatilho ficaria
@@ -36,8 +44,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       ...("horarioDiario" in patch ? { horarioDiario: patch.horarioDiario ?? null } : {}),
       ...(typeof patch.ativo === "boolean" ? { ativo: patch.ativo } : {}),
       ...(typeof patch.ordem === "number" ? { ordem: patch.ordem } : {}),
-    },
-  });
+  };
+
+  await prisma.gatilhoEtapa.updateMany({ where: alvo, data: dadosDoPatch });
+  const linha = (await prisma.gatilhoEtapa.findUnique({ where: { id } }))!;
 
   return NextResponse.json({
     ...linha,
@@ -54,8 +64,18 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
   const { id } = await params;
 
-  const apagados = await prisma.gatilhoEtapa.deleteMany({
+  // Apagar uma faixa apaga a faixa inteira: ela é um retângulo só na tela, e deixar as irmãs
+  // para trás daria pedaços órfãos espalhados pelas outras etapas.
+  const alvo = await prisma.gatilhoEtapa.findFirst({
     where: { id, workspaceId: sessao.user.workspaceId },
+    select: { grupoId: true },
+  });
+  if (!alvo) return NextResponse.json({ erro: "Gatilho não encontrado" }, { status: 404 });
+
+  const apagados = await prisma.gatilhoEtapa.deleteMany({
+    where: alvo.grupoId
+      ? { workspaceId: sessao.user.workspaceId, grupoId: alvo.grupoId }
+      : { id, workspaceId: sessao.user.workspaceId },
   });
   if (!apagados.count) return NextResponse.json({ erro: "Gatilho não encontrado" }, { status: 404 });
 

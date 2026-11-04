@@ -73,6 +73,13 @@ export type AcaoDados = {
 };
 
 export type GatilhoEtapaVisao = {
+  /**
+   * O mesmo gatilho valendo para várias etapas: todas as linhas irmãs têm este id.
+   *
+   * Nulo = gatilho de uma etapa só. Quem agrupa é a TELA, que desenha as irmãs como uma faixa só;
+   * o motor continua achando os gatilhos de uma etapa por `etapaId`, sem saber que existem grupos.
+   */
+  grupoId?: string | null;
   id: string;
   funilId: string;
   etapaId: string;
