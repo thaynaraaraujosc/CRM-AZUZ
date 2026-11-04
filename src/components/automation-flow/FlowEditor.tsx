@@ -459,6 +459,34 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     setRfNodes(novoNodes);
     persist(novoNodes, rfEdges);
   }
+  /**
+   * Escrever a mensagem direto no cartão do canvas.
+   *
+   * `persistDebounced` e não `persist`: cada tecla digitada passa por aqui, e gravar a cada tecla
+   * manda o fluxo inteiro pro servidor dezenas de vezes por frase.
+   *
+   * O campo varia por tipo de bloco — texto é `texto`, mídia é `legenda` — e por isso o nome do
+   * campo é decidido aqui e não no cartão: o cartão desenha, não sabe do formato do bloco.
+   */
+  function editarTextoDoBloco(nodeId: string, texto: string) {
+    const novoNodes = rfNodes.map((n) => {
+      if (n.id !== nodeId) return n;
+      const tipo = n.data.flowNode.type;
+      const campo = tipo.startsWith("mensagem_") && !["mensagem_texto", "mensagem_botoes", "mensagem_lista"].includes(tipo)
+        ? "legenda"
+        : "texto";
+      return {
+        ...n,
+        data: {
+          ...n.data,
+          flowNode: { ...n.data.flowNode, data: { ...(n.data.flowNode.data ?? {}), [campo]: texto } },
+        },
+      };
+    });
+    setRfNodes(novoNodes);
+    persistDebounced(novoNodes, rfEdges);
+  }
+
   function onEdgesDelete(deleted: FlowRFEdge[]) {
     const idsSet = new Set(deleted.map((e) => e.id));
     const novoEdges = rfEdges.filter((e) => !idsSet.has(e.id));
@@ -1026,7 +1054,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   }, [selectedNodeIds, rfEdges]);
   const nodesParaRenderizar = useMemo(
     () =>
-      rfNodes.map((n) => ({
+      rfNodes.map((n, indice) => ({
         ...n,
         className: [
           nodesRelacionados && !nodesRelacionados.has(n.id) ? "flow-node-apagado" : "",
@@ -1046,6 +1074,8 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           /* Os dois botões que aparecem em cima do bloco selecionado, no Social Seller. */
           aoDuplicar: ehSocial && modoConstrucao ? () => duplicarUm(n.id) : undefined,
           aoRemover: ehSocial && modoConstrucao ? () => removerNodes([n.id]) : undefined,
+          numero: indice + 1,
+          aoEditarTexto: modoConstrucao ? (texto: string) => editarTextoDoBloco(n.id, texto) : undefined,
         },
       })),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `duplicarUm` e `removerNodes` são

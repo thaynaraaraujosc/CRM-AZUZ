@@ -21257,6 +21257,178 @@ table.tbl .name-cell .r {
  * ficam identificáveis de longe, sem precisar ler nada. Não tem sombra nem volume: ela marca um
  * lugar, não é um bloco que se configura.
  */
+/* ================= O CARTÃO DE MENSAGEM =================
+ *
+ * A Thaynara mandou o editor do Kommo como padrão e foi direta: "as caixinhas de automação, eu
+ * quero idêntica". O ponto dela não é estética — é que um bloco de mensagem não é "mais um
+ * bloco", ele é a própria conversa. Antes o cartão mostrava uma linha de resumo entre aspas
+ * ("(vazio)" · Canal: whatsapp) e uma pilha de rótulos cinzas. Dava pra saber que existia uma
+ * mensagem; não dava pra LER a mensagem, nem pra escrevê-la sem abrir o painel da direita.
+ *
+ * Agora: cartão branco com o número e o nome do bloco em cima, a mensagem numa BOLHA azul
+ * editável no lugar, os botões de resposta rápida dentro dela (cada um com o seu ponto de
+ * ligação, porque cada um abre um caminho), e embaixo os caminhos de resultado — "Outra
+ * resposta", "Sem resposta" e, em vermelho, "Falha ao enviar a mensagem".
+ *
+ * As saídas já existiam todas no motor: o que faltava era vê-las.
+ */
+.flow-node.msg-cartao {
+  width: 320px;
+  padding: 0;
+  overflow: visible;
+}
+
+.msg-cab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+/* O número do bloco, como na referência: serve pra conversar sobre o fluxo ("o bloco 5 está
+   errado"). É a ordem de criação, que é estável — a de execução muda conforme o caminho. */
+.msg-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  font-size: 11.5px;
+  font-weight: 650;
+  color: var(--text-muted);
+}
+
+.msg-nome {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink);
+}
+
+/*
+ * A BOLHA AZUL.
+ *
+ * Azul cheio e texto branco, como na referência. Ela é a única coisa colorida do canvas de
+ * propósito: num fluxo de quinze blocos, o olho tem que achar as mensagens — que é o que o
+ * contato de fato recebe — sem ler bloco por bloco.
+ */
+.msg-bolha {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 10px 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--msg-bolha-fundo, #4a6cf7);
+  color: #fff;
+}
+
+.msg-avatar {
+  position: absolute;
+  top: 11px;
+  left: 12px;
+  display: inline-flex;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/*
+ * O CAMPO DE TEXTO VESTIDO DE BOLHA.
+ *
+ * É um `textarea` de verdade — não um texto que abre um editor noutro lugar —, sem contorno,
+ * sem fundo e herdando a cor: o que se vê é a mensagem, e o cursor aparece onde se clica.
+ * `field-sizing` não é confiável em todos os navegadores ainda, então a altura vem do número de
+ * linhas, calculado no componente.
+ */
+.msg-texto {
+  width: 100%;
+  margin: 0;
+  padding: 0 0 0 22px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.4;
+  resize: none;
+  overflow: hidden;
+}
+
+.msg-texto:focus {
+  outline: none;
+}
+
+.msg-texto::placeholder {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+/* Cada botão de resposta rápida é uma pastilha dentro da bolha, com o ponto de ligação na borda
+   do cartão: é ele que diz que aquele botão leva a um caminho próprio. */
+.msg-opcao {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 999px;
+  font-size: 12.5px;
+}
+
+.msg-opcao > span {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.msg-opcao-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--msg-bolha-fundo, #4a6cf7);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* O ponto sai da borda DIREITA DO CARTÃO, e não da pastilha: é de lá que a linha parte, e a
+   pastilha está 12px pra dentro. */
+.msg-opcao .msg-handle {
+  right: -22px;
+}
+
+/* Os caminhos de resultado, alinhados à direita como na referência. */
+.flow-node-handles.msg-saidas {
+  padding: 0 12px 10px;
+  gap: 2px;
+}
+
+.flow-node-handles.msg-saidas .flow-node-handle-row {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.flow-node-handles.msg-saidas .flow-node-handle-row.is-falha .flow-handle-label {
+  color: var(--danger);
+}
+
 .no-inicio {
   display: inline-flex;
   align-items: center;
@@ -23888,6 +24060,17 @@ td.trafego-col-crm:first-of-type {
   position: relative;
 }
 
+/*
+ * "Testar e publicar" SUMIA no editor do funil.
+ *
+ * Ele pintava com `var(--ss-azul)`, que é um token LOCAL do Social Seller — definido só dentro de
+ * `.flow-shell-social`. Enquanto a barra era só de lá, funcionava. Quando ela passou a servir os
+ * dois editores, no funil o token não existia: sem valor, a regra inteira é inválida, o botão
+ * ficou sem fundo e sobrou texto branco sobre barra branca.
+ *
+ * O valor de fallback resolve isso sem desfazer a identidade do módulo: dentro do Social Seller
+ * o `--ss-azul` continua mandando; fora dele entra o azul de ação do CRM.
+ */
 .ss-toolbar-publicar {
   /* 144×36px na referência. */
   min-width: 144px;
@@ -23895,17 +24078,22 @@ td.trafego-col-crm:first-of-type {
   padding: 0 16px;
   border: 0;
   border-radius: var(--radius-2);
-  background: var(--ss-azul);
-  color: #fff;
+  background: var(--ss-azul, var(--acao));
+  color: var(--ss-azul-texto, var(--acao-texto));
   font: inherit;
   font-size: 14px;
   font-weight: 650;
   cursor: pointer;
-  transition: background 0.14s ease;
+  transition: filter 0.14s ease, background 0.14s ease;
 }
 
 .ss-toolbar-publicar:hover {
-  background: var(--ss-azul-forte);
+  background: var(--ss-azul-forte, var(--acao-hover));
+}
+
+/* No Social Seller o botão é azul cheio, e aí o texto é branco. */
+.flow-shell-social .ss-toolbar-publicar {
+  color: #fff;
 }
 
 /* O menu dos dois botões do canto. Cada item com a explicação embaixo: "Publicar agora" e
@@ -24013,26 +24201,29 @@ td.trafego-col-crm:first-of-type {
 /* O "+" é o único cheio e colorido: é a ação que faz a automação existir. O resto é manobra, e
    manobra não disputa atenção com conteúdo. */
 .ss-ferramenta.principal {
-  background: var(--ss-azul);
+  /* Fallback pelo mesmo motivo do "Testar e publicar": `--ss-azul` é token local do Social
+     Seller, e a coluna de ferramentas passou a servir os dois editores. Sem valor, a regra é
+     inválida e o botão some. */
+  background: var(--ss-azul, var(--acao));
   color: #fff;
   margin-bottom: 4px;
 }
 
 .ss-ferramenta.principal:hover:not(:disabled) {
-  background: var(--ss-azul-forte);
+  background: var(--ss-azul-forte, var(--acao-hover));
   color: #fff;
 }
 
 /* Separado do grupo, em cima: muda o que a tela MOSTRA, não o que ela faz. */
 .ss-ferramenta.destaque {
   border: 1px solid var(--line-soft);
-  background: var(--ss-azul-suave);
-  color: var(--ss-azul);
+  background: var(--ss-azul-suave, color-mix(in srgb, var(--acao) 18%, transparent));
+  color: var(--ss-azul, var(--ink));
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
 }
 
 .ss-ferramenta.destaque.on {
-  background: var(--ss-azul);
+  background: var(--ss-azul, var(--acao));
   color: #fff;
   border-color: transparent;
 }

@@ -83,8 +83,20 @@ function textoDaMensagem(node: FlowNodeDominio): string | null {
  */
 export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
   const { t: traduzir } = useIdioma();
-  const { flowNode, problemas, saidasConectadas, caminhosConvergindo, ordemNarrativa, explicacao, onAdicionarApos, area, aoDuplicar, aoRemover } =
-    data;
+  const {
+    flowNode,
+    problemas,
+    saidasConectadas,
+    caminhosConvergindo,
+    ordemNarrativa,
+    explicacao,
+    onAdicionarApos,
+    area,
+    aoDuplicar,
+    aoRemover,
+    numero,
+    aoEditarTexto,
+  } = data;
   /*
    * A CARA DO INSTAGRAM só no Social Seller, e só nos blocos que falam com a rede.
    *
@@ -97,10 +109,39 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
   const { funis } = useFunis();
   const bloco = BLOCOS_DISPONIVEIS.find((b) => b.tipo === flowNode.type);
   const saidas = saidasDoNo(flowNode);
+  /*
+   * O CARTÃO DE MENSAGEM, no modelo da referência.
+   *
+   * Um bloco de mensagem não é "mais um bloco": ele é a própria conversa. O cartão mostra a
+   * mensagem como ela sai — bolha, texto editável no lugar, os botões de resposta rápida dentro
+   * dela — e pendura à direita os caminhos que ela abre ("Outra resposta", "Sem resposta",
+   * "Falha ao enviar a mensagem"). Antes isso era uma linha de resumo entre aspas e uma pilha de
+   * rótulos cinzas: dava pra saber que existia uma mensagem, não dava pra LER a mensagem.
+   *
+   * Os outros blocos (condição, espera, etiqueta) continuam no cartão comum: eles não têm
+   * conteúdo pra mostrar, têm configuração — e configuração se lê melhor em resumo.
+   */
+  const ehCartaoDeMensagem = flowNode.category === "mensagem";
+  const textoDoBloco = (() => {
+    const d = (flowNode.data ?? {}) as Record<string, unknown>;
+    const bruto = flowNode.type === "mensagem_texto" || flowNode.type === "mensagem_botoes" || flowNode.type === "mensagem_lista" ? d.texto : d.legenda;
+    return typeof bruto === "string" ? bruto : "";
+  })();
+  /** As saídas que são BOTÃO de resposta rápida: elas moram dentro da bolha, como na referência. */
+  const saidasDeOpcao = ehCartaoDeMensagem
+    ? saidas.filter(
+        (sa) =>
+          (flowNode.type === "mensagem_botoes" || flowNode.type === "mensagem_lista") &&
+          sa.handleId !== undefined &&
+          !["outra_resposta", "nao_respondeu", "tentativas_esgotadas", "falha"].includes(sa.handleId),
+      )
+    : [];
+  const saidasDeCaminho = saidas.filter((sa) => !saidasDeOpcao.includes(sa));
   const temErro = problemas.some((p) => p.severidade === "erro");
   const temAviso = !temErro && problemas.some((p) => p.severidade === "aviso");
   const classes = [
     "flow-node",
+    ehCartaoDeMensagem ? "msg-cartao" : "",
     `flow-cat-${flowNode.category}`,
     selected ? "is-selected" : "",
     temErro ? "has-error" : temAviso ? "has-warning" : "",
@@ -195,6 +236,75 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
         </div>
       ) : null}
 
+      {ehCartaoDeMensagem ? (
+        <>
+          {/* O cabeçalho do cartão: o número do bloco e o nome dele. O número é da referência e
+              serve pra conversar sobre o fluxo ("o bloco 5 está errado"). */}
+          <div className="msg-cab">
+            {numero ? <span className="msg-num">{numero}</span> : null}
+            <span className="msg-nome">
+              {flowNode.titulo || (bloco?.label ? traduzir(bloco.label) : flowNode.type)}
+            </span>
+            {flowNode.desativado ? <span className="flow-node-pausado-badge">{traduzir("Pausado")}</span> : null}
+            {temErro || temAviso ? (
+              <span className="flow-node-warn" title={problemas.map((p) => p.mensagem).join(" · ")}>
+                <IconAlerta width={13} height={13} />
+              </span>
+            ) : null}
+          </div>
+
+          <div className="msg-bolha">
+            <span className="msg-avatar" aria-hidden="true">
+              {caraDoInstagram ? <IconInstagram width={14} height={14} /> : <IconAutomacoes width={14} height={14} />}
+            </span>
+            {/*
+              A MENSAGEM SE ESCREVE AQUI.
+              
+              `nodrag` e `nowheel` são do React Flow: sem eles, arrastar pra selecionar texto
+              arrasta o bloco, e rolar dentro do campo dá zoom no canvas.
+              
+              Sem `aoEditarTexto` (modo "só visualizar") o campo vira leitura: desabilitar o
+              editor inteiro e deixar um campo editável no meio dele seria mentir sobre o modo.
+            */}
+            <textarea
+              className="msg-texto nodrag nowheel"
+              value={textoDoBloco}
+              readOnly={!aoEditarTexto}
+              rows={Math.min(8, Math.max(1, textoDoBloco.split("\n").length))}
+              placeholder={traduzir("Escreva a mensagem do robô…")}
+              onChange={(e) => aoEditarTexto?.(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+            />
+
+            {saidasDeOpcao.map((sa) => {
+              const chave = sa.handleId ?? "__default__";
+              const conectada = saidasConectadas?.has(chave) ?? false;
+              return (
+                <div className="msg-opcao" key={chave}>
+                  {/* O rótulo vem de `saidasDoNo` numerado ("1 · Quero agendar"); na pastilha o
+                      número é ruído, porque a ordem já é a de cima pra baixo. */}
+                  <span>{traduzir(sa.label).replace(/^\d+ · /, "")}</span>
+                  {!conectada && onAdicionarApos ? (
+                    <button
+                      type="button"
+                      className="msg-opcao-add"
+                      title={traduzir("O que acontece quando clicam aqui?")}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onAdicionarApos(sa.handleId);
+                      }}
+                    >
+                      +
+                    </button>
+                  ) : null}
+                  <Handle type="source" position={Position.Right} id={sa.handleId} className="flow-handle msg-handle" />
+                </div>
+              );
+            })}
+          </div>
+        </>
+      ) : (
+        <>
       <div className="flow-node-header">
         <span className={`flow-node-icon${caraDoInstagram ? " is-instagram" : ""}`} aria-hidden="true">
           {(() => {
@@ -240,6 +350,8 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
           );
         })()
       )}
+        </>
+      )}
 
       {explicacao ? (
         <div className="flow-node-explicacao">
@@ -247,9 +359,11 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
         </div>
       ) : null}
 
-      {saidas.length > 1 ? (
-        <div className="flow-node-handles">
-          {saidas.map((s) => {
+      {/* No cartão de mensagem, os botões de resposta já foram desenhados DENTRO da bolha: aqui
+          sobram os caminhos de resultado ("Outra resposta", "Sem resposta", "Falha ao enviar"). */}
+      {(ehCartaoDeMensagem ? saidasDeCaminho : saidas).length > 1 ? (
+        <div className={`flow-node-handles${ehCartaoDeMensagem ? " msg-saidas" : ""}`}>
+          {(ehCartaoDeMensagem ? saidasDeCaminho : saidas).map((s) => {
             const chave = s.handleId ?? "__default__";
             const conectada = saidasConectadas?.has(chave) ?? false;
             /* Condição binária (item 8): "Sim"/"Não" tem que ler como uma bifurcação clara, não só
@@ -259,12 +373,16 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
             /* Pergunta com várias opções (item 8): visual de "menu" (pill azulado). Diferente da
                bifurcação binária de condição, pra não parecer o mesmo tipo de componente. */
             const ehOpcaoDePergunta =
+              !ehCartaoDeMensagem &&
               (flowNode.type === "mensagem_botoes" || flowNode.type === "mensagem_lista") &&
               chave !== "outra_resposta" &&
               chave !== "nao_respondeu";
+            /* O caminho de falha é o único em vermelho, como na referência: ele não é "mais uma
+               resposta possível", é o que fazer quando o envio não saiu. */
+            const ehFalha = chave === "falha";
             return (
               <div
-                className={`flow-node-handle-row${corBifurcacao ? ` is-bifurcacao-${corBifurcacao}` : ""}${ehOpcaoDePergunta ? " is-opcao-pergunta" : ""}`}
+                className={`flow-node-handle-row${corBifurcacao ? ` is-bifurcacao-${corBifurcacao}` : ""}${ehOpcaoDePergunta ? " is-opcao-pergunta" : ""}${ehFalha ? " is-falha" : ""}`}
                 key={chave}
               >
                 <span className="flow-handle-label">{traduzir(s.label)}</span>
@@ -291,7 +409,7 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
             );
           })}
         </div>
-      ) : saidas.length === 1 ? (
+      ) : (ehCartaoDeMensagem ? saidasDeCaminho : saidas).length === 1 ? (
         <div className="flow-node-saida-unica">
           {/* "Próximo passo" escrito: o ponto de conexão sozinho não diz o que ele é, e quem
               nunca montou um fluxo não descobre que se arrasta dali pra ligar no bloco seguinte. */}

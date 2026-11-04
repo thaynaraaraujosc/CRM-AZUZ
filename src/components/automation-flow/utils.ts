@@ -39,6 +39,23 @@ export type FlowRFNodeData = {
   /** Copiar e apagar ESTE bloco, pelos dois botões que aparecem em cima dele quando selecionado. */
   aoDuplicar?: () => void;
   aoRemover?: () => void;
+  /**
+   * O número do bloco, do jeito que a referência mostra: `1`, `3`, `14`.
+   *
+   * É a ORDEM DE CRIAÇÃO, e não a ordem de execução. Parece um detalhe e não é: a ordem de
+   * execução muda conforme o caminho que o contato toma (uma pergunta com três botões tem três
+   * ordens possíveis), então um número "de execução" estaria errado na maioria das vezes. O
+   * número de criação é estável, serve pra conversar sobre o fluxo ("o bloco 5 está errado") e
+   * não promete nada que não cumpre.
+   */
+  numero?: number;
+  /**
+   * ESCREVER A MENSAGEM NO PRÓPRIO CARTÃO, sem abrir o painel da direita.
+   *
+   * É o gesto da referência, e é o que faz o canvas valer a pena: a mensagem que o contato vai
+   * receber fica legível e editável no mesmo lugar onde se desenha o caminho dela.
+   */
+  aoEditarTexto?: (texto: string) => void;
 };
 
 /**
