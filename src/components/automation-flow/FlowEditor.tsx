@@ -2,10 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  ControlButton,
-  Controls,
   MarkerType,
-  MiniMap,
   Panel,
   ReactFlow,
   ReactFlowProvider,
@@ -35,12 +32,12 @@ import type {
   VersaoFluxo,
 } from "@/lib/automation-flow/types";
 
-import { BlockLibrary, FLOW_DND_MIME } from "./BlockLibrary";
+import { FLOW_DND_MIME } from "./BlockLibrary";
+import { blocoApareceNaArea } from "@/lib/canais/capacidades";
 import { ConfigPanel } from "./ConfigPanel";
 import { HistoricoExecucoes } from "./HistoricoExecucoes";
 import { HistoricoVersoes } from "./HistoricoVersoes";
 import { Simulador } from "./Simulador";
-import { Toolbar } from "./Toolbar";
 import { ToolbarSocial } from "./ToolbarSocial";
 import { BarraFerramentasSocial } from "./BarraFerramentasSocial";
 import { ArestaSocial } from "./ArestaSocial";
@@ -48,7 +45,7 @@ import { GatilhosDoSocial } from "./GatilhosDoSocial";
 import { ListaDePassos } from "./ListaDePassos";
 import { PainelProximoPasso } from "./PainelProximoPasso";
 import { nodeTypes } from "./nodes";
-import { IconCheck, IconClose, IconExpandir } from "@/components/icons";
+import { IconCheck, IconClose } from "@/components/icons";
 import { useIdioma } from "@/lib/idioma-context";
 import {
   CORES_CATEGORIA,
@@ -64,23 +61,6 @@ import {
 } from "./utils";
 
 type Snapshot = { nodes: FlowRFNode[]; edges: FlowRFEdge[] };
-
-/**
- * Gatilhos mais comuns, na ordem sugerida pro fluxo guiado de primeira automação. Evita jogar as 31
- * opções de gatilho de uma vez só pra quem está começando. "Ver todos os gatilhos" continua abrindo a
- * biblioteca completa (nada fica escondido, só não é a primeira coisa que aparece).
- */
-const GATILHOS_COMUNS: FlowNodeType[] = [
-  "mensagem_recebida",
-  "lead_criado",
-  "lead_entrou_etapa",
-  "lead_saiu_etapa",
-  "lead_respondeu",
-  "lead_nao_respondeu",
-  "etiqueta_adicionada",
-  "campo_alterado",
-  "horario_programado",
-];
 
 /** Frase curta pro modo "Entender fluxo" (item 24). Mesma frase de resumoNo(), só emoldurada por
  * categoria pra ler como narrativa ("Começa quando...", "Verifica...", "Envia...") em vez de um
@@ -180,7 +160,6 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const [metaPendente, setMetaPendente] = useState<Partial<FluxoAutomacao>>({});
   // A biblioteca começa FECHADA. Ela ocupava um terço da tela o tempo todo, inclusive nas horas
   // em que a pessoa só quer ler o fluxo, e o canvas é o que precisa de espaço. Abrir é um clique.
-  const [libAberta, setLibAberta] = useState(false);
   const [simuladorAberto, setSimuladorAberto] = useState(false);
   const [execucoesAbertas, setExecucoesAbertas] = useState(false);
   const [historicoAberto, setHistoricoAberto] = useState(false);
@@ -196,14 +175,47 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
    * gravado nas configurações, e se nem isso houver, o lugar calculado.
    */
   const [posicaoInicioArrastada, setPosicaoInicioArrastada] = useState<{ x: number; y: number } | null>(null);
+  /*
+   * O QUADRO VAZIO JÁ ABRE COM AS OPÇÕES NA TELA.
+   *
+   * "Quando começa um do zero, ele começa com a tela limpa: só aparece iniciar robô e o próximo
+   * passo." Antes havia um cartão de boas-vindas com um botão que abria a lista — um clique a
+   * mais pra chegar na única coisa que dá pra fazer num fluxo vazio.
+   *
+   * Este estado é o "a pessoa fechou": sem ele, fechar a lista num fluxo que continua vazio a
+   * abriria de novo no render seguinte, e não haveria como fechá-la.
+   */
+  const [dispensouAbertura, setDispensouAbertura] = useState(false);
   const [acaoRapida, setAcaoRapida] = useState<{ nodeId: string; handleId: string | undefined } | null>(null);
-  const [minimapaVisivel, setMinimapaVisivel] = useState(true);
+
   const [arrastandoSobreCanvas, setArrastandoSobreCanvas] = useState(false);
   const [entenderFluxoAtivo, setEntenderFluxoAtivo] = useState(false);
   /** Modo Visualizar (item 25): mesmo canvas, mas sem nada editável: sem arrastar bloco da
    * biblioteca, sem menu de contexto, sem botão "+", sem arrastar node. Útil pra revisar o fluxo
    * com alguém sem risco de mexer em nada sem querer. */
   const [modoConstrucao, setModoConstrucao] = useState(true);
+  /*
+   * A abertura automática é DERIVADA, não ligada por um efeito.
+   *
+   * "O quadro vazio não tem nada pra escolher além do primeiro passo" é um fato do render: dá pra
+   * lê-lo direto do estado em vez de reagir a ele e chamar `setState` — que é um render a mais e
+   * um caminho a mais pra sair do compasso. `dispensouAbertura` é o único estado de verdade: ele
+   * guarda que a pessoa fechou a lista, pra ela não voltar sozinha no quadro seguinte.
+   */
+  const quadroVazio = carregado && modoConstrucao && rfNodes.length === 0;
+  // No Instagram o fluxo começa escolhendo o GATILHO; num robô de funil o gatilho já está na
+  // etapa, então o que falta escolher é o primeiro passo.
+  const abrirGatilhoSozinho = quadroVazio && !dispensouAbertura && ehSocial;
+  const abrirPassoSozinho = quadroVazio && !dispensouAbertura && !ehSocial;
+  const escolhendoGatilho = escolherGatilhoAberto || abrirGatilhoSozinho;
+  const escolhendoProximoPasso = acaoRapida ?? (abrirPassoSozinho ? { nodeId: "", handleId: undefined } : null);
+
+  /** Fechar qualquer uma das duas também desliga a abertura automática. */
+  function fecharEscolha() {
+    setDispensouAbertura(true);
+    setEscolherGatilhoAberto(false);
+    setAcaoRapida(null);
+  }
   const [modoPassos, setModoPassos] = useState(false);
   /** Quantas execuções passaram por cada bloco. Só é buscado quando a lista de passos abre. */
   const [contadores, setContadores] = useState<Record<string, number>>({});
@@ -1042,39 +1054,6 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     [rfNodes, problemasPorNode, saidasConectadasPorNode, entradasPorNode, ordemNarrativaPorNode, entenderFluxoAtivo, nodesRelacionados, modoConstrucao, funis, nodePiscando, area, ehSocial],
   );
   /**
-   * O QUE O CARTÃO DE ABERTURA DIZ, quando o canvas está vazio.
-   *
-   * Três começos diferentes, e a diferença é real: um robô de Instagram começa escolhendo o
-   * gatilho; um robô de funil amarrado a uma etapa já tem o gatilho definido lá e começa pelo
-   * primeiro passo; um fluxo solto precisa escolher um gatilho do zero. `null` = há blocos, e o
-   * início volta a ser a pastilha compacta.
-   */
-  const aberturaDoCanvasVazio = useMemo(() => {
-    if (ehSocial) {
-      return {
-        titulo: traduzir("O que inicia a automação"),
-        rotuloBotao: traduzir("Adicionar gatilho"),
-        aoClicar: () => setEscolherGatilhoAberto(true),
-      };
-    }
-    if (inicioNoFunil) {
-      return {
-        titulo: `Quando o lead entra em “${inicioNoFunil.etapaTitulo}”`,
-        descricao: `${inicioNoFunil.funilNome}. Quando executar, os dias e a condição foram configurados na etapa, em Automatizar funil. Aqui você monta o que o robô faz.`,
-        rotuloBotao: traduzir("Adicionar primeiro passo"),
-        aoClicar: () => setAcaoRapida({ nodeId: "", handleId: undefined }),
-      };
-    }
-    return {
-      titulo: traduzir("Como esta automação deve começar?"),
-      descricao: traduzir("Toda automação começa a partir de um gatilho."),
-      rotuloBotao: traduzir("Escolher gatilho"),
-      aoClicar: () => setEscolherGatilhoAberto(true),
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- `traduzir` troca de identidade a cada render do contexto de idioma; o conteúdo depende só da área e da etapa.
-  }, [ehSocial, inicioNoFunil]);
-
-  /**
    * De qual bloco o fluxo parte: o gatilho, ou o primeiro bloco sem nada chegando nele.
    *
    * É a mesma pergunta que a pastilha verde responde, e ela precisa de uma resposta mesmo em fluxo
@@ -1105,12 +1084,11 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
    */
   const inicioDesenhado = useMemo(() => {
     const alvo = rfNodes.find((n) => n.id === idDoPrimeiroBloco);
-    const vazio = !alvo && modoConstrucao ? aberturaDoCanvasVazio : null;
-    if (!alvo && !vazio) return null;
+    if (!alvo && !modoConstrucao) return null;
 
     const posicaoPadrao = alvo
       ? { x: alvo.position.x - 230, y: alvo.position.y + 8 }
-      : { x: 80, y: 80 };
+      : { x: 120, y: 120 };
     const no: FlowRFNode = {
       id: ID_INICIO,
       type: "inicio",
@@ -1123,8 +1101,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
         // início não lê nenhum campo dele, e o tipo exige que exista.
         flowNode: alvo?.data.flowNode ?? ({ id: ID_INICIO, type: "inicio", category: "gatilho" } as unknown as DomainFlowNode),
         problemas: [],
-        ...(vazio ? { inicioVazio: vazio } : {}),
-        ...(alvo && inicioNoFunil ? { detalheInicio: `Lead entra em “${inicioNoFunil.etapaTitulo}”` } : {}),
+        ...(inicioNoFunil ? { detalheInicio: `Lead entra em “${inicioNoFunil.etapaTitulo}”` } : {}),
       } as FlowRFNode["data"],
     };
     if (!alvo) return { no, aresta: null };
@@ -1143,7 +1120,6 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     idDoPrimeiroBloco,
     inicioNoFunil,
     modoConstrucao,
-    aberturaDoCanvasVazio,
     posicaoInicioArrastada,
     fluxo?.configuracoes?.posicaoInicio,
   ]);
@@ -1210,64 +1186,39 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   return (
     <div className={`flow-shell${ehSocial ? " flow-shell-social" : ""}`}>
       {/*
-        DUAS BARRAS, uma por área.
+        UMA BARRA SÓ, pros dois editores.
         
-        A do funil tem doze controles na mesma linha e cabe porque foi crescendo. Uma automação de
-        Instagram é curta e se monta em dois minutos: com aquela barra, o editor fica mais
-        complicado que a própria automação. A do Social Seller deixa à vista só voltar, o nome,
-        publicar e o "⋮" — e nada saiu do editor: tudo o que não está na barra está no menu.
+        A do funil tinha doze controles na mesma linha: voltar, nome, etiqueta, aviso de
+        pendência, três modos, desfazer, refazer, organizar, entender fluxo, histórico, execuções,
+        testar, um interruptor de ativo e dois botões de gravar. Cabia porque foi crescendo, não
+        porque foi desenhada — e a Thaynara comparou com o Kommo, onde o editor abre com o nome, o
+        salvar e o fechar, e mais nada.
+        
+        NADA SAIU DO EDITOR. O que não está na barra está no "⋮" ou na coluna de ferramentas do
+        canvas, à direita.
       */}
-      {ehSocial ? (
-        <ToolbarSocial
-          nome={fluxoNaTela.nome}
-          onChangeNome={(nome) => updateFluxoMeta({ nome })}
-          status={fluxo.status}
-          salvando={salvando}
-          salvoEm={salvoEm}
-          temPendencia={temPendencia}
-          onSalvarAlteracoes={salvarAlteracoes}
-          onDescartarAlteracoes={descartarAlteracoes}
-          ativa={fluxo.ativa}
-          podeAtivar={fluxo.status === "publicado"}
-          onToggleAtiva={() => alternarAtivo(fluxoId)}
-          onTestar={() => setSimuladorAberto(true)}
-          onSalvarRascunho={salvarRascunhoAgora}
-          onPublicar={publicar}
-          onAbrirHistorico={() => setHistoricoAberto(true)}
-          onAbrirExecucoes={() => setExecucoesAbertas(true)}
-          onAbrirConfiguracoes={() => {
-            setSelectedNodeIds([]);
-            setConfigGeralAberta(true);
-          }}
-          entenderFluxoAtivo={entenderFluxoAtivo}
-          onAlternarEntenderFluxo={() => setEntenderFluxoAtivo((v) => !v)}
-          modoConstrucao={modoConstrucao}
-          onAlternarModo={() => setModoConstrucao((v) => !v)}
-          modoPassos={modoPassos}
-          onModoPassos={setModoPassos}
-        />
-      ) : (
-      <Toolbar
+      <ToolbarSocial
+        hrefVoltar={ehSocial ? "/social-seller/automacoes" : "/automacoes"}
         nome={fluxoNaTela.nome}
         onChangeNome={(nome) => updateFluxoMeta({ nome })}
         status={fluxo.status}
         salvando={salvando}
+        salvoEm={salvoEm}
         temPendencia={temPendencia}
         onSalvarAlteracoes={salvarAlteracoes}
         onDescartarAlteracoes={descartarAlteracoes}
         ativa={fluxo.ativa}
         podeAtivar={fluxo.status === "publicado"}
         onToggleAtiva={() => alternarAtivo(fluxoId)}
-        podeDesfazer={historyIndex > 0}
-        podeRefazer={historyIndex < historyLen - 1}
-        onUndo={undo}
-        onRedo={redo}
         onTestar={() => setSimuladorAberto(true)}
         onSalvarRascunho={salvarRascunhoAgora}
         onPublicar={publicar}
         onAbrirHistorico={() => setHistoricoAberto(true)}
         onAbrirExecucoes={() => setExecucoesAbertas(true)}
-        onOrganizarAutomaticamente={organizarAutomaticamente}
+        onAbrirConfiguracoes={() => {
+          setSelectedNodeIds([]);
+          setConfigGeralAberta(true);
+        }}
         entenderFluxoAtivo={entenderFluxoAtivo}
         onAlternarEntenderFluxo={() => setEntenderFluxoAtivo((v) => !v)}
         modoConstrucao={modoConstrucao}
@@ -1275,26 +1226,16 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
         modoPassos={modoPassos}
         onModoPassos={setModoPassos}
       />
-      )}
 
       <div className="flow-body">
         {/*
-          NO SOCIAL SELLER NÃO HÁ BIBLIOTECA FIXA à esquerda.
+          SEM BIBLIOTECA FIXA à esquerda, em nenhum dos dois.
           
-          Ela é do editor do funil, onde se monta um fluxo de vinte blocos e vale ter a paleta
-          aberta o tempo todo. Aqui o bloco entra por onde a pessoa está olhando: o "+" da saída
-          do bloco anterior, ou o "+" da coluna da direita. Uma coluna fixa com dez categorias
-          rouba um terço da tela de uma automação que tem seis blocos — e a esquerda é onde o
-          painel do bloco clicado precisa abrir.
+          Era uma coluna com dez categorias e sessenta blocos, aberta o tempo todo, ocupando um
+          terço da tela. O bloco entra por onde a pessoa está olhando: o "+" da saída do bloco
+          anterior, ou o "+" da coluna de ferramentas — e os dois abrem a MESMA lista, com busca.
+          Uma paleta fixa a mais era um terceiro lugar pra procurar a mesma coisa.
         */}
-        {modoConstrucao && !ehSocial ? (
-          <BlockLibrary
-            aberta={libAberta}
-            area={area}
-            onFechar={() => setLibAberta((v) => !v)}
-            onAdicionarBloco={(tipo) => adicionarBloco(tipo)}
-          />
-        ) : null}
 
         {modoPassos ? (
           <div className="flow-canvas passos-area">
@@ -1384,9 +1325,11 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
               No Social Seller a coluna da direita substitui estes controles: ter os dois seria
               zoom em dois lugares, e o de baixo-à-esquerda é o que ninguém acha.
             */}
-            {ehSocial ? (
-              <Panel position="top-right">
-                <BarraFerramentasSocial
+            {/* A COLUNA DE FERRAMENTAS, nos dois editores: zoom, desfazer, refazer, organizar,
+                execuções, histórico e o "+" que abre a lista de blocos. Ela substitui a fileira de
+                botões que ficava na barra de cima do funil. */}
+            <Panel position="top-right">
+              <BarraFerramentasSocial
                   podeDesfazer={historyIndex > 0}
                   podeRefazer={historyIndex < historyLen - 1}
                   habilitado={modoConstrucao}
@@ -1400,14 +1343,12 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                   onOrganizar={organizarAutomaticamente}
                   onExecucoes={() => setExecucoesAbertas(true)}
                   onHistorico={() => setHistoricoAberto(true)}
-                  onAlternarEntenderFluxo={() => setEntenderFluxoAtivo((v) => !v)}
-                />
-              </Panel>
-            ) : null}
+                onAlternarEntenderFluxo={() => setEntenderFluxoAtivo((v) => !v)}
+              />
+            </Panel>
 
             {/* "Salvo em…" longe dos botões: é informação, não controle. */}
-            {ehSocial ? (
-              <Panel position="bottom-right">
+            <Panel position="bottom-right">
                 <span className={`ss-salvo${salvando ? " salvando" : ""}`}>
                   {salvando ? (
                     traduzir("Salvando…")
@@ -1424,52 +1365,16 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                     </>
                   ) : null}
                 </span>
-              </Panel>
-            ) : null}
-
-            {ehSocial ? null : (
-            <Controls showZoom={false} showFitView={false} showInteractive={false}>
-              <ControlButton title={traduzir("Aumentar zoom")} aria-label={traduzir("Aumentar zoom")} onClick={() => zoomIn({ duration: 200 })}>
-                +
-              </ControlButton>
-              <ControlButton title={traduzir("Diminuir zoom")} aria-label={traduzir("Diminuir zoom")} onClick={() => zoomOut({ duration: 200 })}>
-                −
-              </ControlButton>
-              <ControlButton title={traduzir("Centralizar fluxo")} aria-label={traduzir("Centralizar fluxo")} onClick={() => centralizarTudo()}>
-                <IconExpandir width={13} height={13} />
-              </ControlButton>
-            </Controls>
-            )}
-            {minimapaVisivel ? (
-              <MiniMap pannable zoomable nodeColor={(n) => CORES_CATEGORIA[String(n.type)] ?? "#94a3b8"} />
-            ) : null}
-            {inicioNoFunil ? (
-              <Panel position="top-left">
-                {/* O começo e o fim ficam à vista o tempo todo, como no Kommo: quem abre um fluxo
-                    com quinze blocos precisa saber de onde ele parte sem procurar, e precisa de um
-                    jeito curto de fechar o caminho que acabou de montar. */}
-                {/* O começo já aparece como pastilha verde no canvas, ligada ao primeiro bloco.
-                    Aqui fica só o funil, que a pastilha não tem espaço pra dizer. O fim sai da
-                    biblioteca, pelo bloco "Encerrar fluxo": um segundo atalho pra criar o mesmo
-                    bloco só faria a pessoa procurar em dois lugares. */}
-                <span className="flow-inicio-fim-funil">{inicioNoFunil.funilNome}</span>
-              </Panel>
-            ) : null}
-            <Panel position="top-right">
-              <div style={{ display: "flex", gap: 8 }}>
-                <button
-                  type="button"
-                  className="btn ghost"
-                  title={minimapaVisivel ? "Ocultar minimapa" : "Mostrar minimapa"}
-                  onClick={() => setMinimapaVisivel((v) => !v)}
-                >
-                  {minimapaVisivel ? "Ocultar minimapa" : "Mostrar minimapa"}
-                </button>
-                <button type="button" className="btn ghost" onClick={() => centralizarTudo()}>
-                  {traduzir("Centralizar")}
-                </button>
-              </div>
             </Panel>
+
+            {/*
+              SEM OS CONTROLES DE BAIXO E SEM O MINIMAPA.
+              
+              O zoom existia em dois lugares — no canto de baixo à esquerda, que ninguém acha, e
+              agora na coluna da direita. O minimapa vinha ligado por padrão e ocupava um pedaço
+              do canvas num fluxo de seis blocos, que é o tamanho da maioria. A coluna da direita
+              tem "Centralizar", que é o que o minimapa de fato resolvia.
+            */}
             {modoConstrucao && selectedNodeIds.length > 0 ? (
               <Panel position="top-center">
                 <div className="flow-selection-bar">
@@ -1497,12 +1402,12 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
             </div>
           ) : null}
 
-          {escolherGatilhoAberto && ehSocial ? (
+          {escolhendoGatilho && ehSocial ? (
             <GatilhosDoSocial
               gatilhosAtuais={domainNodesAtuais
                 .filter((n) => n.category === "gatilho")
                 .map((n) => ({ tipo: n.type, data: (n.data ?? {}) as Record<string, unknown> }))}
-              onFechar={() => setEscolherGatilhoAberto(false)}
+              onFechar={fecharEscolha}
               onEscolher={(escolhas) => {
                 aplicarGatilhos(escolhas);
                 setEscolherGatilhoAberto(false);
@@ -1510,8 +1415,8 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
             />
           ) : null}
 
-          {escolherGatilhoAberto && !ehSocial ? (
-            <div className="modal-overlay" onClick={() => setEscolherGatilhoAberto(false)}>
+          {escolhendoGatilho && !ehSocial ? (
+            <div className="modal-overlay" onClick={fecharEscolha}>
               <div className="modal flow-escolher-gatilho" onClick={(e) => e.stopPropagation()}>
                 <div className="panel-h">
                   <h4>{traduzir("Quando isso deve acontecer?")}</h4>
@@ -1519,46 +1424,41 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                     type="button"
                     className="modal-close-btn"
                     aria-label={traduzir("Fechar")}
-                    onClick={() => setEscolherGatilhoAberto(false)}
+                    onClick={fecharEscolha}
                   >
                     <IconClose width={13} height={13} />
                   </button>
                 </div>
+                {/*
+                  TODOS OS GATILHOS DA ÁREA, e não só os comuns com um "ver todos" embaixo.
+                  
+                  O "ver todos" abria a biblioteca fixa da esquerda, que não existe mais. Em vez
+                  de um segundo lugar pra procurar, a lista inteira fica aqui — ela tem dezesseis
+                  linhas, cabe, e some a pergunta "onde está o resto?".
+                */}
                 <div className="flow-escolher-gatilho-lista">
-                  {GATILHOS_COMUNS.map((tipo) => {
-                    const bloco = BLOCOS_DISPONIVEIS.find((b) => b.tipo === tipo);
-                    if (!bloco) return null;
-                    return (
-                      <button
-                        type="button"
-                        key={tipo}
-                        className="flow-escolher-gatilho-item"
-                        onClick={() => {
-                          adicionarBloco(tipo, { x: 80, y: 80 });
-                          setEscolherGatilhoAberto(false);
-                        }}
-                      >
-                        <span className="n">{traduzir(bloco.label)}</span>
-                        <span className="r">{traduzir(bloco.descricao)}</span>
-                      </button>
-                    );
-                  })}
+                  {BLOCOS_DISPONIVEIS.filter(
+                    (b) => b.categoria === "gatilho" && blocoApareceNaArea(b, area),
+                  ).map((bloco) => (
+                    <button
+                      type="button"
+                      key={bloco.tipo}
+                      className="flow-escolher-gatilho-item"
+                      onClick={() => {
+                        adicionarBloco(bloco.tipo, { x: 120, y: 120 });
+                        fecharEscolha();
+                      }}
+                    >
+                      <span className="n">{traduzir(bloco.label)}</span>
+                      <span className="r">{traduzir(bloco.descricao)}</span>
+                    </button>
+                  ))}
                 </div>
-                <button
-                  type="button"
-                  className="btn ghost block"
-                  onClick={() => {
-                    setEscolherGatilhoAberto(false);
-                    setLibAberta(true);
-                  }}
-                >
-                  {traduzir("Ver todos os gatilhos")}
-                </button>
               </div>
             </div>
           ) : null}
 
-          {acaoRapida ? (
+          {escolhendoProximoPasso ? (
             <PainelProximoPasso
               tipoAnterior={noDaAcaoRapida?.type}
               categoriaAnterior={noDaAcaoRapida?.category}
@@ -1567,15 +1467,16 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
               onEscolher={(tipo) => {
                 // `nodeId` vazio = "primeiro passo" de um robô que começa na etapa do funil: não há
                 // bloco anterior a que conectar, então o passo entra solto no canvas.
-                if (acaoRapida.nodeId) adicionarBlocoConectado(tipo, acaoRapida.nodeId, acaoRapida.handleId);
-                else adicionarBloco(tipo, { x: 80, y: 80 });
+                if (escolhendoProximoPasso.nodeId)
+                  adicionarBlocoConectado(tipo, escolhendoProximoPasso.nodeId, escolhendoProximoPasso.handleId);
+                else adicionarBloco(tipo, { x: 420, y: 120 });
                 setAcaoRapida(null);
               }}
               onFollowUp={() => {
-                adicionarFollowUp(acaoRapida.nodeId, acaoRapida.handleId);
+                adicionarFollowUp(escolhendoProximoPasso.nodeId, escolhendoProximoPasso.handleId);
                 setAcaoRapida(null);
               }}
-              onFechar={() => setAcaoRapida(null)}
+              onFechar={fecharEscolha}
               /*
                * A CAIXINHA TAMBÉM NO FUNIL, e não só no Social Seller.
                *
@@ -1652,7 +1553,14 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           
           As configurações gerais do fluxo não se perderam: elas continuam no "⋮" do cabeçalho.
         */}
-        {ehSocial && selectedNodes.length === 0 && !configGeralAberta ? null : (
+        {/*
+          O PAINEL DA DIREITA SÓ EXISTE QUANDO HÁ O QUE CONFIGURAR.
+          
+          Ele ficava aberto o tempo todo no funil, com "Configurar" e "Problemas", ocupando 380px
+          de tela pra mostrar o nome do fluxo — que já está escrito na barra de cima. Agora abre
+          ao clicar num bloco, ou pelo "Configurações da automação" do menu "⋮".
+        */}
+        {selectedNodes.length === 0 && !configGeralAberta ? null : (
         <ConfigPanel
           fluxo={fluxoNaTela}
           selectedNodes={selectedNodes}

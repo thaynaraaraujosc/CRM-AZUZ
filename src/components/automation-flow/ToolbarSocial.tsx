@@ -21,8 +21,16 @@ import { useIdioma } from "@/lib/idioma-context";
  *
  * A barra de ferramentas do canvas (zoom, desfazer, refazer, organizar) virou uma COLUNA à direita,
  * perto de onde a mão está enquanto se arrasta bloco. Ver `BarraFerramentasSocial`.
+ *
+ * VALE PRO FUNIL TAMBÉM, desde que a Thaynara comparou as duas telas com a do Kommo: "a gente tem
+ * muita informação nessa tela que precisamos retirar... quando começa um do zero, ele começa com
+ * a tela limpa". A barra antiga do funil tinha doze controles numa linha — três modos, desfazer,
+ * refazer, organizar, entender fluxo, histórico, execuções, testar, um interruptor e dois botões
+ * de gravar. Tudo continua existindo: o que se usa o tempo todo ficou na barra, o resto está no
+ * "⋮" e na coluna de ferramentas do canvas.
  */
 export function ToolbarSocial({
+  hrefVoltar,
   nome,
   onChangeNome,
   status,
@@ -47,6 +55,8 @@ export function ToolbarSocial({
   onModoPassos,
   onAlternarModo,
 }: {
+  /** Pra onde a setinha de voltar leva. Muda por módulo: o funil volta pra Automações. */
+  hrefVoltar: string;
   nome: string;
   onChangeNome: (v: string) => void;
   status: "rascunho" | "publicado";
@@ -103,7 +113,7 @@ export function ToolbarSocial({
     <header className="flow-toolbar ss-toolbar">
       <div className="ss-toolbar-esq">
         <Link
-          href="/social-seller/automacoes"
+          href={hrefVoltar}
           className="ss-toolbar-voltar"
           aria-label={traduzir("Voltar pras automações")}
         >

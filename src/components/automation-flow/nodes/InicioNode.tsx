@@ -17,37 +17,14 @@ import { useIdioma } from "@/lib/idioma-context";
  * quadro branco". Ele continua fora do fluxo gravado; o que se grava é só a POSIÇÃO, nas
  * configurações (ver `posicaoInicio` em `ConfiguracoesFluxo`).
  *
- * DUAS CARAS. Com blocos no canvas, é a pastilha verde compacta. Com o canvas vazio, é o cartão
- * de abertura — mesmo nó, mesma posição arrastável — com o botão que começa a automação. Era um
- * aviso centralizado por cima do canvas, que não se movia e não fazia parte do desenho.
+ * EXISTE DESDE O QUADRO VAZIO. Antes só aparecia depois do primeiro bloco, e o canvas novo abria
+ * com um cartão de boas-vindas desenhado POR CIMA dele, que não se movia e sumia no instante em
+ * que o primeiro bloco entrava. Agora a pastilha está lá desde o começo, e a lista de passos abre
+ * sozinha ao lado dela — que é o que a referência faz.
  */
 export default function InicioNode({ data }: NodeProps<FlowRFNode>) {
   const { t: traduzir } = useIdioma();
-  const { detalheInicio: detalhe, inicioVazio: vazio } = data as {
-    detalheInicio?: string;
-    inicioVazio?: { titulo: string; descricao?: string; rotuloBotao: string; aoClicar: () => void };
-  };
-
-  if (vazio) {
-    return (
-      <div className="no-inicio-cartao">
-        <span className="flow-node-aba">
-          <span className="no-inicio-marca" aria-hidden="true">
-            ▶
-          </span>
-          {traduzir("Início")}
-        </span>
-        <h4>{vazio.titulo}</h4>
-        {vazio.descricao ? <p>{vazio.descricao}</p> : null}
-        {/* `nodrag` é do React Flow: sem ele, apertar o botão começa a arrastar o cartão e o
-            clique nunca chega. */}
-        <button type="button" className="no-inicio-cartao-btn nodrag" onClick={vazio.aoClicar}>
-          {vazio.rotuloBotao} <span aria-hidden="true">+</span>
-        </button>
-        <Handle type="source" position={Position.Right} isConnectable={false} />
-      </div>
-    );
-  }
+  const detalhe = (data as { detalheInicio?: string }).detalheInicio;
 
   return (
     <div className="no-inicio">

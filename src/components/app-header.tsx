@@ -185,6 +185,19 @@ export function AppHeader() {
    */
   if (pathname === "/conversas") return null;
 
+  /*
+   * E SOME NO EDITOR DE AUTOMAÇÃO, pelo mesmo motivo.
+   *
+   * Ali a tela inteira é um quadro de desenho. A barra tirava 64px do topo pra mostrar a busca
+   * global, o seletor de idioma e o sino — três coisas que ninguém usa no meio de montar um robô,
+   * e que a Thaynara apontou uma a uma comparando com a referência: "a gente tem muita informação
+   * nessa tela que precisamos retirar".
+   *
+   * O atalho de teclado da busca continua funcionando: ele não depende deste componente estar
+   * montado. E a setinha de voltar do próprio editor é o caminho de saída.
+   */
+  if (pathname?.startsWith("/automacoes/editor/")) return null;
+
   return (
     <header className={`app-header${naTelaInicio ? " app-header-transparente" : ""}`}>
       <GlobalSearch />
