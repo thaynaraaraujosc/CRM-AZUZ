@@ -52,6 +52,7 @@ export function PainelProximoPasso({
   onFechar,
   compacto,
   juntoAoInicio,
+  posicao,
 }: {
   tipoAnterior?: FlowNodeType;
   categoriaAnterior?: FlowNodeCategory;
@@ -81,6 +82,8 @@ export function PainelProximoPasso({
    * não cobrir justamente a saída de onde o passo novo vai sair.
    */
   juntoAoInicio?: boolean;
+  /** Em pixels de tela, quando a lista é chamada por um "+" de bloco. Ver o comentário no editor. */
+  posicao?: { top: number; left: number };
 }) {
   const { t: traduzir } = useIdioma();
   const [busca, setBusca] = useState("");
@@ -132,7 +135,8 @@ export function PainelProximoPasso({
   if (compacto) {
     return (
       <aside
-        className={`pp-caixa${juntoAoInicio ? " pp-caixa-inicio" : ""}`}
+        className={`pp-caixa${juntoAoInicio ? " pp-caixa-inicio" : ""}${posicao ? " pp-caixa-ancorada" : ""}`}
+        style={posicao ? { top: posicao.top, left: posicao.left } : undefined}
         role="dialog"
         aria-label={traduzir("Adicionar próximo passo")}
       >

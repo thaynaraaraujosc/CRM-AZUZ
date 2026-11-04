@@ -25,7 +25,7 @@ export type FlowRFNodeData = {
   ordemNarrativa?: number;
   explicacao?: string;
   /** Fechado sobre o id do nó lá no FlowEditor. Abre o seletor rápido "O que acontece agora?" pra essa saída específica. */
-  onAdicionarApos?: (handleId: string | undefined) => void;
+  onAdicionarApos?: (handleId: string | undefined, ancora?: DOMRect) => void;
   /**
    * A área do fluxo a que este nó pertence. Viaja no `data` porque o nó não a conhece: ela é do
    * FLUXO, e o React Flow entrega ao componente só o nó.
@@ -56,6 +56,18 @@ export type FlowRFNodeData = {
    * receber fica legível e editável no mesmo lugar onde se desenha o caminho dela.
    */
   aoEditarTexto?: (texto: string) => void;
+  /** Trocar o nome do bloco, pelo "⋯" do próprio cartão. */
+  aoRenomear?: (titulo: string) => void;
+  /** Testar a automação a partir do começo, pelo "⋯". */
+  aoTestar?: () => void;
+  /**
+   * Prender um arquivo ao bloco de mensagem: o clipe e o microfone do cartão.
+   *
+   * O bloco MUDA DE TIPO quando isso acontece (texto vira imagem, áudio, documento…), porque é
+   * assim que o motor sabe o que enviar. Quem decide o tipo é o editor, não o cartão: o cartão
+   * entrega o arquivo e o que ele é.
+   */
+  aoAnexar?: (arquivo: { dataUrl: string; nome: string; mimeType: string; bytes: number }) => void;
 };
 
 /**

@@ -21414,6 +21414,159 @@ table.tbl .name-cell .r {
   right: -22px;
 }
 
+/* O "⋯" do bloco: renomear, duplicar, testar e excluir num lugar só. */
+.msg-mais-caixa {
+  position: relative;
+  flex: none;
+}
+
+.msg-mais {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--text-faint);
+  cursor: pointer;
+}
+
+.msg-mais:hover {
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+
+.msg-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  min-width: 190px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-elevated);
+  box-shadow: 0 10px 28px rgba(16, 24, 40, 0.16);
+}
+
+.msg-menu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.msg-menu button:hover {
+  background: var(--surface-hover);
+}
+
+.msg-menu button.perigo {
+  color: var(--danger);
+}
+
+.msg-nome-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid var(--acao);
+  border-radius: 6px;
+  background: var(--surface-elevated);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+}
+
+/* O clipe e o microfone, no canto da bolha. */
+.msg-ferramentas {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.msg-ferramentas button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 26px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.msg-ferramentas button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.msg-ferramentas button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.msg-gravando {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: auto;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+}
+
+/* O ponto que pisca: é o sinal de que o microfone está LIGADO, e ele precisa ser impossível de
+   confundir com um ícone decorativo. */
+.msg-gravando-ponto {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff5a5a;
+  animation: msg-pulsa 1s ease-in-out infinite;
+}
+
+@keyframes msg-pulsa {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .msg-gravando-ponto { animation: none; }
+}
+
+.msg-erro {
+  margin: 0 12px 10px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--danger);
+}
+
+/* A lista de passos colada no "+" que a chamou: posição em pixels de tela, vinda do editor. */
+.pp-caixa-ancorada {
+  position: fixed;
+  right: auto;
+  transform: none;
+  max-height: 430px;
+}
+
 /* Os caminhos de resultado, alinhados à direita como na referência. */
 .flow-node-handles.msg-saidas {
   padding: 0 12px 10px;

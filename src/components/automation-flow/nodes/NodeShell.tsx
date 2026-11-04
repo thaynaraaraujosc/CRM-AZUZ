@@ -1,6 +1,10 @@
 "use client";
 
+import { useRef, useState } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
+
+import { useFecharMenuDeLinha } from "@/lib/menu-de-linha";
+import { relogioDaGravacao, useGravadorDeAudio } from "@/lib/audio/gravador";
 
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
 import { resumoIndicaIncompleto, resumoNo, saidasDoNo, temEntrada } from "@/lib/automation-flow/resumo";
@@ -23,6 +27,11 @@ import {
   IconRaio,
   IconRamificacao,
   IconRelogio,
+  IconAnexo,
+  IconEdit,
+  IconMaisOpcoes,
+  IconMic,
+  IconPlay,
 } from "@/components/icons";
 
 /** Ícone por categoria de bloco. Eram emojis: cada um com desenho, peso e cor de uma fonte
@@ -96,7 +105,38 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
     aoRemover,
     numero,
     aoEditarTexto,
+    aoRenomear,
+    aoTestar,
+    aoAnexar,
   } = data;
+
+  const [menuAberto, setMenuAberto] = useState(false);
+  const [renomeando, setRenomeando] = useState(false);
+  const entradaDeArquivo = useRef<HTMLInputElement>(null);
+  useFecharMenuDeLinha(menuAberto, () => setMenuAberto(false));
+
+  const gravador = useGravadorDeAudio((audio) => {
+    aoAnexar?.({
+      dataUrl: audio.dataUrl,
+      nome: `audio-${audio.segundos}s.webm`,
+      mimeType: audio.mimeType,
+      // O tamanho sai do base64: 4 caracteres por 3 bytes. Serve pro rótulo, não pra cobrança.
+      bytes: Math.round((audio.dataUrl.length - audio.dataUrl.indexOf(",") - 1) * 0.75),
+    });
+  });
+
+  function escolherArquivo(arquivo: File | undefined) {
+    if (!arquivo || !aoAnexar) return;
+    const leitor = new FileReader();
+    leitor.onload = () =>
+      aoAnexar({
+        dataUrl: String(leitor.result),
+        nome: arquivo.name,
+        mimeType: arquivo.type || "application/octet-stream",
+        bytes: arquivo.size,
+      });
+    leitor.readAsDataURL(arquivo);
+  }
   /*
    * A CARA DO INSTAGRAM só no Social Seller, e só nos blocos que falam com a rede.
    *
@@ -240,16 +280,85 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
         <>
           {/* O cabeçalho do cartão: o número do bloco e o nome dele. O número é da referência e
               serve pra conversar sobre o fluxo ("o bloco 5 está errado"). */}
-          <div className="msg-cab">
+          <div className="msg-cab" data-menu-de-linha="">
             {numero ? <span className="msg-num">{numero}</span> : null}
-            <span className="msg-nome">
-              {flowNode.titulo || (bloco?.label ? traduzir(bloco.label) : flowNode.type)}
-            </span>
+            {renomeando && aoRenomear ? (
+              <input
+                className="msg-nome-input nodrag"
+                autoFocus
+                defaultValue={flowNode.titulo ?? (bloco?.label ? traduzir(bloco.label) : flowNode.type)}
+                onClick={(e) => e.stopPropagation()}
+                onBlur={(e) => {
+                  aoRenomear(e.target.value.trim());
+                  setRenomeando(false);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") e.currentTarget.blur();
+                  if (e.key === "Escape") setRenomeando(false);
+                }}
+              />
+            ) : (
+              <span className="msg-nome">
+                {flowNode.titulo || (bloco?.label ? traduzir(bloco.label) : flowNode.type)}
+              </span>
+            )}
             {flowNode.desativado ? <span className="flow-node-pausado-badge">{traduzir("Pausado")}</span> : null}
             {temErro || temAviso ? (
               <span className="flow-node-warn" title={problemas.map((p) => p.mensagem).join(" · ")}>
                 <IconAlerta width={13} height={13} />
               </span>
+            ) : null}
+            {/*
+              O "⋯" DO BLOCO.
+              
+              Renomear, duplicar, testar e excluir estavam espalhados: o nome só no painel da
+              direita, duplicar e apagar em botões que só apareciam no Social Seller com o bloco
+              selecionado, e excluir também na tecla Delete — que ninguém descobre olhando. Aqui
+              ficam os quatro, no mesmo lugar em que a referência os põe.
+            */}
+            {aoRenomear || aoDuplicar || aoRemover || aoTestar ? (
+              <div className="msg-mais-caixa">
+                <button
+                  type="button"
+                  className="msg-mais nodrag"
+                  aria-label={traduzir("Mais opções deste bloco")}
+                  aria-expanded={menuAberto}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMenuAberto((v) => !v);
+                  }}
+                >
+                  <IconMaisOpcoes width={14} height={14} />
+                </button>
+                {menuAberto ? (
+                  <div className="msg-menu" role="menu">
+                    {aoTestar ? (
+                      <button type="button" role="menuitem" onClick={() => { setMenuAberto(false); aoTestar(); }}>
+                        <IconPlay width={12} height={12} aria-hidden="true" />
+                        {traduzir("Testar a automação")}
+                      </button>
+                    ) : null}
+                    {aoRenomear ? (
+                      <button type="button" role="menuitem" onClick={() => { setMenuAberto(false); setRenomeando(true); }}>
+                        <IconEdit width={12} height={12} aria-hidden="true" />
+                        {traduzir("Renomear")}
+                      </button>
+                    ) : null}
+                    {aoDuplicar ? (
+                      <button type="button" role="menuitem" onClick={() => { setMenuAberto(false); aoDuplicar(); }}>
+                        <IconDuplicar width={12} height={12} aria-hidden="true" />
+                        {traduzir("Duplicar")}
+                      </button>
+                    ) : null}
+                    {aoRemover ? (
+                      <button type="button" role="menuitem" className="perigo" onClick={() => { setMenuAberto(false); aoRemover(); }}>
+                        <IconLixeira width={12} height={12} aria-hidden="true" />
+                        {traduzir("Excluir")}
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
             ) : null}
           </div>
 
@@ -276,6 +385,63 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
               onClick={(e) => e.stopPropagation()}
             />
 
+            {/*
+              O CLIPE E O MICROFONE, dentro da bolha.
+              
+              Prender um arquivo TROCA o tipo do bloco (texto vira imagem, áudio, documento),
+              porque é assim que o motor sabe o que enviar — e o texto que já estava escrito vira
+              a legenda, em vez de se perder. Quem faz essa troca é o editor; aqui só se escolhe
+              o arquivo.
+            */}
+            {aoAnexar ? (
+              <div className="msg-ferramentas nodrag">
+                {gravador.estado === "gravando" ? (
+                  <>
+                    <span className="msg-gravando">
+                      <span className="msg-gravando-ponto" aria-hidden="true" />
+                      {relogioDaGravacao(gravador.segundos)}
+                    </span>
+                    <button type="button" onClick={(e) => { e.stopPropagation(); gravador.parar(); }}>
+                      {traduzir("Usar")}
+                    </button>
+                    <button type="button" onClick={(e) => { e.stopPropagation(); gravador.cancelar(); }}>
+                      {traduzir("Descartar")}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      title={traduzir("Anexar um arquivo")}
+                      aria-label={traduzir("Anexar um arquivo")}
+                      onClick={(e) => { e.stopPropagation(); entradaDeArquivo.current?.click(); }}
+                    >
+                      <IconAnexo width={14} height={14} />
+                    </button>
+                    <button
+                      type="button"
+                      title={traduzir("Gravar um áudio")}
+                      aria-label={traduzir("Gravar um áudio")}
+                      disabled={gravador.estado === "pedindo"}
+                      onClick={(e) => { e.stopPropagation(); void gravador.comecar(); }}
+                    >
+                      <IconMic width={14} height={14} />
+                    </button>
+                  </>
+                )}
+                <input
+                  ref={entradaDeArquivo}
+                  type="file"
+                  hidden
+                  onChange={(e) => {
+                    escolherArquivo(e.target.files?.[0]);
+                    e.target.value = "";
+                  }}
+                />
+              </div>
+            ) : null}
+            {gravador.erro ? <p className="msg-erro">{gravador.erro}</p> : null}
+
             {saidasDeOpcao.map((sa) => {
               const chave = sa.handleId ?? "__default__";
               const conectada = saidasConectadas?.has(chave) ?? false;
@@ -291,7 +457,7 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
                       title={traduzir("O que acontece quando clicam aqui?")}
                       onClick={(e) => {
                         e.stopPropagation();
-                        onAdicionarApos(sa.handleId);
+                        onAdicionarApos(sa.handleId, e.currentTarget.getBoundingClientRect());
                       }}
                     >
                       +
@@ -393,7 +559,7 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
                     title={traduzir("O que acontece agora?")}
                     onClick={(e) => {
                       e.stopPropagation();
-                      onAdicionarApos(s.handleId);
+                      onAdicionarApos(s.handleId, e.currentTarget.getBoundingClientRect());
                     }}
                   >
                     +
@@ -426,7 +592,7 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
               title={traduzir("O que acontece agora?")}
               onClick={(e) => {
                 e.stopPropagation();
-                onAdicionarApos(undefined);
+                onAdicionarApos(undefined, e.currentTarget.getBoundingClientRect());
               }}
             >
               +

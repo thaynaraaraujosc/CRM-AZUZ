@@ -186,7 +186,12 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
    * abriria de novo no render seguinte, e não haveria como fechá-la.
    */
   const [dispensouAbertura, setDispensouAbertura] = useState(false);
-  const [acaoRapida, setAcaoRapida] = useState<{ nodeId: string; handleId: string | undefined } | null>(null);
+  const [acaoRapida, setAcaoRapida] = useState<{
+    nodeId: string;
+    handleId: string | undefined;
+    /** Onde o "+" clicado está na tela, pra lista abrir COLADA nele. */
+    ancora?: DOMRect;
+  } | null>(null);
 
   const [arrastandoSobreCanvas, setArrastandoSobreCanvas] = useState(false);
   const [entenderFluxoAtivo, setEntenderFluxoAtivo] = useState(false);
@@ -209,6 +214,36 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const abrirPassoSozinho = quadroVazio && !dispensouAbertura && !ehSocial;
   const escolhendoGatilho = escolherGatilhoAberto || abrirGatilhoSozinho;
   const escolhendoProximoPasso = acaoRapida ?? (abrirPassoSozinho ? { nodeId: "", handleId: undefined } : null);
+
+  /*
+   * ONDE A LISTA ABRE: colada no "+" que a chamou.
+   *
+   * Ela abria sempre no canto de cima à direita do canvas. Num fluxo com dez blocos, isso é longe
+   * do que se está fazendo: a pessoa clica num "+" lá embaixo à esquerda e a resposta aparece do
+   * outro lado da tela. Agora ela nasce ao lado do botão, como na referência.
+   *
+   * `position: fixed` com a medida da janela, e não coordenada do canvas: o "+" mora dentro de um
+   * nó que o React Flow move e escala, então converter de volta pra coordenada do canvas seria
+   * refazer a conta de zoom e deslocamento que ele acabou de fazer. O retângulo que o clique
+   * entrega já está em pixels de tela.
+   *
+   * Os limites são aparados: perto da borda direita a caixa vira pra ESQUERDA do botão, e perto
+   * do rodapé ela sobe — senão metade dela fica fora da tela, que é pior que longe.
+   */
+  const LARGURA_DA_LISTA = 250;
+  const ALTURA_MAXIMA_DA_LISTA = 430;
+  const posicaoDaLista = (() => {
+    const r = acaoRapida?.ancora;
+    if (!r) return undefined;
+    const margem = 12;
+    const cabeDireita = r.right + margem + LARGURA_DA_LISTA <= window.innerWidth - margem;
+    const left = cabeDireita ? r.right + margem : Math.max(margem, r.left - margem - LARGURA_DA_LISTA);
+    const top = Math.max(
+      margem,
+      Math.min(r.top - 10, window.innerHeight - margem - ALTURA_MAXIMA_DA_LISTA),
+    );
+    return { top, left };
+  })();
 
   /** Fechar qualquer uma das duas também desliga a abertura automática. */
   function fecharEscolha() {
@@ -485,6 +520,93 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     });
     setRfNodes(novoNodes);
     persistDebounced(novoNodes, rfEdges);
+  }
+
+  /** Trocar o nome do bloco pelo "⋯" do cartão. Vazio volta ao nome padrão do tipo. */
+  function renomearBloco(nodeId: string, titulo: string) {
+    const novoNodes = rfNodes.map((n) =>
+      n.id === nodeId
+        ? { ...n, data: { ...n.data, flowNode: { ...n.data.flowNode, titulo: titulo || undefined } } }
+        : n,
+    );
+    setRfNodes(novoNodes);
+    persist(novoNodes, rfEdges);
+  }
+
+  /**
+   * O ARQUIVO PRESO NO CARTÃO: clipe e microfone.
+   *
+   * Duas etapas, e a primeira é a que faz o robô conseguir enviar: o arquivo entra na BIBLIOTECA
+   * de documentos, que é de onde o motor lê a mídia na hora do envio. Guardá-lo dentro do fluxo
+   * não serviria — o fluxo é desenho, não é cofre de arquivo.
+   *
+   * Depois o bloco TROCA DE TIPO. Um `mensagem_texto` com um áudio pendurado não existe pro
+   * motor: quem manda áudio é `mensagem_audio`. O texto que já estava escrito vira a LEGENDA, em
+   * vez de se perder — é o mesmo texto, no campo que o novo tipo usa.
+   */
+  async function anexarNoBloco(
+    nodeId: string,
+    arquivo: { dataUrl: string; nome: string; mimeType: string; bytes: number },
+  ) {
+    const tipoMidia = arquivo.mimeType.startsWith("image/")
+      ? "imagem"
+      : arquivo.mimeType.startsWith("video/")
+        ? "video"
+        : arquivo.mimeType.startsWith("audio/")
+          ? "audio"
+          : "documento";
+    const tipoDoBloco = (
+      { imagem: "mensagem_imagem", video: "mensagem_video", audio: "mensagem_audio", documento: "mensagem_documento" } as const
+    )[tipoMidia];
+
+    let documentoId: string;
+    try {
+      const resposta = await fetch("/api/biblioteca-documentos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nome: arquivo.nome,
+          categoria: "Automação",
+          formato: (arquivo.nome.split(".").pop() ?? "").toUpperCase() || tipoMidia.toUpperCase(),
+          tamanho: arquivo.bytes,
+          autor: "Automação",
+          url: arquivo.dataUrl,
+          tipoMidia,
+        }),
+      });
+      if (!resposta.ok) throw new Error(String(resposta.status));
+      documentoId = ((await resposta.json()) as { id: string }).id;
+    } catch {
+      window.alert("Não deu pra guardar o arquivo. Tente de novo.");
+      return;
+    }
+
+    const novoNodes = rfNodes.map((n) => {
+      if (n.id !== nodeId) return n;
+      const antigo = (n.data.flowNode.data ?? {}) as Record<string, unknown>;
+      const textoAnterior = typeof antigo.texto === "string" ? antigo.texto : (antigo.legenda as string | undefined);
+      return {
+        ...n,
+        data: {
+          ...n.data,
+          flowNode: {
+            ...n.data.flowNode,
+            type: tipoDoBloco,
+            data: {
+              canal: antigo.canal,
+              origemArquivo: "upload",
+              arquivoId: documentoId,
+              arquivoNome: arquivo.nome,
+              arquivoTipo: (arquivo.nome.split(".").pop() ?? "").toUpperCase(),
+              arquivoTamanho: `${Math.max(1, Math.round(arquivo.bytes / 1024))} KB`,
+              legenda: textoAnterior,
+            },
+          },
+        },
+      } as typeof n;
+    });
+    setRfNodes(novoNodes);
+    persist(novoNodes, rfEdges);
   }
 
   function onEdgesDelete(deleted: FlowRFEdge[]) {
@@ -1069,13 +1191,24 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           caminhosConvergindo: entradasPorNode.get(n.id) ?? 0,
           ordemNarrativa: ordemNarrativaPorNode?.get(n.id),
           explicacao: entenderFluxoAtivo ? explicacaoDoNo(n.data.flowNode, funis) : undefined,
-          onAdicionarApos: modoConstrucao ? (handleId: string | undefined) => setAcaoRapida({ nodeId: n.id, handleId }) : undefined,
+          onAdicionarApos: modoConstrucao
+            ? (handleId: string | undefined, ancora?: DOMRect) => setAcaoRapida({ nodeId: n.id, handleId, ancora })
+            : undefined,
           area,
           /* Os dois botões que aparecem em cima do bloco selecionado, no Social Seller. */
-          aoDuplicar: ehSocial && modoConstrucao ? () => duplicarUm(n.id) : undefined,
-          aoRemover: ehSocial && modoConstrucao ? () => removerNodes([n.id]) : undefined,
+          /* Duplicar e apagar deixaram de ser exclusivos do Social Seller: agora os dois
+             editores têm o "⋯" no cartão, que é onde a referência os põe. */
+          aoDuplicar: modoConstrucao ? () => duplicarUm(n.id) : undefined,
+          aoRemover: modoConstrucao ? () => removerNodes([n.id]) : undefined,
           numero: indice + 1,
           aoEditarTexto: modoConstrucao ? (texto: string) => editarTextoDoBloco(n.id, texto) : undefined,
+          aoRenomear: modoConstrucao ? (titulo: string) => renomearBloco(n.id, titulo) : undefined,
+          aoTestar: () => setSimuladorAberto(true),
+          aoAnexar:
+            modoConstrucao && n.data.flowNode.category === "mensagem"
+              ? (arquivo: { dataUrl: string; nome: string; mimeType: string; bytes: number }) =>
+                  void anexarNoBloco(n.id, arquivo)
+              : undefined,
         },
       })),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `duplicarUm` e `removerNodes` são
@@ -1532,6 +1665,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                */
               compacto
               juntoAoInicio={!acaoRapida}
+              posicao={posicaoDaLista}
             />
           ) : null}
 
