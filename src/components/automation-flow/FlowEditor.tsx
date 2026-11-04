@@ -48,7 +48,7 @@ import { GatilhosDoSocial } from "./GatilhosDoSocial";
 import { ListaDePassos } from "./ListaDePassos";
 import { PainelProximoPasso } from "./PainelProximoPasso";
 import { nodeTypes } from "./nodes";
-import { IconCheck, IconClose, IconExpandir, IconRaio } from "@/components/icons";
+import { IconCheck, IconClose, IconExpandir } from "@/components/icons";
 import { useIdioma } from "@/lib/idioma-context";
 import {
   CORES_CATEGORIA,
@@ -187,6 +187,15 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const [menuContexto, setMenuContexto] = useState<{ x: number; y: number; nodeId: string } | null>(null);
   const [toasts, setToasts] = useState<{ id: number; texto: string }[]>([]);
   const [escolherGatilhoAberto, setEscolherGatilhoAberto] = useState(false);
+  /*
+   * ONDE A PASTILHA DE INÍCIO ESTÁ ENQUANTO SE ARRASTA.
+   *
+   * O início não é um bloco: ele não entra em `rfNodes` e por isso `applyNodeChanges` não mexe
+   * nele. Sem guardar a posição em algum lugar, o React Flow desenha o arraste e o nó volta pro
+   * lugar no quadro seguinte. `null` = ainda não foi movido nesta sessão, então vale o que está
+   * gravado nas configurações, e se nem isso houver, o lugar calculado.
+   */
+  const [posicaoInicioArrastada, setPosicaoInicioArrastada] = useState<{ x: number; y: number } | null>(null);
   const [acaoRapida, setAcaoRapida] = useState<{ nodeId: string; handleId: string | undefined } | null>(null);
   const [minimapaVisivel, setMinimapaVisivel] = useState(true);
   const [arrastandoSobreCanvas, setArrastandoSobreCanvas] = useState(false);
@@ -359,7 +368,13 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   function onNodesChange(changes: NodeChange<FlowRFNode>[]) {
     // A pastilha de início é desenhada, não salva. Deixar uma mudança dela chegar ao estado a
     // gravaria no fluxo, e ela passaria a existir de verdade: um bloco fantasma que o motor não
-    // sabe executar.
+    // sabe executar. O que ela tem de próprio é a POSIÇÃO, que vai pra um estado à parte —
+    // senão o arraste é desenhado e desfeito no quadro seguinte.
+    for (const mudanca of changes) {
+      if (mudanca.type === "position" && mudanca.id === ID_INICIO && mudanca.position) {
+        setPosicaoInicioArrastada(mudanca.position);
+      }
+    }
     setRfNodes((nds) => applyNodeChanges(changes.filter((c) => !ehDesenhado("id" in c ? c.id : "")), nds));
   }
   function onEdgesChange(changes: EdgeChange<FlowRFEdge>[]) {
@@ -378,7 +393,13 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     setRfEdges(novoEdges);
     persist(rfNodes, novoEdges);
   }
-  function onNodeDragStop() {
+  function onNodeDragStop(_evento: unknown, node?: { id: string; position: { x: number; y: number } }) {
+    // Soltar o início grava a posição nas CONFIGURAÇÕES, não entre os blocos: ele continua fora
+    // do fluxo que o motor executa.
+    if (node?.id === ID_INICIO) {
+      updateConfiguracoes({ posicaoInicio: node.position });
+      return;
+    }
     persist(rfNodes, rfEdges);
   }
 
@@ -1021,6 +1042,39 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     [rfNodes, problemasPorNode, saidasConectadasPorNode, entradasPorNode, ordemNarrativaPorNode, entenderFluxoAtivo, nodesRelacionados, modoConstrucao, funis, nodePiscando, area, ehSocial],
   );
   /**
+   * O QUE O CARTÃO DE ABERTURA DIZ, quando o canvas está vazio.
+   *
+   * Três começos diferentes, e a diferença é real: um robô de Instagram começa escolhendo o
+   * gatilho; um robô de funil amarrado a uma etapa já tem o gatilho definido lá e começa pelo
+   * primeiro passo; um fluxo solto precisa escolher um gatilho do zero. `null` = há blocos, e o
+   * início volta a ser a pastilha compacta.
+   */
+  const aberturaDoCanvasVazio = useMemo(() => {
+    if (ehSocial) {
+      return {
+        titulo: traduzir("O que inicia a automação"),
+        rotuloBotao: traduzir("Adicionar gatilho"),
+        aoClicar: () => setEscolherGatilhoAberto(true),
+      };
+    }
+    if (inicioNoFunil) {
+      return {
+        titulo: `Quando o lead entra em “${inicioNoFunil.etapaTitulo}”`,
+        descricao: `${inicioNoFunil.funilNome}. Quando executar, os dias e a condição foram configurados na etapa, em Automatizar funil. Aqui você monta o que o robô faz.`,
+        rotuloBotao: traduzir("Adicionar primeiro passo"),
+        aoClicar: () => setAcaoRapida({ nodeId: "", handleId: undefined }),
+      };
+    }
+    return {
+      titulo: traduzir("Como esta automação deve começar?"),
+      descricao: traduzir("Toda automação começa a partir de um gatilho."),
+      rotuloBotao: traduzir("Escolher gatilho"),
+      aoClicar: () => setEscolherGatilhoAberto(true),
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `traduzir` troca de identidade a cada render do contexto de idioma; o conteúdo depende só da área e da etapa.
+  }, [ehSocial, inicioNoFunil]);
+
+  /**
    * De qual bloco o fluxo parte: o gatilho, ou o primeiro bloco sem nada chegando nele.
    *
    * É a mesma pergunta que a pastilha verde responde, e ela precisa de uma resposta mesmo em fluxo
@@ -1036,28 +1090,44 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   }, [rfNodes, rfEdges]);
 
   /**
-   * A pastilha verde e a linha que sai dela.
+   * A pastilha verde (ou o cartão de abertura) e a linha que sai dela.
    *
    * Entram no que é DESENHADO, nunca no estado: não são blocos do fluxo, o motor não os executa, e
-   * salvá-los criaria um passo fantasma. Por isso também não se arrastam, não se selecionam e não
-   * se apagam.
+   * salvá-los criaria um passo fantasma. Por isso não se selecionam e não se apagam.
+   *
+   * ARRASTAM, sim. "Tudo tem que ser movível dentro do quadro branco" — e a pastilha era a única
+   * peça presa, grudada 230px à esquerda do primeiro bloco. O que se grava é só a posição, nas
+   * configurações; o início continua fora do fluxo.
+   *
+   * COM O CANVAS VAZIO ele vira o cartão de abertura, no mesmo lugar onde antes havia um aviso
+   * centralizado POR CIMA do canvas — que não se movia, não fazia parte do desenho, e sumia no
+   * instante em que o primeiro bloco entrava.
    */
   const inicioDesenhado = useMemo(() => {
     const alvo = rfNodes.find((n) => n.id === idDoPrimeiroBloco);
-    if (!alvo) return null;
+    const vazio = !alvo && modoConstrucao ? aberturaDoCanvasVazio : null;
+    if (!alvo && !vazio) return null;
+
+    const posicaoPadrao = alvo
+      ? { x: alvo.position.x - 230, y: alvo.position.y + 8 }
+      : { x: 80, y: 80 };
     const no: FlowRFNode = {
       id: ID_INICIO,
       type: "inicio",
-      position: { x: alvo.position.x - 230, y: alvo.position.y + 8 },
-      draggable: false,
+      position: posicaoInicioArrastada ?? fluxo?.configuracoes?.posicaoInicio ?? posicaoPadrao,
+      draggable: modoConstrucao,
       selectable: false,
       deletable: false,
       data: {
-        flowNode: alvo.data.flowNode,
+        // Sem bloco de destino (canvas vazio) não há `flowNode` de verdade; o componente do
+        // início não lê nenhum campo dele, e o tipo exige que exista.
+        flowNode: alvo?.data.flowNode ?? ({ id: ID_INICIO, type: "inicio", category: "gatilho" } as unknown as DomainFlowNode),
         problemas: [],
-        ...(inicioNoFunil ? { detalheInicio: `Lead entra em “${inicioNoFunil.etapaTitulo}”` } : {}),
+        ...(vazio ? { inicioVazio: vazio } : {}),
+        ...(alvo && inicioNoFunil ? { detalheInicio: `Lead entra em “${inicioNoFunil.etapaTitulo}”` } : {}),
       } as FlowRFNode["data"],
     };
+    if (!alvo) return { no, aresta: null };
     const aresta: FlowRFEdge = {
       id: `${ID_INICIO}-linha`,
       source: ID_INICIO,
@@ -1068,7 +1138,15 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
       style: { stroke: "var(--success)" },
     };
     return { no, aresta };
-  }, [rfNodes, idDoPrimeiroBloco, inicioNoFunil]);
+  }, [
+    rfNodes,
+    idDoPrimeiroBloco,
+    inicioNoFunil,
+    modoConstrucao,
+    aberturaDoCanvasVazio,
+    posicaoInicioArrastada,
+    fluxo?.configuracoes?.posicaoInicio,
+  ]);
 
   const edgesParaRenderizar = useMemo(
     () =>
@@ -1081,7 +1159,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   );
 
   const edgesComInicio = useMemo(
-    () => (inicioDesenhado ? [inicioDesenhado.aresta, ...edgesParaRenderizar] : edgesParaRenderizar),
+    () => (inicioDesenhado?.aresta ? [inicioDesenhado.aresta, ...edgesParaRenderizar] : edgesParaRenderizar),
     [inicioDesenhado, edgesParaRenderizar],
   );
 
@@ -1419,69 +1497,6 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
             </div>
           ) : null}
 
-          {modoConstrucao && rfNodes.length === 0 && area === "social" ? (
-            <div className="flow-inicio-vazio">
-              {/* O cartão do gatilho vazio: o canvas em branco de uma automação nova precisa dizer
-                  o que fazer primeiro, senão a tela é uma parede. */}
-              {/*
-                O MESMO CARTÃO DOS BLOCOS, e não um cartão só dele.
-                
-                A aba "Gatilho" estava CENTRADA e montada em cima da borda de cima — parecia um
-                selo descolado, e a Thaynara apontou isso comparando com a referência. Agora ela é
-                a mesma `.flow-node-aba` dos blocos de verdade: pendurada na quina de cima à
-                esquerda, encaixando no cartão. Quem chega num canvas vazio já vê a peça do jeito
-                que ela vai ser depois de preenchida.
-              */}
-              <div className="no-gatilho-vazio">
-                <span className="flow-node-aba">
-                  <IconRaio width={13} height={13} aria-hidden="true" />
-                  {traduzir("Gatilho")}
-                </span>
-                <div className="no-gatilho-vazio-corpo">
-                  <h4>{traduzir("O que inicia a automação")}</h4>
-                  {/* Abria a biblioteca da esquerda, que saiu do Social Seller: o botão tinha
-                      virado um clique que não fazia nada. Agora abre a gaveta de gatilhos. */}
-                  <button type="button" className="no-gatilho-vazio-btn" onClick={() => setEscolherGatilhoAberto(true)}>
-                    {traduzir("Adicionar gatilho")} <span aria-hidden="true">+</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : null}
-
-          {modoConstrucao && rfNodes.length === 0 && area !== "social" && inicioNoFunil ? (
-            <div className="flow-inicio-vazio">
-              <div className="flow-inicio-etapa">
-                <span className="flow-inicio-etapa-selo">{traduzir("Início")}</span>
-                <div className="flow-inicio-etapa-corpo">
-                  <h4>Quando o lead entra em “{inicioNoFunil.etapaTitulo}”</h4>
-                  <p className="hint">
-                    {inicioNoFunil.funilNome}. Quando executar, os dias e a condição foram
-                    configurados na etapa, em Automatizar funil. Aqui você monta o que o robô faz.
-                  </p>
-                  <button
-                    type="button"
-                    className="btn primary mt8"
-                    onClick={() => setAcaoRapida({ nodeId: "", handleId: undefined })}
-                  >
-                    + Adicionar primeiro passo
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : null}
-
-          {modoConstrucao && rfNodes.length === 0 && area !== "social" && !inicioNoFunil ? (
-            <div className="flow-inicio-vazio">
-              <p className="flow-inicio-vazio-titulo">{traduzir("Como esta automação deve começar?")}</p>
-              <p className="flow-inicio-vazio-sub">{traduzir("Toda automação começa a partir de um gatilho.")}</p>
-              <button type="button" className="btn primary" onClick={() => setEscolherGatilhoAberto(true)}>
-                + Escolher gatilho
-              </button>
-            </div>
-          ) : null}
-
-
           {escolherGatilhoAberto && ehSocial ? (
             <GatilhosDoSocial
               gatilhosAtuais={domainNodesAtuais
@@ -1561,7 +1576,14 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                 setAcaoRapida(null);
               }}
               onFechar={() => setAcaoRapida(null)}
-              compacto={ehSocial}
+              /*
+               * A CAIXINHA TAMBÉM NO FUNIL, e não só no Social Seller.
+               *
+               * A gaveta de altura cheia cobria metade do desenho pra uma escolha de um segundo,
+               * e repetia o título no topo. A caixa mostra a mesma lista inteira, com busca, sem
+               * tirar o fluxo da vista — que é como a referência faz.
+               */
+              compacto
             />
           ) : null}
 

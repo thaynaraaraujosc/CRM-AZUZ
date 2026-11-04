@@ -21241,58 +21241,6 @@ table.tbl .name-cell .r {
 
 /* O nó vazio: o canvas de uma automação nova precisa dizer o que fazer primeiro, senão a tela em
  * branco é uma parede. */
-/*
- * O CARTÃO DO GATILHO VAZIO: a mesma peça dos blocos, antes de ter conteúdo.
- *
- * Era um cartão próprio, com contorno de destaque e um selo "Gatilho" CENTRADO montado em cima
- * da borda — e `overflow: hidden` cortando o selo pela metade. Parecia defeito, e era a primeira
- * coisa que se vê num canvas novo.
- *
- * Agora tem a medida e o acabamento dos blocos de verdade: contorno fino, canto de 16px, e a aba
- * pendurada na quina de cima à esquerda (`.flow-node-aba`, a mesma classe). `overflow: visible`
- * é obrigatório — é o que deixa a aba sair pra fora do cartão em vez de ser cortada.
- */
-.no-gatilho-vazio {
-  position: relative;
-  width: 340px;
-  padding: var(--space-4);
-  border: 1px solid var(--line-strong);
-  border-radius: 16px;
-  background: var(--surface-elevated);
-  overflow: visible;
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
-}
-
-.no-gatilho-vazio-corpo h4 {
-  margin: 0 0 var(--space-3);
-  font-size: 16px;
-  font-weight: 650;
-  letter-spacing: -0.01em;
-  color: var(--ink);
-}
-
-.no-gatilho-vazio-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  padding: 16px;
-  border: 0;
-  border-radius: 10px;
-  background: var(--surface-hover);
-  color: var(--ink);
-  font: inherit;
-  font-size: 15px;
-  font-weight: 650;
-  cursor: pointer;
-}
-
-.no-gatilho-vazio-btn:hover {
-  background: var(--surface-active);
-}
-
-
 .flow-inicio-fim-funil {
   padding: 6px 10px;
   border: 1px solid var(--border);
@@ -21348,35 +21296,76 @@ table.tbl .name-cell .r {
   pointer-events: none;
 }
 
-/* O cartão de início no canvas vazio: diz que o gatilho já foi configurado na etapa, e por isso a
- * pergunta "como esta automação começa?" não aparece de novo aqui. */
-.flow-inicio-etapa {
-  width: 380px;
-  border: 1px solid var(--blue);
-  border-radius: var(--radius-3, 12px);
+/*
+ * O CARTÃO DE ABERTURA DO CANVAS: o nó de início quando ainda não há nenhum bloco.
+ *
+ * Era um aviso desenhado POR CIMA do canvas, centralizado e preso: não se arrastava, não fazia
+ * parte do desenho, e sumia no instante em que o primeiro bloco entrava. Agora é o próprio nó de
+ * início — a mesma peça que vira a pastilha verde depois —, então ele se move como tudo o mais.
+ *
+ * A medida e o acabamento são os dos blocos de verdade: contorno fino, canto de 16px e a aba
+ * pendurada na quina de cima à esquerda (`.flow-node-aba`). `overflow: visible` é o que deixa a
+ * aba sair pra fora em vez de ser cortada.
+ */
+.no-inicio-cartao {
+  position: relative;
+  width: 340px;
+  padding: var(--space-4);
+  border: 1px solid var(--line-strong);
+  border-radius: 16px;
   background: var(--surface-elevated);
-  overflow: hidden;
+  overflow: visible;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
   text-align: left;
+  cursor: grab;
 }
 
-.flow-inicio-etapa-selo {
-  display: inline-block;
-  padding: 4px 10px;
-  background: var(--blue);
-  color: #ffffff;
-  font-size: 12px;
-  font-weight: 700;
-  border-bottom-right-radius: var(--radius-2);
+.no-inicio-cartao:active {
+  cursor: grabbing;
 }
 
-.flow-inicio-etapa-corpo {
-  padding: var(--space-3);
-}
-
-.flow-inicio-etapa-corpo h4 {
-  margin: 0 0 6px;
-  font-size: 15px;
+.no-inicio-cartao h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
   color: var(--ink);
+}
+
+.no-inicio-cartao p {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.no-inicio-cartao-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: var(--space-4);
+  padding: 16px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--surface-hover);
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.no-inicio-cartao-btn:hover {
+  background: var(--surface-active);
+}
+
+/* A seta do selo, dentro da aba: o mesmo ▶ da pastilha compacta, para a peça ser reconhecida
+   como a mesma coisa nos dois estados. */
+.no-inicio-cartao .flow-node-aba .no-inicio-marca {
+  font-size: 9px;
+  line-height: 1;
 }
 
 /* Aviso de alteração não gravada, no lugar de "Todas as alterações foram salvas".
@@ -24650,6 +24639,24 @@ td.trafego-col-crm:first-of-type {
   background: var(--surface);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
   overflow: hidden;
+}
+
+.pp-titulo {
+  padding: 12px 12px 0;
+}
+
+.pp-titulo strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--ink);
+}
+
+.pp-titulo span {
+  display: block;
+  margin-top: 2px;
+  font-size: 11.5px;
+  color: var(--text-muted);
 }
 
 .pp-busca {

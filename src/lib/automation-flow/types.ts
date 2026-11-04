@@ -693,6 +693,15 @@ export type ConfiguracoesFluxo = {
   naoIniciarSeJaNoFluxo?: boolean;
   cancelarExecucaoAnterior?: boolean;
   /**
+   * Onde a pessoa deixou a pastilha de início no canvas.
+   *
+   * Fica nas CONFIGURAÇÕES e não entre os blocos porque o início não é um bloco: o motor não o
+   * executa, e gravá-lo como nó criaria um passo fantasma. Mas a posição dele é escolha de quem
+   * desenha — a pastilha ficava grudada à esquerda do primeiro bloco, e não dava pra tirar do
+   * caminho. Sem valor gravado, ela volta pro lugar calculado.
+   */
+  posicaoInicio?: { x: number; y: number };
+  /**
    * Resquício da época em que existiam dois motores: a chave escolhia qual deles rodava o fluxo.
    *
    * Continua no tipo só porque fluxos gravados ainda têm o campo no Json de configurações, e

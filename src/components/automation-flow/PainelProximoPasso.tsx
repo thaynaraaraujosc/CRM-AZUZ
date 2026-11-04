@@ -121,7 +121,13 @@ export function PainelProximoPasso({
 
   if (compacto) {
     return (
-      <aside className="pp-caixa" role="dialog" aria-label={traduzir("Adicionar bloco")}>
+      <aside className="pp-caixa" role="dialog" aria-label={traduzir("Adicionar próximo passo")}>
+        {/* O título estava só no `aria-label`: a caixa abria com um campo de busca e nenhuma
+            palavra dizendo o que se está escolhendo. A referência abre com ele escrito. */}
+        <div className="pp-titulo">
+          <strong>{traduzir("Adicionar próximo passo")}</strong>
+          {rotuloDaSaida ? <span>depois de &quot;{rotuloDaSaida}&quot;</span> : null}
+        </div>
         <div className="pp-busca">
           <input
             className="input"
