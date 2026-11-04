@@ -21677,6 +21677,21 @@ table.tbl .name-cell .r {
   color: #fff;
 }
 
+/* "Esperar a resposta do contato": o interruptor que transforma o aviso em pergunta. */
+.msg-esperar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.92);
+  cursor: pointer;
+}
+
+.msg-esperar input {
+  accent-color: #fff;
+  cursor: pointer;
+}
+
 /* "+ Botão de ação" e "+ Botão de URL", tracejados dentro da bolha como na referência. */
 .msg-novos-botoes {
   display: flex;

@@ -17,6 +17,7 @@ import type {
   FlowNodeCategory,
   GrupoCondicoes,
   MensagemBotoesData,
+  MensagemTextoData,
 } from "./types";
 
 function nomeFunil(funis: Funil[] | undefined, funilId: unknown): string | undefined {
@@ -98,6 +99,21 @@ export function saidasDoNo(node: FlowNode): SaidaNo[] {
       { handleId: "nao_respondeu", label: "⏱ Sem resposta" },
       // Idem: só com limite de tentativas configurado é que existe "acabaram as tentativas".
       ...(data.tentativasMaximas ? [{ handleId: "tentativas_esgotadas", label: "✕ Errou demais" }] : []),
+      { handleId: "falha", label: "✕ Falha ao enviar a mensagem" },
+    ];
+  }
+
+  /*
+   * O TEXTO QUE ESPERA RESPOSTA tem as saídas de uma pergunta, e não as de um aviso.
+   *
+   * Ligado o "esperar resposta", o bloco para depois de mandar: não existe mais "Enviou e
+   * seguiu". O que existe é "a pessoa escreveu" e "a pessoa não escreveu" — exatamente as duas
+   * saídas da pergunta com botões, pela mesma razão.
+   */
+  if (node.type === "mensagem_texto" && (node.data as MensagemTextoData | undefined)?.esperarResposta) {
+    return [
+      { handleId: "outra_resposta", label: "↺ Respondeu" },
+      { handleId: "nao_respondeu", label: "⏱ Sem resposta" },
       { handleId: "falha", label: "✕ Falha ao enviar a mensagem" },
     ];
   }

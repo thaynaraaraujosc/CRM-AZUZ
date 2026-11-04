@@ -115,6 +115,7 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
     aoMudarOpcoes,
     aoDesligarSaida,
     aoMudarCanal,
+    aoAlternarEsperarResposta,
   } = data;
 
   const [menuAberto, setMenuAberto] = useState(false);
@@ -680,6 +681,25 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
                 </div>
               );
             })}
+
+            {/*
+              "ESPERAR RESPOSTA" num bloco de texto.
+              
+              Ligado, o robô manda e PARA, esperando a pessoa escrever — e o bloco passa a ter as
+              saídas "Respondeu" e "Sem resposta", como a pergunta com botões. Desligado (o
+              padrão) ele manda e segue, que é o certo pra um aviso: "já recebemos seu pedido"
+              não é pergunta.
+            */}
+            {aoAlternarEsperarResposta ? (
+              <label className="msg-esperar nodrag" onClick={(e) => e.stopPropagation()}>
+                <input
+                  type="checkbox"
+                  checked={!!((flowNode.data ?? {}) as { esperarResposta?: boolean }).esperarResposta}
+                  onChange={() => aoAlternarEsperarResposta()}
+                />
+                <span>{traduzir("Esperar a resposta do contato")}</span>
+              </label>
+            ) : null}
 
             {aoMudarOpcoes ? (
               <div className="msg-novos-botoes nodrag">

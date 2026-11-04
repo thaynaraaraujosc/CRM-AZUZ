@@ -290,6 +290,24 @@ export type MensagemTextoData = {
   variaveisUsadas?: string[];
   anexos?: string[];
   templateId?: string;
+  /**
+   * DEPOIS DE MANDAR, O ROBÔ PARA E ESPERA a pessoa escrever.
+   *
+   * Sem isto um bloco de texto manda e segue na mesma hora — e é o certo na maioria das vezes:
+   * "já recebemos seu pedido" não é pergunta. Mas há o caso em que é: "me conta o que você
+   * precisa". Aí o bloco precisa das mesmas duas saídas da pergunta com botões — qualquer
+   * resposta, e ninguém respondeu —, senão a única forma de esperar é inventar um botão.
+   *
+   * Desligado (o padrão) nada muda: o bloco continua com "Enviou" e "Falha ao enviar".
+   */
+  esperarResposta?: boolean;
+  /**
+   * Quanto tempo esperar antes de seguir por "Sem resposta". Só vale com `esperarResposta`.
+   *
+   * Vazio = espera sem prazo, e aí "Sem resposta" nunca acontece. O editor grava um padrão
+   * quando a pessoa liga um caminho nessa saída, pra ela não ficar desenhada sem nunca ocorrer.
+   */
+  esperaMinutos?: number;
 };
 export type OrigemArquivoMidia = "biblioteca" | "upload";
 

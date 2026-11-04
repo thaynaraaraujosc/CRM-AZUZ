@@ -448,12 +448,37 @@ async function executarNo(params: {
     }
 
     case "mensagem_texto": {
-      const data = no.data as { texto?: string; mensagem?: string; canal?: string };
+      const data = no.data as {
+        texto?: string;
+        mensagem?: string;
+        canal?: string;
+        esperarResposta?: boolean;
+        esperaMinutos?: number;
+      };
       const texto = preencher((data.texto ?? data.mensagem ?? "").trim(), contato);
       if (!texto) return { tipo: "erro", detalhe: "Bloco de mensagem sem texto configurado." };
       const envio = await acoes.enviarTexto({ contatoNome: nome, texto, canal: data.canal });
-      if (envio.ok) return { tipo: "seguir", detalhe: envio.detalhe };
-      return falhaDeEnvio(no, edges, envio);
+      if (!envio.ok) return falhaDeEnvio(no, edges, envio);
+
+      /*
+       * COM "ESPERAR RESPOSTA" LIGADO, o bloco para aqui — igual a uma pergunta com botões.
+       *
+       * A diferença entre os dois é só o que a pessoa vê: lá ela escolhe de uma lista, aqui ela
+       * escreve o que quiser. Pro motor é o mesmo compasso: mandou, parou, e quem acorda a
+       * execução é a resposta (ou o prazo).
+       */
+      if (data.esperarResposta) {
+        const ate = data.esperaMinutos ? new Date(agora.getTime() + data.esperaMinutos * 60_000) : undefined;
+        return {
+          tipo: "aguardar_evento",
+          evento: "resposta",
+          ate,
+          detalhe: ate
+            ? `${envio.detalhe} Esperando a resposta até ${ate.toLocaleString("pt-BR")}.`
+            : `${envio.detalhe} Esperando a resposta do contato.`,
+        };
+      }
+      return { tipo: "seguir", detalhe: envio.detalhe };
     }
 
     case "mensagem_imagem":

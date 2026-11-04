@@ -293,6 +293,18 @@ export async function continuarComResposta(params: {
     }
   }
 
+  /*
+   * Texto que espera resposta: qualquer coisa que a pessoa escreva segue por "Respondeu".
+   *
+   * Não há opção pra casar, como na pergunta com botões — o bloco existe justamente pra receber
+   * resposta aberta. Sem este trecho a saída ficava indefinida e a escolha caía na primeira
+   * aresta do bloco, que podia ser a de "Sem resposta": a pessoa respondia e o fluxo a tratava
+   * como quem sumiu.
+   */
+  if (no.type === "mensagem_texto" && !saida && temSaida(versao.edges, no.id, "outra_resposta")) {
+    saida = "outra_resposta";
+  }
+
   // Bloco de espera com os dois caminhos: quem respondeu sai por "ok". Sem dizer isso aqui, a
   // saída ficava indefinida e a escolha caía na PRIMEIRA aresta do bloco, que muitas vezes é a de
   // "Não respondeu": a pessoa respondia e o fluxo a tratava como quem sumiu.
@@ -350,7 +362,12 @@ export async function retomarEsperasVencidas(limite = 50): Promise<{ retomadas: 
       // é "não respondeu", que é o nome que a pessoa vê no desenho. Usar "timeout" nos dois faria
       // a pergunta seguir por um caminho que não existe, e a execução morreria em silêncio.
       const noParado = versao.nodes.find((n) => n.id === execucao.aguardandoNoId);
-      const ehPergunta = noParado?.type === "mensagem_botoes" || noParado?.type === "mensagem_lista";
+      const ehPergunta =
+        noParado?.type === "mensagem_botoes" ||
+        noParado?.type === "mensagem_lista" ||
+        // O texto com "esperar resposta" é uma pergunta pro motor, mesmo sem botão nenhum.
+        (noParado?.type === "mensagem_texto" &&
+          !!(noParado.data as { esperarResposta?: boolean } | undefined)?.esperarResposta);
       const nomeDaSaida = ehPergunta ? "nao_respondeu" : "timeout";
       const saida = temSaida(versao.edges, execucao.aguardandoNoId, nomeDaSaida) ? nomeDaSaida : undefined;
       await continuarDeDepoisDe({ execucao, versao, noId: execucao.aguardandoNoId, saida, contexto: execucao.contexto });

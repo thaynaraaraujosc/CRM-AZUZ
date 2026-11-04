@@ -113,3 +113,32 @@ describe("espera com cronômetro que a resposta interrompe", () => {
     expect(saidas[0].handleId).toBeUndefined();
   });
 });
+
+/*
+ * O TEXTO QUE ESPERA RESPOSTA.
+ *
+ * Um bloco de texto manda e segue, e é o certo na maioria das vezes: "já recebemos seu pedido"
+ * não é pergunta. Ligado o "esperar resposta", ele para depois de mandar e passa a ter as duas
+ * saídas de uma pergunta — a pessoa escreveu, ou não escreveu. Deixa de ter "Enviou", porque não
+ * existe mais "enviou e seguiu".
+ */
+describe("texto que espera resposta", () => {
+  it("sem esperar, tem só 'Enviou' e a falha", () => {
+    expect(saidasDoNo(no("mensagem_texto", "mensagem", { texto: "oi" })).map((s) => s.handleId)).toEqual([
+      undefined,
+      "falha",
+    ]);
+  });
+
+  it("esperando, troca 'Enviou' por 'Respondeu' e 'Sem resposta'", () => {
+    expect(
+      saidasDoNo(no("mensagem_texto", "mensagem", { texto: "oi", esperarResposta: true })).map((s) => s.handleId),
+    ).toEqual(["outra_resposta", "nao_respondeu", "falha"]);
+  });
+
+  it("a espera não afeta outros tipos de mensagem", () => {
+    expect(
+      saidasDoNo(no("mensagem_imagem", "mensagem", { arquivoId: "a1", esperarResposta: true })).map((s) => s.handleId),
+    ).toEqual([undefined, "falha"]);
+  });
+});

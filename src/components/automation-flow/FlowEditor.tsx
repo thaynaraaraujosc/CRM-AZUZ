@@ -679,6 +679,39 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     });
   }
 
+  /**
+   * Liga e desliga o "esperar resposta" do bloco de texto.
+   *
+   * DESLIGAR LIMPA AS LIGAÇÕES das saídas que deixam de existir. Sem isso, as arestas de
+   * "Respondeu" e "Sem resposta" ficariam penduradas num bloco que não tem mais essas saídas:
+   * invisíveis no desenho e vivas no arquivo, prontas pra reaparecer quando alguém religasse a
+   * espera meses depois, apontando pra blocos que podem nem existir mais.
+   */
+  function alternarEsperaDoTexto(nodeId: string, ligar: boolean) {
+    const novoNodes = rfNodes.map((n) =>
+      n.id === nodeId
+        ? {
+            ...n,
+            data: {
+              ...n.data,
+              flowNode: {
+                ...n.data.flowNode,
+                data: { ...(n.data.flowNode.data ?? {}), esperarResposta: ligar || undefined },
+              },
+            },
+          }
+        : n,
+    );
+    const novoEdges = ligar
+      ? rfEdges
+      : rfEdges.filter(
+          (e) => e.source !== nodeId || !["outra_resposta", "nao_respondeu"].includes(e.sourceHandle ?? ""),
+        );
+    setRfNodes(novoNodes);
+    if (novoEdges !== rfEdges) setRfEdges(novoEdges);
+    persist(novoNodes, novoEdges);
+  }
+
   /** Grava um campo solto nos dados do bloco (canal, por ora). */
   function editarCampoDoBloco(nodeId: string, campo: string, valor: unknown) {
     const novoNodes = rfNodes.map((n) =>
@@ -1310,6 +1343,14 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           aoMudarCanal:
             modoConstrucao && n.data.flowNode.category === "mensagem"
               ? (canal: string) => editarCampoDoBloco(n.id, "canal", canal)
+              : undefined,
+          aoAlternarEsperarResposta:
+            modoConstrucao && n.data.flowNode.type === "mensagem_texto"
+              ? () =>
+                  alternarEsperaDoTexto(
+                    n.id,
+                    !((n.data.flowNode.data ?? {}) as { esperarResposta?: boolean }).esperarResposta,
+                  )
               : undefined,
           aoMudarOpcoes:
             modoConstrucao &&
