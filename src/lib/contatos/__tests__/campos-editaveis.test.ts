@@ -48,3 +48,30 @@ describe("somenteCamposDeContato", () => {
     expect(somenteCamposDeContato({})).toEqual({});
   });
 });
+
+/**
+ * `camposExtras` é a única coluna da lista em que o NAVEGADOR escolhe as chaves, e não só os
+ * valores. Sem corte, uma coluna JSON de configuração vira depósito.
+ */
+describe("somenteCamposDeContato e os campos que a empresa criou", () => {
+  it("deixa passar os pares de texto", () => {
+    const limpo = somenteCamposDeContato({ camposExtras: { c1: "Novo", c2: "Indicação" } });
+    expect(limpo.camposExtras).toEqual({ c1: "Novo", c2: "Indicação" });
+  });
+
+  it("corta o objeto gigante", () => {
+    const cru: Record<string, string> = {};
+    for (let i = 0; i < 500; i += 1) cru[`c${i}`] = "x";
+    const limpo = somenteCamposDeContato({ camposExtras: cru });
+    expect(Object.keys(limpo.camposExtras as Record<string, string>).length).toBeLessThanOrEqual(30);
+  });
+
+  it("`null` esvazia em vez de gravar nulo", () => {
+    // Diferente de `etiquetas`: aqui esvaziar é uma ação de verdade na tela ("apaguei o valor").
+    expect(somenteCamposDeContato({ camposExtras: null }).camposExtras).toEqual({});
+  });
+
+  it("não inventa a coluna quando ela não foi mandada", () => {
+    expect("camposExtras" in somenteCamposDeContato({ nome: "Ana" })).toBe(false);
+  });
+});

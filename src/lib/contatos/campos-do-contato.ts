@@ -99,3 +99,25 @@ export const ROTULO_DO_TIPO: Record<TipoDeCampo, string> = {
   data: "Data",
   escolha: "Escolha entre opções",
 };
+
+/**
+ * Saneia os VALORES vindos do navegador, sem precisar das definições.
+ *
+ * `lerValoresDeCampos` exige a lista de campos pra descartar valor órfão, e isso é o certo na
+ * LEITURA — a tela só mostra o que ainda existe. Na ESCRITA a rota de contatos não tem a lista em
+ * mãos e não vale uma consulta a mais só pra isso: o risco real ali não é valor órfão (que some
+ * sozinho na leitura seguinte), é alguém usar uma coluna JSON como depósito. Então aqui o corte é
+ * de FORMA e de TAMANHO: só pares de texto, no teto de campos, com valor curto.
+ */
+export function sanearValoresDeCampos(cru: unknown): ValoresDeCampos {
+  if (!cru || typeof cru !== "object" || Array.isArray(cru)) return {};
+  const saida: ValoresDeCampos = {};
+  for (const [id, valor] of Object.entries(cru as Record<string, unknown>)) {
+    if (Object.keys(saida).length >= MAXIMO_DE_CAMPOS) break;
+    if (!id || id.length > 40) continue;
+    const texto =
+      typeof valor === "string" ? valor.trim() : typeof valor === "number" ? String(valor) : "";
+    if (texto) saida[id] = texto.slice(0, 500);
+  }
+  return saida;
+}

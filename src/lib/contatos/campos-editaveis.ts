@@ -1,3 +1,5 @@
+import { sanearValoresDeCampos } from "@/lib/contatos/campos-do-contato";
+
 /**
  * Os campos de `Contato` que o navegador pode escrever. LISTA FECHADA.
  *
@@ -50,6 +52,12 @@ export const CAMPOS_CONTATO_EDITAVEIS = [
    * rota, depois de conferir a sessão. A rota pública do formulário nunca o inclui.
    */
   "salvoEm",
+  /**
+   * Os campos que a empresa criou, como objeto `{ "<id>": "valor" }`. Entra na lista porque é
+   * conteúdo que a pessoa digita no painel do contato — mas passa pelo saneamento abaixo, porque
+   * é a única coluna aqui em que o navegador escolhe as CHAVES além dos valores.
+   */
+  "camposExtras",
 ] as const;
 
 /** Filtra o corpo recebido, deixando passar só o que está na lista. */
@@ -61,5 +69,14 @@ export function somenteCamposDeContato(corpo: Record<string, unknown>): Record<s
   // `etiquetas` é JSON no banco: `null` apaga a lista, `undefined` deixa como está. Mandar `null`
   // por engano (o front manda quando não há etiqueta nenhuma) não pode zerar o campo.
   if (limpo.etiquetas === null) delete limpo.etiquetas;
+  /*
+   * `camposExtras` é a única coluna em que o NAVEGADOR escolhe as chaves, e não só os valores.
+   * Sem corte, um objeto de dez mil pares entraria inteiro numa coluna JSON. O saneamento mantém
+   * só pares de texto, no teto de campos e com valor curto.
+   */
+  if (limpo.camposExtras !== undefined) {
+    limpo.camposExtras =
+      limpo.camposExtras === null ? {} : sanearValoresDeCampos(limpo.camposExtras);
+  }
   return limpo;
 }

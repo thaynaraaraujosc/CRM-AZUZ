@@ -25,6 +25,8 @@ type ContatosContextValue = {
    * de etiqueta/campo que não têm uma coluna dedicada em `Contato`.
    */
   salvarDadosContato: (nome: string, dados: Partial<DadosContato> & Record<string, unknown>) => void;
+  /** Busca a agenda de novo. Pra quando o servidor muda mais do que a tela pediu. */
+  recarregar: () => void;
   /** Atribui o atendente responsável por esse contato (cria o contato se for a primeira vez que ele aparece). */
   atribuirAtendente: (nome: string, atendente: string) => void;
   criarContato: (dados: Partial<DadosContato> & { nome: string }) => Contato;
@@ -60,11 +62,24 @@ function iniciais(nome: string) {
 export function ContatosProvider({ children }: { children: ReactNode }) {
   const [contatos, setContatos] = useState<Contato[]>([]);
 
-  useEffect(() => {
-    fetch("/api/contatos")
+  /**
+   * Busca a agenda de novo agora.
+   *
+   * Quase toda mudança é otimista e não precisa disto: a tela já aplicou o que mandou pro
+   * servidor. Existe pro caso em que o SERVIDOR muda mais do que foi pedido — renomear um número
+   * mexe no contato, no card do funil e nas mensagens numa transação só, e a cópia que o
+   * navegador tem fica velha inteira.
+   */
+  function recarregar() {
+    return fetch("/api/contatos", { cache: "no-store" })
       .then((r) => r.json())
       .then((dados: Contato[]) => setContatos(dados))
       .catch((erro) => console.error("Falha ao carregar contatos da API:", erro));
+  }
+
+  // Só no mount: daí em diante cada mudança já atualiza a lista local otimisticamente.
+  useEffect(() => {
+    recarregar();
   }, []);
 
   function upsertRemoto(nome: string, dados: Partial<Contato> & Record<string, unknown>) {
@@ -210,6 +225,7 @@ export function ContatosProvider({ children }: { children: ReactNode }) {
         salvarDadosContato,
         atribuirAtendente,
         criarContato,
+        recarregar,
         adicionarEtiqueta,
         removerEtiqueta,
         alternarFavorito,

@@ -204,6 +204,17 @@ export type Contato = {
   /** Quando alguém da equipe salvou esta pessoa de propósito. Nulo = nasceu sozinho de uma
    *  mensagem. É o que decide quem aparece na tela de Contatos (ver `contatos/salvos.ts`). */
   salvoEm?: string | null;
+  /**
+   * OS CAMPOS QUE A PRÓPRIA EMPRESA CRIOU, como `{ "<id do campo>": "valor" }`.
+   *
+   * Os de cima são os que todo CRM tem. Isto aqui é o que muda de cliente pra cliente — "paciente
+   * novo ou antigo" numa clínica, "placa" numa oficina, "turma" num curso — e por isso não vira
+   * coluna: viraria uma lista interminável de campos vazios, e uma migração por cliente novo.
+   *
+   * A DEFINIÇÃO (nome, tipo, opções) mora em `Preferencia`, chave `campos-do-contato`; ver
+   * `src/lib/contatos/campos-do-contato.ts`. Aqui ficam só os valores desta pessoa.
+   */
+  camposExtras?: Record<string, string>;
 };
 
 export const contatos: Contato[] = [

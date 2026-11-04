@@ -25361,3 +25361,71 @@ td.trafego-col-crm:first-of-type {
 .topbar h2:empty {
   display: none;
 }
+
+/* ---------------- Campos que a empresa cria no contato ----------------
+ *
+ * Ver `src/components/conversas/CamposPersonalizados.tsx`. Eles aparecem no meio dos campos fixos
+ * do painel, e por isso NÃO têm desenho próprio: usam `.field`, `label` e `.input` como todos os
+ * outros. O que está aqui é só o que não existe nos fixos — a ação de apagar ao lado do rótulo e
+ * o botão de criar no fim da lista. Dar a eles um visual próprio seria dizer, sem motivo, que
+ * campo criado pela empresa vale menos que campo do produto.
+ */
+
+/* O rótulo vira uma linha com duas pontas só quando há ação do lado direito. */
+.cpers-rotulo {
+  display: flex !important;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  /* O painel é estreito e nome de campo é livre: sem quebrar, "Apagar de todos os contatos?" ao
+     lado de um rótulo comprido empurraria o botão pra fora. */
+  flex-wrap: wrap;
+}
+
+/* As ações herdam o tamanho do rótulo, sem o caixa-alta nem o espaçamento de letra dele: são
+   frase, não etiqueta de campo. */
+.cpers-rotulo .link {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 11px;
+  font-weight: var(--fw-medium);
+}
+
+.cpers-apagar {
+  color: var(--text-faint);
+}
+.cpers-apagar:hover {
+  color: #d64545;
+}
+
+/* Apagar um campo some com ele de TODOS os contatos, então a confirmação fica na própria linha:
+   um passo a mais, sem tirar a pessoa do painel pra um modal. */
+.cpers-confirma {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 11px;
+  font-weight: var(--fw-regular);
+  color: var(--text-muted);
+}
+
+.cpers-perigo {
+  color: #d64545 !important;
+  font-weight: var(--fw-semibold) !important;
+}
+
+/* Fica dentro do fluxo dos campos, com a mesma margem lateral deles. */
+.cpers-criar {
+  margin: var(--space-3) var(--space-4) var(--space-4);
+  width: calc(100% - var(--space-4) * 2);
+  justify-content: center;
+}
+
+/* A linha que explica por que há uma caixa de texto onde deveria haver um nome. */
+.wa-sem-nome {
+  margin: 0 0 var(--space-2);
+  font-size: 12px;
+  color: var(--text-muted);
+}
