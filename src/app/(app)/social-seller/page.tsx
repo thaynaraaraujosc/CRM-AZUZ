@@ -10,12 +10,21 @@ import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { MODELOS_SOCIAIS } from "@/lib/social/modelos-rapidos";
 import {
   IconAutomacoes,
+  IconCalendar,
   IconCheck,
   IconContatos,
   IconConversas,
+  IconGlobo,
   IconInstagram,
   IconPlay,
 } from "@/components/icons";
+import { ColumnChart } from "@/components/charts";
+import { dataCurta } from "@/lib/agenda/fuso";
+import {
+  agrupamentosPossiveis,
+  agrupar,
+  type Agrupamento,
+} from "@/lib/social/serie-de-interacoes";
 import { useIdioma } from "@/lib/idioma-context";
 import type { PainelSocial } from "@/app/api/social/metricas/route";
 
@@ -48,7 +57,20 @@ const PERIODOS = [
   { dias: 1, label: "Dia" },
   { dias: 7, label: "Semana" },
   { dias: 30, label: "Mês" },
+  { dias: 90, label: "Trimestre" },
 ] as const;
+
+/*
+ * O TRIMESTRE ENTROU junto com o gráfico, e não é enfeite: num recorte de uma semana, "agrupar
+ * por mês" é uma barra só. Os três agrupamentos que a referência mostra só fazem sentido se
+ * existir um período longo o bastante pra caber mais de um mês dentro.
+ */
+const NOME_DO_AGRUPAMENTO: Record<Agrupamento, string> = {
+  hora: "Por hora",
+  dia: "Diário",
+  semana: "Semanal",
+  mes: "Mensal",
+};
 
 
 type Icone = typeof IconAutomacoes;
@@ -79,6 +101,10 @@ export default function ResumoSocialPage() {
   const router = useRouter();
   const { criarFluxo } = useAutomationFlows();
   const [dias, setDias] = useState<number>(7);
+  /* O agrupamento do gráfico é guardado como PEDIDO e resolvido no render: trocar o período pode
+     tirar do ar a opção escolhida ("Mensal" não existe numa semana), e corrigir isso num efeito
+     significaria um quadro desenhado com um agrupamento impossível antes da correção chegar. */
+  const [agrupamentoPedido, setAgrupamentoPedido] = useState<Agrupamento>("dia");
   /* O período pedido viaja JUNTO com a resposta, como no painel: assim "carregando" é derivado
      (a resposta que tenho não é do período que estou mostrando) em vez de ser um segundo estado
      que precisa ser ligado e desligado na mão, e que erra sozinho quando duas buscas se cruzam. */
@@ -117,6 +143,22 @@ export default function ResumoSocialPage() {
     });
     router.push(`/automacoes/editor/${novo.id}`);
   }
+
+  /* Só os agrupamentos que rendem mais de uma barra no período escolhido. Quando sobra um, ele
+     vira legenda: um botão único, que não desliga, é um botão que engana. */
+  const agrupamentos = painel
+    ? agrupamentosPossiveis(painel.serie.granularidade, painel.periodoDias)
+    : [];
+  const agrupamento = agrupamentos.includes(agrupamentoPedido) ? agrupamentoPedido : agrupamentos[0];
+  const colunas =
+    painel && agrupamento
+      ? agrupar(painel.serie.pontos, agrupamento).map((ponto) => ({
+          chave: ponto.chave,
+          rotulo: ponto.rotulo,
+          titulo: ponto.titulo,
+          valor: ponto.total,
+        }))
+      : [];
 
   const interacoes = painel
     ? painel.crm.directs +
@@ -225,7 +267,14 @@ export default function ResumoSocialPage() {
             mais explicação do que conteúdo.
           */}
           <section className="ss-secao">
-            <div className="ss-secao-topo ss-secao-topo-solta">
+            {/*
+              O PERÍODO ESCRITO POR EXTENSO, e não só o botão marcado.
+              
+              "Semana" marcado não diz QUAIS sete dias, e o recorte fecha por dia de calendário no
+              fuso da conta — uma interação das 23h entra no dia dela, não no seguinte. Quem lê um
+              número de painel precisa poder conferir o que ele cobre; a linha aqui é a conferência.
+            */}
+            <div className="ss-secao-topo ss-periodo">
               <div className="ss-seg" role="group" aria-label={traduzir("Período")}>
                 {PERIODOS.map((p) => (
                   <button
@@ -239,6 +288,21 @@ export default function ResumoSocialPage() {
                   </button>
                 ))}
               </div>
+              {painel ? (
+                <div className="ss-periodo-info">
+                  <span>
+                    <IconCalendar width={13} height={13} aria-hidden="true" />
+                    {dataCurta(painel.periodo.primeiroDia)}
+                    {painel.periodo.primeiroDia === painel.periodo.ultimoDia
+                      ? null
+                      : ` – ${dataCurta(painel.periodo.ultimoDia)}`}
+                  </span>
+                  <span>
+                    <IconGlobo width={13} height={13} aria-hidden="true" />
+                    {traduzir("Horário de Brasília")}
+                  </span>
+                </div>
+              ) : null}
             </div>
 
             {carregando || !painel ? (
@@ -284,27 +348,49 @@ export default function ResumoSocialPage() {
               <div className="ss-passos-topo">
                 <div>
                   <strong>{traduzir("Seus próximos passos")}</strong>
-                  <p>
-                    {feitos} {traduzir("de")} {passos.length} {traduzir("prontos")}
-                  </p>
+                  <p>{traduzir("O que falta para o atendimento do Instagram rodar sozinho.")}</p>
+                </div>
+                <span className="ss-passos-conta">
+                  {feitos} {traduzir("de")} {passos.length} {traduzir("prontos")}
+                </span>
+              </div>
+
+              {/*
+                A TRILHA DEITADA, com os passos ligados por uma linha — a forma da referência.
+                
+                SEM CADEADO nos passos à frente, e isso é diferença de produto, não de desenho. Lá
+                a trilha é um jogo: a missão seguinte está travada até a anterior fechar. Aqui não
+                há nada travado — dá pra publicar um robô antes de conectar a conta, só não
+                adianta. Desenhar cadeado seria prometer uma regra que o CRM não aplica.
+                
+                SEM RECOMPENSA, pelo mesmo motivo: a referência pendura "+100 contatos" e "10% OFF"
+                em cada passo. Não temos nenhum prêmio pra dar, e o selo de um prêmio que não
+                existe é pior do que trilha nenhuma.
+              */}
+              <ol className="ss-trilha">
+                {passos.map((p, i) => (
+                  <li key={p.titulo} className={`ss-passo${p.feito ? " feito" : ""}${p === proximo ? " agora" : ""}`}>
+                    <span className="ss-passo-marca" aria-hidden="true">
+                      {p.feito ? <IconCheck width={13} height={13} /> : i + 1}
+                    </span>
+                    <span className="ss-passo-textos">
+                      <strong>{traduzir(p.titulo)}</strong>
+                    </span>
+                  </li>
+                ))}
+              </ol>
+
+              {/* O passo da vez repetido embaixo, com o porquê e o botão: na trilha cabe o nome, e
+                  é aqui que se decide se vale clicar agora. */}
+              <div className="ss-passos-agora">
+                <div>
+                  <strong>{traduzir(proximo.titulo)}</strong>
+                  <span>{traduzir(proximo.detalhe)}</span>
                 </div>
                 <Link className="ss-passos-botao" href={proximo.href}>
                   {traduzir(proximo.acao)} <span aria-hidden="true">→</span>
                 </Link>
               </div>
-              <ol className="ss-trilha">
-                {passos.map((p) => (
-                  <li key={p.titulo} className={`ss-passo${p.feito ? " feito" : ""}${p === proximo ? " agora" : ""}`}>
-                    <span className="ss-passo-marca" aria-hidden="true">
-                      {p.feito ? <IconCheck width={12} height={12} /> : null}
-                    </span>
-                    <span className="ss-passo-textos">
-                      <strong>{traduzir(p.titulo)}</strong>
-                      <span>{traduzir(p.detalhe)}</span>
-                    </span>
-                  </li>
-                ))}
-              </ol>
             </section>
           ) : null}
 
@@ -354,6 +440,37 @@ export default function ResumoSocialPage() {
                   <Tile Icone={IconConversas} valor={painel.crm.mencoes} label="Menções em stories" />
                   <Tile Icone={IconConversas} valor={painel.crm.reacoes} label="Reações" />
                 </div>
+
+                {/*
+                  O GRÁFICO CONTA OS MESMOS EVENTOS dos cinco números acima — o total das barras
+                  bate com a soma deles. Dois jeitos de olhar a mesma contagem, e não duas
+                  contagens: um painel que mostra 262 em cima e 254 embaixo perde a confiança da
+                  tela inteira, e nunca se descobre qual dos dois estava certo.
+                */}
+                <div className="ss-grafico">
+                  <div className="ss-grafico-topo">
+                    <h4>{traduzir("Quando elas chegaram")}</h4>
+                    {agrupamentos.length > 1 ? (
+                      <div className="ss-seg" role="group" aria-label={traduzir("Agrupar o gráfico")}>
+                        {agrupamentos.map((a) => (
+                          <button
+                            key={a}
+                            type="button"
+                            className={`ss-seg-item${agrupamento === a ? " on" : ""}`}
+                            aria-pressed={agrupamento === a}
+                            onClick={() => setAgrupamentoPedido(a)}
+                          >
+                            {traduzir(NOME_DO_AGRUPAMENTO[a])}
+                          </button>
+                        ))}
+                      </div>
+                    ) : agrupamento ? (
+                      <span className="hint">{traduzir(NOME_DO_AGRUPAMENTO[agrupamento])}</span>
+                    ) : null}
+                  </div>
+                  <ColumnChart colunas={colunas} />
+                </div>
+
                 {!interacoes && painel.conectado ? (
                   <p className="hint">
                     {traduzir("Nada ainda neste período. Um robô ligado é o que faz a interação virar atendimento.")}

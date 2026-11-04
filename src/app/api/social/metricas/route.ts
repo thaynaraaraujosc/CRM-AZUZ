@@ -4,6 +4,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { decriptar } from "@/lib/integracoes/crypto";
 import { buscarMetricasInstagram, type ResultadoMetricas } from "@/lib/integracoes/instagram-metricas";
+import { FUSO_BRASILIA, hojeEmBrasilia, isoDeBrasilia, somarDias } from "@/lib/agenda/fuso";
+import { montarSerie, type Granularidade } from "@/lib/social/serie-de-interacoes";
 
 /**
  * O painel social. Dois blocos com origens diferentes, e a tela diz qual é qual.
@@ -22,6 +24,42 @@ export type PainelSocial = {
   motivoDesconectado?: string;
   /** Dias considerados. */
   periodoDias: number;
+  /**
+   * O RECORTE EXATO que estes números cobrem, pra tela poder escrevê-lo.
+   *
+   * Antes a tela só sabia "7 dias" e a pessoa tinha que confiar. Agora o período é fechado por
+   * DIA DE CALENDÁRIO no fuso da conta — "Semana" são os sete dias que terminam hoje, de meia-noite
+   * a agora —, e não uma janela rolante de 168 horas. Dias inteiros é o que dá pra escrever numa
+   * linha ("29/10/2026 – 04/11/2026") e é o recorte em que se pensa o Instagram.
+   */
+  periodo: {
+    /** Primeiro dia do recorte, "YYYY-MM-DD" no calendário do fuso. */
+    primeiroDia: string;
+    /** Último dia do recorte — hoje —, "YYYY-MM-DD". */
+    ultimoDia: string;
+    /** O instante em que a resposta foi montada, pra tela mostrar "atualizado em". */
+    atualizadoEm: string;
+    /** O fuso em que os dias foram fechados. */
+    fuso: string;
+  };
+  /**
+   * AS INTERAÇÕES AO LONGO DO TEMPO, pra tela desenhar o gráfico.
+   *
+   * Conta exatamente os mesmos eventos que `crm.directs + comentarios + storiesRespondidos +
+   * mencoes + reacoes`: o total do gráfico e o total dos números têm que bater, senão a tela
+   * mostra duas verdades sobre a mesma coisa.
+   *
+   * Um balde POR HORA quando o período é de um dia só (24 barras, e a pergunta vira "a que horas
+   * falam comigo?"), e POR DIA no resto. Semana e mês saem daí, somados na tela: mandar os três
+   * recortes prontos seria mandar a mesma contagem três vezes.
+   *
+   * Dia sem nenhuma interação vem com zero, e não ausente: um buraco no meio do gráfico é
+   * informação, e uma barra que simplesmente não existe parece dado faltando.
+   */
+  serie: {
+    granularidade: Granularidade;
+    pontos: { chave: string; total: number }[];
+  };
   crm: {
     comentarios: number;
     directs: number;
@@ -66,6 +104,14 @@ const GRUPOS = {
   reacoes: ["reacao_adicionada"],
 };
 
+/**
+ * Tudo que conta como "interação recebida" — a união dos grupos acima.
+ *
+ * Serve pra duas coisas ao mesmo tempo: filtrar a leitura no banco (não há motivo pra trazer tipo
+ * que nenhuma conta usa) e garantir que o gráfico e os números somem os MESMOS eventos.
+ */
+const TIPOS_DE_INTERACAO = Array.from(new Set(Object.values(GRUPOS).flat()));
+
 /** Situações de `ExecucaoAutomacao` que ainda não terminaram. */
 const EM_ANDAMENTO = ["em_andamento", "aguardando_tempo", "aguardando_evento"];
 
@@ -78,14 +124,27 @@ export async function GET(request: Request) {
   // oferecer "último ano" na tela seria prometer um recorte que volta vazio.
   const pedido = Number(new URL(request.url).searchParams.get("dias") ?? "7");
   const periodoDias = Number.isFinite(pedido) ? Math.min(90, Math.max(1, Math.trunc(pedido))) : 7;
+
+  /*
+   * O PERÍODO FECHA POR DIA DE CALENDÁRIO, no fuso da conta.
+   *
+   * Era `agora - dias * 24h`. Numa janela rolante, "Semana" às 13h de quarta começa às 13h da
+   * quarta anterior: o primeiro e o último dia do gráfico aparecem pela metade, e o rótulo do
+   * período não cabe numa linha sem escrever a hora. Com dia inteiro, "Semana" são os sete dias
+   * que terminam hoje — que é o que a pessoa quer dizer quando escolhe "semana".
+   */
+  const ultimoDia = hojeEmBrasilia();
+  const primeiroDia = somarDias(ultimoDia, -(periodoDias - 1));
+  const desde = new Date(isoDeBrasilia(primeiroDia, "00:00"));
   const ate = new Date();
-  const desde = new Date(ate.getTime() - periodoDias * 24 * 60 * 60 * 1000);
 
   const [eventos, leadsCriados, automacoesIniciadas, integracao, fluxosSociais, execucoes] = await Promise.all([
-    prisma.instagramEvento.groupBy({
-      by: ["tipo"],
-      where: { workspaceId, criadoEm: { gte: desde } },
-      _count: { _all: true },
+    // Os eventos do período, crus. Era um `groupBy` por tipo, que dava os totais e só: o gráfico
+    // precisa de QUANDO cada um chegou. São poucas linhas por workspace num recorte de até 90
+    // dias, e a mesma leitura passou a servir às duas respostas.
+    prisma.instagramEvento.findMany({
+      where: { workspaceId, criadoEm: { gte: desde }, tipo: { in: TIPOS_DE_INTERACAO } },
+      select: { tipo: true, criadoEm: true },
     }),
     prisma.contato.count({ where: { workspaceId, criadoVia: "instagram", criadoEm: { gte: desde } } }),
     prisma.execucaoAutomacao.count({
@@ -109,10 +168,21 @@ export async function GET(request: Request) {
   ]);
 
   function contar(tipos: string[]): number {
-    return eventos
-      .filter((e) => tipos.includes(e.tipo))
-      .reduce((soma, e) => soma + e._count._all, 0);
+    return eventos.filter((e) => tipos.includes(e.tipo)).length;
   }
+
+  /*
+   * O GRÁFICO SAI DA MESMA LEITURA dos números, por balde fino: um por hora quando o período é de
+   * um dia só, um por dia no resto. Semana e mês a tela soma a partir daí — ver
+   * `serie-de-interacoes.ts`, que é onde a contagem mora e onde ela é testada.
+   */
+  const granularidade: Granularidade = periodoDias === 1 ? "hora" : "dia";
+  const pontos = montarSerie(
+    eventos.map((e) => e.criadoEm),
+    granularidade,
+    primeiroDia,
+    ultimoDia,
+  );
 
   const conectado = integracao?.status === "conectado" && !!integracao.accessTokenCriptografado;
 
@@ -133,6 +203,8 @@ export async function GET(request: Request) {
       ? undefined
       : (integracao?.erroMensagem ?? "Conecte a conta do Instagram em Configurações."),
     periodoDias,
+    periodo: { primeiroDia, ultimoDia, atualizadoEm: ate.toISOString(), fuso: FUSO_BRASILIA },
+    serie: { granularidade, pontos },
     crm: {
       comentarios: contar(GRUPOS.comentarios),
       directs: contar(GRUPOS.directs),

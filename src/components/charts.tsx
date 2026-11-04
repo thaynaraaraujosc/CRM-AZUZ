@@ -218,6 +218,113 @@ export function FunnelSteps({ etapas, onClickEtapa }: { etapas: EtapaFunilVisual
   );
 }
 
+/**
+ * GRÁFICO DE COLUNAS: uma barra por período, pra responder "como foi ao longo do tempo".
+ *
+ * Em HTML e CSS, não em SVG como o `LineChart` aqui do lado. A diferença que importa: o rótulo de
+ * cada barra é TEXTO de verdade, então ele acompanha o tamanho de fonte do sistema, é lido por
+ * leitor de tela e nunca sai desalinhado quando a fonte carrega depois. Num gráfico de linha o
+ * caminho precisa de coordenadas e o SVG se paga; numa coluna, não.
+ *
+ * UMA SÉRIE SÓ, de propósito. Duas séries de barras lado a lado é a figura que parece analítica e
+ * quase nunca é lida: pra comparar duas coisas no tempo, duas linhas funcionam melhor, e é pra
+ * isso que o `LineChart` existe.
+ */
+export type ColunaDoGrafico = {
+  chave: string;
+  /** O que vai escrito embaixo da barra. Curto: "04/11", "13h", "nov". */
+  rotulo: string;
+  /** O balde por extenso, que aparece ao parar o mouse: "quarta-feira, 4 de novembro". */
+  titulo: string;
+  valor: number;
+};
+
+/**
+ * O teto do eixo, arredondado pra um número que se lê.
+ *
+ * Sem isto o topo do gráfico é o maior valor, e o eixo vira "0 / 0.75 / 1.5 / 2.25 / 3" — que foi
+ * exatamente o que apareceu na referência. Contagem de interação é número inteiro; meia interação
+ * não existe, e escrever "2.25" no eixo é dizer que existe.
+ */
+export function tetoDoEixo(maior: number): number {
+  if (maior <= 4) return Math.max(1, Math.ceil(maior));
+  const magnitude = 10 ** Math.floor(Math.log10(maior));
+  for (const passo of [1, 2, 2.5, 5, 10]) {
+    const candidato = passo * magnitude;
+    if (candidato >= maior) return Math.ceil(candidato);
+  }
+  return Math.ceil(10 * magnitude);
+}
+
+/** As marcas do eixo: sempre 0 e o teto, e as do meio só quando caem em número inteiro. */
+export function marcasDoEixo(teto: number): number[] {
+  const marcas = [0, teto];
+  for (const fracao of [0.5, 0.25, 0.75]) {
+    const valor = teto * fracao;
+    if (Number.isInteger(valor) && !marcas.includes(valor) && marcas.length < 5) marcas.push(valor);
+  }
+  return marcas.sort((a, b) => a - b);
+}
+
+export function ColumnChart({
+  colunas,
+  altura = 200,
+  cor = "var(--ss-azul, #657bff)",
+}: {
+  colunas: ColunaDoGrafico[];
+  altura?: number;
+  cor?: string;
+}) {
+  const { t: traduzir, localeNumero } = useIdioma();
+  if (!colunas.length) return <p className="hint">{traduzir("Sem dados suficientes no período.")}</p>;
+
+  const maior = Math.max(...colunas.map((c) => c.valor));
+  const teto = tetoDoEixo(maior);
+  const marcas = marcasDoEixo(teto);
+  const total = colunas.reduce((soma, c) => soma + c.valor, 0);
+
+  /* Com muitas barras os rótulos se encavalam. Em vez de girar o texto — que fica ilegível e muda
+     a altura do gráfico —, escreve um a cada N e deixa o resto respirar. O balde de cada barra
+     continua inteiro no título, ao parar o mouse. */
+  const passoDoRotulo = Math.ceil(colunas.length / 12);
+
+  return (
+    <div className="gcol" style={{ "--gcol-altura": `${altura}px` } as React.CSSProperties}>
+      <div className="gcol-eixo" aria-hidden="true">
+        {[...marcas].reverse().map((m) => (
+          <span key={m}>{m.toLocaleString(localeNumero)}</span>
+        ))}
+      </div>
+      <div className="gcol-area">
+        <div className="gcol-grades" aria-hidden="true">
+          {[...marcas].reverse().map((m) => (
+            <span key={m} />
+          ))}
+        </div>
+        <ol
+          className="gcol-barras"
+          aria-label={traduzir("{total} no período", { total: total.toLocaleString(localeNumero) })}
+        >
+          {colunas.map((c, i) => (
+            <li key={c.chave} className="gcol-barra">
+              <span
+                className="gcol-haste"
+                style={{ height: `${(c.valor / teto) * 100}%`, background: cor }}
+                title={`${c.titulo}: ${c.valor.toLocaleString(localeNumero)}`}
+              >
+                <span className="gcol-valor">{c.valor.toLocaleString(localeNumero)}</span>
+              </span>
+              <span className="gcol-rotulo">
+                {i % passoDoRotulo === 0 || i === colunas.length - 1 ? c.rotulo : ""}
+              </span>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </div>
+  );
+}
+
 export function ChartCard({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {
   return (
     <div className="card mb14">

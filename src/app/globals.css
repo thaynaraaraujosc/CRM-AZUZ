@@ -20349,42 +20349,187 @@ table.tbl .name-cell .r {
 }
 
 /*
- * A TRILHA DE PRIMEIROS PASSOS, no mesmo cartão branco das outras seções.
+ * A TRILHA DE PRIMEIROS PASSOS: o único bloco colorido da tela, e ele é DOURADO.
  *
- * Era um bloco chapado no navy, com texto branco por cima. Quando a tela ganhou o acabamento do
- * Umbler, `.ss-passos` entrou na regra que pinta toda seção de cartão branco — e o texto branco
- * continuou branco, em cima de branco. Sobravam na tela três linhas douradas e três ✓, sem uma
- * palavra. A correção não é devolver o fundo navy: é parar de escrever cor fixa aqui e deixar o
- * texto nos tokens, como no resto da página. O destaque de "este bloco é diferente" fica por
- * conta do ouro da trilha e do botão, que já o davam.
+ * A Thaynara apontou a caixa equivalente do Gaio como referência de forma — trilha deitada, os
+ * passos ligados por uma linha, e embaixo uma faixa branca com a missão da vez e o botão — e
+ * pediu a cor da casa no lugar do azul-arroxeado de lá.
+ *
+ * O ouro é `--acao` com `--acao-texto` por cima, o par que o produto já usa em botão: marinho
+ * sobre dourado, com contraste nos dois temas. Pintar de ouro e escrever em branco, que é o
+ * reflexo quando se pensa "bloco colorido", daria 1,9:1 — ilegível.
+ *
+ * É o único bloco que não é cartão branco nesta tela, e isso é o ponto: ele é o que a pessoa faz
+ * A SEGUIR, não o que já aconteceu. Todo o resto da tela é relato.
  */
 .ss-passos {
   margin-bottom: var(--space-4);
-  padding: var(--space-4);
-  border-radius: var(--radius-3);
-  background: var(--surface-elevated);
-  color: var(--ink);
+  padding: var(--space-5);
+  border-radius: 16px;
+  background: var(--acao);
+  color: var(--acao-texto);
 }
 
 .ss-passos-topo {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-3);
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-5);
 }
 
 .ss-passos-topo strong {
   display: block;
-  font-size: 16px;
-  font-weight: 650;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .ss-passos-topo p {
-  margin: 2px 0 0;
+  margin: 3px 0 0;
+  font-size: 13px;
+  /* Marinho rebaixado, e não branco: sobre ouro, o branco é mais claro que o fundo e some. */
+  color: color-mix(in srgb, var(--acao-texto) 72%, transparent);
+}
+
+/* O contador no lugar onde a referência põe o relógio regressivo. Não há contagem regressiva aqui
+   porque não há prazo nenhum: a trilha não expira. */
+.ss-passos-conta {
+  flex: none;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--acao-texto) 12%, transparent);
   font-size: 12px;
-  color: var(--text-muted);
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+/*
+ * A TRILHA DEITADA.
+ *
+ * `grid-auto-flow: column` e NÃO `auto-fit`: a trilha é uma fileira só, sempre. Com `auto-fit` ela
+ * quebrava em várias linhas na tela estreita, e aí a linha que liga um passo ao anterior —
+ * desenhada em `::before`, esticada pra esquerda — ia ligar um passo ao que está uma fileira
+ * ACIMA, atravessando o bloco inteiro e saindo pelo lado de fora. Em tela estreita a trilha vira
+ * vertical de verdade (ver a media query no fim deste bloco), que é a forma certa de empilhar uma
+ * sequência: a linha continua ligando quem é vizinho.
+ */
+.ss-trilha {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  list-style: none;
+  margin: 0 0 var(--space-4);
+  padding: 0;
+}
+
+.ss-passo {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  text-align: center;
+  padding: 0 6px;
+}
+
+/* A linha que chega neste passo, vinda do anterior. Cheia quando o passo já foi alcançado,
+   apagada quando ainda está à frente: é o progresso lido de um olhar. */
+.ss-passo::before {
+  content: "";
+  position: absolute;
+  top: 15px;
+  right: 50%;
+  left: -50%;
+  height: 2px;
+  margin-right: 20px;
+  margin-left: 20px;
+  background: color-mix(in srgb, var(--acao-texto) 22%, transparent);
+}
+
+.ss-passo:first-child::before {
+  display: none;
+}
+
+.ss-passo.feito::before,
+.ss-passo.agora::before {
+  background: color-mix(in srgb, var(--acao-texto) 60%, transparent);
+}
+
+.ss-passo-marca {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--acao-texto) 22%, transparent);
+  background: var(--acao);
+  font-size: 13px;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--acao-texto) 55%, transparent);
+}
+
+/* Feito: marinho cheio com o ✓ dourado. */
+.ss-passo.feito .ss-passo-marca {
+  border-color: var(--acao-texto);
+  background: var(--acao-texto);
+  color: var(--acao);
+}
+
+/* O da vez: branco cheio com anel marinho — o único que salta da trilha. */
+.ss-passo.agora .ss-passo-marca {
+  border-color: var(--acao-texto);
+  background: #fff;
+  color: var(--acao-texto);
+}
+
+.ss-passo-textos strong {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: color-mix(in srgb, var(--acao-texto) 70%, transparent);
+}
+
+.ss-passo.agora .ss-passo-textos strong,
+.ss-passo.feito .ss-passo-textos strong {
+  color: var(--acao-texto);
+}
+
+/*
+ * A faixa branca da missão da vez, com o porquê e o botão.
+ *
+ * BRANCO FIXO, e não `--surface-elevated`. O bloco em volta é dourado nos dois temas (`--acao` e
+ * `--acao-texto` não mudam de valor), então o que está dentro dele também não pode mudar: com o
+ * token, no tema escuro esta faixa virava marinho e o texto marinho em cima dela sumia.
+ */
+.ss-passos-agora {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.ss-passos-agora strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--acao-texto);
+}
+
+.ss-passos-agora > div > span {
+  display: block;
+  margin-top: 2px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: color-mix(in srgb, var(--acao-texto) 68%, transparent);
 }
 
 /* O botão aponta pro PRÓXIMO passo em aberto, não pro primeiro da lista: quem já conectou a conta
@@ -20393,11 +20538,12 @@ table.tbl .name-cell .r {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 32px;
-  padding: 0 14px;
+  flex: none;
+  height: 34px;
+  padding: 0 16px;
   border-radius: 999px;
-  background: var(--acao);
-  color: var(--acao-texto);
+  background: var(--acao-texto);
+  color: #fff;
   font-size: 13px;
   font-weight: 650;
   text-decoration: none;
@@ -20405,94 +20551,38 @@ table.tbl .name-cell .r {
 }
 
 .ss-passos-botao:hover {
-  background: var(--acao-hover);
+  filter: brightness(1.3);
 }
 
-.ss-trilha {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
-  gap: var(--space-3);
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  counter-reset: passo;
-}
+/*
+ * NA TELA ESTREITA A TRILHA FICA EM PÉ.
+ *
+ * Quatro colunas de 80px não cabem o nome de um passo, e espremer é como se perde a trilha. Em
+ * pé, cada passo tem a largura toda pro nome e a linha passa a ser vertical, ligando cada marca
+ * à de cima — que continua sendo o passo vizinho, que é o ponto da linha existir.
+ */
+@media (max-width: 760px) {
+  .ss-trilha {
+    grid-auto-flow: row;
+    grid-auto-columns: auto;
+    gap: 18px;
+  }
 
-.ss-passo {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding-top: 10px;
-  border-top: 2px solid var(--line-strong);
-  counter-increment: passo;
-}
+  .ss-passo {
+    flex-direction: row;
+    align-items: center;
+    text-align: left;
+    padding: 0;
+  }
 
-.ss-passo.feito {
-  border-top-color: var(--acao);
-}
-
-/* A marca é número enquanto o passo está em aberto e vira ✓ quando está feito: assim a trilha se
-   lê como progresso, e não como uma lista de quatro itens iguais. */
-.ss-passo-marca {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: 1.5px solid var(--line-strong);
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-muted);
-}
-
-.ss-passo-marca::before {
-  content: counter(passo);
-}
-
-.ss-passo.feito .ss-passo-marca {
-  border-color: var(--acao);
-  background: var(--acao);
-  color: var(--acao-texto);
-}
-
-.ss-passo.feito .ss-passo-marca::before {
-  content: none;
-}
-
-.ss-passo.agora .ss-passo-marca {
-  border-color: var(--ink);
-  color: var(--ink);
-}
-
-.ss-passo-textos {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.ss-passo-textos strong {
-  font-size: 13px;
-  font-weight: 650;
-  line-height: 1.3;
-}
-
-.ss-passo-textos > span {
-  font-size: 12px;
-  line-height: 1.4;
-  color: var(--text-muted);
-}
-
-
-
-/* O passo já feito recua um tom, e para no tom APAGADO do produto: diluir mais que isso deixava
-   um rótulo de 13px em 2,9:1 sobre o cartão branco, que é ilegível. Quem está no passo da vez
-   continua se destacando porque o título dele é tinta cheia, não porque o resto sumiu. */
-.ss-passo.feito .ss-passo-textos strong,
-.ss-passo.feito .ss-passo-textos > span {
-  color: var(--text-muted);
+  .ss-passo::before {
+    top: -18px;
+    right: auto;
+    left: 15px;
+    width: 2px;
+    height: 18px;
+    margin: 0;
+  }
 }
 
 .ss-objetivos {
@@ -26448,14 +26538,192 @@ td.trafego-col-crm:first-of-type {
  * horizontais atravessando tudo, e o olho lê "formulário comprido" em vez de "quatro assuntos".
  * Cartão branco sobre papel colorido é a mesma separação, feita por superfície.
  */
-.content.social-layout .ss-secao,
-.content.social-layout .ss-passos {
+.content.social-layout .ss-secao {
   margin-bottom: var(--space-4);
   padding: var(--space-5);
   border: 0;
   border-radius: 16px;
   background: var(--surface-elevated);
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.05);
+}
+
+/*
+ * A BARRA DE PERÍODO: o que escolher à esquerda, o que foi escolhido à direita.
+ *
+ * O recorte vem escrito em data porque "Semana" marcado não diz QUAIS sete dias, e porque o fuso
+ * importa: a conta fecha os dias no relógio de Brasília, não no do servidor. Sem a linha, quem
+ * desconfia de um número não tem como conferir o que ele cobre.
+ */
+.ss-periodo {
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.ss-periodo-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.ss-periodo-info span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ss-periodo-info svg {
+  color: var(--text-faint);
+}
+
+/* O gráfico fica DENTRO da seção de interações, separado por um filete: é outro jeito de olhar os
+   mesmos cinco números logo acima, não um assunto novo. */
+.ss-grafico {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+
+.ss-grafico-topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.ss-grafico-topo h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--ink);
+}
+
+/* ================= GRÁFICO DE COLUNAS =================
+ *
+ * Em HTML, não em SVG: o rótulo de cada barra é texto de verdade — acompanha o tamanho de fonte
+ * do sistema, é lido por leitor de tela, nunca sai do lugar quando a fonte carrega depois.
+ *
+ * A altura vem por `--gcol-altura`, posta no elemento pelo componente. As barras medem a altura
+ * delas em PORCENTAGEM dessa caixa, e por isso a fileira de rótulos fica FORA dela, pendurada por
+ * `position: absolute`: se o rótulo dividisse a caixa, 100% deixaria de ser o topo do eixo e toda
+ * barra cheia ficaria curta.
+ */
+.gcol {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0 10px;
+}
+
+.gcol-eixo {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+  height: var(--gcol-altura);
+  font-size: 11px;
+  line-height: 1;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.gcol-area {
+  position: relative;
+  height: var(--gcol-altura);
+  margin-bottom: 26px;
+}
+
+.gcol-grades {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.gcol-grades span {
+  display: block;
+  border-top: 1px dashed var(--line);
+}
+
+/* A última grade é o chão do gráfico: contínua, porque ela é o eixo e não uma referência. */
+.gcol-grades span:last-child {
+  border-top-style: solid;
+  border-top-color: var(--line-strong);
+}
+
+.gcol-barras {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gcol-barra {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+}
+
+.gcol-haste {
+  position: relative;
+  width: 100%;
+  max-width: 46px;
+  /* Barra de valor zero vira um traço no chão em vez de sumir: "ninguém falou comigo na terça" é
+     uma resposta, e ela precisa ocupar lugar no gráfico. */
+  min-height: 2px;
+  border-radius: 5px 5px 2px 2px;
+  transition: filter 0.12s ease;
+}
+
+.gcol-barra:hover .gcol-haste {
+  filter: brightness(1.12);
+}
+
+/* O número aparece ao parar o mouse. Escrito em todas as barras, com trinta delas na tela, ele
+   vira ruído e some atrás do vizinho. */
+.gcol-valor {
+  position: absolute;
+  bottom: calc(100% + 5px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--surface-elevated);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.5;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+
+.gcol-barra:hover .gcol-valor {
+  opacity: 1;
+}
+
+.gcol-rotulo {
+  position: absolute;
+  top: calc(100% + 7px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  line-height: 1.2;
+  color: var(--text-faint);
+  white-space: nowrap;
 }
 
 .content.social-layout .ss-secao:last-child {

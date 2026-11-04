@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { AcoesNoTopo } from "@/lib/topo-da-pagina";
+import { useFecharMenuDeLinha } from "@/lib/menu-de-linha";
 import { AbasSocial } from "@/components/social/AbasSocial";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
@@ -76,6 +77,8 @@ export default function AutomacoesSociaisPage() {
   const [visao, setVisao] = useState<Visao>("lista");
   const [pastaAberta, setPastaAberta] = useState<string | null>(null);
   const [menuAberto, setMenuAberto] = useState<string | null>(null);
+  const fecharMenu = useCallback(() => setMenuAberto(null), []);
+  useFecharMenuDeLinha(menuAberto !== null, fecharMenu);
 
   const carregarPastas = useCallback(async () => {
     const r = await fetch("/api/automacoes-pastas?area=social", { cache: "no-store" });
@@ -345,7 +348,7 @@ export default function AutomacoesSociaisPage() {
                       )}
                     </div>
 
-                    <div className="ssl-acoes">
+                    <div className="ssl-acoes" data-menu-de-linha="">
                       <button
                         type="button"
                         className="icon-btn subtle"
@@ -356,7 +359,13 @@ export default function AutomacoesSociaisPage() {
                       </button>
                       {menuAberto === f.id ? (
                         <div className="social-menu-opcoes" role="menu">
-                          <button type="button" onClick={() => router.push(`/automacoes/editor/${f.id}`)}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMenuAberto(null);
+                              router.push(`/automacoes/editor/${f.id}`);
+                            }}
+                          >
                             {traduzir("Abrir")}
                           </button>
                           <button
