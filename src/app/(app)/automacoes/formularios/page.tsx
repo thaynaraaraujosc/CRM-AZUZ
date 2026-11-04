@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
 import { Ajuda, Toggle } from "@/components/ui";
+import { GrupoRecolhivel } from "@/components/automacoes/GrupoRecolhivel";
 import { AcoesNoTopo } from "@/lib/topo-da-pagina";
 import { ProtecoesDoNumero } from "@/components/automacoes/ProtecoesDoNumero";
 import { IconExpandir } from "@/components/icons";
@@ -59,45 +60,6 @@ function Robo({ fluxo }: { fluxo: FluxoAutomacao }) {
         {noAr ? traduzir("no ar") : fluxo.status === "publicado" ? traduzir("pausado") : traduzir("rascunho")}
       </span>
     </li>
-  );
-}
-
-/**
- * UM GRUPO que abre, com a cor da origem.
- *
- * O cabeçalho é o botão inteiro — a seta é desenho, não alvo. Uma seta de 14px é alvo ruim no
- * celular, e quem lê "Formulários do Flow · 5" espera que clicar no texto também abra.
- */
-function Grupo({
-  tom,
-  titulo,
-  explicacao,
-  contagem,
-  aberto,
-  aoAlternar,
-  children,
-}: {
-  tom: "ouro" | "azul";
-  titulo: string;
-  explicacao: string;
-  contagem: number;
-  aberto: boolean;
-  aoAlternar: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className={`card fgrupo ${tom}${aberto ? " aberto" : ""}`}>
-      <button type="button" className="fgrupo-cabecalho" onClick={aoAlternar} aria-expanded={aberto}>
-        <span className="fgrupo-marca" aria-hidden="true" />
-        <span className="fgrupo-textos">
-          <span className="fgrupo-titulo">{titulo}</span>
-          <span className="fgrupo-explicacao">{explicacao}</span>
-        </span>
-        <span className="fgrupo-contagem">{contagem}</span>
-        <IconExpandir className="fgrupo-seta" width={14} height={14} aria-hidden="true" />
-      </button>
-      {aberto ? <div className="fgrupo-corpo">{children}</div> : null}
-    </section>
   );
 }
 
@@ -362,7 +324,10 @@ export default function FormulariosPage() {
         </Link>
       </AcoesNoTopo>
 
-      <div className="content">
+      {/* `fform-pilha`: o respiro entre os cartões vem de um `gap` só, e não de uma margem
+          escrita em cada um. Eram três cartões encostados, com a divisa de 1px fazendo o trabalho
+          que o espaço devia fazer. */}
+      <div className="content fform-pilha">
         {/* As proteções do número vêm antes dos formulários porque valem para todos eles. */}
         <ProtecoesDoNumero />
 
@@ -397,7 +362,7 @@ export default function FormulariosPage() {
               escondia metade da tela de quem não usa o Flow. Quem aparece e some agora é o grupo.
             */}
             {recurso.conectado ? (
-              <Grupo
+              <GrupoRecolhivel
                 tom="ouro"
                 titulo={traduzir("Formulários do AZUZ Flow")}
                 explicacao={traduzir("Chegam sozinhos do Flow, com a chave que vocês conectaram.")}
@@ -439,7 +404,7 @@ export default function FormulariosPage() {
                     )}
                   </p>
                 )}
-              </Grupo>
+              </GrupoRecolhivel>
             ) : null}
 
             {/*
@@ -449,7 +414,7 @@ export default function FormulariosPage() {
               todos. A pergunta é a mesma dos de cima — "o que acontece quando preenchem este
               formulário" — e responder em dois lugares faria procurar no errado metade das vezes.
             */}
-            <Grupo
+            <GrupoRecolhivel
               tom="azul"
               titulo={traduzir("Formulários do CRM")}
               explicacao={traduzir("Os que vocês montaram aqui dentro, em Formulários.")}
@@ -475,7 +440,7 @@ export default function FormulariosPage() {
                   {traduzir("Nenhum ainda.")} <Link href="/formularios">{traduzir("Criar um formulário")}</Link>
                 </p>
               )}
-            </Grupo>
+            </GrupoRecolhivel>
           </>
         )}
 

@@ -21627,45 +21627,13 @@ table.tbl .name-cell .r {
 }
 
 /*
- * AS PROTEÇÕES DO NÚMERO, agrupadas por assunto.
+ * AS PROTEÇÕES DO NÚMERO: a frase com os campos dentro.
  *
  * Eram cinco caixas numa fileira com rótulos em maiúsculas — DAS, ÀS, POR DIA, POR NÚMERO, FALHAS
  * ATÉ PAUSAR —, e assim ninguém lê que as duas primeiras são uma coisa só e as três seguintes são
- * outra. Em linhas com o assunto escrito à esquerda, a frase se lê inteira: "só manda das 5 às 23",
- * "no máximo 30 por dia".
+ * outra. Escrita por extenso, a regra se lê inteira: "só manda das 5 às 23", "no máximo 30 por
+ * dia". Os blocos que as agrupam estão mais abaixo, em `.prot-blocos`.
  */
-.prot-card {
-  padding: 0;
-  overflow: hidden;
-}
-
-.prot-topo {
-  padding: var(--space-4) var(--space-4) var(--space-2);
-}
-
-.prot-topo .int-title {
-  margin: 0 0 2px;
-}
-
-.prot-linha {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2) var(--space-4);
-  padding: var(--space-3) var(--space-4);
-  border-top: 1px solid var(--line-soft);
-}
-
-.prot-linha:hover {
-  background: color-mix(in srgb, var(--acao) 5%, transparent);
-}
-
-.prot-rotulo {
-  flex: 0 0 130px;
-  font-size: 13px;
-  font-weight: 650;
-}
-
 .prot-campos {
   display: flex;
   flex-wrap: wrap;
@@ -21713,10 +21681,6 @@ table.tbl .name-cell .r {
 .prot-nota {
   font-size: 12px;
   color: var(--text-muted);
-}
-
-.prot-pausa {
-  justify-content: space-between;
 }
 
 .prot-disjuntor {
@@ -21772,12 +21736,21 @@ table.tbl .name-cell .r {
 
 /* O cabeçalho inteiro é o botão: uma seta de 14px é alvo ruim no celular, e quem lê o nome do
    grupo espera que clicar nele abra. */
+/* O "?" mora FORA do botão que abre (botão dentro de botão é HTML inválido), então o cabeçalho
+   é uma linha com os dois. O botão cresce; o "?" fica na ponta. */
+.fgrupo-topo {
+  display: flex;
+  align-items: center;
+  padding-right: var(--space-4);
+}
+
 .fgrupo-cabecalho {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  width: 100%;
-  padding: var(--space-4) var(--space-5);
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: var(--space-4) var(--space-4) var(--space-4) var(--space-5);
   border: 0;
   background: none;
   font: inherit;
@@ -21785,7 +21758,7 @@ table.tbl .name-cell .r {
   cursor: pointer;
 }
 
-.fgrupo-cabecalho:hover {
+.fgrupo-topo:hover {
   background: var(--fgrupo-fundo);
 }
 
@@ -21869,9 +21842,13 @@ table.tbl .name-cell .r {
   padding-top: 0;
 }
 
-/* Os dois grupos são de origens diferentes, e estavam encostados. */
-.fgrupo + .fgrupo {
-  margin-top: var(--space-5);
+/* O respiro entre os cartões da tela de Formulários (proteções, grupo do Flow, grupo do CRM) é
+   um `gap` só. Margem escrita em cada cartão sempre esquece um — e foi o que aconteceu: os dois
+   grupos tinham espaço entre si e as proteções em cima continuavam encostadas. */
+.fform-pilha {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
 }
 
 .fflow-vazio {
@@ -25724,4 +25701,58 @@ td.trafego-col-crm:first-of-type {
 .ajuda-alvo:focus-visible + .ajuda-balao {
   opacity: 1;
   visibility: visible;
+}
+
+/* ---------------- O resumo do grupo fechado ----------------
+ *
+ * Fechar um cartão não pode custar a resposta que ele dá. Nas Proteções do número, fechado se lê
+ * "05:00–23:00 · 30 por dia · 3 por número": a configuração inteira numa linha, e só quem vai
+ * MUDAR precisa abrir. Ver `GrupoRecolhivel`.
+ */
+.fgrupo-resumo {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: var(--fw-semibold);
+  color: var(--text-muted);
+}
+
+/* ---------------- As proteções do número, por assunto ----------------
+ *
+ * Eram três linhas separadas por filete, com um rótulo em negrito de 130px à esquerda e os campos
+ * à direita — o desenho de uma tabela de configuração, que é exatamente o que a tela de
+ * Formulários logo abaixo deixou de ser. Agora são os mesmos blocos recuados dela: título em
+ * cima, a frase com os campos embaixo.
+ */
+.prot-blocos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* Em telas largas, horário e limites cabem lado a lado: são duas perguntas curtas, e empilhá-las
+   faz o cartão aberto ocupar o dobro da altura por nada. */
+@media (min-width: 900px) {
+  .prot-blocos {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .prot-bloco-pausa {
+    grid-column: 1 / -1;
+  }
+}
+
+.prot-bloco {
+  gap: var(--space-3);
+}
+
+/* O interruptor fica na mesma linha do título: não há frase pra escrever embaixo dele, e um
+   bloco com título em cima e controle embaixo gastaria duas linhas pra dizer "ligado". */
+.prot-bloco-pausa {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
 }

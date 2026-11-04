@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { Toggle } from "@/components/ui";
+import { GrupoRecolhivel } from "@/components/automacoes/GrupoRecolhivel";
 import type { RespostaDoFlow } from "@/lib/integracoes/azuz-flow-resposta";
 import { useIdioma } from "@/lib/idioma-context";
 
@@ -41,6 +42,9 @@ function opcoesComOValorAtual(atual: string): string[] {
 
 export function ProtecoesDoNumero() {
   const { t: traduzir } = useIdioma();
+  /* Nasce FECHADO: é configuração de uma vez só, e aberto empurrava os formulários — que são o
+     assunto da tela — pra fora da primeira dobra. O resumo no cabeçalho diz o essencial sem abrir. */
+  const [aberto, setAberto] = useState(false);
   const [config, setConfig] = useState<RespostaDoFlow | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -92,15 +96,27 @@ export function ProtecoesDoNumero() {
     return Number.isFinite(n) && n > 0 ? n : padrao;
   };
 
-  return (
-    <section className="card prot-card">
-      <header className="prot-topo">
-        <p className="int-title">{traduzir("Proteções do número")}</p>
-        <p className="hint">
-          {traduzir("Valem para todos os formulários: é o número de WhatsApp que elas protegem.")}
-        </p>
-      </header>
+  /*
+   * O QUE O CARTÃO DIZ FECHADO.
+   *
+   * Fechar não pode custar a resposta. "05:00–23:00 · 30 por dia · 3 por número" é a configuração
+   * inteira numa linha, e só quem vai MUDAR precisa abrir. Quando os envios estão pausados isso
+   * vem primeiro: é o que muda o comportamento do CRM hoje.
+   */
+  const resumo = config.confirmacao.pausada
+    ? traduzir("Envios pausados")
+    : `${janela.inicio}–${janela.fim} · ${config.confirmacao.tetoDiario} ${traduzir("por dia")} · ${config.confirmacao.tetoPorNumero} ${traduzir("por número")}`;
 
+  return (
+    <GrupoRecolhivel
+      titulo={traduzir("Proteções do número")}
+      ajuda={traduzir(
+        "Valem para todos os formulários: é o número de WhatsApp que elas protegem. Um teto por formulário protegeria pela metade — cinco formulários com teto de 30 seriam 150 mensagens saindo do mesmo número no mesmo dia.",
+      )}
+      resumo={resumo}
+      aberto={aberto}
+      aoAlternar={() => setAberto((v) => !v)}
+    >
       {/*
         O DISJUNTOR não é escolha da empresa: é o que está ACONTECENDO com o canal. Por isso aparece
         como aviso com um botão, e não como mais uma opção entre as outras.
@@ -127,11 +143,12 @@ export function ProtecoesDoNumero() {
         coisa só e as três seguintes são outra. Em duas linhas com o assunto escrito à esquerda, a
         frase se lê inteira: "só manda das 5 às 23" e "no máximo 30 por dia".
       */}
-      <div className="prot-linha">
-        <span className="prot-rotulo">{traduzir("Só manda")}</span>
+      <div className="prot-blocos">
+      <section className="fflow-bloco prot-bloco">
+        <p className="fflow-bloco-titulo">{traduzir("Horário de envio")}</p>
         <div className="prot-campos">
           <label className="prot-campo">
-            <span>{traduzir("das")}</span>
+            <span>{traduzir("Só manda das")}</span>
             <select
               className="input"
               value={janela.inicio}
@@ -162,12 +179,13 @@ export function ProtecoesDoNumero() {
           </label>
           <span className="prot-nota">{traduzir("horário de Brasília")}</span>
         </div>
-      </div>
+      </section>
 
-      <div className="prot-linha">
-        <span className="prot-rotulo">{traduzir("No máximo")}</span>
+      <section className="fflow-bloco prot-bloco">
+        <p className="fflow-bloco-titulo">{traduzir("Quanto pode sair")}</p>
         <div className="prot-campos">
           <label className="prot-campo">
+            <span>{traduzir("No máximo")}</span>
             <input
               className="input prot-numero"
               type="number"
@@ -215,23 +233,24 @@ export function ProtecoesDoNumero() {
             <span>{traduzir("falhas seguidas")}</span>
           </label>
         </div>
-      </div>
+      </section>
 
       {/*
         PAUSAR É DIFERENTE DE DESLIGAR, e por isso continua existindo mesmo com a confirmação agora
         sendo por formulário: desligar é "não quero isso"; pausar é "pare AGORA e me deixe pensar",
         sem perder o que foi escrito em formulário nenhum.
       */}
-      <div className="prot-linha prot-pausa">
-        <span className="prot-rotulo">{traduzir("Pausar envios")}</span>
+      <section className="fflow-bloco prot-bloco prot-bloco-pausa">
+        <p className="fflow-bloco-titulo">{traduzir("Pausar envios")}</p>
         <Toggle
           defaultOn={config.confirmacao.pausada}
           label={traduzir("Pausar envios")}
           onToggle={(ligado) => void salvar({ confirmacao: { pausada: ligado } })}
         />
+      </section>
       </div>
 
       {erro ? <p className="int-aviso-conflito">{erro}</p> : null}
-    </section>
+    </GrupoRecolhivel>
   );
 }
