@@ -10,7 +10,6 @@ import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { MODELOS_SOCIAIS } from "@/lib/social/modelos-rapidos";
 import {
   IconAutomacoes,
-  IconCalendar,
   IconCheck,
   IconContatos,
   IconConversas,
@@ -19,7 +18,7 @@ import {
   IconPlay,
 } from "@/components/icons";
 import { ColumnChart } from "@/components/charts";
-import { dataCurta } from "@/lib/agenda/fuso";
+import { SeletorDePeriodo } from "@/components/social/SeletorDePeriodo";
 import {
   agrupamentosPossiveis,
   agrupar,
@@ -101,31 +100,41 @@ export default function ResumoSocialPage() {
   const router = useRouter();
   const { criarFluxo } = useAutomationFlows();
   const [dias, setDias] = useState<number>(7);
+  /*
+   * O INTERVALO ESCOLHIDO À MÃO, quando há um.
+   *
+   * Guardado ao lado de `dias` e não no lugar dele: voltar de um recorte escolhido pra "Semana" é
+   * um clique na pastilha, e a pastilha que estava marcada antes continua lembrada. Quem manda
+   * é o intervalo enquanto ele existe.
+   */
+  const [intervalo, setIntervalo] = useState<{ de: string; ate: string } | null>(null);
   /* O agrupamento do gráfico é guardado como PEDIDO e resolvido no render: trocar o período pode
      tirar do ar a opção escolhida ("Mensal" não existe numa semana), e corrigir isso num efeito
      significaria um quadro desenhado com um agrupamento impossível antes da correção chegar. */
   const [agrupamentoPedido, setAgrupamentoPedido] = useState<Agrupamento>("dia");
   /* O período pedido viaja JUNTO com a resposta, como no painel: assim "carregando" é derivado
      (a resposta que tenho não é do período que estou mostrando) em vez de ser um segundo estado
-     que precisa ser ligado e desligado na mão, e que erra sozinho quando duas buscas se cruzam. */
-  const [resposta, setResposta] = useState<{ paraDias: number; dados: PainelSocial | null } | null>(null);
+     que precisa ser ligado e desligado na mão, e que erra sozinho quando duas buscas se cruzam.
+     A própria string de busca é o que viaja, porque agora o período tem duas formas. */
+  const busca = intervalo ? `de=${intervalo.de}&ate=${intervalo.ate}` : `dias=${dias}`;
+  const [resposta, setResposta] = useState<{ paraBusca: string; dados: PainelSocial | null } | null>(null);
 
   useEffect(() => {
     let cancelado = false;
-    fetch(`/api/social/metricas?dias=${dias}`, { cache: "no-store" })
+    fetch(`/api/social/metricas?${busca}`, { cache: "no-store" })
       .then((r) => (r.ok ? (r.json() as Promise<PainelSocial>) : null))
       .then((dados) => {
-        if (!cancelado) setResposta({ paraDias: dias, dados });
+        if (!cancelado) setResposta({ paraBusca: busca, dados });
       })
       .catch(() => {
-        if (!cancelado) setResposta({ paraDias: dias, dados: null });
+        if (!cancelado) setResposta({ paraBusca: busca, dados: null });
       });
     return () => {
       cancelado = true;
     };
-  }, [dias]);
+  }, [busca]);
 
-  const carregando = resposta?.paraDias !== dias;
+  const carregando = resposta?.paraBusca !== busca;
   const painel = resposta?.dados ?? null;
 
   /** Um modelo vira rascunho e abre no editor. Nunca publicado: ver `/social-seller/novo`. */
@@ -276,27 +285,34 @@ export default function ResumoSocialPage() {
             */}
             <div className="ss-secao-topo ss-periodo">
               <div className="ss-seg" role="group" aria-label={traduzir("Período")}>
-                {PERIODOS.map((p) => (
-                  <button
-                    key={p.dias}
-                    type="button"
-                    className={`ss-seg-item${dias === p.dias ? " on" : ""}`}
-                    aria-pressed={dias === p.dias}
-                    onClick={() => setDias(p.dias)}
-                  >
-                    {traduzir(p.label)}
-                  </button>
-                ))}
+                {PERIODOS.map((p) => {
+                  const marcado = !intervalo && dias === p.dias;
+                  return (
+                    <button
+                      key={p.dias}
+                      type="button"
+                      className={`ss-seg-item${marcado ? " on" : ""}`}
+                      aria-pressed={marcado}
+                      onClick={() => {
+                        setIntervalo(null);
+                        setDias(p.dias);
+                      }}
+                    >
+                      {traduzir(p.label)}
+                    </button>
+                  );
+                })}
               </div>
               {painel ? (
                 <div className="ss-periodo-info">
-                  <span>
-                    <IconCalendar width={13} height={13} aria-hidden="true" />
-                    {dataCurta(painel.periodo.primeiroDia)}
-                    {painel.periodo.primeiroDia === painel.periodo.ultimoDia
-                      ? null
-                      : ` – ${dataCurta(painel.periodo.ultimoDia)}`}
-                  </span>
+                  {/* O recorte escrito É o botão que o troca: ler "29/10 – 04/11" e não poder
+                      mexer nele é a reclamação que trouxe este seletor. */}
+                  <SeletorDePeriodo
+                    primeiroDia={painel.periodo.primeiroDia}
+                    ultimoDia={painel.periodo.ultimoDia}
+                    personalizado={!!intervalo}
+                    aoEscolher={setIntervalo}
+                  />
                   <span>
                     <IconGlobo width={13} height={13} aria-hidden="true" />
                     {traduzir("Horário de Brasília")}

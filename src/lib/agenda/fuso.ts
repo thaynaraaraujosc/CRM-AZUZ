@@ -117,6 +117,23 @@ export function somarDias(dataIso: string, dias: number): string {
   return `${somado.getUTCFullYear()}-${String(somado.getUTCMonth() + 1).padStart(2, "0")}-${String(somado.getUTCDate()).padStart(2, "0")}`;
 }
 
+/**
+ * Quantos dias o intervalo de "YYYY-MM-DD" a "YYYY-MM-DD" cobre, contando as duas pontas.
+ *
+ * De 29/10 a 04/11 são SETE dias, não seis: um período de um dia só ("hoje a hoje") tem que
+ * valer 1, senão todo cálculo que divide pelo tamanho do período divide por zero.
+ *
+ * A conta é feita sobre o meio-dia em UTC, pelo mesmo motivo de `somarDias`: é o ponto do dia que
+ * nenhum fuso do Brasil empurra pra outra data. Data inválida devolve 0.
+ */
+export function diasEntre(dataIsoInicio: string, dataIsoFim: string): number {
+  const inicio = instanteDoDia(dataIsoInicio);
+  const fim = instanteDoDia(dataIsoFim);
+  if (!inicio || !fim) return 0;
+  const bruto = Math.round((fim.getTime() - inicio.getTime()) / (24 * 60 * 60 * 1000));
+  return bruto < 0 ? 0 : bruto + 1;
+}
+
 /** "2026-10-22" formatado como a tela pedir ("qui", "22", "out"). Data inválida devolve "". */
 export function formatarDia(dataIso: string, opcoes: Intl.DateTimeFormatOptions): string {
   const instante = instanteDoDia(dataIso);

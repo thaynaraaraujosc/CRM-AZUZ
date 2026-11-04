@@ -21241,33 +21241,33 @@ table.tbl .name-cell .r {
 
 /* O nó vazio: o canvas de uma automação nova precisa dizer o que fazer primeiro, senão a tela em
  * branco é uma parede. */
+/*
+ * O CARTÃO DO GATILHO VAZIO: a mesma peça dos blocos, antes de ter conteúdo.
+ *
+ * Era um cartão próprio, com contorno de destaque e um selo "Gatilho" CENTRADO montado em cima
+ * da borda — e `overflow: hidden` cortando o selo pela metade. Parecia defeito, e era a primeira
+ * coisa que se vê num canvas novo.
+ *
+ * Agora tem a medida e o acabamento dos blocos de verdade: contorno fino, canto de 16px, e a aba
+ * pendurada na quina de cima à esquerda (`.flow-node-aba`, a mesma classe). `overflow: visible`
+ * é obrigatório — é o que deixa a aba sair pra fora do cartão em vez de ser cortada.
+ */
 .no-gatilho-vazio {
-  width: 320px;
-  border: 1px solid var(--blue);
-  border-radius: var(--radius-3, 12px);
+  position: relative;
+  width: 340px;
+  padding: var(--space-4);
+  border: 1px solid var(--line-strong);
+  border-radius: 16px;
   background: var(--surface-elevated);
-  overflow: hidden;
-}
-
-.no-gatilho-vazio-selo {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  background: var(--blue);
-  color: #ffffff;
-  font-size: 12px;
-  font-weight: 700;
-  border-bottom-right-radius: var(--radius-2);
-}
-
-.no-gatilho-vazio-corpo {
-  padding: var(--space-3);
+  overflow: visible;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
 }
 
 .no-gatilho-vazio-corpo h4 {
-  margin: 0 0 var(--space-2);
-  font-size: 15px;
+  margin: 0 0 var(--space-3);
+  font-size: 16px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
   color: var(--ink);
 }
 
@@ -21275,16 +21275,16 @@ table.tbl .name-cell .r {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
   width: 100%;
-  padding: 12px;
+  padding: 16px;
   border: 0;
-  border-radius: var(--radius-2);
+  border-radius: 10px;
   background: var(--surface-hover);
   color: var(--ink);
   font: inherit;
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 650;
   cursor: pointer;
 }
 
@@ -26698,6 +26698,92 @@ td.trafego-col-crm:first-of-type {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+
+/*
+ * O RECORTE ESCRITO É O BOTÃO QUE O TROCA.
+ *
+ * Ele nasceu como texto — "29/10/2026 – 04/11/2026" — e era exatamente isso que faltava: ler o
+ * período e não poder mexer nele. Pastilha discreta, não botão cheio: a escolha de todo dia é a
+ * pastilha ao lado (Dia, Semana, Mês), e esta é a saída pra pergunta com data marcada.
+ */
+.ss-periodo-escolha {
+  position: relative;
+}
+
+.ss-periodo-botao {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 11px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.ss-periodo-botao:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+
+/* Marcado quando o recorte veio daqui: sem isso, nenhuma pastilha acesa parecia tela quebrada. */
+.ss-periodo-botao.on {
+  border-color: var(--line-strong);
+  background: var(--surface-hover);
+  color: var(--ink);
+  font-weight: var(--fw-semibold);
+}
+
+.ss-periodo-botao svg {
+  color: var(--text-faint);
+}
+
+.ss-periodo-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 40;
+  width: min(330px, calc(100vw - 32px));
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface-elevated);
+  box-shadow:
+    0 2px 6px rgba(16, 24, 40, 0.06),
+    0 14px 36px rgba(16, 24, 40, 0.14);
+  animation: modal-fade-in var(--transition-fast);
+}
+
+.ss-periodo-campos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.ss-periodo-campos .field {
+  margin: 0;
+  min-width: 0;
+}
+
+.ss-periodo-campos .seletor-data-campo {
+  width: 100%;
+}
+
+.ss-periodo-pop .hint {
+  margin: var(--space-3) 0 0;
+}
+
+.ss-periodo-fim {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: var(--space-3);
 }
 
 .ss-periodo-info svg {

@@ -4,6 +4,7 @@ import {
   dataCurta,
   dataIsoEmBrasilia,
   dataPorExtenso,
+  diasEntre,
   hojeEmBrasilia,
   horaEmBrasilia,
 } from "../fuso";
@@ -58,5 +59,28 @@ describe("fuso de Brasília", () => {
 
   it("calcula hoje em Brasília mesmo quando em UTC já é amanhã", () => {
     expect(hojeEmBrasilia(new Date("2026-10-21T00:30:00Z"))).toBe("2026-10-20");
+  });
+});
+
+describe("diasEntre", () => {
+  it("conta as duas pontas: de 29/10 a 04/11 são sete dias", () => {
+    expect(diasEntre("2026-10-29", "2026-11-04")).toBe(7);
+  });
+
+  it("o mesmo dia vale 1, e não 0", () => {
+    expect(diasEntre("2026-11-04", "2026-11-04")).toBe(1);
+  });
+
+  it("atravessa a virada do ano", () => {
+    expect(diasEntre("2026-12-30", "2027-01-02")).toBe(4);
+  });
+
+  it("intervalo ao contrário devolve 0 em vez de número negativo", () => {
+    expect(diasEntre("2026-11-04", "2026-10-29")).toBe(0);
+  });
+
+  it("data inválida devolve 0", () => {
+    expect(diasEntre("ontem", "2026-11-04")).toBe(0);
+    expect(diasEntre("2026-11-04", "")).toBe(0);
   });
 });

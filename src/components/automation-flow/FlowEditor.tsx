@@ -48,7 +48,7 @@ import { GatilhosDoSocial } from "./GatilhosDoSocial";
 import { ListaDePassos } from "./ListaDePassos";
 import { PainelProximoPasso } from "./PainelProximoPasso";
 import { nodeTypes } from "./nodes";
-import { IconCheck, IconClose, IconExpandir } from "@/components/icons";
+import { IconCheck, IconClose, IconExpandir, IconRaio } from "@/components/icons";
 import { useIdioma } from "@/lib/idioma-context";
 import {
   CORES_CATEGORIA,
@@ -1423,14 +1423,26 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
             <div className="flow-inicio-vazio">
               {/* O cartão do gatilho vazio: o canvas em branco de uma automação nova precisa dizer
                   o que fazer primeiro, senão a tela é uma parede. */}
+              {/*
+                O MESMO CARTÃO DOS BLOCOS, e não um cartão só dele.
+                
+                A aba "Gatilho" estava CENTRADA e montada em cima da borda de cima — parecia um
+                selo descolado, e a Thaynara apontou isso comparando com a referência. Agora ela é
+                a mesma `.flow-node-aba` dos blocos de verdade: pendurada na quina de cima à
+                esquerda, encaixando no cartão. Quem chega num canvas vazio já vê a peça do jeito
+                que ela vai ser depois de preenchida.
+              */}
               <div className="no-gatilho-vazio">
-                <span className="no-gatilho-vazio-selo">{traduzir("Gatilho")}</span>
+                <span className="flow-node-aba">
+                  <IconRaio width={13} height={13} aria-hidden="true" />
+                  {traduzir("Gatilho")}
+                </span>
                 <div className="no-gatilho-vazio-corpo">
-                  <h4>{traduzir("Gatilho para acionar a automação")}</h4>
+                  <h4>{traduzir("O que inicia a automação")}</h4>
                   {/* Abria a biblioteca da esquerda, que saiu do Social Seller: o botão tinha
                       virado um clique que não fazia nada. Agora abre a gaveta de gatilhos. */}
                   <button type="button" className="no-gatilho-vazio-btn" onClick={() => setEscolherGatilhoAberto(true)}>
-                    {traduzir("Adicionar gatilho +")}
+                    {traduzir("Adicionar gatilho")} <span aria-hidden="true">+</span>
                   </button>
                 </div>
               </div>

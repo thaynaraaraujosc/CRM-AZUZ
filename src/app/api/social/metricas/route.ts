@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { decriptar } from "@/lib/integracoes/crypto";
 import { buscarMetricasInstagram, type ResultadoMetricas } from "@/lib/integracoes/instagram-metricas";
 import { FUSO_BRASILIA, hojeEmBrasilia, isoDeBrasilia, somarDias } from "@/lib/agenda/fuso";
+import { recortePedido } from "@/lib/social/recorte-do-periodo";
 import { montarSerie, type Granularidade } from "@/lib/social/serie-de-interacoes";
 
 /**
@@ -120,35 +121,40 @@ export async function GET(request: Request) {
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
   const workspaceId = sessao.user.workspaceId;
 
-  // 1 a 90 dias. O teto não é gosto: a API de insights da Meta não devolve período maior, e
-  // oferecer "último ano" na tela seria prometer um recorte que volta vazio.
-  const pedido = Number(new URL(request.url).searchParams.get("dias") ?? "7");
-  const periodoDias = Number.isFinite(pedido) ? Math.min(90, Math.max(1, Math.trunc(pedido))) : 7;
-
   /*
-   * O PERÍODO FECHA POR DIA DE CALENDÁRIO, no fuso da conta.
+   * DOIS JEITOS DE PEDIR O PERÍODO, e um só jeito de representá-lo.
    *
-   * Era `agora - dias * 24h`. Numa janela rolante, "Semana" às 13h de quarta começa às 13h da
-   * quarta anterior: o primeiro e o último dia do gráfico aparecem pela metade, e o rótulo do
-   * período não cabe numa linha sem escrever a hora. Com dia inteiro, "Semana" são os sete dias
-   * que terminam hoje — que é o que a pessoa quer dizer quando escolhe "semana".
+   * `?dias=7` é o atalho das pastilhas (Dia, Semana, Mês, Trimestre). `?de=&ate=` é o intervalo
+   * que a pessoa escolhe no calendário. Qualquer um dos dois vira o mesmo par primeiro/último
+   * dia, e daí pra frente o resto da rota não sabe por qual porta a pergunta entrou.
+   *
+   * O PERÍODO FECHA POR DIA DE CALENDÁRIO, no fuso da conta. Era `agora - dias * 24h`. Numa
+   * janela rolante, "Semana" às 13h de quarta começa às 13h da quarta anterior: o primeiro e o
+   * último dia do gráfico aparecem pela metade, e o rótulo do período não cabe numa linha sem
+   * escrever a hora.
    */
-  const ultimoDia = hojeEmBrasilia();
-  const primeiroDia = somarDias(ultimoDia, -(periodoDias - 1));
+  const parametros = new URL(request.url).searchParams;
+  const hoje = hojeEmBrasilia();
+  const { primeiroDia, ultimoDia, periodoDias } = recortePedido(parametros, hoje);
+
   const desde = new Date(isoDeBrasilia(primeiroDia, "00:00"));
-  const ate = new Date();
+  // O fim do intervalo é o FIM do último dia, não "agora": pedindo um recorte que termina ontem,
+  // cortar em `new Date()` incluiria o dia de hoje inteiro por acidente.
+  const ate = new Date(isoDeBrasilia(somarDias(ultimoDia, 1), "00:00"));
+
+  const janela = { gte: desde, lt: ate };
 
   const [eventos, leadsCriados, automacoesIniciadas, integracao, fluxosSociais, execucoes] = await Promise.all([
     // Os eventos do período, crus. Era um `groupBy` por tipo, que dava os totais e só: o gráfico
     // precisa de QUANDO cada um chegou. São poucas linhas por workspace num recorte de até 90
     // dias, e a mesma leitura passou a servir às duas respostas.
     prisma.instagramEvento.findMany({
-      where: { workspaceId, criadoEm: { gte: desde }, tipo: { in: TIPOS_DE_INTERACAO } },
+      where: { workspaceId, criadoEm: janela, tipo: { in: TIPOS_DE_INTERACAO } },
       select: { tipo: true, criadoEm: true },
     }),
-    prisma.contato.count({ where: { workspaceId, criadoVia: "instagram", criadoEm: { gte: desde } } }),
+    prisma.contato.count({ where: { workspaceId, criadoVia: "instagram", criadoEm: janela } }),
     prisma.execucaoAutomacao.count({
-      where: { workspaceId, iniciadaEm: { gte: desde }, fluxo: { area: "social" } },
+      where: { workspaceId, iniciadaEm: janela, fluxo: { area: "social" } },
     }),
     prisma.integracao.findUnique({
       where: { workspaceId_provedor: { workspaceId, provedor: "meta_instagram" } },
@@ -162,7 +168,7 @@ export async function GET(request: Request) {
     // As execuções do período, cruas. Agrupar aqui em memória em vez de fazer um groupBy por
     // situação: são poucas linhas por workspace, e assim a última data sai da mesma leitura.
     prisma.execucaoAutomacao.findMany({
-      where: { workspaceId, iniciadaEm: { gte: desde }, fluxo: { area: "social" } },
+      where: { workspaceId, iniciadaEm: janela, fluxo: { area: "social" } },
       select: { fluxoId: true, situacao: true, iniciadaEm: true },
     }),
   ]);
@@ -203,7 +209,12 @@ export async function GET(request: Request) {
       ? undefined
       : (integracao?.erroMensagem ?? "Conecte a conta do Instagram em Configurações."),
     periodoDias,
-    periodo: { primeiroDia, ultimoDia, atualizadoEm: ate.toISOString(), fuso: FUSO_BRASILIA },
+    periodo: {
+      primeiroDia,
+      ultimoDia,
+      atualizadoEm: new Date().toISOString(),
+      fuso: FUSO_BRASILIA,
+    },
     serie: { granularidade, pontos },
     crm: {
       comentarios: contar(GRUPOS.comentarios),
