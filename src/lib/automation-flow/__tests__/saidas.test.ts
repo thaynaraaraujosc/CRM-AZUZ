@@ -15,8 +15,6 @@ function no(tipo: string, categoria: string, data: Record<string, unknown> = {})
 
 describe("saídas de um bloco", () => {
   it("mensagem ganha o caminho de falha, e o de sucesso continua sem handle", () => {
-    // Mídia, e não texto: o texto tem quatro saídas desde que ganhou os caminhos de resposta
-    // (ver o bloco "saídas da mensagem de texto" no fim deste arquivo).
     const saidas = saidasDoNo(no("mensagem_imagem", "mensagem", { arquivoId: "a1" }));
     expect(saidas).toHaveLength(2);
     // Sem handle no sucesso de propósito: é o que mantém ligada a seta dos fluxos que já existem.
@@ -40,6 +38,17 @@ describe("saídas de um bloco", () => {
       no("mensagem_botoes", "mensagem", { opcoes: [{ id: "o1", rotulo: "Sim" }] }),
     );
     expect(saidas.map((s) => s.handleId)).toEqual(["o1", "outra_resposta", "nao_respondeu", "falha"]);
+  });
+
+  it("bloco só de botão de URL não ganha caminho de resposta", () => {
+    // Ninguém volta de um clique em link com resposta pra casar: sem botão de ação não há o que
+    // esperar, e "Outra resposta"/"Sem resposta" ali seria caminho que nunca é seguido.
+    const saidas = saidasDoNo(
+      no("mensagem_botoes", "mensagem", {
+        opcoes: [{ id: "o1", rotulo: "Ver o site", url: "https://azuz.com.br" }],
+      }),
+    );
+    expect(saidas.map((s) => s.handleId)).toEqual([undefined, "falha"]);
   });
 
   it("botão de URL não vira saída: quem clica sai e não responde", () => {
@@ -117,24 +126,35 @@ describe("espera com cronômetro que a resposta interrompe", () => {
 });
 
 /*
- * A MENSAGEM DE TEXTO TEM AS QUATRO SAÍDAS, sempre.
+ * TEXTO PURO É "MANDA E SEGUE": SÓ A BOLHA E O DESVIO DE FALHA.
  *
- * "Enviou" é mandar e seguir; "Outra resposta" e "Sem resposta" são os caminhos de quem espera.
- * Quem decide qual comportamento vale é o DESENHO — havendo aresta numa das saídas de resposta,
- * o motor para e espera (ver `motor-estado.ts`). As saídas existirem sempre é o que permite
- * ligar uma delas; esconder até configurar era o problema do ovo e da galinha.
+ * Os caminhos de resposta ("Outra resposta", "Sem resposta") pertencem a quem PEDE resposta, e
+ * quem pede resposta é o bloco com botão de ação — que já não é `mensagem_texto`: o primeiro
+ * botão de ação promove o bloco a `mensagem_botoes` (`mudarOpcoesDoBloco`, no FlowEditor). Então o
+ * texto fica com a saída normal (que no cartão é o "+" da bolha) e a de falha, como qualquer
+ * outro envio.
  */
 describe("saídas da mensagem de texto", () => {
-  it("tem Enviou, Outra resposta, Sem resposta e Falha", () => {
+  it("tem só a saída normal e a de falha", () => {
     expect(saidasDoNo(no("mensagem_texto", "mensagem", { texto: "oi" })).map((s) => s.handleId)).toEqual([
       undefined,
-      "outra_resposta",
-      "nao_respondeu",
       "falha",
     ]);
   });
 
-  it("as saídas de resposta são só do texto: mídia continua com Enviou e Falha", () => {
+  it("os caminhos de resposta aparecem no bloco com botão de ação, não no texto", () => {
+    const texto = saidasDoNo(no("mensagem_texto", "mensagem", { texto: "oi" }));
+    expect(texto.some((s) => s.handleId === "outra_resposta")).toBe(false);
+    expect(texto.some((s) => s.handleId === "nao_respondeu")).toBe(false);
+
+    const comBotao = saidasDoNo(
+      no("mensagem_botoes", "mensagem", { texto: "oi", opcoes: [{ id: "o1", rotulo: "Sim" }] }),
+    );
+    expect(comBotao.some((s) => s.handleId === "outra_resposta")).toBe(true);
+    expect(comBotao.some((s) => s.handleId === "nao_respondeu")).toBe(true);
+  });
+
+  it("mídia segue igual: Enviou e Falha", () => {
     expect(saidasDoNo(no("mensagem_imagem", "mensagem", { arquivoId: "a1" })).map((s) => s.handleId)).toEqual([
       undefined,
       "falha",

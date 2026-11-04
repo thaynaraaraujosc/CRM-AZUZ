@@ -832,8 +832,13 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
       ) : null}
 
       {/* No cartão de mensagem, os botões de resposta já foram desenhados DENTRO da bolha: aqui
-          sobram os caminhos de resultado ("Outra resposta", "Sem resposta", "Falha ao enviar"). */}
-      {(ehCartaoDeMensagem ? saidasDeCaminho : saidas).length > 1 ? (
+          sobram os caminhos de resultado ("Outra resposta", "Sem resposta", "Falha ao enviar").
+          UM caminho só já merece linha no cartão de mensagem: desde que "Enviou" virou o "+" da
+          bolha, o que sobra aqui é sempre desvio — um texto puro tem só a falha, e esconder essa
+          linha deixava o bloco sem jeito de tratar envio que não saiu. Nos outros cartões o
+          critério continua sendo dois: lá a saída única é a normal, sem rótulo, e uma linha vazia
+          embaixo do bloco não diz nada. */}
+      {(ehCartaoDeMensagem ? saidasDeCaminho.length > 0 : saidas.length > 1) ? (
         <div className={`flow-node-handles${ehCartaoDeMensagem ? " msg-saidas" : ""}`}>
           {(ehCartaoDeMensagem ? saidasDeCaminho : saidas).map((s) => {
             const chave = s.handleId ?? "__default__";

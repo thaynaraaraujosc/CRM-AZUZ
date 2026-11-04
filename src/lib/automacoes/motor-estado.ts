@@ -408,6 +408,19 @@ async function executarNo(params: {
       const envio = await acoes.perguntar({ contatoNome: nome, texto: preencher(data.texto ?? "", contato), opcoes });
       if (!envio.ok) return falhaDeEnvio(no, edges, envio);
 
+      /*
+       * SEM BOTÃO DE AÇÃO NÃO HÁ O QUE ESPERAR: manda e segue.
+       *
+       * Um bloco só com botão de URL não é pergunta: quem clica sai pro site e não volta com
+       * resposta nenhuma. Parar ali fazia a execução esperar pra sempre uma escolha que ninguém
+       * pode fazer — e, desde que o editor deixou de desenhar os caminhos de resposta nesse caso
+       * (ver `saidasDoNo`), não haveria nem por onde sair. Então ele segue pela saída normal, como
+       * um texto com link.
+       */
+      if (!opcoes.some((o) => !o.url?.trim())) {
+        return { tipo: "seguir", detalhe: envio.detalhe };
+      }
+
       // O prazo é o que faz a saída "Sem resposta" existir de verdade. Sem ele a pergunta espera
       // pra sempre, e o caminho fica desenhado sem nunca acontecer.
       const ate = data.esperaMinutos ? new Date(agora.getTime() + data.esperaMinutos * 60_000) : undefined;
@@ -469,6 +482,11 @@ async function executarNo(params: {
        *
        * Daí pra frente é o mesmo compasso da pergunta com botões: mandou, parou, e quem acorda
        * a execução é a resposta (ou o prazo).
+       *
+       * O editor já não OFERECE esses caminhos num texto puro (só a pergunta com botão de ação os
+       * mostra, ver `saidasDoNo`), então na prática quem passa por aqui é fluxo desenhado quando
+       * eles apareciam. É de propósito que o trecho fica: fluxo já publicado continua esperando
+       * exatamente como esperava.
        */
       const esperaPeloDesenho = edges.some(
         (e) => e.source === no.id && (e.sourceHandle === "outra_resposta" || e.sourceHandle === "nao_respondeu"),

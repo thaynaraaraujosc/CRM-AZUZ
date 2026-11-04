@@ -83,17 +83,35 @@ export function saidasDoNo(node: FlowNode): SaidaNo[] {
         handleId: opcao.id,
         label: `${numero} · ${opcao.rotulo || "Opção sem nome"}`,
       }));
+    /*
+     * OS CAMINHOS DE RESPOSTA SÓ EXISTEM SE HÁ BOTÃO DE AÇÃO.
+     *
+     * Quem espera resposta é a mensagem que PEDE resposta. Botão de URL não pede: quem clica sai
+     * pro site e não volta com nada pra casar — então um bloco só de botões de URL não tem o que
+     * esperar, e "Outra resposta"/"Sem resposta" ali seria caminho desenhado que nunca é seguido.
+     * `opcoes` aqui já é a lista sem os de URL: ter ao menos uma é exatamente a pergunta "este
+     * bloco tem botão de ação?".
+     */
+    if (!opcoes.length) {
+      // Manda e segue, como um texto com link. Precisa da saída normal, senão não haveria por onde
+      // continuar o fluxo depois dele. O motor combina com isso: sem botão de ação ele não para
+      // esperando resposta (ver `motor-estado.ts`).
+      return [
+        { handleId: undefined, label: "Enviou" },
+        { handleId: "falha", label: "✕ Falha ao enviar a mensagem" },
+      ];
+    }
     return [
       ...opcoes,
       { handleId: "outra_resposta", label: "↺ Outra resposta" },
       /*
-       * "SEM RESPOSTA" APARECE SEMPRE numa pergunta, como na referência.
+       * "SEM RESPOSTA" APARECE SEMPRE que há botão de ação, como na referência.
        *
-       * Ela só aparecia com prazo configurado, pelo motivo certo: sem prazo a pergunta espera
-       * pra sempre e o caminho nunca seria seguido — oferecer uma saída que não acontece é pior
-       * do que não ter. O que mudou é que o editor passou a RESOLVER isso: ligar um caminho aqui
-       * grava um prazo padrão no bloco (ver `garantirPrazoDeEspera` no FlowEditor). Então a
-       * saída deixou de ser uma promessa vazia e virou uma que o motor cumpre.
+       * Ela só aparecia com prazo configurado, pelo motivo certo: sem prazo a pergunta espera pra
+       * sempre e o caminho nunca seria seguido — oferecer uma saída que não acontece é pior do que
+       * não ter. O que mudou é que o editor passou a RESOLVER isso: ligar um caminho aqui grava um
+       * prazo padrão no bloco (ver `garantirPrazoDeEspera` no FlowEditor). Então a saída deixou de
+       * ser promessa vazia e virou uma que o motor cumpre.
        */
       { handleId: "nao_respondeu", label: "⏱ Sem resposta" },
       // Idem: só com limite de tentativas configurado é que existe "acabaram as tentativas".
@@ -103,27 +121,20 @@ export function saidasDoNo(node: FlowNode): SaidaNo[] {
   }
 
   /*
-   * A MENSAGEM DE TEXTO TEM AS QUATRO SAÍDAS, sempre.
+   * TEXTO SEM BOTÃO DE AÇÃO NÃO TEM CAMINHO DE RESPOSTA.
    *
-   * "Enviou" é o caminho normal: mandou e seguiu. "Outra resposta" e "Sem resposta" são os dois
-   * caminhos de quem espera. E é o DESENHO que decide qual dos dois comportamentos vale: se a
-   * pessoa ligar alguma coisa numa das saídas de resposta, o bloco passa a esperar; se não ligar
-   * nada, ele manda e segue, como sempre fez.
+   * Por um tempo a mensagem de texto trouxe "Outra resposta" e "Sem resposta" sempre, e o desenho
+   * decidia se ela esperava. Na referência não é assim: texto puro é "manda e segue" — só a bolha
+   * azul, o "+" na beirada dela e o desvio de falha. Os caminhos de resposta aparecem quando o
+   * bloco ganha BOTÃO DE AÇÃO, e aí ele já não é mais `mensagem_texto`: o primeiro botão de ação
+   * promove o bloco a `mensagem_botoes` (ver `mudarOpcoesDoBloco` no FlowEditor), que é quem trata
+   * esses caminhos logo acima.
    *
-   * Era um interruptor "esperar a resposta do contato" dentro da bolha — um controle a mais pra
-   * dizer o que a própria ligação já diz. Ligar um caminho em "Sem resposta" só pode querer
-   * dizer uma coisa: espere, e se não vier, siga por aqui.
-   *
-   * Fluxo antigo não muda de comportamento: sem aresta nessas saídas, nada espera.
+   * Então aqui não há caso especial nenhum: o texto cai no mesmo lugar que imagem, vídeo, áudio e
+   * documento, com a saída normal e a de falha. O motor continua honrando os caminhos de resposta
+   * de fluxos desenhados quando eles existiam no texto (ver `motor-estado.ts`), que é o que impede
+   * um fluxo já publicado de mudar de comportamento.
    */
-  if (node.type === "mensagem_texto") {
-    return [
-      { handleId: undefined, label: "Enviou" },
-      { handleId: "outra_resposta", label: "↺ Outra resposta" },
-      { handleId: "nao_respondeu", label: "⏱ Sem resposta" },
-      { handleId: "falha", label: "✕ Falha ao enviar a mensagem" },
-    ];
-  }
 
   // Toda mensagem ganha um caminho de falha. É o "Falha ao enviar a mensagem" do editor: o envio
   // pode não sair (canal caiu, número inválido, arquivo sumiu) e a automação precisa poder avisar

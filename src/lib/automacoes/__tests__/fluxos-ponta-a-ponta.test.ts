@@ -144,6 +144,49 @@ describe("pergunta com opções: cada resposta vai pro seu caminho", () => {
   });
 });
 
+/*
+ * SÓ BOTÃO DE URL NÃO É PERGUNTA.
+ *
+ * Quem clica num botão de link sai pro site e não volta com resposta nenhuma. Enquanto o motor
+ * parava em todo `mensagem_botoes`, um bloco assim prendia a execução esperando pra sempre uma
+ * escolha que ninguém podia fazer — e desde que o editor deixou de desenhar "Outra resposta"/"Sem
+ * resposta" nesse caso (`saidasDoNo`), não haveria nem por onde sair.
+ */
+describe("mensagem só com botão de URL", () => {
+  const nodes = [
+    no("g", "mensagem_recebida", "gatilho", {}),
+    no("msg", "mensagem_botoes", "mensagem", {
+      texto: "Dá uma olhada na nossa tabela.",
+      opcoes: [{ id: "site", rotulo: "Ver a tabela", url: "https://azuz.com.br" }],
+    }),
+    no("depois", "mensagem_texto", "mensagem", { texto: "Qualquer dúvida, é só chamar." }),
+  ];
+  const edges = [liga("g", "msg"), liga("msg", "depois")];
+
+  it("manda e segue, em vez de ficar esperando resposta", async () => {
+    const estado = await rodar(nodes, edges);
+    expect(intencoes(estado)).toContain("Qualquer dúvida");
+    expect(estado.situacao).toBe("concluida");
+  });
+
+  it("com botão de ação no meio, volta a esperar a escolha", async () => {
+    const comAcao = [
+      nodes[0],
+      no("msg", "mensagem_botoes", "mensagem", {
+        texto: "Dá uma olhada na nossa tabela.",
+        opcoes: [
+          { id: "site", rotulo: "Ver a tabela", url: "https://azuz.com.br" },
+          { id: "falar", rotulo: "Quero falar com alguém" },
+        ],
+      }),
+      nodes[2],
+    ];
+    const estado = await rodar(comAcao, edges);
+    expect(estado.situacao).toBe("aguardando_evento");
+    expect(intencoes(estado)).not.toContain("Qualquer dúvida");
+  });
+});
+
 describe("encerrar fluxo", () => {
   it("o que vem depois do encerramento não roda", async () => {
     const nodes = [

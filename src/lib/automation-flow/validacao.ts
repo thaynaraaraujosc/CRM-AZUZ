@@ -166,10 +166,11 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
       });
     }
 
-    // A saída "Não respondeu" existe no desenho, mas a pergunta espera sem prazo: só o bloco
-    // "Aguardar resposta" tem tempo máximo. Sem esse aviso, o ramo fica pendurado pra sempre e
-    // parece que a automação simplesmente parou.
-    if (saidas.some((e) => e.sourceHandle === "nao_respondeu")) {
+    // A saída "Não respondeu" existe no desenho, mas a pergunta espera sem prazo: o ramo fica
+    // pendurado pra sempre e parece que a automação simplesmente parou. Só avisa quando de fato
+    // não há prazo: ligar um caminho aqui no editor já grava um padrão (`garantirPrazoDeEspera`),
+    // e repetir o aviso com o prazo gravado seria apontar um problema que não existe mais.
+    if (!data.esperaMinutos && saidas.some((e) => e.sourceHandle === "nao_respondeu")) {
       problemas.push({
         id: proximoIdProblema(),
         severidade: "aviso",
