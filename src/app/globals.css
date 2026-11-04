@@ -26511,60 +26511,62 @@ td.trafego-col-crm:first-of-type {
   border-radius: 999px;
 }
 
-/* ================= A GRADE DE AUTOMAÇÃO: PISO CINZA, CARTÃO BRANCO =================
+/* ================= A GRADE DE AUTOMAÇÃO: FUNDO BRANCO, GATILHO AZUL =================
  *
- * Era o contrário, e por isso não se lia: a grade inteira branca, e o gatilho num azul de 12%
- * sobre branco. Dois tons quase iguais, e o cartão — que é a única coisa que importa ali —
- * desaparecia no fundo. Com dez etapas na tela, a pessoa procurava onde havia automação.
+ * Duas tentativas antes desta, e as duas erradas, pelo mesmo motivo de fundo: a grade e o cartão
+ * precisavam de um DEGRAU entre si, e eu tentei construí-lo escurecendo a grade.
  *
- * O piso é o AZUL-MARINHO DA MARCA a 5% sobre branco: lê como cinza, mas é um cinza que pertence
- * à identidade, e não um cinza neutro qualquer. É a mesma receita do quadro de negócios — coluna
- * recuada, cartão branco flutuando — que é onde ela já funciona há tempo neste produto.
+ * - A primeira deixava tudo branco com o gatilho num `color-mix` de 12% do navy. Navy diluído em
+ *   branco não dá azul: dá cinza-azulado. O cartão ficava a três pontos do fundo e sumia.
+ * - A segunda inverteu: piso cinza, cartão branco. Legível, e não era o que se queria — a tela
+ *   inteira ficou cinza, que é o oposto de uma grade de trabalho.
+ *
+ * A Thaynara resolveu em uma frase: o fundo é todo branco, e quem é azul claro é o GATILHO. É o
+ * desenho do Kommo (cartão `#D8EFFF` sobre célula branca) e é o certo, porque inverte quem carrega
+ * a cor: a cor passa a significar "aqui existe automação" em vez de ser só o fundo da tela.
  */
-/* 5% dava um piso a 3% de distância do cartão branco — tecnicamente diferente, visualmente o
-   mesmo plano, que é a reclamação de sempre. Em 8% o degrau se vê sem o piso virar uma área
-   escura competindo com o conteúdo. */
 .fauto-grade,
-.fauto-cab {
-  background: color-mix(in srgb, var(--navy-marca) 8%, #ffffff);
-}
-
-:root[data-theme="dark"] .fauto-grade,
-:root[data-theme="dark"] .fauto-cab {
-  background: var(--surface);
-}
-
-/* O gatilho vira cartão branco: superfície, contorno fino e uma sombra curta. Os três juntos é
-   que fazem ele FLUTUAR sobre o piso em vez de ser uma mancha de cor dentro da célula. */
-.fauto-gat {
+.fauto-cab,
+.fauto-cel {
   background: var(--surface-elevated);
-  border: 1px solid var(--line);
-  /* Duas sombras: uma curta que cola o cartão no piso e uma longa e fraca que o levanta. Com só
-     a curta, o cartão fica "colado"; com só a longa, flutua sem apoio. */
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 4px 12px rgba(16, 24, 40, 0.05);
+}
+
+/*
+ * O AZUL DO GATILHO, em valor literal e não em `color-mix` com `--blue`.
+ *
+ * `--blue` é o token de ACENTO, e no tema claro ele vale `#002037` — navy. Diluí-lo em branco dá
+ * cinza, nunca azul claro, e foi o que fez a primeira versão parecer "tudo cinza". Aqui o valor é
+ * escrito, e o tema escuro tem o seu.
+ */
+.fauto-gat {
+  --fauto-gat-fundo: #dceefc;
+  --fauto-gat-borda: #b4d9f2;
+  background: var(--fauto-gat-fundo);
+  border: 1px solid var(--fauto-gat-borda);
+  box-shadow: none;
+}
+
+:root[data-theme="dark"] .fauto-gat {
+  --fauto-gat-fundo: rgba(120, 180, 240, 0.16);
+  --fauto-gat-borda: rgba(120, 180, 240, 0.32);
 }
 
 .fauto-gat:hover {
-  border-color: color-mix(in srgb, var(--acao) 50%, var(--line));
+  border-color: color-mix(in srgb, var(--acao) 55%, var(--fauto-gat-borda));
   box-shadow: 0 2px 8px rgba(16, 24, 40, 0.08);
 }
 
 /*
- * DESLIGADO TAMBÉM É CARTÃO BRANCO.
+ * DESLIGADO PERDE A COR, e é só isso.
  *
- * Eu tinha pintado o desligado de cinza pra diferenciar, e o efeito foi o oposto do pretendido:
- * num funil em que a maioria dos gatilhos está desligada, a tela inteira ficava de cartões
- * cinzas sobre piso cinza — que foi exatamente o "o cartão não está branco" da Thaynara.
- *
- * A diferença passa a ser o CONTORNO TRACEJADO e o texto apagado, que é como o resto do produto
- * já mostra "existe, mas não está valendo" (o "+ Adicionar gatilho" da célula vazia, o rascunho
- * de formulário). O fundo fica branco nos dois: a superfície diz "isto é um cartão", não "isto
- * está ligado".
+ * A cor é o que diz "aqui tem automação valendo". Um gatilho pausado continua existindo, continua
+ * ocupando a linha e continua editável — o que ele não faz é rodar. Então ele fica branco com
+ * contorno tracejado: o mesmo vocabulário do "+ Adicionar gatilho" da célula vazia, que é também
+ * "lugar que existe e ainda não está fazendo nada".
  */
 .fauto-gat.desligado {
   background: var(--surface-elevated);
-  border-style: dashed;
-  border-color: var(--line-strong);
+  border: 1px dashed var(--line-strong);
   box-shadow: none;
   opacity: 1;
 }
@@ -26574,12 +26576,11 @@ td.trafego-col-crm:first-of-type {
   font-weight: var(--fw-medium);
 }
 
-/* O "+ Adicionar gatilho" deixa de ter fundo próprio: sobre o piso, o tracejado já diz "vazio",
-   e uma caixa cinza dentro de uma célula cinza era mais uma borda sem função. */
+/* A célula vazia é branca como o resto: o tracejado sozinho já diz que ali não tem nada. */
 .fauto-add {
   background: transparent;
 }
 
 .fauto-add:hover {
-  background: var(--surface-elevated);
+  background: color-mix(in srgb, var(--acao) 6%, var(--surface-elevated));
 }
