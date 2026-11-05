@@ -21716,6 +21716,45 @@ table.tbl .name-cell .r {
   background: rgba(255, 255, 255, 0.16);
 }
 
+/*
+ * A PRÉVIA DA IMAGEM DENTRO DA BOLHA.
+ *
+ * Largura inteira e altura limitada: a imagem precisa ser reconhecível (é pra isso que ela está
+ * ali), mas não pode esticar o cartão a ponto de o fluxo virar uma coluna de fotos. `cover`
+ * recorta em vez de deformar — uma imagem amassada não ajuda ninguém a reconhecê-la.
+ */
+.msg-imagem {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.msg-imagem-previa {
+  width: 100%;
+  max-height: 150px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.msg-imagem-legenda {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.msg-imagem-legenda strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: var(--fw-semibold);
+  color: #fff;
+}
+
 .msg-arquivo-mini {
   flex: none;
   width: 42px;
@@ -24796,6 +24835,16 @@ td.trafego-col-crm:first-of-type {
   font-weight: 550;
   text-align: left;
   cursor: pointer;
+}
+
+/* A ação que apaga é a única em vermelho: ela não se desfaz, e a cor é o aviso mais barato. */
+.ss-menu button.perigo {
+  color: var(--danger);
+}
+
+.ss-menu button.perigo em {
+  color: var(--danger);
+  opacity: 0.75;
 }
 
 .ss-menu button:hover:not(:disabled) {
@@ -28233,5 +28282,95 @@ td.trafego-col-crm:first-of-type {
 .flow-config .flow-midia-dropzone,
 .flow-config .upload-area {
   padding: 16px 12px;
+  border-radius: 10px;
+}
+
+/* ==========================================================================
+   O MODAL DO GATILHO DA ETAPA: margens e botões
+   ==========================================================================
+   "Melhore as margens, deixe com mais modernidade, melhore os botões."
+
+   O que pesava era a herança do `.field` de painel: 16px de recuo em cada lado DENTRO de uma
+   caixa que já tem recuo, uma divisória forte entre cada campo e alturas diferentes entre
+   seletor, campo e botão. O conteúdo ficava com dois recuos somados e o formulário parecia uma
+   lista de linhas, não um formulário.
+   ========================================================================== */
+
+/* Um recuo só, o da caixa. O campo cuida do espaço vertical. */
+.fauto-painel {
+  padding: var(--space-4) 18px;
+}
+
+.fauto-painel .field {
+  padding: 13px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.fauto-painel .field:last-of-type {
+  border-bottom: none;
+}
+
+.fauto-painel .field label {
+  margin-bottom: 7px;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+}
+
+/* Uma altura só pra tudo que se preenche ou se clica. */
+.fauto-painel .input,
+.fauto-painel select.input {
+  min-height: 38px;
+  border-radius: 10px;
+}
+
+.fauto-painel textarea.input {
+  border-radius: 10px;
+  padding-top: 9px;
+}
+
+/* O cabeçalho e o rodapé acompanham o recuo novo, senão o título fica desalinhado dos campos. */
+.fauto-painel-topo {
+  margin: calc(var(--space-4) * -1) -18px var(--space-3);
+  padding: 14px 18px;
+}
+
+.fauto-painel-fim {
+  margin: var(--space-3) -18px calc(var(--space-4) * -1);
+  padding: 12px 18px;
+  gap: 10px;
+}
+
+/* Os dois botões do rodapé têm o mesmo tamanho e o mesmo canto: são duas respostas pra mesma
+   pergunta, e tamanhos diferentes fazem uma parecer mais importante do que ela é. */
+.fauto-painel-fim .btn {
+  min-height: 38px;
+  padding: 0 18px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+/* As pastilhas de dia: um pouco menores, pra "Sempre" e os sete dias caberem em duas linhas
+   folgadas em vez de três apertadas, e com o mesmo canto do resto. */
+.fauto-painel .fauto-dia {
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.fauto-painel .fauto-dias {
+  gap: 6px;
+}
+
+/* A caixa de "aplicar aos leads que já estão aqui" ganha ar e deixa de encostar no rodapé. */
+.fauto-painel .fauto-caixa {
+  gap: 9px;
+  margin: 12px 0 2px;
+  font-size: 13px;
+}
+
+/* O botão de adicionar condição: tracejado mais discreto e altura de botão de verdade. */
+.fauto-painel .fauto-add {
+  min-height: 42px;
   border-radius: 10px;
 }

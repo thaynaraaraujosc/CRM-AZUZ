@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   MarkerType,
   Panel,
@@ -17,6 +18,8 @@ import {
 import "@xyflow/react/dist/style.css";
 
 import { useAutomationFlows } from "@/lib/automation-flow-context";
+import { useBibliotecaDocumentos } from "@/lib/biblioteca-documentos-context";
+import { ModalConfirmacao } from "@/components/ui";
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
 import { resumoNo, saidasDoNo } from "@/lib/automation-flow/resumo";
 import { nosDeFollowUp } from "@/lib/automation-flow/sugestoes";
@@ -93,8 +96,11 @@ function explicacaoDoNo(flowNode: DomainFlowNode, funis: Funil[]): string {
 
 function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const { t: traduzir } = useIdioma();
-  const { fluxos, carregado, recarregarFluxos, atualizarFluxo, publicarFluxo, restaurarVersao, alternarAtivo } =
+  const { fluxos, carregado, recarregarFluxos, atualizarFluxo, publicarFluxo, restaurarVersao, alternarAtivo, excluirFluxo } =
     useAutomationFlows();
+  const router = useRouter();
+  /** A confirmação de apagar o robô. Nada some sem passar por ela. */
+  const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
   const fluxo = fluxos.find((f) => f.id === fluxoId);
   // Fluxo sem área é comercial: é o que todo fluxo criado antes desta coluna é.
   const area = fluxo?.area ?? "comercial";
@@ -102,6 +108,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
 
   const { screenToFlowPosition, fitView, setCenter, zoomIn, zoomOut } = useReactFlow();
   const { funis } = useFunis();
+  const { adicionarDocumento } = useBibliotecaDocumentos();
 
 
   /**
@@ -556,21 +563,24 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
 
     let documentoId: string;
     try {
-      const resposta = await fetch("/api/biblioteca-documentos", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nome: arquivo.nome,
-          categoria: "Automação",
-          formato: (arquivo.nome.split(".").pop() ?? "").toUpperCase() || tipoMidia.toUpperCase(),
-          tamanho: arquivo.bytes,
-          autor: "Automação",
-          url: arquivo.dataUrl,
-          tipoMidia,
-        }),
+      /*
+       * PELO CONTEXTO, e não por um `fetch` direto na API.
+       *
+       * Os dois gravam a mesma linha, mas só o contexto acrescenta o arquivo à lista que está na
+       * memória desta aba. Com o `fetch` cru, o cartão acabava de anexar a imagem e não achava o
+       * documento pra desenhar a miniatura: aparecia o clipe genérico até alguém recarregar a
+       * página.
+       */
+      const salvo = await adicionarDocumento({
+        nome: arquivo.nome,
+        categoria: "Automação",
+        formato: (arquivo.nome.split(".").pop() ?? "").toUpperCase() || tipoMidia.toUpperCase(),
+        tamanho: arquivo.bytes,
+        autor: "Automação",
+        url: arquivo.dataUrl,
+        tipoMidia,
       });
-      if (!resposta.ok) throw new Error(String(resposta.status));
-      documentoId = ((await resposta.json()) as { id: string }).id;
+      documentoId = salvo.id;
     } catch {
       window.alert("Não deu pra guardar o arquivo. Tente de novo.");
       return;
@@ -1600,6 +1610,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
         onPublicar={publicar}
         onAbrirHistorico={() => setHistoricoAberto(true)}
         onAbrirExecucoes={() => setExecucoesAbertas(true)}
+        onExcluir={() => setConfirmandoExclusao(true)}
         onAbrirConfiguracoes={() => {
           setSelectedNodeIds([]);
           setConfigGeralAberta(true);
@@ -1976,6 +1987,30 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
       </div>
 
       {simuladorAberto && fluxoParaSimular ? <Simulador fluxo={fluxoParaSimular} onFechar={() => setSimuladorAberto(false)} /> : null}
+
+      {/*
+        APAGAR O ROBÔ, com confirmação e dizendo o que vai junto.
+        
+        Os gatilhos de etapa que executam este robô são apagados com ele (ver o DELETE em
+        `/api/automacoes-fluxos/[id]`): deixá-los pra trás enchia a grade do funil de cartões
+        "robô apagado" e fazia a varredura do cron tentar executar um fluxo que não existe mais.
+      */}
+      <ModalConfirmacao
+        aberto={confirmandoExclusao}
+        titulo={traduzir("Excluir este robô?")}
+        mensagem={traduzir(
+          "O robô \"{nome}\" e os gatilhos de etapa que o executam são apagados. As execuções que já aconteceram ficam no histórico. Não dá pra desfazer.",
+          { nome: fluxo.nome },
+        )}
+        rotuloConfirmar={traduzir("Excluir o robô")}
+        perigoso
+        onCancelar={() => setConfirmandoExclusao(false)}
+        onConfirmar={() => {
+          setConfirmandoExclusao(false);
+          excluirFluxo(fluxoId);
+          router.push("/automacoes");
+        }}
+      />
       {execucoesAbertas ? <HistoricoExecucoes fluxoId={fluxoId} onFechar={() => setExecucoesAbertas(false)} /> : null}
       {historicoAberto ? (
         <HistoricoVersoes

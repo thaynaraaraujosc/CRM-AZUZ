@@ -622,16 +622,31 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
                 const dados = (flowNode.data ?? {}) as { arquivoId?: string; arquivoNome?: string; arquivoTamanho?: string };
                 const doc = documentos.find((d) => d.id === dados.arquivoId);
                 if (!dados.arquivoId) return null;
+                /*
+                 * A IMAGEM APARECE DE VERDADE, grande o bastante pra se reconhecer.
+                 *
+                 * Era um quadradinho de 42px ao lado do nome do arquivo — do tamanho de um ícone,
+                 * e com a mesma utilidade dele: dava pra ver que existe uma imagem, não QUAL. E
+                 * saber se é a imagem certa é justamente a pergunta de quem olha o cartão. Nome e
+                 * tamanho continuam, embaixo, porque "#01-01 ktm450.png" também identifica.
+                 */
+                if (flowNode.type === "mensagem_imagem" && doc?.url) {
+                  return (
+                    <div className="msg-imagem">
+                      {/* eslint-disable-next-line @next/next/no-img-element -- a fonte é uma data URL da biblioteca, não uma URL remota que o otimizador do Next saiba buscar. */}
+                      <img src={doc.url} alt={dados.arquivoNome ?? ""} className="msg-imagem-previa" />
+                      <span className="msg-imagem-legenda">
+                        <strong>{dados.arquivoNome ?? doc?.nome ?? traduzir("Imagem")}</strong>
+                        {dados.arquivoTamanho ? <span>{dados.arquivoTamanho}</span> : null}
+                      </span>
+                    </div>
+                  );
+                }
                 return (
                   <div className="msg-arquivo">
-                    {flowNode.type === "mensagem_imagem" && doc?.url ? (
-                      // eslint-disable-next-line @next/next/no-img-element -- a fonte é uma data URL da biblioteca, não uma URL remota que o otimizador do Next saiba buscar.
-                      <img src={doc.url} alt="" className="msg-arquivo-mini" />
-                    ) : (
-                      <span className="msg-arquivo-mini msg-arquivo-icone" aria-hidden="true">
-                        <IconAnexo width={16} height={16} />
-                      </span>
-                    )}
+                    <span className="msg-arquivo-mini msg-arquivo-icone" aria-hidden="true">
+                      <IconAnexo width={16} height={16} />
+                    </span>
                     <span className="msg-arquivo-textos">
                       <strong>{dados.arquivoNome ?? doc?.nome ?? traduzir("Arquivo")}</strong>
                       {dados.arquivoTamanho ? <span>{dados.arquivoTamanho}</span> : null}

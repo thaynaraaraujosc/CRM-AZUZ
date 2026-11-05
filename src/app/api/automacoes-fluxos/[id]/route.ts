@@ -85,5 +85,21 @@ export async function DELETE(_request: Request, ctx: RouteContext<"/api/automaco
     where: { id, workspaceId: sessao.user.workspaceId },
   });
   if (count === 0) return NextResponse.json({ erro: "Fluxo não encontrado" }, { status: 404 });
-  return NextResponse.json({ ok: true });
+
+  /*
+   * OS GATILHOS DE ETAPA DESTE ROBÔ VÃO JUNTO.
+   *
+   * `GatilhoEtapa.fluxoId` é uma coluna solta, sem chave estrangeira — de propósito, porque nem
+   * todo gatilho executa robô. O efeito colateral era este: apagar o robô deixava cartões órfãos
+   * na grade do funil ("Executar robô: robô apagado"), e a varredura do cron continuava tentando
+   * executar um fluxo que não existe mais, reclamando no log a cada batida.
+   *
+   * Depois do fluxo, e não antes: se o `deleteMany` do fluxo não achar nada (id de outro
+   * workspace), nada aqui é apagado.
+   */
+  const gatilhos = await prisma.gatilhoEtapa.deleteMany({
+    where: { workspaceId: sessao.user.workspaceId, fluxoId: id },
+  });
+
+  return NextResponse.json({ ok: true, gatilhosRemovidos: gatilhos.count });
 }

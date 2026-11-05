@@ -48,6 +48,7 @@ export function ToolbarSocial({
   onPublicar,
   onAbrirHistorico,
   onAbrirConfiguracoes,
+  onExcluir,
   entenderFluxoAtivo,
   onAlternarEntenderFluxo,
   modoConstrucao,
@@ -76,6 +77,8 @@ export function ToolbarSocial({
   onAbrirHistorico: () => void;
   /** As configurações gerais do fluxo: nome, descrição, horários. */
   onAbrirConfiguracoes: () => void;
+  /** Apaga o robô inteiro. Sem isto, não havia onde apagar um robô em lugar nenhum do CRM. */
+  onExcluir?: () => void;
   entenderFluxoAtivo: boolean;
   onAlternarEntenderFluxo: () => void;
   modoConstrucao: boolean;
@@ -251,6 +254,23 @@ export function ToolbarSocial({
               <button type="button" role="menuitem" onClick={() => fecharEntao(onAbrirHistorico)}>
                 {traduzir("Histórico de versões")}
               </button>
+              {/*
+                APAGAR O ROBÔ, que não existia em lugar nenhum.
+                
+                A lista de robôs saiu do CRM (a automação passou a ser configurada na etapa), e com
+                ela foi embora o único lugar que apagava um. Dava pra apagar o CARTÃO da grade —
+                que tira o gatilho e deixa o robô vivo, disparando pelo bloco de gatilho dele. O
+                lugar certo é aqui dentro: quem quer apagar o robô está olhando pra ele.
+              */}
+              {onExcluir ? (
+                <>
+                  <hr />
+                  <button type="button" role="menuitem" className="perigo" onClick={() => fecharEntao(onExcluir)}>
+                    {traduzir("Excluir este robô")}
+                    <em>{traduzir("Apaga o robô e os gatilhos de etapa que o executam. Não dá pra desfazer.")}</em>
+                  </button>
+                </>
+              ) : null}
             </div>
           ) : null}
         </div>
