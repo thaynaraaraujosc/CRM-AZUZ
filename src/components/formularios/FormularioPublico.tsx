@@ -523,7 +523,9 @@ export function FormularioPublico({
           <h2>{formulario.paginaFinal.mensagem || MENSAGEM_FINAL_PADRAO}</h2>
           {formulario.paginaFinal.urlRedirecionamento ? (
             <a className="btn form-obrigado-botao" href={formulario.paginaFinal.urlRedirecionamento}>
-              {traduzir("Continuar")}
+              {/* O texto é escolhido em Design. "Continuar" é só o que sobra quando ninguém
+                  escreveu nada — e é a última frase que a pessoa lê antes de clicar. */}
+              {formulario.paginaFinal.textoDoBotao?.trim() || traduzir("Continuar")}
             </a>
           ) : null}
         </div>

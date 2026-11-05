@@ -36,9 +36,13 @@ export function respostasEmCsv(
       const valor = r.valores[q.id] ?? "";
       if (TIPOS_UPLOAD.includes(q.tipo)) return valor.split("|")[0] ?? "";
       if (q.tipo === "assinatura") return valor ? "(assinatura enviada)" : "";
-      // O consentimento no CRM não é um TIPO de campo, é um MAPEAMENTO: qualquer sim/não pode ser
-      // marcado como "Consentimento de WhatsApp". Por isso a regra olha o mapeamento, e não o tipo.
-      if (q.mapeamentoCrm === "consentimentoWhatsApp") return valor.toLowerCase() === "sim" ? "Sim" : "Não";
+      // O consentimento chega de dois jeitos: pelo TIPO de campo ("Consentimento de WhatsApp", na
+      // lista do "+ Adicionar campo") ou pelo MAPEAMENTO, marcado à mão num sim/não. Na planilha
+      // os dois viram a mesma coluna de "Sim"/"Não": é o comprovante, e ele não pode sair em
+      // branco só porque o formulário foi montado de outro jeito.
+      if (q.tipo === "consentimento_whatsapp" || q.mapeamentoCrm === "consentimentoWhatsApp") {
+        return valor.toLowerCase() === "sim" ? "Sim" : "Não";
+      }
       return valor;
     });
     return [formatarData(r.criadoEm), ...valores];

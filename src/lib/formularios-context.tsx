@@ -40,6 +40,14 @@ export type TipoCampoFormulario =
   | "multipla_escolha"
   | "tags"
   | "sim_nao"
+  /**
+   * A CAIXA DE CONSENTIMENTO DE WHATSAPP: a pessoa marca que aceita receber mensagens.
+   *
+   * Não é um "Sim / Não" com outro rótulo. É o comprovante de que ela autorizou — a frase que ela
+   * leu fica gravada junto com a resposta, e é por isso que o texto da frase É o rótulo do campo.
+   * Sem isso, mandar automação pra quem preencheu um formulário é mensagem não pedida.
+   */
+  | "consentimento_whatsapp"
   | "avaliacao"
   | "nota"
   // upload (visual apenas: sem storage real, front-end apenas)
@@ -94,6 +102,7 @@ export const TIPOS_CAMPO_FORMULARIO: {
   { tipo: "multipla_escolha", label: "Múltipla escolha (várias opções)", categoria: "escolha" },
   { tipo: "tags", label: "Tags", categoria: "escolha" },
   { tipo: "sim_nao", label: "Sim / Não", categoria: "escolha" },
+  { tipo: "consentimento_whatsapp", label: "Consentimento de WhatsApp", categoria: "escolha" },
   { tipo: "avaliacao", label: "Avaliação (estrelas)", categoria: "escolha" },
   { tipo: "nota", label: "Nota (0 a 10)", categoria: "escolha" },
   { tipo: "arquivo", label: "Arquivo", categoria: "upload" },
@@ -364,7 +373,12 @@ export type VersaoFormulario = {
   criadoEm: string;
   paginas: PaginaFormulario[];
   tema: TemaFormulario;
-  paginaFinal: { mensagem: string; urlRedirecionamento?: string; redirecionarAutomaticamente: boolean };
+  paginaFinal: {
+    mensagem: string;
+    urlRedirecionamento?: string;
+    redirecionarAutomaticamente: boolean;
+    textoDoBotao?: string;
+  };
 };
 
 export type Formulario = {
@@ -395,6 +409,14 @@ export type Formulario = {
     mensagem: string;
     urlRedirecionamento?: string;
     redirecionarAutomaticamente: boolean;
+    /**
+     * O QUE O BOTÃO DO FIM DIZ. Vazio cai em "Continuar".
+     *
+     * Ele só aparece quando há pra onde ir (o endereço de redirecionamento), e é a última frase
+     * que a pessoa lê antes de clicar: dizer "Continuar" quando o botão leva pro WhatsApp é
+     * desperdiçar justamente esse momento.
+     */
+    textoDoBotao?: string;
   };
   tema: TemaFormulario;
   senha?: string;
@@ -437,12 +459,22 @@ function temaVazio(): TemaFormulario {
   };
 }
 
+/**
+ * A FRASE PADRÃO DO CONSENTIMENTO.
+ *
+ * Nasce genérica de propósito, e o construtor pede pra trocar pelo nome da marca: "Aceito receber
+ * mensagens da Fulana pelo WhatsApp" é o que a pessoa de fato leu, e é isso que vale como
+ * autorização — não um texto que fala em nome de ninguém.
+ */
+export const CONSENTIMENTO_WHATSAPP_PADRAO = "Aceito receber mensagens pelo WhatsApp.";
+
 function perguntaVazia(tipo: TipoCampoFormulario): PerguntaFormulario {
   const comOpcoes = tipo === "lista_suspensa" || tipo === "opcao_unica" || tipo === "checkbox" || tipo === "multipla_escolha";
   return {
     id: idUnico("campo"),
     tipo,
-    rotulo: labelTipoCampo(tipo),
+    // No consentimento o rótulo É a frase que a pessoa aceita, e não o nome do tipo de campo.
+    rotulo: tipo === "consentimento_whatsapp" ? CONSENTIMENTO_WHATSAPP_PADRAO : labelTipoCampo(tipo),
     obrigatoria: false,
     oculta: false,
     somenteLeitura: false,

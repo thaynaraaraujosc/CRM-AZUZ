@@ -9,16 +9,18 @@ import { IconAnexo, IconCadeado, IconClose, IconEdit, IconGlobo, IconOlho, IconO
 import {
   textoDoBotaoDaCapa,
   mostraCapa,
-  numeraPerguntas,
   CAMPOS_CRM_MAPEAVEIS,
   CATEGORIAS_CAMPO,
   CORES_TEMA_FORMULARIO,
   MENSAGEM_FINAL_PADRAO,
-  OPERADORES_LOGICA,
   TIPOS_CAMPO_FORMULARIO,
   TIPOS_LAYOUT,
   TIPOS_UPLOAD,
   labelTipoCampo,
+  mostraNome,
+  mostraPaginas,
+  mostraTitulo,
+  numeraPerguntas,
   useFormularios,
   type Formulario,
   type LogicaCampo,
@@ -27,11 +29,12 @@ import {
   type RespostaFormulario,
 } from "@/lib/formularios-context";
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
-import { Modal, Topbar } from "@/components/ui";
+import { Ajuda, Modal, Topbar } from "@/components/ui";
 import { PerguntaVisualizacao } from "@/components/campo-resposta";
 import { classesDoCartao, estiloDoBanner, estiloDoCartao } from "@/components/formularios/FormularioPublico";
 import { LogicaCanvas } from "@/components/formularios/LogicaCanvas";
 import { AGENDA_PADRAO } from "@/lib/formularios/agendamento";
+import { juntarEmUmaPagina, temMaisDeUmaPagina } from "@/lib/formularios/uma-pagina";
 import { nomeDoArquivo, respostasEmCsv } from "@/lib/formularios/planilha";
 import { escolhasMarcadas } from "@/lib/formularios/escolhas";
 import { pixelMetaValido, tagGoogleValida } from "@/lib/formularios/rastreamento";
@@ -106,11 +109,7 @@ export default function FormulariosPage() {
     excluirFormulario,
     alternarPublicacao,
     restaurarVersaoFormulario,
-    adicionarPagina,
-    duplicarPagina,
     atualizarPagina,
-    excluirPagina,
-    reordenarPagina,
     adicionarPergunta,
     duplicarPergunta,
     atualizarPergunta,
@@ -126,7 +125,6 @@ export default function FormulariosPage() {
   const [paginaAtivaId, setPaginaAtivaId] = useState<string | null>(null);
   const [campoSelecionadoId, setCampoSelecionadoId] = useState<string | null>(null);
 
-  const [paginaArrastando, setPaginaArrastando] = useState<number | null>(null);
   const [campoArrastando, setCampoArrastando] = useState<number | null>(null);
 
   const [menuAdicionarAberto, setMenuAdicionarAberto] = useState(false);
@@ -176,6 +174,19 @@ export default function FormulariosPage() {
 
   function abrirFormulario(id: string, aba: AbaBuilder = "editar") {
     const f = formularios.find((x) => x.id === id);
+    /*
+     * FORMULÁRIO ANTIGO, COM PÁGINAS, É JUNTADO NUM SÓ AO ABRIR.
+     *
+     * As páginas saíram do construtor; o que era página vira seção (um campo de título) na mesma
+     * ordem. A junção acontece aqui, e não numa migração do banco, porque é reversível de fato:
+     * nenhum id de campo muda, nenhuma resposta já gravada perde o dono, e formulário que
+     * ninguém abrir continua exatamente como está. Ver `lib/formularios/uma-pagina.ts`.
+     */
+    if (f && temMaisDeUmaPagina(f.paginas)) {
+      atualizarFormulario(f.id, {
+        paginas: juntarEmUmaPagina(f.paginas, () => `campo-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`),
+      });
+    }
     setFormularioAbertoId(id);
     setAbaBuilder(aba);
     setPaginaAtivaId(f?.paginas[0]?.id ?? null);
@@ -249,13 +260,6 @@ export default function FormulariosPage() {
 
   const respostas = formularioAberto ? respostasDoFormulario(formularioAberto.id) : [];
   const respostaAberta = respostaAbertaId ? respostas.find((r) => r.id === respostaAbertaId) ?? null : null;
-
-  // ---- Drag and drop: páginas -------------------------------------------------
-  function onDropPagina(indiceDestino: number) {
-    if (!formularioAberto || paginaArrastando === null) return;
-    reordenarPagina(formularioAberto.id, paginaArrastando, indiceDestino);
-    setPaginaArrastando(null);
-  }
 
   // ---- Drag and drop: campos ---------------------------------------------------
   function onDropCampo(indiceDestino: number) {
@@ -602,90 +606,13 @@ export default function FormulariosPage() {
                 onRestaurarVersao={(versaoId) => restaurarVersaoFormulario(formularioAberto.id, versaoId)}
               />
             ) : (
-              <div className="form-builder-4areas">
-                <div className="form-builder-paginas">
-                  <p className="form-painel-secao-h" style={{ padding: "12px 14px 6px" }}>
-                    {traduzir("Páginas")}
-                  </p>
-                  {formularioAberto.paginas.map((pagina, indice) => (
-                    <div
-                      key={pagina.id}
-                      className={`form-pagina-item${pagina.id === paginaAtiva?.id ? " active" : ""}${paginaArrastando === indice ? " arrastando" : ""}`}
-                      onDragOver={(e) => e.preventDefault()}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        onDropPagina(indice);
-                      }}
-                    >
-                      <span
-                        className="form-pagina-handle"
-                        draggable
-                        onDragStart={() => setPaginaArrastando(indice)}
-                        onDragEnd={() => setPaginaArrastando(null)}
-                        title={traduzir("Arraste pra reordenar")}
-                      >
-                        ⠿
-                      </span>
-                      <button
-                        type="button"
-                        className="form-pagina-btn"
-                        onClick={() => {
-                          setPaginaAtivaId(pagina.id);
-                          setCampoSelecionadoId(null);
-                        }}
-                      >
-                        {pagina.titulo || `Página ${indice + 1}`}
-                        <span className="form-pagina-count">{pagina.perguntas.length}</span>
-                      </button>
-                      <span className="form-pagina-acoes">
-                        <button
-                          type="button"
-                          className="form-pagina-acao-btn"
-                          title={traduzir("Duplicar página")}
-                          onClick={() => duplicarPagina(formularioAberto.id, pagina.id)}
-                        >
-                          ⧉
-                        </button>
-                        <button
-                          type="button"
-                          className="form-pagina-acao-btn"
-                          title={traduzir("Excluir página")}
-                          disabled={formularioAberto.paginas.length <= 1}
-                          onClick={() => {
-                            if (formularioAberto.paginas.length <= 1) return;
-                            if (window.confirm(traduzir('Excluir "{titulo}"?', { titulo: pagina.titulo }))) {
-                              excluirPagina(formularioAberto.id, pagina.id);
-                              if (paginaAtiva?.id === pagina.id) setPaginaAtivaId(null);
-                            }
-                          }}
-                        >
-                          <IconClose width={11} height={11} />
-                        </button>
-                      </span>
-                    </div>
-                  ))}
-                  {/* O respiro é padding do container, não margem do botão. Com `width: 100%` mais
-                      margem lateral de 12px, o botão media 244px numa coluna de 220px e os 24px
-                      que sobravam eram cortados pelo `overflow: hidden` do quadro. */}
-                  <div className="form-builder-paginas-add">
-                    <button
-                      type="button"
-                      className="btn ghost block"
-                      onClick={() => {
-                        const novaId = adicionarPagina(formularioAberto.id);
-                        setPaginaAtivaId(novaId);
-                        setCampoSelecionadoId(null);
-                      }}
-                    >{traduzir("+ Adicionar página")}</button>
-                  </div>
-                </div>
-
+              <div className="form-builder-4areas sem-paginas">
                 <div className="form-builder-canvas" onClick={() => setCampoSelecionadoId(null)}>
                   {paginaAtiva ? (
                     <div className="form-canvas-folha" onClick={(e) => e.stopPropagation()}>
                       {paginaAtiva.perguntas.length === 0 ? (
                         <p className="hint" style={{ padding: "40px 0", textAlign: "center" }}>
-                          {traduzir("Página vazia: adicione o primeiro campo abaixo.")}
+                          {traduzir("Formulário em branco: adicione o primeiro campo abaixo.")}
                         </p>
                       ) : (
                         paginaAtiva.perguntas.map((pergunta, indice) => {
@@ -806,7 +733,6 @@ export default function FormulariosPage() {
                   ) : paginaAtiva ? (
                     <PainelPagina
                       pagina={paginaAtiva}
-                      camposAnteriores={camposDisponiveisParaLogica(paginaAtiva.id)}
                       onAtualizar={(patch) => atualizarPagina(formularioAberto.id, paginaAtiva.id, patch)}
                     />
                   ) : (
@@ -828,27 +754,28 @@ export default function FormulariosPage() {
               <div onClick={() => setMenuAdicionarAberto(false)} style={{ position: "fixed", inset: 0, zIndex: 190 }} />
               <div
                 ref={menuAdicionarRef}
-                className="dropdown-pop"
-                style={{ position: "fixed", top: menuAdicionarPos.top, left: menuAdicionarPos.left, zIndex: 200, width: 300, maxHeight: 420, overflowY: "auto" }}
+                className="dropdown-pop form-tipos"
+                style={{ position: "fixed", top: menuAdicionarPos.top, left: menuAdicionarPos.left, zIndex: 200, width: 320, maxHeight: 460, overflowY: "auto" }}
               >
+                {/* CADA TIPO É UM BOTÃO CHEIO, e cada categoria uma faixa dourada.
+                    A lista de linhas de antes não dizia que era pra clicar: quarenta nomes
+                    empilhados em texto preto, com o nome da categoria no mesmo cinza de todo o
+                    resto. Em cor sólida dá pra escolher de longe, que é o que se faz aqui. */}
                 {CATEGORIAS_CAMPO.map(({ categoria, label }) => (
-                  <div key={categoria}>
-                    <p className="doc-sidebar-h" style={{ padding: "8px 14px 4px" }}>
-                      {label}
-                    </p>
+                  <div key={categoria} className="form-tipos-grupo">
+                    <p className="form-tipos-titulo">{traduzir(label)}</p>
                     {TIPOS_CAMPO_FORMULARIO.filter((t) => t.categoria === categoria).map((t) => (
                       <button
                         type="button"
                         key={t.tipo}
-                        className="dropdown-item"
-                        style={{ width: "100%", textAlign: "left" }}
+                        className="form-tipos-botao"
                         onClick={() => {
                           const novoId = adicionarPergunta(formularioAberto.id, paginaAtiva.id, t.tipo);
                           setCampoSelecionadoId(novoId);
                           setMenuAdicionarAberto(false);
                         }}
                       >
-                        <span className="n">{t.label}</span>
+                        {traduzir(t.label)}
                       </button>
                     ))}
                   </div>
@@ -922,22 +849,31 @@ export default function FormulariosPage() {
 
 function PainelPagina({
   pagina,
-  camposAnteriores,
   onAtualizar,
 }: {
   pagina: PaginaFormulario;
-  camposAnteriores: PerguntaFormulario[];
   onAtualizar: (patch: Partial<PaginaFormulario>) => void;
 }) {
   const { t: traduzir } = useIdioma();
+  /*
+   * O PAINEL DA "PÁGINA" SOBREVIVEU ÀS PÁGINAS, com outro nome.
+   *
+   * O formulário é um só agora, então não existe mais "a página 2" pra configurar. O que ficou
+   * é o cabeçalho que aparece ACIMA das perguntas — e ele continua precisando de um lugar pra
+   * ser escrito. A condição de exibir saiu junto: condicionar a única página a uma resposta
+   * dela mesma nunca fez sentido, e com uma página só é o único caso possível.
+   */
   return (
     <>
       <p className="hint" style={{ padding: "14px 14px 0" }}>
-        {traduzir("Nada selecionado: configurando a página.")}
+        {traduzir("Nada selecionado: configurando o cabeçalho do formulário.")}
       </p>
       <SecaoPainel titulo={traduzir("Geral")}>
         <div className="field">
-          <label>{traduzir("Título da página")}</label>
+          <label>
+            {traduzir("Título acima das perguntas")}
+            <Ajuda texto={traduzir("Aparece em cima da primeira pergunta. Em Design dá pra escondê-lo sem apagar o texto.")} />
+          </label>
           <input className="input" style={{ width: "100%" }} value={pagina.titulo} onChange={(e) => onAtualizar({ titulo: e.target.value })} />
         </div>
         <div className="field">
@@ -950,62 +886,6 @@ function PainelPagina({
           />
         </div>
       </SecaoPainel>
-      {/* Some quando não há campo anterior nenhum pra condicionar, que é sempre o caso da primeira
-          página. Antes ela aparecia mesmo assim, com uma frase explicando por que não dava pra
-          usar: uma seção que só existe pra dizer que não serve. Em formulário de página única ela
-          nunca serve, e é o formato da maioria. Quem tiver duas páginas continua vendo, na
-          segunda, que é onde ela faz sentido: "mostrar esta página só se a resposta lá atrás
-          foi tal". */}
-      {camposAnteriores.length === 0 ? null : (
-        <SecaoPainel titulo={traduzir("Condição de exibir")}>
-          <>
-            <div className="field">
-              <label>{traduzir("Mostrar esta página só se")}</label>
-              <select
-                className="input"
-                style={{ width: "100%" }}
-                value={pagina.condicao?.campoId ?? ""}
-                onChange={(e) =>
-                  onAtualizar({
-                    condicao: e.target.value ? { campoId: e.target.value, operador: "igual", valor: "" } : undefined,
-                  })
-                }
-              >
-                <option value="">{traduzir("Sempre mostrar")}</option>
-                {camposAnteriores.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.rotulo || labelTipoCampo(c.tipo)}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {pagina.condicao ? (
-              <div className="filters-row">
-                <select
-                  className="input"
-                  value={pagina.condicao.operador}
-                  onChange={(e) => onAtualizar({ condicao: { ...pagina.condicao!, operador: e.target.value as typeof pagina.condicao.operador } })}
-                >
-                  {OPERADORES_LOGICA.map((o) => (
-                    <option key={o.operador} value={o.operador}>
-                      {traduzir(o.label)}
-                    </option>
-                  ))}
-                </select>
-                {pagina.condicao.operador !== "preenchido" && pagina.condicao.operador !== "vazio" ? (
-                  <input
-                    className="input"
-                    style={{ flex: 1 }}
-                    value={pagina.condicao.valor ?? ""}
-                    onChange={(e) => onAtualizar({ condicao: { ...pagina.condicao!, valor: e.target.value } })}
-                    placeholder={traduzir("Valor")}
-                  />
-                ) : null}
-              </div>
-            ) : null}
-          </>
-        </SecaoPainel>
-      )}
     </>
   );
 }
@@ -1026,6 +906,7 @@ function PainelCampo({
   const categoriaCampo = TIPOS_CAMPO_FORMULARIO.find((t) => t.tipo === pergunta.tipo)?.categoria;
   const comMascara = categoriaCampo === "texto" && !["texto_longo", "email", "url", "senha"].includes(pergunta.tipo);
   const comRegex = categoriaCampo === "texto";
+  const ehConsentimento = pergunta.tipo === "consentimento_whatsapp";
   const logica: LogicaCampo = pergunta.logica ?? { modo: "mostrar_se", regras: [] };
 
   return (
@@ -1036,7 +917,20 @@ function PainelCampo({
 
       <SecaoPainel titulo={traduzir("Geral")}>
         <div className="field">
-          <label>{ehLayout ? "Texto" : traduzir("Rótulo")}</label>
+          <label>
+            {ehLayout
+              ? "Texto"
+              : ehConsentimento
+                ? traduzir("Frase de consentimento")
+                : traduzir("Rótulo")}
+            {ehConsentimento ? (
+              <Ajuda
+                texto={traduzir(
+                  "É a frase que a pessoa marca, e é ela que fica gravada como autorização. Troque o texto padrão pelo nome da marca: quem leu “Aceito receber mensagens da Fulana” autorizou a Fulana, não “uma empresa”. A caixa nasce desmarcada.",
+                )}
+              />
+            ) : null}
+          </label>
           <input className="input" style={{ width: "100%" }} value={pergunta.rotulo} onChange={(e) => onAtualizar({ rotulo: e.target.value })} />
         </div>
         {pergunta.tipo === "imagem_bloco" ? (
@@ -1702,6 +1596,48 @@ function PreviaDaCapa({ formulario, traduzir }: { formulario: Formulario; traduz
 }
 
 /**
+ * UM PAR "MOSTRAR / ESCONDER", com rótulo e com o "?" ao lado.
+ *
+ * Existe pra não escrever o mesmo bloco de quatro linhas quatro vezes, e porque a pergunta que
+ * cada um responde é sempre a mesma: esta coisa aparece pra quem responde, sim ou não? Com dois
+ * botões, o estado é legível de relance — um chip sozinho não diz se está aceso ou em foco.
+ *
+ * O texto explicativo mora no "?" de propósito. Uma frase cinza embaixo de cada par viraria uma
+ * coluna de parágrafos que ninguém lê depois da segunda visita, e foi exatamente o pedido da
+ * Thaynara: "tudo que for informação, deixa dentro de um quadradinho de interrogação".
+ */
+function ParMostrarEsconder({
+  rotulo,
+  ajuda,
+  ligado,
+  aoMudar,
+  traduzir,
+}: {
+  rotulo: string;
+  ajuda?: string;
+  ligado: boolean;
+  aoMudar: (valor: boolean) => void;
+  traduzir: (t: string) => string;
+}) {
+  return (
+    <div className="field">
+      <label>
+        {rotulo}
+        {ajuda ? <Ajuda texto={ajuda} /> : null}
+      </label>
+      <div className="filters-row" style={{ margin: 0 }}>
+        <button type="button" className={`fchip${ligado ? " active" : ""}`} onClick={() => aoMudar(true)}>
+          {traduzir("Mostrar")}
+        </button>
+        <button type="button" className={`fchip${ligado ? "" : " active"}`} onClick={() => aoMudar(false)}>
+          {traduzir("Esconder")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/**
  * A MENSAGEM FINAL, com as cores de verdade. A prévia desenhava o fundo fixo e "Continuar"
  * cravado: quem trocava a cor do botão não via nada mudar aqui, que é onde se confere.
  *
@@ -1730,7 +1666,7 @@ function PreviaMensagemFinal({ formulario, traduzir }: { formulario: Formulario;
                 className="btn form-obrigado-botao"
                 style={{ background: tema.corBotao, borderColor: tema.corBotao, pointerEvents: "none" }}
               >
-                {traduzir("Continuar")}
+                {formulario.paginaFinal.textoDoBotao?.trim() || traduzir("Continuar")}
               </span>
             ) : null}
           </div>
@@ -1740,7 +1676,7 @@ function PreviaMensagemFinal({ formulario, traduzir }: { formulario: Formulario;
         {automatico
           ? traduzir("Esta tela aparece por um instante e a pessoa é levada sozinha pro endereço de redirecionamento.")
           : redireciona
-            ? traduzir("A pessoa vê esta tela e decide se clica em “Continuar”.")
+            ? `${traduzir("A pessoa vê esta tela e decide se clica em")} “${formulario.paginaFinal.textoDoBotao?.trim() || traduzir("Continuar")}”.`
             : traduzir("A pessoa vê esta tela e fica nela. Pra levar pro WhatsApp, preencha a URL de redirecionamento acima.")}
       </p>
     </>
@@ -1808,7 +1744,10 @@ function PainelDesign({
         {/* A CAPA DE APRESENTAÇÃO fica junto da descrição e da mensagem final porque são as três
             coisas que o formulário DIZ — o resto do cartão é aparência. */}
         <div className="field">
-          <label>{traduzir("Capa de apresentação")}</label>
+          <label>
+            {traduzir("Capa de apresentação")}
+            <Ajuda texto={traduzir("A tela que aparece antes da primeira pergunta, dizendo pra que serve o formulário.")} />
+          </label>
           <div className="filters-row" style={{ margin: 0 }}>
             <button
               type="button"
@@ -1825,9 +1764,6 @@ function PainelDesign({
               {traduzir("Não mostrar")}
             </button>
           </div>
-          <p className="hint">
-            {traduzir("A tela que aparece antes da primeira pergunta, dizendo pra que serve o formulário.")}
-          </p>
         </div>
         {formulario.capa?.ativa ? (
           <div className="capa-do-formulario">
@@ -1877,6 +1813,22 @@ function PainelDesign({
             value={formulario.paginaFinal.mensagem}
             onChange={(e) => onAtualizar({ paginaFinal: { ...formulario.paginaFinal, mensagem: e.target.value } })}
             placeholder={MENSAGEM_FINAL_PADRAO}
+          />
+        </div>
+        {/* O TEXTO DO BOTÃO DO FIM. Faltava, e era a única frase da tela final que não dava pra
+            escrever: a pessoa acabava de responder e via "Continuar", sem dizer pra onde. Fica
+            logo acima do endereço porque é o par dele — o botão só aparece quando há pra onde ir. */}
+        <div className="field">
+          <label>
+            {traduzir("Texto do botão final")}
+            <Ajuda texto={traduzir("O que o botão diz na tela de obrigado. Só aparece quando existe um endereço de redirecionamento abaixo. Vazio vira “Continuar”.")} />
+          </label>
+          <input
+            className="input"
+            style={{ width: "100%" }}
+            value={formulario.paginaFinal.textoDoBotao ?? ""}
+            onChange={(e) => onAtualizar({ paginaFinal: { ...formulario.paginaFinal, textoDoBotao: e.target.value } })}
+            placeholder={traduzir("Continuar")}
           />
         </div>
         <div className="field">
@@ -1933,17 +1885,16 @@ function PainelDesign({
           />
         </div>
         <div className="field">
-          <label>{traduzir("Cor do texto")}</label>
+          <label>
+            {traduzir("Cor do texto")}
+            <Ajuda texto={traduzir("Em “A” (automático) o texto segue o tema. Escolha uma cor quando o fundo pedir: fundo escuro com tema claro deixava texto preto sobre preto, sem jeito de corrigir.")} />
+          </label>
           <SeletorDeCor
             valor={formulario.tema.corTexto}
             opcoes={["#0b1533", "#3f4658", "#6b7280", "#ffffff", "#e7e9f2", "#a4adc4"]}
             padraoQuandoVazio={formulario.tema.temaEscuro ? "#eef1fb" : "#0b1533"}
             onMudar={(c) => atualizarTema({ corTexto: c })}
           />
-          <p className="hint" style={{ marginTop: 6 }}>
-            Em &quot;A&quot; (automático) o texto segue o tema. Escolha uma cor quando o fundo pedir:
-            fundo escuro com tema claro deixava texto preto sobre preto, sem jeito de corrigir.
-          </p>
         </div>
         <CampoImagem
           rotulo="Logo"
@@ -1985,13 +1936,12 @@ function PainelDesign({
             </div>
           }
         />
-        <CampoImagem
-          rotulo={traduzir("Imagem de fundo")}
-          tipo="fundo"
-          formularioId={formulario.id}
-          url={formulario.tema.imagemFundoUrl}
-          onMudar={(url, arquivo) => atualizarTema({ imagemFundoUrl: url, fundoArquivo: arquivo })}
-        />
+        {/* A IMAGEM DE FUNDO SAIU, a pedido da Thaynara: "a gente não usa mais imagem de fundo".
+            Ela ficava ATRÁS do cartão branco das perguntas — ou não aparecia, ou brigava com o
+            que importa ler —, e fazia quem responde (quase sempre no celular) baixar mais um
+            arquivo pesado pra ver uma borda colorida. Logo e banner continuam.
+            O campo segue no banco: formulário que já tem uma imagem gravada não perde nada, ela
+            só deixa de ser oferecida. Ver `FormularioPublico.tsx`. */}
         <div className="field">
           <label>{traduzir("Layout")}</label>
           <div className="filters-row" style={{ margin: 0 }}>
@@ -2023,14 +1973,17 @@ function PainelDesign({
           </div>
         </div>
         <div className="field">
-          <label>{traduzir("Como quem responde vê")}</label>
+          <label>
+            {traduzir("Como mostrar")}
+            <Ajuda texto={traduzir("Formulário completo: tudo numa página, a pessoa rola. Uma pergunta por vez: uma por tela, com a barra de progresso.")} />
+          </label>
           <div className="filters-row" style={{ margin: 0 }}>
             <button
               type="button"
               className={`fchip${formulario.tema.exibicao === "uma-por-vez" ? "" : " active"}`}
               onClick={() => atualizarTema({ exibicao: "completo" })}
             >
-              {traduzir("Página inteira")}
+              {traduzir("Formulário completo")}
             </button>
             <button
               type="button"
@@ -2042,52 +1995,54 @@ function PainelDesign({
           </div>
         </div>
         {/*
-          * O QUE APARECE PRA QUEM RESPONDE.
+          * O QUE APARECE PRA QUEM RESPONDE: UMA PERGUNTA POR LINHA.
           *
-          * Os quatro só ESCONDEM: sem valor gravado, tudo aparece — que é como estão os
-          * formulários já publicados. Por isso o estado ligado é `!== false`, e não `=== true`:
-          * formulário antigo não pode mudar de cara sozinho só porque a opção passou a existir.
+          * Eram quatro chips numa fileira só, cada um ligando e desligando no próprio clique. Em
+          * cima deles, um rótulo genérico ("Mostrar pra quem responde"). Daí não dava pra saber
+          * duas coisas que importam: o que cada chip controla, e se ele está LIGADO ou se é só o
+          * que está em foco. "Mostrar / Esconder" responde as duas de uma vez.
+          *
+          * As opções só ESCONDEM: sem valor gravado, tudo aparece — que é como estão os
+          * formulários já publicados. Por isso `mostraX(tema)` responde `!== false`, e não
+          * `=== true`: formulário antigo não muda de cara sozinho porque a opção passou a existir.
           */}
-        <div className="field">
-          <label>{traduzir("Mostrar pra quem responde")}</label>
-          <div className="filters-row" style={{ margin: 0, flexWrap: "wrap" }}>
-            <button
-              type="button"
-              className={`fchip${formulario.tema.mostrarNome !== false ? " active" : ""}`}
-              onClick={() => atualizarTema({ mostrarNome: formulario.tema.mostrarNome === false })}
-            >
-              {traduzir("Nome do formulário")}
-            </button>
-            <button
-              type="button"
-              className={`fchip${formulario.tema.mostrarTitulo !== false ? " active" : ""}`}
-              onClick={() => atualizarTema({ mostrarTitulo: formulario.tema.mostrarTitulo === false })}
-            >
-              {traduzir("Título da página")}
-            </button>
-            <button
-              type="button"
-              className={`fchip${formulario.tema.mostrarPaginas !== false ? " active" : ""}`}
-              onClick={() => atualizarTema({ mostrarPaginas: formulario.tema.mostrarPaginas === false })}
-            >
-              {traduzir("Contagem de páginas")}
-            </button>
-            <button
-              type="button"
-              className={`fchip${formulario.tema.numerarPerguntas !== false ? " active" : ""}`}
-              onClick={() => atualizarTema({ numerarPerguntas: formulario.tema.numerarPerguntas === false })}
-            >
-              {traduzir("Numerar perguntas")}
-            </button>
-          </div>
-        </div>
+        <ParMostrarEsconder
+          rotulo={traduzir("Nome do formulário na tela de quem responde")}
+          ajuda={traduzir("Esconda quando o banner ou a primeira pergunta já disserem do que se trata. Na sua lista de formulários o nome continua igual.")}
+          ligado={mostraNome(formulario.tema)}
+          aoMudar={(v) => atualizarTema({ mostrarNome: v })}
+          traduzir={traduzir}
+        />
+        <ParMostrarEsconder
+          rotulo={traduzir("Título acima das perguntas")}
+          ajuda={traduzir("O título que você escreveu pro formulário. Num formulário curto ele costuma repetir o nome.")}
+          ligado={mostraTitulo(formulario.tema)}
+          aoMudar={(v) => atualizarTema({ mostrarTitulo: v })}
+          traduzir={traduzir}
+        />
+        <ParMostrarEsconder
+          rotulo={traduzir("Barra de progresso")}
+          ajuda={traduzir("O “1 de 8” com a barrinha, no modo uma pergunta por vez.")}
+          ligado={mostraPaginas(formulario.tema)}
+          aoMudar={(v) => atualizarTema({ mostrarPaginas: v })}
+          traduzir={traduzir}
+        />
+        <ParMostrarEsconder
+          rotulo={traduzir("Número antes da pergunta")}
+          ajuda={traduzir("O “1.”, “2.” na frente de cada enunciado. Em formulário curto costuma pesar mais do que ajudar.")}
+          ligado={numeraPerguntas(formulario.tema)}
+          aoMudar={(v) => atualizarTema({ numerarPerguntas: v })}
+          traduzir={traduzir}
+        />
       </div>
 
       <div className="card" style={{ padding: 17 }}>
         <div className="panel-h" style={{ padding: 0, marginBottom: 12 }}>
-          <h4>{traduzir("Integrações")}</h4>
+          <h4>
+            {traduzir("Integrações")}
+            <Ajuda texto={traduzir("Toda resposta enviada vira um negócio no funil e na etapa escolhidos, e dispara as automações com gatilho “Formulário preenchido”.")} />
+          </h4>
         </div>
-        <p className="hint" style={{ marginTop: 0 }}>{traduzir("Toda resposta enviada vira automaticamente um negócio no funil/etapa escolhidos e dispara automações com gatilho &quot;Formulário preenchido&quot;.")}</p>
         <div className="field">
           <label>{traduzir("Funil de destino")}</label>
           <select
@@ -2164,11 +2119,11 @@ function PainelDesign({
         */}
       <div className="card cartao-anuncios" style={{ padding: 17 }}>
         <div className="panel-h" style={{ padding: 0, marginBottom: 12 }}>
-          <h4>{traduzir("Anúncios")}</h4>
+          <h4>
+            {traduzir("Anúncios")}
+            <Ajuda texto={traduzir("Cole os ids da conta de anúncios da empresa. Quem enviar o formulário é marcado como Lead, e a campanha aprende a buscar gente parecida.")} />
+          </h4>
         </div>
-        <p className="hint" style={{ marginTop: 0 }}>
-          {traduzir("Cole os ids da conta de anúncios da empresa. Quem enviar o formulário é marcado como Lead, e a campanha aprende a buscar gente parecida.")}
-        </p>
         <CampoDeRastreio
           rotulo={traduzir("Pixel do Meta")}
           exemplo="Ex.: 1234567890123456"
@@ -2191,10 +2146,13 @@ function PainelDesign({
 
       <div className="card" style={{ padding: 17 }}>
         <div className="panel-h" style={{ padding: 0, marginBottom: 12 }}>
-          <h4>{traduzir("Histórico de versões")}</h4>
+          <h4>
+            {traduzir("Histórico de versões")}
+            <Ajuda texto={traduzir("Toda vez que você publicar o formulário, uma versão fica salva aqui. Dá pra voltar pra ela depois.")} />
+          </h4>
         </div>
         {formulario.versoes.length === 0 ? (
-          <p className="hint" style={{ marginTop: 0 }}>{traduzir("Toda vez que você publicar o formulário, uma versão fica salva aqui. Dá pra voltar pra ela depois.")}</p>
+          <p className="hint" style={{ marginTop: 0 }}>{traduzir("Nenhuma versão ainda.")}</p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {[...formulario.versoes].reverse().map((v) => (

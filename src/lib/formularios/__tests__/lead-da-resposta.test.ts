@@ -93,6 +93,19 @@ describe("o consentimento", () => {
     }
   });
 
+  it("o campo do TIPO consentimento vale sozinho, sem mapeamento marcado", () => {
+    /*
+     * O consentimento nasceu como mapeamento (um sim/não marcado à mão no painel do campo) e
+     * agora também é um tipo de campo, que é como se pede por ele. Quem arrasta "Consentimento
+     * de WhatsApp" pro formulário não tem por que descobrir depois que faltava marcar um
+     * seletor escondido — e descobrir isso significa ter deixado de registrar a autorização de
+     * todo mundo que respondeu até ali.
+     */
+    const porTipo = lerLeadDaResposta(pagina([{ id: "c", tipo: "consentimento_whatsapp" }]), { c: "sim" });
+    expect(porTipo.consentiu).toBe(true);
+    expect(lerLeadDaResposta(pagina([{ id: "c", tipo: "consentimento_whatsapp" }]), { c: "" }).consentiu).toBe(false);
+  });
+
   it("SEM a pergunta no formulário, é não", () => {
     /*
      * E não "não se sabe". Esta mensagem parte do CRM pra quem NUNCA escreveu, por um número que

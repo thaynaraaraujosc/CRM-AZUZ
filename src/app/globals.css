@@ -29759,3 +29759,103 @@ td.trafego-col-crm:first-of-type {
   align-items: center;
   gap: 6px;
 }
+
+/* ============================================================================
+   O MENU "ADICIONAR CAMPO" — cada tipo é um botão, não uma linha de texto
+   ----------------------------------------------------------------------------
+   Eram quarenta nomes empilhados em texto preto, com o nome da categoria no
+   mesmo cinza do resto: nada ali dizia que era pra clicar. Em cor sólida dá
+   pra escolher de longe. As cores são as da casa — a faixa no dourado da ação,
+   o botão no marinho da marca —, não as do produto de onde veio a ideia.
+   ========================================================================== */
+.form-tipos {
+  padding: 10px;
+}
+
+.form-tipos-grupo + .form-tipos-grupo {
+  margin-top: 12px;
+}
+
+.form-tipos-titulo {
+  margin: 0 0 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--acao);
+  color: var(--acao-texto);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.form-tipos-botao {
+  display: block;
+  width: 100%;
+  margin-bottom: 4px;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--blue);
+  color: #ffffff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--transition-fast), transform var(--transition-fast);
+}
+
+.form-tipos-botao:last-child {
+  margin-bottom: 0;
+}
+
+.form-tipos-botao:hover {
+  background: var(--acao);
+  color: var(--acao-texto);
+}
+
+.form-tipos-botao:focus-visible {
+  outline: 2px solid var(--acao);
+  outline-offset: 2px;
+}
+
+/* No tema escuro o marinho da marca encosta no fundo: o botão vira a superfície elevada. */
+:root[data-theme="dark"] .form-tipos-botao {
+  background: var(--surface-elevated);
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+/* ============================================================================
+   CONSENTIMENTO DE WHATSAPP — a caixa que autoriza a mensagem
+   ----------------------------------------------------------------------------
+   Sem enunciado por cima: a frase que a pessoa aceita é o próprio rótulo, ao
+   lado da caixa. Ver `components/campo-resposta.tsx`.
+   ========================================================================== */
+.form-consentimento {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.45;
+  /* A cor do TEXTO DO CARTÃO (`--ink` é redefinido dentro do formulário, claro ou escuro): sem
+     isto a frase herdava a cor da tela em volta e sumia em cima do cartão. */
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.form-consentimento input[type="checkbox"] {
+  flex: none;
+  margin-top: 2px;
+}
+
+.form-consentimento-texto {
+  min-width: 0;
+}
+
+/* ----------------------------------------------------------------------------
+   SEM A COLUNA DE PÁGINAS, o construtor é o formulário e o painel do campo.
+   -------------------------------------------------------------------------- */
+.form-builder-4areas.sem-paginas {
+  grid-template-columns: minmax(0, 1fr) 320px;
+}

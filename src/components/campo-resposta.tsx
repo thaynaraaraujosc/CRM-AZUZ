@@ -593,6 +593,20 @@ export function CampoResposta({
     }
     case "tags":
       return <CampoTags interativo={interativo} valor={valor} onMudarValor={onMudarValor} placeholder={pergunta.placeholder} />;
+    case "consentimento_whatsapp":
+      // Versão enxuta, pra quem desenha o campo fora do bloco com enunciado. No formulário o
+      // desenho é o de `PerguntaVisualizacao`: a frase é o próprio rótulo, ao lado da caixa.
+      return (
+        <label className="form-consentimento">
+          <input
+            type="checkbox"
+            disabled={!interativo}
+            checked={interativo ? valor === "sim" : false}
+            onChange={(e) => onMudarValor?.(e.target.checked ? "sim" : "")}
+          />
+          <span className="form-consentimento-texto">{pergunta.rotulo}</span>
+        </label>
+      );
     case "sim_nao":
       return (
         <div className="filters-row" style={{ margin: 0 }}>
@@ -744,6 +758,34 @@ export function PerguntaVisualizacao({
     return (
       <div className="form-pergunta-enunciado-bloco" style={estiloBloco}>
         <CampoResposta pergunta={pergunta} interativo={interativo} valor={valor} onMudarValor={onMudarValor} />
+      </div>
+    );
+  }
+
+  /*
+    A CAIXA DE CONSENTIMENTO NÃO TEM ENUNCIADO ACIMA.
+
+    A frase que a pessoa aceita É o rótulo, escrita ao lado da caixa. Um título "Consentimento"
+    em cima e a frase embaixo seriam dois textos pra uma decisão só — e é a frase que a pessoa lê,
+    e que fica gravada como comprovante. Nasce desmarcada; marcada, o valor guardado é "sim".
+  */
+  if (pergunta.tipo === "consentimento_whatsapp") {
+    return (
+      <div className="form-pergunta-enunciado-bloco form-consentimento-bloco" style={estiloBloco}>
+        <label className="form-consentimento">
+          <input
+            type="checkbox"
+            disabled={!interativo || pergunta.somenteLeitura}
+            checked={interativo ? valor === "sim" : false}
+            onChange={(e) => onMudarValor?.(e.target.checked ? "sim" : "")}
+          />
+          <span className="form-consentimento-texto">
+            {pergunta.rotulo || "Aceito receber mensagens pelo WhatsApp."}
+            {pergunta.obrigatoria ? <span className="form-pergunta-asterisco"> *</span> : null}
+          </span>
+        </label>
+        {pergunta.descricao ? <p className="form-pergunta-dica">{pergunta.descricao}</p> : null}
+        {erro ? <p className="form-pergunta-erro">{erro}</p> : null}
       </div>
     );
   }

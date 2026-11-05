@@ -2698,4 +2698,26 @@ export const TRADUCOES_EN: Record<string, string> = {
   "Link da reunião": "Meeting link",
   "Do contato": "From the contact",
   "Da próxima reunião": "From the next meeting",
+
+  /* Formulários: o construtor sem páginas, os blocos de "Mostrar / Esconder" e o consentimento. */
+  "Frase de consentimento": "Consent sentence",
+  "Consentimento de WhatsApp": "WhatsApp consent",
+  "Aceito receber mensagens pelo WhatsApp.": "I agree to receive messages on WhatsApp.",
+  "Como mostrar": "How to show it",
+  "Formulário completo": "Whole form",
+  "Esconder": "Hide",
+  "Texto do botão final": "Final button text",
+  "Nome do formulário na tela de quem responde": "Form name on the respondent's screen",
+  "Título acima das perguntas": "Title above the questions",
+  "Barra de progresso": "Progress bar",
+  "Número antes da pergunta": "Number before the question",
+  "Nenhuma versão ainda.": "No versions yet.",
+  "Formulário em branco: adicione o primeiro campo abaixo.": "Empty form: add the first field below.",
+  "Nada selecionado: configurando o cabeçalho do formulário.": "Nothing selected: editing the form header.",
+
+  /* Ficha do contato */
+  "Contato há": "Contact for",
+  "campos ainda em branco": "fields still blank",
+  "1 campo ainda em branco": "1 field still blank",
+  "Preencher": "Fill in",
 };

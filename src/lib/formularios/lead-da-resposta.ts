@@ -51,7 +51,21 @@ export function lerLeadDaResposta(paginas: unknown, valores: Record<string, stri
       if (!valor) continue;
 
       if (pergunta.tipo === "agendamento") reuniaoBruta = valor;
-      const mapeamento = typeof pergunta.mapeamentoCrm === "string" ? pergunta.mapeamentoCrm : null;
+      /*
+       * O TIPO "CONSENTIMENTO DE WHATSAPP" VALE COMO O MAPEAMENTO, sem ninguém precisar escolhê-lo.
+       *
+       * O consentimento nasceu aqui como MAPEAMENTO: qualquer sim/não podia ser marcado como
+       * "Consentimento de WhatsApp" no painel do campo. Agora ele também é um TIPO de campo, que
+       * é como se pede por ele ("quero a caixa de consentimento"), e quem arrasta esse campo não
+       * tem por que descobrir que ainda falta marcar um seletor escondido pra ele valer. O tipo
+       * responde pelo mapeamento; marcar o mapeamento à mão continua funcionando.
+       */
+      const mapeamento =
+        pergunta.tipo === "consentimento_whatsapp"
+          ? "consentimentoWhatsApp"
+          : typeof pergunta.mapeamentoCrm === "string"
+            ? pergunta.mapeamentoCrm
+            : null;
       // O PRIMEIRO campo de cada mapeamento vence: dois campos mapeados pro mesmo lugar é erro de
       // quem montou o formulário, e trocar o valor no meio do caminho esconderia esse erro.
       if (mapeamento && !porMapeamento.has(mapeamento)) porMapeamento.set(mapeamento, valor);
