@@ -23,7 +23,7 @@ const MARGEM = 12;
  * que se desloca: o topo dela é o centro da âncora menos esta distância. Era "topo da âncora menos
  * 10", que acertava por acaso num botão de 20px e errava em tudo que fosse mais alto.
  */
-const ALTURA_DO_FIO = 28;
+export const ALTURA_DO_FIO = 28;
 
 export type AncoraDaLista = { top: number; left: number; right: number; bottom: number };
 

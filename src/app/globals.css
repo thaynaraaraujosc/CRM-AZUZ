@@ -25597,32 +25597,36 @@ td.trafego-col-crm:first-of-type {
  */
 .pp-ponte {
   position: fixed;
+  inset: 0;
   z-index: 29;
-  height: 1px;
-  background: var(--line-strong);
+  width: 100vw;
+  height: 100vh;
+  /* A tela inteira é o quadro do desenho, e o traço é desenhado em pixels de tela — as mesmas
+     coordenadas da caixa. Nada aqui recebe clique: é risco, não controle. */
   pointer-events: none;
+  overflow: visible;
 }
 
-.pp-ponte-bolinha {
-  position: absolute;
-  top: -2.5px;
-  left: -3px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--line-strong);
+.pp-ponte path {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 1.5;
+}
+
+.pp-ponte circle {
+  fill: var(--line-strong);
 }
 
 /* A ponte que sai da pastilha "Iniciar robô" tem a cor dela, como a ligação que o canvas desenha
-   entre o começo e o primeiro bloco. Um pouco mais grossa: 1px de cor clara some no branco. */
-.pp-ponte-inicio {
-  height: 2px;
-  background: var(--success);
+   entre o começo e o primeiro bloco. Um pouco mais grossa: traço fino de cor clara some no
+   branco. */
+.pp-ponte-inicio path {
+  stroke: var(--success);
+  stroke-width: 2;
 }
 
-.pp-ponte-inicio .pp-ponte-bolinha {
-  top: -2px;
-  background: var(--success);
+.pp-ponte-inicio circle {
+  fill: var(--success);
 }
 
 /*

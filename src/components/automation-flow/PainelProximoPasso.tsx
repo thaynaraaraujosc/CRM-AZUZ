@@ -16,7 +16,12 @@ import {
 import { BLOCOS_DISPONIVEIS, GRUPOS_BIBLIOTECA } from "@/lib/automation-flow/blocos";
 import { blocoApareceNaArea, blocoValeNaArea, type AreaAutomacao } from "@/lib/canais/capacidades";
 import { separarPrimeirosPassos, sugestoesApos } from "@/lib/automation-flow/sugestoes";
-import { LARGURA_DA_LISTA, type AncoraDaLista, type PosicaoDaLista } from "@/lib/automation-flow/posicao-da-lista";
+import {
+  ALTURA_DO_FIO,
+  LARGURA_DA_LISTA,
+  type AncoraDaLista,
+  type PosicaoDaLista,
+} from "@/lib/automation-flow/posicao-da-lista";
 import type { FlowNodeCategory, FlowNodeType } from "@/lib/automation-flow/types";
 import { useIdioma } from "@/lib/idioma-context";
 
@@ -205,25 +210,35 @@ export function PainelProximoPasso({
           fixed`), então não há conversão no meio pra sair errada.
         */}
         {posicao && ancora ? (
-          <span
-            className={`pp-ponte${fioVerde ? " pp-ponte-inicio" : ""}`}
-            aria-hidden="true"
-            style={
-              posicao.fioNaDireita
-                ? {
-                    left: posicao.left + LARGURA_DA_LISTA,
-                    top: (ancora.top + ancora.bottom) / 2,
-                    width: Math.max(0, ancora.left - (posicao.left + LARGURA_DA_LISTA)),
-                  }
-                : {
-                    left: ancora.right,
-                    top: (ancora.top + ancora.bottom) / 2,
-                    width: Math.max(0, posicao.left - ancora.right),
-                  }
-            }
-          >
-            <i className="pp-ponte-bolinha" />
-          </span>
+          (() => {
+            /*
+             * A PONTE ACOMPANHA A CAIXA, inclusive quando ela é ARRASTADA.
+             *
+             * Era um retângulo horizontal: dava conta da folga, mas só na horizontal e só no lugar
+             * onde a caixa nasceu. Arrastando a caixa pra baixo, o traço ficava parado apontando
+             * pro vazio. Uma curva em SVG resolve os dois: ela liga dois PONTOS, em qualquer
+             * direção, e os dois pontos são calculados com o deslocamento do arraste junto.
+             *
+             * O desenho é o mesmo das ligações do canvas: sai na horizontal de quem chamou,
+             * chega na horizontal na caixa, e curva no meio.
+             */
+            const x1 = posicao.fioNaDireita ? ancora.left : ancora.right;
+            const y1 = (ancora.top + ancora.bottom) / 2;
+            const x2 = posicao.fioNaDireita
+              ? posicao.left + arrastado.x + LARGURA_DA_LISTA
+              : posicao.left + arrastado.x;
+            const y2 = posicao.top + arrastado.y + ALTURA_DO_FIO;
+            const curva = Math.max(24, Math.abs(x2 - x1) / 2);
+            const sentido = posicao.fioNaDireita ? -1 : 1;
+            return (
+              <svg className={`pp-ponte${fioVerde ? " pp-ponte-inicio" : ""}`} aria-hidden="true">
+                <path
+                  d={`M ${x1} ${y1} C ${x1 + curva * sentido} ${y1}, ${x2 - curva * sentido} ${y2}, ${x2} ${y2}`}
+                />
+                <circle cx={x1} cy={y1} r={3.5} />
+              </svg>
+            );
+          })()
         ) : posicao ? (
           <span
             className={`pp-fio${posicao.fioNaDireita ? " pp-fio-direita" : ""}${fioVerde ? " pp-fio-inicio" : ""}`}
