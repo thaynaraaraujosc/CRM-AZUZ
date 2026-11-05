@@ -833,15 +833,71 @@ export function FilterBar({
  * É um `<button>` e não um `<span>` de propósito: assim o teclado chega nele, e quem usa leitor
  * de tela ouve o texto pelo `aria-label` em vez de passar direto por um enfeite.
  */
+/**
+ * O "?" que explica um campo, com o balão DESENHADO FORA do painel.
+ *
+ * O balão era um filho posicionado dentro do próprio campo. Num painel estreito e com rolagem —
+ * que é exatamente onde ele mais aparece — a caixa de texto era cortada pelas bordas do painel:
+ * sobrava meia frase, e metade dela ficava escondida atrás da barra de abas.
+ *
+ * Agora ele sai por um portal, em coordenadas de TELA: não existe mais caixa que o corte. A
+ * posição é calculada no momento de abrir — centrado no "?", aparado às bordas da janela, e
+ * virado pra baixo quando não há espaço em cima.
+ *
+ * Abre no passar do mouse, no foco pelo teclado e no CLIQUE: no celular e no trackpad sem hover,
+ * passar o mouse não existe, e sem o clique a explicação simplesmente não teria como aparecer.
+ */
 export function Ajuda({ texto }: { texto: string }) {
+  const alvoRef = useRef<HTMLButtonElement>(null);
+  const [balao, setBalao] = useState<{ top: number; left: number; largura: number; abaixo: boolean } | null>(null);
+
+  function abrir() {
+    const alvo = alvoRef.current?.getBoundingClientRect();
+    if (!alvo) return;
+    const margem = 12;
+    const largura = Math.min(300, window.innerWidth - margem * 2);
+    // Centrado no "?", mas sem passar das beiradas da janela.
+    const left = Math.min(
+      Math.max(margem, alvo.left + alvo.width / 2 - largura / 2),
+      window.innerWidth - margem - largura,
+    );
+    // Em cima, que é onde se espera; embaixo quando o "?" está perto do topo da tela e o balão
+    // sairia pra fora dela.
+    const abaixo = alvo.top < 160;
+    setBalao({ top: abaixo ? alvo.bottom + 8 : alvo.top - 8, left, largura, abaixo });
+  }
+
   return (
     <span className="ajuda">
-      <button type="button" className="ajuda-alvo" aria-label={texto}>
+      <button
+        ref={alvoRef}
+        type="button"
+        className="ajuda-alvo"
+        aria-label={texto}
+        onMouseEnter={abrir}
+        onMouseLeave={() => setBalao(null)}
+        onFocus={abrir}
+        onBlur={() => setBalao(null)}
+        onClick={(e) => {
+          e.preventDefault();
+          if (balao) setBalao(null);
+          else abrir();
+        }}
+      >
         ?
       </button>
-      <span className="ajuda-balao" role="tooltip">
-        {texto}
-      </span>
+      {balao && typeof document !== "undefined"
+        ? createPortal(
+            <span
+              className={`ajuda-balao${balao.abaixo ? " abaixo" : ""}`}
+              role="tooltip"
+              style={{ top: balao.top, left: balao.left, width: balao.largura }}
+            >
+              {texto}
+            </span>,
+            document.body,
+          )
+        : null}
     </span>
   );
 }

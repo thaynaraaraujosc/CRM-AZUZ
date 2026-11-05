@@ -25530,6 +25530,13 @@ td.trafego-col-crm:first-of-type {
   right: auto;
   transform: none;
   max-height: 430px;
+  /* Arrasta por qualquer ponto (ver `PainelProximoPasso`): o cursor avisa isso no cartão inteiro,
+     e não só na faixa do título. Campo e botões trazem o cursor deles por cima. */
+  cursor: grab;
+}
+
+.pp-caixa.pp-caixa-ancorada:active {
+  cursor: grabbing;
 }
 
 /*
@@ -27028,15 +27035,19 @@ td.trafego-col-crm:first-of-type {
 
 /* `visibility` e não `display`: assim a transição funciona, e o balão continua fora da árvore de
    acessibilidade enquanto está escondido. */
+/*
+ * O BALÃO VIVE NO `body`, em coordenadas de tela (ver `Ajuda`, em ui.tsx).
+ *
+ * Era `position: absolute` dentro do campo, e dentro de um painel estreito com rolagem ele era
+ * CORTADO pelas bordas: sobrava meia frase. Fora de qualquer caixa, não há o que o corte.
+ *
+ * Ele só existe no DOM enquanto está aberto, então não precisa mais de `visibility`/`opacity`
+ * pra se esconder.
+ */
 .ajuda-balao {
-  position: absolute;
-  bottom: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 80;
-  width: max-content;
-  max-width: 280px;
-  padding: 8px 10px;
+  position: fixed;
+  z-index: 400;
+  padding: 9px 11px;
   border-radius: var(--radius-2);
   background: var(--navy-marca);
   color: #fff;
@@ -27045,17 +27056,16 @@ td.trafego-col-crm:first-of-type {
   line-height: 1.45;
   text-align: left;
   white-space: normal;
-  box-shadow: var(--shadow-md);
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity var(--transition-fast), visibility var(--transition-fast);
+  box-shadow: var(--shadow-lg);
   pointer-events: none;
+  /* `top` é a borda de BAIXO do balão quando ele abre pra cima: o deslocamento é o que faz a
+     conta de posição não precisar saber a altura dele, que só o navegador sabe. */
+  transform: translateY(-100%);
+  animation: modal-fade-in var(--transition-fast);
 }
 
-.ajuda:hover .ajuda-balao,
-.ajuda-alvo:focus-visible + .ajuda-balao {
-  opacity: 1;
-  visibility: visible;
+.ajuda-balao.abaixo {
+  transform: none;
 }
 
 /* ---------------- O resumo do grupo fechado ----------------

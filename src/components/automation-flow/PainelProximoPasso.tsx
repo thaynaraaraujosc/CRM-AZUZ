@@ -134,7 +134,16 @@ export function PainelProximoPasso({
    * nascer colada nele, em vez de herdar o arrasto da vez passada.
    */
   const [arrastado, setArrastado] = useState({ x: 0, y: 0 });
-  const arrasteRef = useRef<{ x: number; y: number; baseX: number; baseY: number } | null>(null);
+  const arrasteRef = useRef<{
+    x: number;
+    y: number;
+    baseX: number;
+    baseY: number;
+    /** Já passou do limiar? Antes disso o gesto ainda é um clique. */
+    arrastou: boolean;
+  } | null>(null);
+  /** Acabou de arrastar: serve pra engolir o clique que vem logo depois de soltar. */
+  const arrastouAgoraRef = useRef(false);
   const termo = busca.trim().toLowerCase();
 
   const sugeridos = useMemo(
@@ -195,6 +204,55 @@ export function PainelProximoPasso({
         style={estilo}
         role="dialog"
         aria-label={traduzir("Adicionar próximo passo")}
+        /*
+         * ARRASTA POR QUALQUER PONTO DO CARTÃO, e não só pela faixa do título.
+         *
+         * O campo de busca fica de fora, porque ali o arraste é pra selecionar texto. O resto —
+         * inclusive as linhas da lista, que são botões — arrasta com LIMIAR: só vira arraste
+         * depois de 4px de movimento, e antes disso continua sendo clique. É o que permite as
+         * duas coisas no mesmo lugar sem a pessoa precisar saber de onde pegar.
+         */
+        onPointerDown={
+          posicao
+            ? (e) => {
+                const alvo = e.target as HTMLElement;
+                if (alvo.closest("input, textarea")) return;
+                e.currentTarget.setPointerCapture(e.pointerId);
+                arrasteRef.current = {
+                  x: e.clientX,
+                  y: e.clientY,
+                  baseX: arrastado.x,
+                  baseY: arrastado.y,
+                  arrastou: false,
+                };
+              }
+            : undefined
+        }
+        onPointerMove={(e) => {
+          const inicio = arrasteRef.current;
+          if (!inicio) return;
+          const dx = e.clientX - inicio.x;
+          const dy = e.clientY - inicio.y;
+          if (!inicio.arrastou && Math.abs(dx) < 4 && Math.abs(dy) < 4) return;
+          inicio.arrastou = true;
+          setArrastado({ x: inicio.baseX + dx, y: inicio.baseY + dy });
+        }}
+        onPointerUp={(e) => {
+          const inicio = arrasteRef.current;
+          arrasteRef.current = null;
+          // Soltar depois de arrastar não pode CLICAR no que estava embaixo do dedo: sem isto,
+          // arrastar pegando numa linha da lista criaria o bloco daquela linha ao soltar.
+          if (inicio?.arrastou) {
+            arrastouAgoraRef.current = true;
+            e.preventDefault();
+          }
+        }}
+        onClickCapture={(e) => {
+          if (!arrastouAgoraRef.current) return;
+          arrastouAgoraRef.current = false;
+          e.preventDefault();
+          e.stopPropagation();
+        }}
       >
         {/*
           A LINHA QUE LIGA A CAIXA A QUEM A ABRIU — o "+" de uma saída, o bloco do menu de
@@ -248,28 +306,7 @@ export function PainelProximoPasso({
 
         {/* O título estava só no `aria-label`: a caixa abria com um campo de busca e nenhuma
             palavra dizendo o que se está escolhendo. A referência abre com ele escrito. */}
-        <div
-          className={`pp-titulo${posicao ? " pp-titulo-arrastavel" : ""}`}
-          onPointerDown={
-            posicao
-              ? (e) => {
-                  e.currentTarget.setPointerCapture(e.pointerId);
-                  arrasteRef.current = { x: e.clientX, y: e.clientY, baseX: arrastado.x, baseY: arrastado.y };
-                }
-              : undefined
-          }
-          onPointerMove={(e) => {
-            const inicio = arrasteRef.current;
-            if (!inicio) return;
-            setArrastado({
-              x: inicio.baseX + (e.clientX - inicio.x),
-              y: inicio.baseY + (e.clientY - inicio.y),
-            });
-          }}
-          onPointerUp={() => {
-            arrasteRef.current = null;
-          }}
-        >
+        <div className={`pp-titulo${posicao ? " pp-titulo-arrastavel" : ""}`}>
           <strong>{traduzir("Adicionar próximo passo")}</strong>
           {rotuloDaSaida ? <span>depois de &quot;{rotuloDaSaida}&quot;</span> : null}
         </div>
