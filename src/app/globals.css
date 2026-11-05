@@ -29878,3 +29878,316 @@ td.trafego-col-crm:first-of-type {
 .form-builder-4areas.sem-paginas {
   grid-template-columns: minmax(0, 1fr) 320px;
 }
+
+/* ============================================================================
+   PAINEL DO SUPER-ADMIN — os quatro números e o gráfico
+   ----------------------------------------------------------------------------
+   Estilos próprios, e não o `.kpi` do resto do CRM, por uma razão de medida:
+   dentro de `.admin-view` o cartão compartilhado perde o respiro lateral
+   (`.admin-view .card { padding-inline: 0 }`, que existe pra as tabelas do
+   admin irem até a borda) e o texto encosta na beirada. Era o que estava na
+   tela: quatro caixas de 126px de altura, rótulo colado na esquerda, um vazio
+   embaixo e um gráfico flutuando no meio de um quadro branco.
+   Ver `app/admin/page.tsx`.
+   ========================================================================== */
+.painel-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  padding: 0 var(--admin-gutter) 16px;
+}
+
+.painel-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 16px 15px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-elevated);
+  box-shadow: var(--shadow-xs);
+}
+
+.painel-kpi-rotulo {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.painel-kpi-valor {
+  margin: 1px 0 0;
+  font-size: 28px;
+  font-weight: 680;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  /* Figuras proporcionais, e não `tabular-nums`: num número solto e grande, dar a todo dígito a
+     largura de um "0" deixa "121" frouxo. Tabular é pra coluna de números que precisa alinhar. */
+  font-variant-numeric: proportional-nums;
+}
+
+.painel-kpi-sub {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+/* ---- o gráfico ---- */
+.painel-grafico {
+  padding: 16px 18px 14px;
+}
+
+.painel-grafico-topo {
+  padding: 0;
+  margin-bottom: 14px;
+  align-items: baseline;
+}
+
+.painel-grafico-nota {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.painel-plot {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+}
+
+/* O eixo distribui as marcas na MESMA altura da área de desenho, pra cada número cair em cima da
+   sua linha de grade. `space-between` com a última marca em 0 é o que alinha os dois. */
+.painel-eixo {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 132px;
+  padding-bottom: 22px; /* a faixa dos meses, embaixo da área */
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+  text-align: right;
+  min-width: 14px;
+}
+
+.painel-eixo span {
+  /* Meio traço pra cima: o número fica centrado NA linha, não apoiado nela. */
+  transform: translateY(-50%);
+}
+
+.painel-eixo span:first-child {
+  transform: none;
+}
+
+.painel-eixo span:last-child {
+  transform: translateY(-50%);
+}
+
+.painel-area {
+  position: relative;
+  height: 132px;
+  padding-bottom: 22px;
+}
+
+.painel-grade {
+  position: absolute;
+  inset: 0 0 22px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+/* Traço contínuo de 1px, um passo acima da superfície. Pontilhado lê como "meta" ou "projeção"
+   quando é só grade. */
+.painel-grade i {
+  display: block;
+  height: 1px;
+  background: var(--line-soft);
+}
+
+.painel-grade i:last-child {
+  background: var(--line);
+}
+
+.painel-colunas {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.painel-coluna {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.painel-coluna-trilho {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.painel-coluna-valor {
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1;
+  /* Texto nunca veste a cor do dado: quem carrega a identidade é a barra ao lado. */
+  color: var(--ink);
+}
+
+/* Barra fina, no máximo 24px: a barra nunca preenche a faixa — o que sobra é ar. Canto de 4px só
+   na ponta de cima; embaixo ela é reta, porque nasce da linha de base. */
+.painel-barra {
+  width: 100%;
+  max-width: 24px;
+  min-height: 3px;
+  border-radius: 4px 4px 0 0;
+  background: var(--blue);
+}
+
+.painel-coluna-mes {
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11.5px;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+/* A dica aparece no ponteiro e no foco: é ela que diz o mês por extenso e o valor dos meses
+   vazios, que não têm número impresso. */
+.painel-coluna-dica {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% - 14px);
+  transform: translate(-50%, 0);
+  padding: 5px 9px;
+  border-radius: 7px;
+  background: var(--ink);
+  color: var(--surface-elevated);
+  font-size: 11.5px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-fast);
+  z-index: 2;
+}
+
+.painel-coluna:hover .painel-coluna-dica,
+.painel-coluna:focus-within .painel-coluna-dica {
+  opacity: 1;
+}
+
+/* ---- a linha de baixo: o gráfico e a situação das contas ---- */
+.painel-linha {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
+  /* `start`, e não o `stretch` padrão: esticado, o cartão mais curto ganha um vazio embaixo do
+     tamanho da diferença — que é justamente o defeito que esta tela tinha. Cada um fica do
+     tamanho do que tem dentro. */
+  align-items: start;
+  gap: 12px;
+  padding: 0 var(--admin-gutter) 16px;
+}
+
+/* Os dois cartões desta linha já estão dentro de um container com respiro: o `margin-inline` que
+   `.admin-view .card` dá a cada cartão solto empurraria os dois pra dentro duas vezes. */
+.painel-linha > .card {
+  margin-inline: 0;
+}
+
+.painel-situacao {
+  padding: 16px 18px 15px;
+}
+
+/* Numa coluna de 280px o título e a contagem não cabem lado a lado: a contagem encostava na
+   borda. Aqui ela vai pra baixo do título. */
+.painel-situacao .painel-grafico-topo {
+  display: block;
+  margin-bottom: 12px;
+}
+
+.painel-situacao .painel-grafico-nota {
+  display: block;
+  margin-top: 2px;
+}
+
+/* Barra FINA de 8px, pontas totalmente redondas, sem linha de base: é uma figura, não um gráfico.
+   O respiro entre as partes é a superfície passando no meio (2px), nunca um contorno. */
+.painel-fatias {
+  display: flex;
+  gap: 2px;
+  height: 8px;
+  margin-bottom: 14px;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.painel-fatias > span {
+  display: block;
+  min-width: 3px;
+}
+
+.painel-situacao-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.painel-situacao-lista li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.painel-situacao-lista strong {
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.painel-ponto {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+@media (max-width: 1100px) {
+  .painel-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .painel-linha {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .painel-kpis {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
