@@ -4,6 +4,7 @@ import { CondicaoForm, novoGrupoCondicoes } from "./CondicaoForm";
 import { IconClose } from "@/components/icons";
 import type { CondicaoRamosData, RamoDeCondicao } from "@/lib/automation-flow/types";
 import { useIdioma } from "@/lib/idioma-context";
+import { Ajuda } from "@/components/ui";
 
 /**
  * O painel do bloco "Condição: regras por caminho".
@@ -60,6 +61,14 @@ export function CondicaoRamosForm({
       ))}
 
       <div className="field">
+        <label>
+          {traduzir("Ordem dos caminhos")}
+          <Ajuda
+            texto={traduzir(
+              "Vale o primeiro caminho que bater, de cima pra baixo. Quem não bater em nenhum sai por \"Nenhuma das condições\", que existe sempre e não se apaga.",
+            )}
+          />
+        </label>
         <button
           type="button"
           className="btn ghost block"
@@ -69,13 +78,6 @@ export function CondicaoRamosForm({
         >
           + {traduzir("Adicionar próxima condição")}
         </button>
-        {/* A saída padrão não se configura: ela existe sempre, e dizer isso aqui evita a procura
-            por um botão que não vai aparecer. */}
-        <p className="hint mt8">
-          {traduzir(
-            "Vale o primeiro caminho que bater, de cima pra baixo. Quem não bater em nenhum sai por \"Nenhuma das condições\", que existe sempre.",
-          )}
-        </p>
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ import type { EstadoSimulacao } from "@/lib/automacoes/simular";
 import type { AguardarData, FluxoAutomacao } from "@/lib/automation-flow/types";
 import { IconBloqueado, IconCheck, IconClose, IconErro, IconFrasco, IconPause, IconPular } from "@/components/icons";
 import { useIdioma } from "@/lib/idioma-context";
+import { Ajuda } from "@/components/ui";
 
 /** Situação de cada passo. Eram emojis: família tipográfica diferente da interface e cor fixa que
  * não acompanha o tema. */
@@ -118,11 +119,16 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
           <p className="flow-sim-banner">
             <IconFrasco width={13} height={13} aria-hidden="true" /> {traduzir("Modo de teste: nenhuma ação real será executada.")}
           </p>
+          {/* A explicação longa virou "?"; o que fica escrito é a única parte que MUDA de fluxo
+              pra fluxo e decide o teste: por qual gatilho ele vai entrar. */}
           <p className="hint">
-            Roda o mesmo motor das automações de verdade, só que sem enviar mensagem, sem mexer no
-            contato e sem gravar nada. Testa o fluxo <strong>como está salvo</strong>. Alteração
-            ainda não salva no editor não entra. Gatilho:{" "}
-            <strong>{noGatilho ? noGatilho.titulo || noGatilho.type : "nenhum"}</strong>
+            {traduzir("Gatilho")}:{" "}
+            <strong>{noGatilho ? noGatilho.titulo || noGatilho.type : traduzir("nenhum")}</strong>
+            <Ajuda
+              texto={traduzir(
+                "Roda o mesmo motor das automações de verdade, só que sem enviar mensagem, sem mexer no contato e sem gravar nada. Testa o fluxo como está SALVO: alteração ainda não salva no editor não entra.",
+              )}
+            />
           </p>
 
           {!estado ? (

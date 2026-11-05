@@ -17,6 +17,7 @@ import type { CondicaoRamosData, FlowNode as FlowNodeDominio, FlowNodeCategory }
 import { useFunis } from "@/lib/funis-context";
 import type { FlowRFNode } from "../utils";
 import { useIdioma } from "@/lib/idioma-context";
+import { Ajuda } from "@/components/ui";
 import {
   IconAlerta,
   IconAutomacoes,
@@ -466,6 +467,8 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
                       <div className="msg-canais-menu nodrag nowheel">
                         <div className="msg-canais-chave">
                           <span>{traduzir("Se você nunca conversou com a pessoa:")}</span>
+                          {/* A explicação mora no "?": frase solta dentro de um menu é parede de
+                              texto, e quem já entendeu passa por cima dela toda vez. */}
                           <label>
                             <input
                               type="checkbox"
@@ -473,12 +476,12 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
                               onChange={(e) => aoMudarCampo("iniciarSemConversa", e.target.checked)}
                             />
                             {traduzir("Tentar enviar mesmo assim")}
+                            <Ajuda
+                              texto={traduzir(
+                                "Começa a conversa pelo WhatsApp, usando o número do cadastro. Respeita o consentimento do contato.",
+                              )}
+                            />
                           </label>
-                          <em>
-                            {traduzir(
-                              "Começa a conversa pelo WhatsApp, usando o número do cadastro. Respeita o consentimento do contato.",
-                            )}
-                          </em>
                         </div>
                         <hr />
                         <label className="msg-canais-item">

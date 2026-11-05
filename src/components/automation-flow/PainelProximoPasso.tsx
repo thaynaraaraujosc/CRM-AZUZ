@@ -16,6 +16,7 @@ import {
 import { BLOCOS_DISPONIVEIS, GRUPOS_BIBLIOTECA } from "@/lib/automation-flow/blocos";
 import { blocoApareceNaArea, blocoValeNaArea, type AreaAutomacao } from "@/lib/canais/capacidades";
 import { separarPrimeirosPassos, sugestoesApos } from "@/lib/automation-flow/sugestoes";
+import { useFecharMenuDeLinha } from "@/lib/menu-de-linha";
 import {
   ALTURA_DO_FIO,
   LARGURA_DA_LISTA,
@@ -196,6 +197,18 @@ export function PainelProximoPasso({
     [corridos],
   );
 
+  /*
+   * CLICAR EM QUALQUER LUGAR DA TELA FECHA A CAIXA.
+   *
+   * Ela só tinha o "✕" e o Esc. Quem abriu sem querer — ou já escolheu olhar o fluxo em vez de
+   * escolher um passo — ficava com ela aberta por cima do desenho, e o gesto que todo mundo
+   * tenta primeiro (clicar fora) não fazia nada.
+   *
+   * O mesmo hook dos outros menus do CRM, pela mesma marcação `data-menu-de-linha`: clique
+   * DENTRO da caixa não fecha, e é isso que deixa escrever na busca e arrastar pelo cartão.
+   */
+  useFecharMenuDeLinha(true, onFechar);
+
   if (compacto) {
     const estilo = posicao
       ? { top: posicao.top + arrastado.y, left: posicao.left + arrastado.x }
@@ -206,6 +219,7 @@ export function PainelProximoPasso({
         style={estilo}
         role="dialog"
         aria-label={traduzir("Adicionar próximo passo")}
+        data-menu-de-linha=""
         /*
          * ARRASTA POR QUALQUER PONTO DO CARTÃO, e não só pela faixa do título.
          *

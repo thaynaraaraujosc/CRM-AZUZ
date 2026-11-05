@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   MarkerType,
@@ -18,6 +18,7 @@ import {
 import "@xyflow/react/dist/style.css";
 
 import { useAutomationFlows } from "@/lib/automation-flow-context";
+import { useFecharMenuDeLinha } from "@/lib/menu-de-linha";
 import { useBibliotecaDocumentos } from "@/lib/biblioteca-documentos-context";
 import { ModalConfirmacao } from "@/components/ui";
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
@@ -244,6 +245,9 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     if (!r || typeof window === "undefined") return undefined;
     return posicaoDaLista(r, { largura: window.innerWidth, altura: window.innerHeight });
   })();
+
+  const fecharMenuContexto = useCallback(() => setMenuContexto(null), []);
+  useFecharMenuDeLinha(menuContexto !== null, fecharMenuContexto);
 
   /** Fechar qualquer uma das duas também desliga a abertura automática. */
   function fecharEscolha() {
@@ -1894,7 +1898,10 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                 const podeAdicionarDepois =
                   noAlvo && saidasDoNo(noAlvo.data.flowNode).length === 1 && !saidasConectadasPorNode.get(noAlvo.id)?.has("__default__");
                 return (
-                  <div className="flow-ctx-menu" style={{ top: menuContexto.y, left: menuContexto.x }}>
+                  /* Fecha clicando em qualquer lugar fora dele, como todo menu do CRM. Antes só
+                     fechava clicando no fundo do canvas: clicar num bloco deixava o menu aberto
+                     em cima de outro bloco. */
+                  <div className="flow-ctx-menu" data-menu-de-linha="" style={{ top: menuContexto.y, left: menuContexto.x }}>
                     {podeAdicionarDepois ? (
                       <button
                         type="button"

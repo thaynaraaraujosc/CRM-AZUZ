@@ -28702,3 +28702,9 @@ td.trafego-col-crm:first-of-type {
   gap: 6px;
   margin-bottom: 8px;
 }
+
+/* A frase do "?" dentro de um rótulo com caixa de seleção: o "?" vem depois do texto, e a linha
+   inteira continua clicável pra marcar — o balão só aparece sobre o próprio "?". */
+.msg-canais-chave label .ajuda {
+  margin-left: 2px;
+}
