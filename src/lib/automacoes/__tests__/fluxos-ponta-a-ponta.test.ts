@@ -187,6 +187,94 @@ describe("mensagem só com botão de URL", () => {
   });
 });
 
+/*
+ * O ROTEADOR DE ATENDIMENTO: o bloco "Condição" com um ramo por caminho.
+ *
+ * O que importa aqui é a ORDEM. Duas regras podem ser verdadeiras ao mesmo tempo ("contém
+ * consulta" e "contém agendar" numa frase que tem as duas palavras), e quem decide é quem está
+ * em cima — não a mais específica, não a mais longa. É a única regra que dá pra prever olhando o
+ * desenho.
+ */
+describe("condição com ramos", () => {
+  const ramos = [
+    {
+      id: "r-agendar",
+      rotulo: "Quer agendar",
+      grupo: {
+        id: "g1",
+        tipo: "E",
+        regras: [{ id: "x1", campo: "mensagem", operador: "contem", valor: "agendar" }],
+        subgrupos: [],
+      },
+    },
+    {
+      id: "r-instagram",
+      rotulo: "Veio do Instagram e quer preço",
+      grupo: {
+        id: "g2",
+        tipo: "E",
+        regras: [
+          { id: "x2", campo: "mensagem", operador: "contem", valor: "preço" },
+          { id: "x3", campo: "origem", operador: "igual", valor: "instagram" },
+        ],
+        subgrupos: [],
+      },
+    },
+  ];
+
+  const nodes = [
+    no("g", "mensagem_recebida", "gatilho", {}),
+    no("cond", "condicao_ramos", "condicao", { ramos }),
+    no("m-agendar", "mensagem_texto", "mensagem", { texto: "Vou te passar os horários." }),
+    no("m-preco", "mensagem_texto", "mensagem", { texto: "A consulta custa X." }),
+    no("m-resto", "mensagem_texto", "mensagem", { texto: "Como posso ajudar?" }),
+  ];
+  const edges = [
+    liga("g", "cond"),
+    liga("cond", "m-agendar", "r-agendar"),
+    liga("cond", "m-preco", "r-instagram"),
+    liga("cond", "m-resto", "senao"),
+  ];
+
+  it("segue o ramo que bate", async () => {
+    const fim = await rodar(nodes, edges, { ...CONTATO, mensagem: "quero AGENDAR uma consulta" });
+    expect(intencoes(fim)).toContain("horários");
+    expect(intencoes(fim)).not.toContain("custa");
+  });
+
+  it("um ramo com duas regras só vale com as DUAS verdadeiras", async () => {
+    const doInstagram = await rodar(nodes, edges, { ...CONTATO, mensagem: "qual o preço?", origem: "Instagram" });
+    expect(intencoes(doInstagram)).toContain("custa");
+
+    const deOutraOrigem = await rodar(nodes, edges, { ...CONTATO, mensagem: "qual o preço?", origem: "Google" });
+    expect(intencoes(deOutraOrigem)).toContain("Como posso ajudar");
+  });
+
+  it("com dois ramos verdadeiros, ganha o de cima", async () => {
+    const fim = await rodar(nodes, edges, {
+      ...CONTATO,
+      mensagem: "quero agendar e saber o preço",
+      origem: "Instagram",
+    });
+    expect(intencoes(fim)).toContain("horários");
+    expect(intencoes(fim)).not.toContain("custa");
+  });
+
+  it("quem não bate em nenhum sai por \"Nenhuma das condições\"", async () => {
+    const fim = await rodar(nodes, edges, { ...CONTATO, mensagem: "bom dia" });
+    expect(intencoes(fim)).toContain("Como posso ajudar");
+  });
+
+  it("sem ligação na saída escolhida, o fluxo termina ali em vez de seguir por outra", async () => {
+    // Sem a aresta de "senao", quem não bate em nada não pode cair no primeiro bloco que houver:
+    // isso mandaria a mensagem errada pra pessoa errada, que é pior do que não mandar nada.
+    const semPadrao = edges.filter((e) => e.id !== "cond->m-resto:senao");
+    const fim = await rodar(nodes, semPadrao, { ...CONTATO, mensagem: "bom dia" });
+    expect(intencoes(fim)).not.toContain("Como posso ajudar");
+    expect(fim.situacao).toBe("concluida");
+  });
+});
+
 describe("encerrar fluxo", () => {
   it("o que vem depois do encerramento não roda", async () => {
     const nodes = [

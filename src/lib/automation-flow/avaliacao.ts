@@ -84,11 +84,32 @@ function valorDoCampo(campo: string, contato: ContextoExecucao["contato"]): stri
   }
 }
 
+/**
+ * COMO DUAS FRASES SÃO COMPARADAS: sem espaço sobrando, sem maiúscula e SEM ACENTO.
+ *
+ * Quem escreve a regra digita "consulta"; quem responde no WhatsApp escreve "Consulta ", "CONSULTA"
+ * ou "consultá". Comparar tudo isso como texto cru faz o robô seguir pelo caminho errado por causa
+ * de um acento — e a pessoa que montou o fluxo não tem como descobrir isso olhando a tela.
+ *
+ * `NFD` separa a letra do acento e o `replace` joga o acento fora; é a mesma normalização que o
+ * resto do CRM usa pra casar palavra-chave.
+ */
+function textoComparavel(texto: string | undefined): string {
+  return (texto ?? "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
 function avaliarRegra(regra: GrupoCondicoes["regras"][number], contato: ContextoExecucao["contato"]): boolean {
   const valorCampo =
     regra.campo === "campo_personalizado"
       ? contato.camposPersonalizados?.[regra.campoPersonalizadoNome ?? ""]
       : valorDoCampo(regra.campo, contato);
+
+  const campo = textoComparavel(valorCampo);
+  const alvo = textoComparavel(regra.valor);
 
   switch (regra.operador) {
     case "existe":
@@ -96,13 +117,25 @@ function avaliarRegra(regra: GrupoCondicoes["regras"][number], contato: Contexto
     case "nao_existe":
       return valorCampo === undefined || valorCampo === "";
     case "igual":
-      return (valorCampo ?? "").toLowerCase() === (regra.valor ?? "").toLowerCase();
+      return campo === alvo;
     case "diferente":
-      return (valorCampo ?? "").toLowerCase() !== (regra.valor ?? "").toLowerCase();
+      return campo !== alvo;
     case "contem":
-      return (valorCampo ?? "").toLowerCase().includes((regra.valor ?? "").toLowerCase());
+      return campo.includes(alvo);
     case "nao_contem":
-      return !(valorCampo ?? "").toLowerCase().includes((regra.valor ?? "").toLowerCase());
+      return !campo.includes(alvo);
+    /*
+     * "COMEÇA COM" E "TERMINA COM" NÃO EXISTIAM AQUI.
+     *
+     * Os dois estão na lista de operadores do formulário desde sempre, e caíam no `default`, que
+     * devolve `true`. Ou seja: a regra passava SEMPRE, para qualquer valor — um caminho que parece
+     * configurado e aceita todo mundo. É o pior tipo de defeito numa condição, porque o fluxo roda
+     * e ninguém vê erro nenhum.
+     */
+    case "comeca_com":
+      return campo.startsWith(alvo);
+    case "termina_com":
+      return campo.endsWith(alvo);
     case "maior_que":
       return Number(valorCampo ?? 0) > Number(regra.valor ?? 0);
     case "menor_que":

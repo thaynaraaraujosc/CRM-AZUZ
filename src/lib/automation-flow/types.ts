@@ -64,6 +64,7 @@ export type FlowNodeType =
   // condicao
   | "condicao_grupo"
   | "decisao_multipla"
+  | "condicao_ramos"
   | "distribuir_sorteio"
   // mensagem
   | "mensagem_texto"
@@ -255,6 +256,37 @@ export type CaminhoDecisao = {
   rotulo: string;
   /** O valor comparado com o campo escolhido. */
   valor: string;
+};
+
+/**
+ * CONDIÇÃO COM RAMOS: cada caminho tem as SUAS regras.
+ *
+ * O CRM já tinha duas formas de separar caminho, e nenhuma faz isto:
+ *
+ * - `condicao_grupo` pergunta uma coisa e responde sim ou não. Dois caminhos, sempre.
+ * - `decisao_multipla` compara UM campo com vários valores. N caminhos, mas a mesma pergunta em
+ *   todos ("a origem é A? é B? é C?").
+ *
+ * Aqui cada ramo é uma pergunta inteira e diferente das outras — "veio do Instagram E falou em
+ * consulta" num, "é cliente antigo" no outro —, e cada um tem a sua saída. É o bloco "Condição"
+ * da referência, e é o que permite um roteador de atendimento de verdade sem empilhar seis blocos
+ * de sim/não em cascata.
+ *
+ * Dentro do ramo as regras valem JUNTAS (E). Entre os ramos vale o primeiro que bater, de cima
+ * pra baixo — por isso a ordem importa e dá pra mover. Quem não bate em nenhum sai pelo
+ * "Nenhuma das condições", que existe sempre e não se apaga: um lead sem caminho é um lead parado
+ * para sempre no meio do fluxo.
+ */
+export type RamoDeCondicao = {
+  id: string;
+  /** O nome que aparece na saída, quando a pessoa escreve um. Vazio = resumo das regras. */
+  rotulo?: string;
+  /** As regras deste ramo, unidas por E. É o mesmo grupo de condições do resto do CRM. */
+  grupo: GrupoCondicoes;
+};
+
+export type CondicaoRamosData = {
+  ramos: RamoDeCondicao[];
 };
 
 export type DecisaoMultiplaData = {

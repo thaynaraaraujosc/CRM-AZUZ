@@ -497,6 +497,34 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     dataPadrao: () => ({ grupo: { id: `grupo-${Date.now()}`, tipo: "E", regras: [], subgrupos: [] } }),
   },
   {
+    /*
+     * CONDIÇÃO COM RAMOS: cada caminho com as SUAS regras.
+     *
+     * Diferente dos dois vizinhos: "sim ou não" tem dois caminhos pra uma pergunta, e "vários
+     * caminhos" tem N caminhos pra UMA pergunta ("a origem é A? é B?"). Aqui cada ramo é uma
+     * pergunta diferente e inteira — "veio do Instagram E falou em consulta" num, "é cliente
+     * antigo" no outro. É o que evita empilhar seis blocos de sim/não em cascata.
+     */
+    tipo: "condicao_ramos",
+    categoria: "condicao",
+    grupo: "decisoes",
+    label: "Condição: regras por caminho",
+    descricao:
+      "Cada caminho tem as suas regras. Vale o primeiro que bater, de cima pra baixo; quem não bate em nenhum sai por \"Nenhuma das condições\".",
+    icone: "GitBranch",
+    corClasse: corDaCategoria("condicao"),
+    // Nasce com UM ramo vazio: é o mínimo pra a pessoa ver a forma do bloco (um ramo + a saída
+    // padrão) e começar a preencher, sem ter que descobrir que precisa criar o primeiro.
+    dataPadrao: () => ({
+      ramos: [
+        {
+          id: `ramo-${Date.now()}`,
+          grupo: { id: `grupo-${Date.now()}`, tipo: "E", regras: [], subgrupos: [] },
+        },
+      ],
+    }),
+  },
+  {
     tipo: "decisao_multipla",
     categoria: "condicao",
     grupo: "decisoes",

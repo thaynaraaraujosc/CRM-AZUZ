@@ -9,6 +9,7 @@
 import type { Funil } from "@/lib/data";
 import type {
   AguardarData,
+  CondicaoRamosData,
   CondicaoGrupoData,
   DecisaoMultiplaData,
   DistribuirSorteioData,
@@ -59,6 +60,27 @@ export function saidasDoNo(node: FlowNode): SaidaNo[] {
     return [
       { handleId: "sim", label: `✓ ${simLabel}` },
       { handleId: "nao", label: `✕ ${naoLabel}` },
+    ];
+  }
+
+  /*
+   * UMA SAÍDA POR RAMO, mais a de quem não bateu em nenhum.
+   *
+   * A ordem é a do desenho e a da execução: o motor percorre os ramos de cima pra baixo e segue o
+   * PRIMEIRO verdadeiro (ver `motor-estado.ts`). Ver isso na mesma ordem nas duas telas é o que
+   * permite entender por que um lead saiu por um ramo e não pelo de baixo.
+   */
+  if (node.type === "condicao_ramos") {
+    const data = node.data as CondicaoRamosData;
+    const ramos = data.ramos ?? [];
+    return [
+      ...ramos.map((r, i) => ({
+        handleId: r.id,
+        label: r.rotulo?.trim() || `${i + 1} · ${resumoGrupoCondicoes(r.grupo)}`,
+      })),
+      // Existe sempre e não se apaga: um valor que ninguém previu precisa ter pra onde ir, senão
+      // o lead fica parado no meio do fluxo pra sempre.
+      { handleId: "senao", label: "Nenhuma das condições" },
     ];
   }
 
@@ -360,6 +382,14 @@ export function resumoNo(node: FlowNode, funis?: Funil[]): string {
     case "condicao_grupo": {
       const data = node.data as CondicaoGrupoData;
       return resumoGrupoCondicoes(data.grupo);
+    }
+    case "condicao_ramos": {
+      const data = node.data as CondicaoRamosData;
+      const ramos = data.ramos ?? [];
+      if (!ramos.length) return "Sem nenhum caminho definido";
+      const vazios = ramos.filter((r) => !r.grupo?.regras?.length && !r.grupo?.subgrupos?.length).length;
+      const texto = `${ramos.length} ${ramos.length === 1 ? "caminho" : "caminhos"} + "Nenhuma das condições"`;
+      return vazios ? `${texto} · ${vazios} sem regra` : texto;
     }
     case "mensagem_texto": {
       return `"${truncar(String(d.texto ?? ""))}" · Canal: ${d.canal ?? "whatsapp"}`;

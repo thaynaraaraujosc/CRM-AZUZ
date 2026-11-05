@@ -16,7 +16,9 @@ import { useIdioma } from "@/lib/idioma-context";
 
 type CategoriaCampo = "Conversa" | "Funil / Negócio" | "Contato" | "Atividade";
 
-const CAMPOS: { valor: CampoCondicao; label: string; categoria: CategoriaCampo }[] = [
+/** Exportados pro cartão de "Condição: regras por caminho" usar a MESMA lista: duas listas de
+ *  campos divergiriam na primeira vez que alguém acrescentasse um campo só num lado. */
+export const CAMPOS_CONDICAO: { valor: CampoCondicao; label: string; categoria: CategoriaCampo }[] = [
   { valor: "canal", label: "Canal", categoria: "Conversa" },
   { valor: "numero_salvo", label: "Número salvo", categoria: "Conversa" },
   { valor: "data_ultima_conversa", label: "Data da última conversa", categoria: "Conversa" },
@@ -48,7 +50,7 @@ const CAMPOS: { valor: CampoCondicao; label: string; categoria: CategoriaCampo }
   { valor: "horario", label: "Horário", categoria: "Atividade" },
 ];
 
-const CATEGORIAS_ORDEM: CategoriaCampo[] = ["Conversa", "Funil / Negócio", "Contato", "Atividade"];
+export const CATEGORIAS_CONDICAO: CategoriaCampo[] = ["Conversa", "Funil / Negócio", "Contato", "Atividade"];
 
 const CAMPOS_SIM_NAO = new Set<CampoCondicao>(["respondeu", "recebeu_automacao", "em_outra_automacao", "possui_agendamento", "consentimento"]);
 const DIAS_SEMANA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
@@ -66,7 +68,7 @@ const CANAIS = [
   { valor: "email", label: "E-mail" },
 ];
 
-const OPERADORES: { valor: OperadorCondicao; label: string }[] = [
+export const OPERADORES_CONDICAO: { valor: OperadorCondicao; label: string }[] = [
   { valor: "igual", label: "é igual a" },
   { valor: "diferente", label: "é diferente de" },
   { valor: "contem", label: "contém" },
@@ -255,9 +257,9 @@ export function CondicaoForm({
             onChange={(e) => atualizarRegra(regra.id, { campo: e.target.value as CampoCondicao })}
             aria-label={traduzir("Campo da condição")}
           >
-            {CATEGORIAS_ORDEM.map((cat) => (
+            {CATEGORIAS_CONDICAO.map((cat) => (
               <optgroup key={cat} label={cat}>
-                {CAMPOS.filter((c) => c.categoria === cat).map((c) => (
+                {CAMPOS_CONDICAO.filter((c) => c.categoria === cat).map((c) => (
                   <option key={c.valor} value={c.valor}>
                     {c.label}
                   </option>
@@ -280,7 +282,7 @@ export function CondicaoForm({
             onChange={(e) => atualizarRegra(regra.id, { operador: e.target.value as OperadorCondicao })}
             aria-label={traduzir("Operador")}
           >
-            {OPERADORES.map((o) => (
+            {OPERADORES_CONDICAO.map((o) => (
               <option key={o.valor} value={o.valor}>
                 {traduzir(o.label)}
               </option>

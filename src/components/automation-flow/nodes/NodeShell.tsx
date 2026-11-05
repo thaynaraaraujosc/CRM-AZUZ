@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 
 import { useFecharMenuDeLinha } from "@/lib/menu-de-linha";
+import { CartaoCondicaoRamos } from "./CartaoCondicaoRamos";
 import { relogioDaGravacao, useGravadorDeAudio } from "@/lib/audio/gravador";
 import { VARIAVEIS_MENSAGEM, inserirTokenNoTexto } from "../forms/variaveis";
 import { canaisDaAreaParaBloco } from "../forms/canais";
@@ -12,7 +13,7 @@ import { PlayerDeAudio } from "./PlayerDeAudio";
 
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
 import { resumoIndicaIncompleto, resumoNo, saidasDoNo, temEntrada } from "@/lib/automation-flow/resumo";
-import type { FlowNode as FlowNodeDominio, FlowNodeCategory } from "@/lib/automation-flow/types";
+import type { CondicaoRamosData, FlowNode as FlowNodeDominio, FlowNodeCategory } from "@/lib/automation-flow/types";
 import { useFunis } from "@/lib/funis-context";
 import type { FlowRFNode } from "../utils";
 import { useIdioma } from "@/lib/idioma-context";
@@ -882,6 +883,13 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
             ) : null}
           </div>
         </>
+      ) : flowNode.type === "condicao_ramos" && aoMudarCampo ? (
+        /* O bloco "Condição" se edita no cartão: ver `CartaoCondicaoRamos`. As saídas continuam
+           desenhadas embaixo, uma por caminho, como em todo bloco que ramifica. */
+        <CartaoCondicaoRamos
+          data={(flowNode.data ?? { ramos: [] }) as CondicaoRamosData}
+          aoMudar={(ramos) => aoMudarCampo("ramos", ramos)}
+        />
       ) : flowNode.type === "aguardar" && aoMudarCronometro ? (
         /*
           O CRONÔMETRO EDITÁVEL NO CARTÃO, como na referência.
@@ -893,7 +901,8 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
           que roda de minuto em minuto. Um prazo de trinta segundos seria arredondado pra cima sem
           avisar, e o campo prometeria uma precisão que o motor não tem.
         */
-        <div className="no-cronometro nodrag" onClick={(e) => e.stopPropagation()}>
+        <div className="no-cond-lista nodrag" onClick={(e) => e.stopPropagation()}>
+        <div className="no-cronometro">
           <IconRelogio width={13} height={13} aria-hidden="true" />
           <span>{traduzir("Cronômetro")}:</span>
           <input
@@ -914,6 +923,57 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
             onChange={(e) => aoMudarCronometro(Math.floor((minutosDaEspera ?? 0) / 60) * 60 + Number(e.target.value))}
           />
           <span>{traduzir("min")}</span>
+        </div>
+
+        {/*
+          AS CONDIÇÕES DE SAÍDA DA PAUSA, embaixo do cronômetro.
+          
+          Na referência o bloco "Pausar" é uma lista: o cronômetro é a primeira linha e as outras
+          dizem o que mais pode interromper a espera. O CRM tinha as duas que importam escondidas
+          no painel da direita — "seguir antes se ele responder" e "contar só o expediente" —, e
+          quem olhava o cartão não tinha como saber que a pausa respondia a isso.
+          
+          Só o que o motor cumpre entra aqui. "Até o vídeo ser aberto" e "ser fechado", que
+          aparecem na referência, dependem de um evento de visualização de vídeo que nenhum canal
+          nosso entrega: a linha existiria na tela e não aconteceria nunca.
+        */}
+        {aoMudarCampo
+          ? (() => {
+              const d = (flowNode.data ?? {}) as { interromperSeResponder?: boolean; somenteExpediente?: boolean };
+              const linhas = [
+                {
+                  campo: "interromperSeResponder",
+                  ligado: !!d.interromperSeResponder,
+                  rotulo: traduzir("Até a mensagem recebida"),
+                  // Esta liga uma SAÍDA nova no bloco ("Respondeu"), e é por isso que ela importa
+                  // mais que as outras: muda o desenho, não só a contagem.
+                  ajuda: traduzir("O bloco ganha dois caminhos: segue na hora se ele responder, e pelo outro quando o tempo acabar."),
+                },
+                {
+                  campo: "somenteExpediente",
+                  ligado: !!d.somenteExpediente,
+                  rotulo: traduzir("Exceto fora do expediente"),
+                  ajuda: traduzir("O relógio só corre no horário de Configurações: \"2 horas\" às 17h de sexta termina na segunda de manhã."),
+                },
+              ];
+              return linhas.map((l) => (
+                <button
+                  type="button"
+                  key={l.campo}
+                  className={`no-cond-linha${l.ligado ? " on" : ""}`}
+                  title={l.ajuda}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    aoMudarCampo(l.campo, !l.ligado);
+                  }}
+                >
+                  <IconEdit width={11} height={11} aria-hidden="true" />
+                  <span>{l.rotulo}</span>
+                  <em aria-hidden="true">{l.ligado ? "×" : "+"}</em>
+                </button>
+              ));
+            })()
+          : null}
         </div>
       ) : (
         (() => {

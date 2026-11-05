@@ -5,6 +5,7 @@
  */
 
 import type {
+  CondicaoRamosData,
   AgendarConsultaData,
   AguardarData,
   AtualizarStatusData,
@@ -283,6 +284,87 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
         id: proximoIdProblema(),
         severidade: "erro",
         mensagem: `Bloco "${n.titulo ?? n.type}" está sem definir o que verificar.`,
+        nodeId: n.id,
+      });
+    }
+  });
+
+  /*
+   * 7a. Condição com ramos: ramo vazio, regra sem valor e caminho sem ligação.
+   *
+   * O ramo VAZIO é o que mais importa, e não é óbvio: um grupo "E" sem nenhuma regra é verdadeiro
+   * (todo mundo passa num `every` de lista vazia), então um ramo em branco PEGA TODO MUNDO e os
+   * ramos abaixo dele nunca são alcançados. Enquanto ele é o último, é só um caminho largo e o
+   * aviso basta; com ramo embaixo, ele apaga os outros em silêncio — e aí é erro.
+   */
+  nodes.forEach((n) => {
+    if (n.type !== "condicao_ramos") return;
+    const data = n.data as CondicaoRamosData;
+    const ramos = data.ramos ?? [];
+    const saidas = saidasPorNo.get(n.id) ?? [];
+
+    if (!ramos.length) {
+      problemas.push({
+        id: proximoIdProblema(),
+        severidade: "erro",
+        mensagem: `Bloco "${n.titulo ?? n.type}" não tem nenhum caminho: só sobra "Nenhuma das condições".`,
+        nodeId: n.id,
+      });
+    }
+
+    ramos.forEach((ramo, i) => {
+      const vazio = !ramo.grupo?.regras?.length && !ramo.grupo?.subgrupos?.length;
+      if (vazio) {
+        const temRamoAbaixo = i < ramos.length - 1;
+        problemas.push({
+          id: proximoIdProblema(),
+          severidade: temRamoAbaixo ? "erro" : "aviso",
+          mensagem: temRamoAbaixo
+            ? `Bloco "${n.titulo ?? n.type}": o caminho ${i + 1} está sem regra, então ele pega todo mundo e os caminhos abaixo dele nunca acontecem.`
+            : `Bloco "${n.titulo ?? n.type}": o caminho ${i + 1} está sem regra, então ele pega todo mundo.`,
+          nodeId: n.id,
+        });
+      }
+
+      (ramo.grupo?.regras ?? []).forEach((regra) => {
+        // "existe"/"não existe" não comparam valor nenhum: cobrar um campo preenchido neles seria
+        // pedir uma informação que a regra não usa.
+        const precisaValor = !["existe", "nao_existe"].includes(regra.operador);
+        if (precisaValor && ehTextoVazio(regra.valor)) {
+          problemas.push({
+            id: proximoIdProblema(),
+            severidade: "erro",
+            mensagem: `Bloco "${n.titulo ?? n.type}": uma regra do caminho ${i + 1} está sem valor pra comparar.`,
+            nodeId: n.id,
+          });
+        }
+        if (regra.operador === "entre" && (ehTextoVazio(regra.valor) || ehTextoVazio(regra.valorFim))) {
+          problemas.push({
+            id: proximoIdProblema(),
+            severidade: "erro",
+            mensagem: `Bloco "${n.titulo ?? n.type}": a regra "entre" do caminho ${i + 1} precisa dos dois limites.`,
+            nodeId: n.id,
+          });
+        }
+      });
+
+      // Caminho desenhado e sem ligação: avisa, não impede. Pode ser um ramo que a pessoa ainda
+      // vai ligar, e bloquear a publicação do fluxo inteiro por causa disso seria demais.
+      if (!saidas.some((e) => e.sourceHandle === ramo.id)) {
+        problemas.push({
+          id: proximoIdProblema(),
+          severidade: "aviso",
+          mensagem: `Bloco "${n.titulo ?? n.type}": o caminho ${i + 1} não leva a lugar nenhum. Quem sair por ele para aqui.`,
+          nodeId: n.id,
+        });
+      }
+    });
+
+    if (ramos.length && !saidas.some((e) => e.sourceHandle === "senao")) {
+      problemas.push({
+        id: proximoIdProblema(),
+        severidade: "aviso",
+        mensagem: `Bloco "${n.titulo ?? n.type}": "Nenhuma das condições" não leva a lugar nenhum. Quem não bater em nenhum caminho para aqui.`,
         nodeId: n.id,
       });
     }

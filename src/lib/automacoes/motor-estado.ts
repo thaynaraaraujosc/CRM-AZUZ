@@ -17,6 +17,7 @@ import type {
   CancelarAgendamentoData,
   ChamarWebhookData,
   CondicaoGrupoData,
+  CondicaoRamosData,
   CriarLembreteData,
   CriarNegocioData,
   CriarTarefaData,
@@ -358,6 +359,33 @@ async function executarNo(params: {
         saida: passou ? "sim" : "nao",
         resultado: passou ? "ok" : "condicao_falsa",
         detalhe: passou ? "Condição verdadeira." : "Condição falsa.",
+      };
+    }
+
+    /*
+     * CONDIÇÃO COM RAMOS: o primeiro que bater, de cima pra baixo.
+     *
+     * A ordem é a do desenho, e é por isso que ela importa: dois ramos podem ser verdadeiros ao
+     * mesmo tempo ("contém consulta" e "contém agendar" numa frase que tem as duas palavras), e o
+     * que decide é quem está em cima. Avaliar todos e escolher o "melhor" seria uma regra que
+     * ninguém consegue prever olhando o desenho.
+     */
+    case "condicao_ramos": {
+      const data = no.data as CondicaoRamosData;
+      const ramos = data.ramos ?? [];
+      const escolhido = ramos.find((r) => avaliarGrupoCondicoes(r.grupo, contato));
+      if (escolhido) {
+        return {
+          tipo: "seguir",
+          saida: escolhido.id,
+          detalhe: `Condição: seguiu pelo caminho ${ramos.indexOf(escolhido) + 1}${escolhido.rotulo?.trim() ? ` ("${escolhido.rotulo.trim()}")` : ""}.`,
+        };
+      }
+      return {
+        tipo: "seguir",
+        saida: "senao",
+        resultado: "condicao_falsa",
+        detalhe: "Condição: nenhum caminho bateu, seguiu por \"Nenhuma das condições\".",
       };
     }
 
