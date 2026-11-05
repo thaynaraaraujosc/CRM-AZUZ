@@ -141,6 +141,8 @@ export function PainelProximoPasso({
     baseY: number;
     /** Já passou do limiar? Antes disso o gesto ainda é um clique. */
     arrastou: boolean;
+    /** O ponteiro deste gesto, pra capturar só quando ele virar arraste. */
+    ponteiro: number;
   } | null>(null);
   /** Acabou de arrastar: serve pra engolir o clique que vem logo depois de soltar. */
   const arrastouAgoraRef = useRef(false);
@@ -209,21 +211,26 @@ export function PainelProximoPasso({
          *
          * O campo de busca fica de fora, porque ali o arraste é pra selecionar texto. O resto —
          * inclusive as linhas da lista, que são botões — arrasta com LIMIAR: só vira arraste
-         * depois de 4px de movimento, e antes disso continua sendo clique. É o que permite as
-         * duas coisas no mesmo lugar sem a pessoa precisar saber de onde pegar.
+         * depois de 4px de movimento, e antes disso continua sendo clique.
+         *
+         * A CAPTURA DO PONTEIRO SÓ ACONTECE DEPOIS DO LIMIAR, e isso não é detalhe: capturar
+         * logo no `pointerdown` faz o navegador entregar o CLIQUE ao elemento que capturou — a
+         * caixa — em vez de ao botão que estava embaixo do dedo. Era isso que impedia escolher um
+         * passo da lista: o clique acontecia, mas chegava no lugar errado e nada era criado.
+         * Capturando só quando vira arraste, o clique simples segue o caminho normal.
          */
         onPointerDown={
           posicao
             ? (e) => {
                 const alvo = e.target as HTMLElement;
                 if (alvo.closest("input, textarea")) return;
-                e.currentTarget.setPointerCapture(e.pointerId);
                 arrasteRef.current = {
                   x: e.clientX,
                   y: e.clientY,
                   baseX: arrastado.x,
                   baseY: arrastado.y,
                   arrastou: false,
+                  ponteiro: e.pointerId,
                 };
               }
             : undefined
@@ -234,7 +241,11 @@ export function PainelProximoPasso({
           const dx = e.clientX - inicio.x;
           const dy = e.clientY - inicio.y;
           if (!inicio.arrastou && Math.abs(dx) < 4 && Math.abs(dy) < 4) return;
-          inicio.arrastou = true;
+          if (!inicio.arrastou) {
+            inicio.arrastou = true;
+            // Agora sim: a captura mantém o arraste vivo mesmo se o ponteiro sair da caixa.
+            e.currentTarget.setPointerCapture(inicio.ponteiro);
+          }
           setArrastado({ x: inicio.baseX + dx, y: inicio.baseY + dy });
         }}
         onPointerUp={(e) => {
@@ -244,7 +255,9 @@ export function PainelProximoPasso({
           // arrastar pegando numa linha da lista criaria o bloco daquela linha ao soltar.
           if (inicio?.arrastou) {
             arrastouAgoraRef.current = true;
-            e.preventDefault();
+            if (e.currentTarget.hasPointerCapture(inicio.ponteiro)) {
+              e.currentTarget.releasePointerCapture(inicio.ponteiro);
+            }
           }
         }}
         onClickCapture={(e) => {
