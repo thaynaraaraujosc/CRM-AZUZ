@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useIdioma } from "@/lib/idioma-context";
+import { Ajuda } from "@/components/ui";
 
 type Story = {
   id: string;
@@ -116,7 +117,14 @@ export function StoryRespondidoForm({
   return (
     <div className="flow-form">
       <div className="field">
-        <label>{traduzir("Palavras que disparam")}</label>
+        <label>
+          {traduzir("Palavras que disparam")}
+          <Ajuda
+            texto={traduzir(
+              "Sem palavra nenhuma, QUALQUER resposta ao story dispara a automação. Com palavras, basta uma delas aparecer na resposta.",
+            )}
+          />
+        </label>
         <div className="ig-palavras">
           {palavras.map((palavra) => (
             <span key={palavra} className="ig-palavra-chip">
@@ -144,15 +152,13 @@ export function StoryRespondidoForm({
           }}
           onBlur={adicionarPalavra}
         />
-        <p className="hint">
-          {palavras.length === 0
-            ? "Sem palavra nenhuma, QUALQUER resposta ao story dispara a automação."
-            : traduzir("Basta uma das palavras aparecer na resposta.")}
-        </p>
       </div>
 
       <div className="field">
-        <label>{traduzir("Como comparar")}</label>
+        <label>
+          {traduzir("Como comparar")}
+          <Ajuda texto={traduzir(MODOS.find((m) => m.valor === (data.modoPalavra ?? "qualquer"))?.ajuda ?? "")} />
+        </label>
         <select
           className="input"
           value={data.modoPalavra ?? "qualquer"}
@@ -164,7 +170,6 @@ export function StoryRespondidoForm({
             </option>
           ))}
         </select>
-        <p className="hint">{MODOS.find((m) => m.valor === (data.modoPalavra ?? "qualquer"))?.ajuda}</p>
       </div>
 
       <div className="toggle-row">
@@ -174,16 +179,18 @@ export function StoryRespondidoForm({
             checked={data.ignorarAcentos ?? true}
             onChange={(e) => onChange({ ...data, ignorarAcentos: e.target.checked })}
           />{" "}
-          Ignorar acentos e maiúsculas
+          {traduzir("Ignorar acentos e maiúsculas")}
+          <Ajuda texto={traduzir("Com isso, \"GUIA\", \"guia\" e \"guía\" contam como a mesma palavra.")} />
         </label>
-        <p className="hint">Com isso, &quot;GUIA&quot;, &quot;guia&quot; e &quot;guía&quot; contam como a mesma palavra.</p>
       </div>
 
       <div className="field">
-        <label>{traduzir("Em qual story")}</label>
-        <p className="hint">
-          {traduzir("Story dura 24 horas. A lista abaixo é o que está no ar agora, buscado na hora.")}
-        </p>
+        <label>
+          {traduzir("Em qual story")}
+          <Ajuda
+            texto={traduzir("Story dura 24 horas. A lista abaixo é o que está no ar agora, buscado na hora.")}
+          />
+        </label>
 
         {escolhidoSumiu ? (
           <p className="hint ig-story-aviso">{traduzir("O story escolhido saiu do ar: passou das 24 horas. Enquanto ele estiver assim, este robô não dispara. Escolha um story de agora, ou volte pra qualquer story.")}</p>

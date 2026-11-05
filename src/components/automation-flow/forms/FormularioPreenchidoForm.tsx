@@ -9,6 +9,7 @@ import {
 } from "@/lib/automation-flow/formulario-do-gatilho";
 import { useFormularios } from "@/lib/formularios-context";
 import { useIdioma } from "@/lib/idioma-context";
+import { Ajuda } from "@/components/ui";
 
 /**
  * DE QUAL FORMULÁRIO ESTE ROBÔ ATENDE.
@@ -55,7 +56,14 @@ export function FormularioPreenchidoForm({
   return (
     <div className="flow-form">
       <div className="field">
-        <label>{traduzir("De qual formulário")}</label>
+        <label>
+          {traduzir("De qual formulário")}
+          <Ajuda
+            texto={traduzir(
+              "Escolhendo um, o robô só responde a quem preencher ESSE formulário. Em branco, ele responde a qualquer formulário preenchido — do CRM e do AZUZ Flow —, que é o que todo robô antigo faz.",
+            )}
+          />
+        </label>
       <select
         className="input"
         value={escolhido}
@@ -92,11 +100,6 @@ export function FormularioPreenchidoForm({
         ninguém. Quem abrir um robô antigo precisa entender por que ele responde a tudo, em vez de
         achar que a escolha se perdeu.
       */}
-      <p className="hint mt8">
-        {escolhido
-          ? traduzir("Este robô só responde a quem preencher esse formulário.")
-          : traduzir("Sem escolher, o robô responde a QUALQUER formulário preenchido — do CRM e do AZUZ Flow.")}
-      </p>
       {doFlow && !doFlow.formularios.length ? (
         <p className="hint mt8">
           {traduzir(

@@ -2,6 +2,7 @@
 
 import type { ReagirMensagemData } from "@/lib/automation-flow/types";
 import { useIdioma } from "@/lib/idioma-context";
+import { Ajuda } from "@/components/ui";
 
 /**
  * O emoji da reação.
@@ -22,7 +23,14 @@ export function ReagirMensagemForm({
   return (
     <div className="flow-form">
       <div className="field">
-        <label>{traduzir("Emoji")}</label>
+        <label>
+          {traduzir("Emoji")}
+          <Ajuda
+            texto={traduzir(
+              "Reage à última mensagem que o contato mandou. Se ele ainda não escreveu nada, não há a que reagir: o passo fica registrado como não feito, sem derrubar o fluxo.",
+            )}
+          />
+        </label>
         <div className="reagir-rapidos">
           {RAPIDOS.map((e) => (
             <button
@@ -43,7 +51,6 @@ export function ReagirMensagemForm({
           placeholder={traduzir("Ou cole outro emoji")}
           maxLength={8}
         />
-        <p className="hint mt8">{traduzir("Reage à última mensagem que o contato mandou. Se ele ainda não escreveu nada, não há a que reagir e o passo é registrado como não feito, sem derrubar o fluxo.")}</p>
       </div>
     </div>
   );

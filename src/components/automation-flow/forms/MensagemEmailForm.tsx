@@ -3,6 +3,7 @@
 import type { DestinatarioEmailModo, MensagemEmailData, SeSemEmailModo } from "@/lib/automation-flow/types";
 import { IconAlerta } from "@/components/icons";
 import { useIdioma } from "@/lib/idioma-context";
+import { Ajuda } from "@/components/ui";
 
 // Mocado: contas de e-mail configuradas no workspace, sem conexão real.
 const CONTAS_EMAIL: string[] = [];
@@ -21,7 +22,14 @@ export function MensagemEmailForm({ data, onChange }: { data: MensagemEmailData;
   return (
     <div className="flow-form">
       <div className="field">
-        <label>{traduzir("Destinatário")}</label>
+        <label>
+          {traduzir("Destinatário")}
+          <Ajuda
+            texto={traduzir(
+              "Com \"e-mail do contato\", vale o endereço cadastrado na ficha do lead que estiver passando pela automação.",
+            )}
+          />
+        </label>
         <select className="input" value={data.destinatarioModo} onChange={(e) => onChange({ ...data, destinatarioModo: e.target.value as DestinatarioEmailModo })}>
           <option value="contato_email">{traduzir("E-mail do contato deste fluxo")}</option>
           <option value="outro_campo">{traduzir("Outro campo de e-mail do contato")}</option>
@@ -29,9 +37,6 @@ export function MensagemEmailForm({ data, onChange }: { data: MensagemEmailData;
           <option value="responsavel">{traduzir("Responsável do lead")}</option>
           <option value="campo_personalizado">{traduzir("Campo personalizado")}</option>
         </select>
-        {data.destinatarioModo === "contato_email" ? (
-          <p className="hint" style={{ marginTop: 6 }}>Será utilizado automaticamente o e-mail cadastrado na ficha do lead que estiver passando por esta automação.</p>
-        ) : null}
       </div>
 
       {data.destinatarioModo === "especifico" || data.destinatarioModo === "outro_campo" || data.destinatarioModo === "campo_personalizado" ? (
@@ -77,16 +82,18 @@ export function MensagemEmailForm({ data, onChange }: { data: MensagemEmailData;
       </div>
 
       <div className="field">
-        <label>{traduzir("Corpo do e-mail")}</label>
+        <label>
+          {traduzir("Corpo do e-mail")}
+          <Ajuda
+            texto={`${traduzir("Aceita variáveis:")} {{primeiro_nome}}, {{nome_completo}}, {{empresa}}, {{responsavel}}, {{valor_negocio}}, {{etapa}}, {{data_agendamento}}`}
+          />
+        </label>
         <textarea
           className="input"
           style={{ width: "100%", minHeight: 100, resize: "vertical" }}
           value={data.corpo}
           onChange={(e) => onChange({ ...data, corpo: e.target.value })}
         />
-        <p className="hint" style={{ marginTop: 4 }}>
-          Variáveis: {"{{primeiro_nome}}"}, {"{{nome_completo}}"}, {"{{empresa}}"}, {"{{responsavel}}"}, {"{{valor_negocio}}"}, {"{{etapa}}"}, {"{{data_agendamento}}"}
-        </p>
       </div>
 
       <div className="field">

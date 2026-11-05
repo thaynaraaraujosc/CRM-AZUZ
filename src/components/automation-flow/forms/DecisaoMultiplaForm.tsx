@@ -3,6 +3,7 @@
 import type { CampoCondicao, DecisaoMultiplaData, OperadorCondicao } from "@/lib/automation-flow/types";
 import { IconClose } from "@/components/icons";
 import { useIdioma } from "@/lib/idioma-context";
+import { Ajuda } from "@/components/ui";
 
 /**
  * Configuração da decisão com vários caminhos.
@@ -62,7 +63,10 @@ export function DecisaoMultiplaForm({
   return (
     <div className="flow-form">
       <div className="field">
-        <label>{traduzir("O que você quer verificar?")}</label>
+        <label>
+          {traduzir("O que você quer verificar?")}
+          <Ajuda texto={traduzir(CAMPOS.find((c) => c.valor === data.campo)?.ajuda ?? "")} />
+        </label>
         <select
           className="input"
           value={data.campo}
@@ -74,7 +78,6 @@ export function DecisaoMultiplaForm({
             </option>
           ))}
         </select>
-        <p className="hint">{CAMPOS.find((c) => c.valor === data.campo)?.ajuda ?? ""}</p>
       </div>
 
       {data.campo === "campo_personalizado" ? (
@@ -105,11 +108,14 @@ export function DecisaoMultiplaForm({
       </div>
 
       <div className="field">
-        <label>{traduzir("Caminhos")}</label>
-        <p className="hint">
-          Cada linha vira uma saída do bloco. O primeiro que bater ganha. Se dois valores se
-          parecem (&quot;valor&quot; e &quot;valores&quot;), deixe o mais específico em cima.
-        </p>
+        <label>
+          {traduzir("Caminhos")}
+          <Ajuda
+            texto={traduzir(
+              "Cada linha vira uma saída do bloco, e o primeiro que bater ganha — com valores parecidos (\"valor\" e \"valores\"), deixe o mais específico em cima. Existe sempre uma saída \"Qualquer outra\", que não some: um valor que ninguém previu precisa ter pra onde ir.",
+            )}
+          />
+        </label>
 
         {caminhos.map((caminho, i) => (
           <div key={caminho.id} className="flow-decisao-linha">
@@ -137,11 +143,6 @@ export function DecisaoMultiplaForm({
           {traduzir("Adicionar caminho")}
         </button>
 
-        <p className="hint" style={{ marginTop: 8 }}>
-          {traduzir("Existe sempre uma saída")} <strong>&quot;Qualquer outra&quot;</strong>, e ela não some: um
-          valor que ninguém previu precisa ter pra onde ir, senão a automação para em silêncio no
-          meio da conversa.
-        </p>
       </div>
     </div>
   );

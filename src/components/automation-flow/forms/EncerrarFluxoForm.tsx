@@ -2,6 +2,7 @@
 
 import type { EncerrarFluxoData, MotivoParada } from "@/lib/automation-flow/types";
 import { useIdioma } from "@/lib/idioma-context";
+import { Ajuda } from "@/components/ui";
 
 /**
  * Por que a automação parou aqui.
@@ -45,14 +46,16 @@ export function EncerrarFluxoForm({
       </div>
 
       <div className="field">
-        <label>{traduzir("Observação")}</label>
+        <label>
+          {traduzir("Observação")}
+          <Ajuda texto={traduzir("Aparece no histórico da execução, junto com o motivo.")} />
+        </label>
         <input
           className="input"
           value={data.observacao ?? ""}
           onChange={(e) => onChange({ ...data, observacao: e.target.value })}
           placeholder={traduzir("Opcional: o que aconteceu, em uma linha")}
         />
-        <p className="hint mt8">{traduzir("Aparece no histórico da execução, junto com o motivo.")}</p>
       </div>
     </div>
   );

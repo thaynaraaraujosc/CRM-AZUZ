@@ -3,6 +3,7 @@
 import { useEquipe } from "@/lib/equipe-context";
 import type { CancelarAgendamentoData, CriterioAgendamento, OrigemMensagemCancelamento } from "@/lib/automation-flow/types";
 import { useIdioma } from "@/lib/idioma-context";
+import { Ajuda } from "@/components/ui";
 
 const TIPOS_AGENDAMENTO = ["Consulta", "Reunião", "Retorno", "Visita", "Demonstração", "Avaliação", "Outro"];
 
@@ -102,7 +103,12 @@ export function CancelarAgendamentoForm({ data, onChange }: { data: CancelarAgen
             </div>
           ) : (
             <div className="field">
-              <label>{traduzir("Mensagem")}</label>
+              <label>
+                {traduzir("Mensagem")}
+                <Ajuda
+                  texto={`${traduzir("Aceita variáveis:")} {{primeiro_nome}}, {{data}}, {{horario}}, {{responsavel}}, {{tipo_agendamento}}, {{local}}`}
+                />
+              </label>
               <textarea
                 className="input"
                 style={{ width: "100%", minHeight: 70, resize: "vertical" }}
@@ -110,7 +116,6 @@ export function CancelarAgendamentoForm({ data, onChange }: { data: CancelarAgen
                 value={data.mensagem ?? ""}
                 onChange={(e) => onChange({ ...data, mensagem: e.target.value })}
               />
-              <p className="hint" style={{ marginTop: 4 }}>Variáveis: {"{{primeiro_nome}}"}, {"{{data}}"}, {"{{horario}}"}, {"{{responsavel}}"}, {"{{tipo_agendamento}}"}, {"{{local}}"}</p>
             </div>
           )}
           <div className="field">

@@ -64,6 +64,7 @@ import { MensagemModeloForm } from "./forms/MensagemModeloForm";
 import { MensagemOpcoesForm } from "./forms/MensagemOpcoesForm";
 import { TarefaEventoForm } from "./forms/TarefaEventoForm";
 import { IconAlerta, IconCheck, IconClose, IconErro } from "@/components/icons";
+import { Ajuda } from "@/components/ui";
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
 import { EscolhaDeConteudo } from "./forms/EscolhaDeConteudo";
 import { DistribuirSorteioForm } from "./forms/DistribuirSorteioForm";
@@ -382,7 +383,10 @@ export function ConfigPanel({
             )}
             <div className="flow-form">
               <div className="field">
-                <label>{traduzir("Título do bloco")}</label>
+                <label>
+                  {traduzir("Título do bloco")}
+                  <Ajuda texto={traduzir("O nome que aparece no cartão, no desenho. Em branco, vale o nome do tipo de bloco.")} />
+                </label>
                 <input
                   className="input"
                   placeholder={node.type}
@@ -391,7 +395,10 @@ export function ConfigPanel({
                 />
               </div>
               <div className="field">
-                <label>{traduzir("Observação (só pra sua equipe)")}</label>
+                <label>
+                  {traduzir("Observação")}
+                  <Ajuda texto={traduzir("Só pra sua equipe: fica guardada no bloco e nunca é enviada pro contato.")} />
+                </label>
                 <textarea
                   className="input"
                   style={{ width: "100%", minHeight: 50, resize: "vertical" }}
@@ -400,16 +407,18 @@ export function ConfigPanel({
                 />
               </div>
             </div>
+            {/*
+              "O QUE ESTE BLOCO FARÁ" VIROU UM "?" NO CABEÇALHO.
+              
+              Era uma seção inteira no fim do painel — título, divisória e um parágrafo — pra uma
+              frase que a pessoa lê uma vez e nunca mais. Ela continua lá, no mesmo lugar onde
+              está a pergunta ("o que isto aqui faz?"), só que sob demanda.
+            */}
             <div className="panel-h divided">
               <h4>{traduzir("Configuração")}</h4>
+              <Ajuda texto={resumoNaturalNo(node, funis)} />
             </div>
             <FormularioDoNode node={node} area={fluxo?.area ?? "comercial"} fluxoAtualId={fluxo?.id} onTrocarTipo={onTrocarTipo} onUpdateNodeData={onUpdateNodeData} onRemoverOpcaoAresta={onRemoverOpcaoAresta} />
-            <div className="panel-h divided">
-              <h4>{traduzir("O que este bloco fará")}</h4>
-            </div>
-            <div className="flow-form">
-              <p className="hint flow-resumo-natural">{resumoNaturalNo(node, funis)}</p>
-            </div>
           </>
         ) : selectedNodes.length > 1 ? (
           <p className="hint">{selectedNodes.length} blocos selecionados: selecione um só pra configurar, ou nenhum pra ver as configurações gerais do fluxo.</p>

@@ -17,6 +17,7 @@ import { inserirTokenNoTexto } from "./variaveis";
 import { AreaDeUpload } from "@/components/area-de-upload";
 import { IconClose, IconDoc, IconFolder, IconImage, IconMic, IconVideoCam } from "@/components/icons";
 import { useIdioma } from "@/lib/idioma-context";
+import { Ajuda } from "@/components/ui";
 
 
 function tipoMidiaDoBloco(tipo: FlowNodeType): TipoMidiaArquivo {
@@ -184,7 +185,10 @@ export function MensagemMidiaForm({
   return (
     <div className="flow-form">
       <div className="field">
-        <label>{traduzir("Canal")}</label>
+        <label>
+          {traduzir("Canal")}
+          {janela ? <Ajuda texto={janela} /> : null}
+        </label>
         <select
           className="input"
           value={data.canal ?? canais[0]?.valor ?? "whatsapp"}
@@ -196,18 +200,26 @@ export function MensagemMidiaForm({
             </option>
           ))}
         </select>
-        {janela ? <p className="hint mt8">{janela}</p> : null}
       </div>
 
       <div className="field">
-        <label>{traduzir("Origem do arquivo")}</label>
+        <label>
+          {traduzir("Origem do arquivo")}
+          <Ajuda
+            texto={
+              tipoMidia === "documento"
+                ? traduzir("Escolha um arquivo que já está na biblioteca do CRM, ou envie um novo — o novo entra na biblioteca e pode ser reaproveitado em outros robôs. Formatos aceitos: {lista}.", { lista: EXTENSOES_ACEITAS_DOCUMENTO.join(", ") })
+                : traduzir("Escolha um arquivo que já está na biblioteca do CRM, ou envie um novo — o novo entra na biblioteca e pode ser reaproveitado em outros robôs.")
+            }
+          />
+        </label>
         <div className="flow-midia-origem">
           <button
             type="button"
             className="flow-midia-origem-btn"
             onClick={() => setModalAberto(true)}
           >
-            <IconFolder width={13} height={13} aria-hidden="true" /> {traduzir("Escolher da biblioteca")}
+            <IconFolder width={13} height={13} aria-hidden="true" /> {traduzir("Da biblioteca")}
           </button>
           <button
             type="button"
@@ -215,7 +227,7 @@ export function MensagemMidiaForm({
             onClick={() => fileInputRef.current?.click()}
             disabled={enviando}
           >
-            {enviando ? "Enviando…" : "Enviar novo arquivo"}
+            {enviando ? traduzir("Enviando…") : traduzir("Enviar arquivo")}
           </button>
         </div>
         {erroUpload ? <p className="hint mt8" style={{ color: "var(--danger)" }}>{erroUpload}</p> : null}
@@ -240,9 +252,6 @@ export function MensagemMidiaForm({
               disabled={enviando}
               aoEscolher={(file) => void processarUpload(file)}
             />
-            {tipoMidia === "documento" ? (
-              <p className="hint mt8">Formatos aceitos: {EXTENSOES_ACEITAS_DOCUMENTO.join(", ")}</p>
-            ) : null}
           </>
         ) : null}
       </div>
@@ -269,32 +278,41 @@ export function MensagemMidiaForm({
           </div>
           <div className="flow-midia-preview-acoes">
             <button type="button" className="btn ghost" onClick={() => setModalAberto(true)}>
-              {traduzir("Substituir (biblioteca)")}
+              {traduzir("Trocar na biblioteca")}
             </button>
             <button type="button" className="btn ghost" onClick={() => fileInputRef.current?.click()}>
-              {traduzir("Substituir (upload)")}
+              {traduzir("Enviar outro")}
             </button>
             <button type="button" className="btn ghost" onClick={removerArquivo}>
-              {traduzir("Remover arquivo")}
+              {traduzir("Remover")}
             </button>
           </div>
         </div>
       ) : null}
 
       <div className="field">
-        <label>{traduzir("Nome de exibição do arquivo")}</label>
+        <label>
+          {traduzir("Nome de exibição do arquivo")}
+          <Ajuda
+            texto={traduzir("Opcional: é o nome que o contato vê. Em branco, vale o nome real do arquivo ({nome}).", {
+              nome: data.arquivoNome || traduzir("nenhum ainda"),
+            })}
+          />
+        </label>
         <input
           className="input"
           placeholder={data.arquivoNome || "Ex.: Catálogo de Toldos"}
           value={data.arquivoNomeExibicao ?? ""}
           onChange={(e) => set({ arquivoNomeExibicao: e.target.value })}
         />
-        <p className="hint mt8">Opcional: se vazio, usa o nome real do arquivo ({data.arquivoNome || "nenhum ainda"}).</p>
       </div>
 
       <div className="field">
         <div className="flow-form-label-row">
-          <label style={{ marginBottom: 0 }}>{traduzir("Mensagem ou legenda")}</label>
+          <label style={{ marginBottom: 0 }}>
+            {traduzir("Mensagem ou legenda")}
+            <Ajuda texto={traduzir("Vai junto com o arquivo. Aceita variáveis, como {primeiro_nome}.")} />
+          </label>
           <VariavelDropdown onEscolher={(t) => set({ legenda: inserirTokenNoTexto(data.legenda ?? "", t, legendaRef.current) })} />
         </div>
         <textarea

@@ -2,6 +2,7 @@
 
 import type { AguardarData } from "@/lib/automation-flow/types";
 import { useIdioma } from "@/lib/idioma-context";
+import { Ajuda } from "@/components/ui";
 
 /**
  * "O que você quer aguardar?": a pergunta que o bloco responde.
@@ -44,7 +45,10 @@ export function AguardarForm({ data, onChange }: { data: AguardarData; onChange:
   return (
     <div className="flow-form">
       <div className="field">
-        <label>{traduzir("O que você quer aguardar?")}</label>
+        <label>
+          {traduzir("O que você quer aguardar?")}
+          {ajuda ? <Ajuda texto={traduzir(ajuda)} /> : null}
+        </label>
         <select
           className="input"
           value={escolhida}
@@ -65,7 +69,6 @@ export function AguardarForm({ data, onChange }: { data: AguardarData; onChange:
             </option>
           ))}
         </select>
-        {ajuda ? <p className="hint">{traduzir(ajuda)}</p> : null}
       </div>
 
       {ehDuracao ? (
@@ -130,10 +133,6 @@ export function AguardarForm({ data, onChange }: { data: AguardarData; onChange:
               ))}
             </select>
           </div>
-          <p className="hint">
-            {traduzir("Se ele responder antes, o fluxo continua na hora pelo caminho")} <strong>{traduzir("Respondeu")}</strong>.
-            Não fica esperando o prazo acabar.
-          </p>
         </div>
       ) : null}
 
@@ -145,7 +144,14 @@ export function AguardarForm({ data, onChange }: { data: AguardarData; onChange:
             e a resposta dele ficava sem tratamento nenhum.
           */}
           <div className="toggle-row">
-            <span className="tl">{traduzir("Continuar antes se o contato responder")}</span>
+            <span className="tl">
+              {traduzir("Continuar antes se o contato responder")}
+              <Ajuda
+                texto={traduzir(
+                  "Ligado, o bloco passa a ter dois caminhos: \"Respondeu\", seguido na hora em que a mensagem dele chegar, e \"Não respondeu\", seguido quando o tempo acabar. Desligado, o fluxo espera o tempo inteiro e segue por um caminho só.",
+                )}
+              />
+            </span>
             <button
               type="button"
               role="switch"
@@ -157,15 +163,6 @@ export function AguardarForm({ data, onChange }: { data: AguardarData; onChange:
               <span className="knob" />
             </button>
           </div>
-          {data.interromperSeResponder ? (
-            <p className="hint">
-              {traduzir("O bloco passa a ter dois caminhos:")} <strong>{traduzir("Respondeu")}</strong>, seguido na hora em que
-              a mensagem dele chegar, e <strong>{traduzir("Não respondeu")}</strong>, seguido quando o tempo
-              acabar. Ligue cada um ao que deve acontecer em cada caso.
-            </p>
-          ) : (
-            <p className="hint">{traduzir("Desligado, o fluxo espera o tempo inteiro e segue por um caminho só, mesmo que ele responda antes.")}</p>
-          )}
 
           <div className="toggle-row">
             <span className="tl">{traduzir("Contar só dias úteis")}</span>
@@ -194,7 +191,14 @@ export function AguardarForm({ data, onChange }: { data: AguardarData; onChange:
             </button>
           </div>
           <div className="toggle-row">
-            <span className="tl">{traduzir("Contar só o horário de expediente")}</span>
+            <span className="tl">
+              {traduzir("Contar só o horário de expediente")}
+              <Ajuda
+                texto={traduzir(
+                  "Com isto ligado, \"2 horas\" às 17h20 de sexta não termina às 19h20: termina às 9h20 de segunda. O horário é o de Configurações, um só pro workspace. Feriado não entra na conta: o CRM não tem calendário de feriados, e fingir que pula faria a mensagem sair no dia errado.",
+                )}
+              />
+            </span>
             <button
               type="button"
               role="switch"
@@ -206,14 +210,6 @@ export function AguardarForm({ data, onChange }: { data: AguardarData; onChange:
               <span className="knob" />
             </button>
           </div>
-          {data.somenteExpediente ? (
-            <p className="hint">
-              &quot;2 horas&quot; às 17h20 de sexta não termina às 19h20: termina às 9h20 de
-              segunda. É a diferença entre um follow-up que chega no meio do atendimento e um que
-              chega de madrugada. O horário é o de Configurações, um só pro workspace.
-            </p>
-          ) : null}
-          <p className="hint">{traduzir("Feriado não entra nessa conta: o CRM não tem calendário de feriados, e fingir que pula faria a mensagem sair no dia errado sem ninguém entender por quê.")}</p>
         </>
       ) : null}
     </div>

@@ -37,6 +37,7 @@ import { validarRegex } from "@/lib/automacoes/regex-seguro";
 import { CANAIS_DA_AREA, formatosDePergunta, type AreaAutomacao } from "@/lib/canais/capacidades";
 import { avisoDeJanela, canaisDaAreaParaBloco } from "./canais";
 import { useIdioma } from "@/lib/idioma-context";
+import { Ajuda } from "@/components/ui";
 
 
 /**
@@ -146,7 +147,10 @@ export function MensagemOpcoesForm({
   return (
     <div className="flow-form">
       <div className="field">
-        <label>{traduzir("Canal")}</label>
+        <label>
+          {traduzir("Canal")}
+          {janela ? <Ajuda texto={janela} /> : null}
+        </label>
         <select
           className="input"
           value={data.canal ?? canais[0]?.valor}
@@ -158,7 +162,6 @@ export function MensagemOpcoesForm({
             </option>
           ))}
         </select>
-        {janela ? <p className="hint mt8">{janela}</p> : null}
       </div>
 
       <div className="field">
@@ -177,13 +180,14 @@ export function MensagemOpcoesForm({
 
       <div className="field">
         <div className="flow-form-label-row">
-          <label style={{ marginBottom: 0 }}>{traduzir("Formato de resposta")}</label>
-          <span
-            className="hint"
-            title={traduzir("Alguns recursos interativos dependem do provedor e do tipo de conexão configurado.")}
-          >
-            ⓘ compatibilidade
-          </span>
+          <label style={{ marginBottom: 0 }}>
+            {traduzir("Formato de resposta")}
+            <Ajuda
+              texto={traduzir(
+                "O que cada conexão entrega de verdade: no WhatsApp oficial, até 3 opções viram botões e de 4 a 10 viram lista. Na conexão por QR Code não existe botão confiável, então a pergunta sai como menu numerado e o contato responde digitando o número. Nos dois casos o casamento da resposta aceita o número e o texto.",
+              )}
+            />
+          </label>
         </div>
         <div className="flow-formato-resposta-lista">
           {formatosDaArea.map((f) => (
@@ -204,10 +208,6 @@ export function MensagemOpcoesForm({
             </button>
           ))}
         </div>
-        <p className="hint mt8">
-          Só front-end nesta fase: nenhum formato liga em envio real de mensagem ainda. O menu numerado
-          continua disponível independentemente da conexão selecionada.
-        </p>
       </div>
 
       {formatoAtual === "menu_numerado" && opcoes.length > 0 ? (
@@ -218,7 +218,14 @@ export function MensagemOpcoesForm({
       ) : null}
 
       <div className="field">
-        <label>Opções ({opcoes.length})</label>
+        <label>
+          {traduzir("Opções")} ({opcoes.length})
+          <Ajuda
+            texto={traduzir(
+              "Cada opção vira uma saída do bloco, pra ligar no próximo passo. \"Outra resposta\" existe sempre; \"Sem resposta\" e \"Errou demais\" aparecem quando você preenche prazo e tentativas aqui embaixo.",
+            )}
+          />
+        </label>
         {opcoes.map((opcao, i) => (
           <div className="flow-opcao-bloco" key={opcao.id}>
             <div className="flow-opcao-row">
@@ -255,7 +262,14 @@ export function MensagemOpcoesForm({
               <summary>{traduzir("Ajustes desta opção")}</summary>
 
             <div className="flow-opcao-alternativas">
-              <label>{traduzir("Como casar a resposta")}</label>
+              <label>
+                {traduzir("Como casar a resposta")}
+                <Ajuda
+                  texto={traduzir(
+                    "No padrão, vale o número da opção, o texto dela e as respostas alternativas. \"Qualquer\" pega tudo que chegar, então deixe essa opção por último: as de baixo nunca seriam alcançadas. A comparação ignora acento e maiúscula.",
+                  )}
+                />
+              </label>
               <select
                 className="input"
                 value={opcao.comparacao ?? "padrao"}
@@ -268,11 +282,6 @@ export function MensagemOpcoesForm({
                   </option>
                 ))}
               </select>
-              {(opcao.comparacao ?? "padrao") === "padrao" ? (
-                <p className="hint mt8">
-                  {traduzir("Aceita o número da opção, o texto dela e as respostas alternativas abaixo.")}
-                </p>
-              ) : null}
               {(opcao.comparacao ?? "padrao") !== "padrao" && opcao.comparacao !== "qualquer" ? (
                 <input
                   className="input mt8"
@@ -285,21 +294,23 @@ export function MensagemOpcoesForm({
               {opcao.comparacao === "regex" ? (
                 (() => {
                   const checagem = validarRegex(opcao.valorComparado ?? "");
-                  return checagem.ok ? (
-                    <p className="hint mt8">{traduzir("Comparação sem acento e sem diferenciar maiúscula. A expressão é conferida antes de salvar e tem tempo limitado na execução.")}</p>
-                  ) : (
+                  return checagem.ok ? null : (
                     <p className="hint mt8" style={{ color: "var(--danger)" }}>
                       {checagem.motivo}
                     </p>
                   );
                 })()
               ) : null}
-              {opcao.comparacao === "qualquer" ? (
-                <p className="hint mt8">{traduzir("Pega tudo que chegar. Deixe por último: as opções abaixo desta nunca são alcançadas.")}</p>
-              ) : null}
             </div>
             <div className="flow-opcao-alternativas">
-              <label>{traduzir("Endereço do link")}</label>
+              <label>
+                {traduzir("Endereço do link")}
+                <Ajuda
+                  texto={traduzir(
+                    "Em branco, a opção é uma resposta normal, com caminho no fluxo. Com endereço, ela vira botão de URL: leva pro site e não cria caminho, porque quem clica sai e não responde nada — e a pergunta inteira passa a sair como menu numerado, com o link escrito na opção.",
+                  )}
+                />
+              </label>
               <input
                 className="input"
                 placeholder="https://…"
@@ -307,20 +318,15 @@ export function MensagemOpcoesForm({
                 onChange={(e) => atualizarOpcao(opcao.id, { url: e.target.value })}
                 aria-label={`Endereço da opção ${i + 1}`}
               />
-              {!opcao.url?.trim() ? (
-                <p className="hint mt8">{traduzir("Vazio = a opção é uma resposta normal, com caminho no fluxo.")}</p>
-              ) : null}
-              {opcao.url?.trim() ? (
-                <p className="hint mt8">
-                  Botão de URL: leva pro endereço e não cria caminho no fluxo, porque quem clica sai
-                  e não responde nada. Com um botão desses, a pergunta inteira sai como menu
-                  numerado, com o link escrito na opção.
-                </p>
-              ) : null}
             </div>
             {formatoAtual === "menu_numerado" && !opcao.url?.trim() ? (
               <div className="flow-opcao-alternativas">
-                <label>{traduzir("Outras respostas aceitas")}</label>
+                <label>
+                  {traduzir("Outras respostas aceitas")}
+                  <Ajuda
+                    texto={traduzir("Separe por vírgula. O número da opção e o texto dela já valem sozinhos.")}
+                  />
+                </label>
                 <input
                   className="input"
                   placeholder={`ex.: número ${i + 1}, opcao ${i + 1}, ${(opcao.rotulo || "palavra-chave").toLowerCase()}`}
@@ -335,9 +341,6 @@ export function MensagemOpcoesForm({
                   }
                   aria-label={`Respostas alternativas da opção ${i + 1}`}
                 />
-                <p className="hint mt8">
-                  Separe por vírgula. O número {i + 1} e o texto da opção já valem sozinhos.
-                </p>
               </div>
             ) : null}
             </details>
@@ -353,21 +356,17 @@ export function MensagemOpcoesForm({
           className="btn ghost block mt8"
           onClick={() => onChange({ ...data, opcoes: [...opcoes, { id: novoIdOpcao(), rotulo: "", url: "https://" }] })}
         >{traduzir("+ Botão de URL")}</button>
-        <p className="hint mt8">
-          <b>{traduzir("O que cada conexão entrega:")}</b> no WhatsApp oficial, até 3 opções viram botões e de 4 a
-          10 viram lista. Na conexão por QR Code não existe botão confiável, então a pergunta sai
-          como menu numerado (&quot;1 - …&quot;, &quot;2 - …&quot;) e a pessoa responde digitando o
-          número. Os dois casos funcionam: o casamento da resposta aceita o número e o texto.
-        </p>
-        <p className="hint mt8">
-          Cada opção vira uma saída no bloco. Conecte ela a um próximo passo no canvas. A saída
-          &quot;Outra resposta&quot; existe sempre; &quot;Sem resposta&quot; e &quot;Errou
-          demais&quot; aparecem quando você configura prazo e tentativas abaixo.
-        </p>
       </div>
 
       <div className="field">
-        <label>{traduzir("Esperar a resposta por")}</label>
+        <label>
+          {traduzir("Esperar a resposta por")}
+          <Ajuda
+            texto={traduzir(
+              "Em branco, espera pra sempre. Com prazo, aparece a saída \"Sem resposta\", que é por onde sai o follow-up de quem sumiu.",
+            )}
+          />
+        </label>
         <div className="funil-auto-horas">
           <input
             type="number"
@@ -381,14 +380,17 @@ export function MensagemOpcoesForm({
           />
           <span>minutos</span>
         </div>
-        <p className="hint mt8">
-          Vazio = espera pra sempre. Com prazo, aparece a saída &quot;Sem resposta&quot;, que é por
-          onde sai o follow-up de quem não respondeu.
-        </p>
       </div>
 
       <div className="field">
-        <label>{traduzir("Tolerar quantas respostas fora das opções")}</label>
+        <label>
+          {traduzir("Tolerar quantas respostas fora das opções")}
+          <Ajuda
+            texto={traduzir(
+              "Em branco, a pergunta se repete pra sempre enquanto a pessoa errar. Com um número, o fluxo para de repetir depois dessa quantidade de erros — é o que impede o \"não entendi\" virar um laço sem fim. Acertar zera a contagem.",
+            )}
+          />
+        </label>
         <input
           type="number"
           min={0}
@@ -412,15 +414,8 @@ export function MensagemOpcoesForm({
                 </option>
               ))}
             </select>
-            <p className="hint mt8">
-              Depois de {data.tentativasMaximas} erro{data.tentativasMaximas > 1 ? "s" : ""}, o
-              fluxo para de repetir a pergunta. É o que impede o &quot;não entendi&quot; virar um
-              laço sem fim com alguém do outro lado. Acertar zera a contagem.
-            </p>
           </>
-        ) : (
-          <p className="hint mt8">{traduzir("Vazio = repete a pergunta pra sempre enquanto a pessoa errar.")}</p>
-        )}
+        ) : null}
       </div>
     </div>
   );

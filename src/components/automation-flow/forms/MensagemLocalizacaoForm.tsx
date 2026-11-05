@@ -3,6 +3,7 @@
 import type { MensagemLocalizacaoData, OrigemLocalizacao } from "@/lib/automation-flow/types";
 import { IconLocalizacao } from "@/components/icons";
 import { useIdioma } from "@/lib/idioma-context";
+import { Ajuda } from "@/components/ui";
 
 // Mocado: localizações salvas do workspace, sem integração real com mapa.
 const LOCALIZACOES_SALVAS = [
@@ -34,7 +35,14 @@ export function MensagemLocalizacaoForm({ data, onChange }: { data: MensagemLoca
   return (
     <div className="flow-form">
       <div className="field">
-        <label>{traduzir("Origem da localização")}</label>
+        <label>
+          {traduzir("Origem da localização")}
+          <Ajuda
+            texto={traduzir("\"Do workspace\" usa o endereço cadastrado em Configurações: {local}.", {
+              local: `${LOCALIZACAO_WORKSPACE.nome}, ${LOCALIZACAO_WORKSPACE.endereco}, ${LOCALIZACAO_WORKSPACE.cidade}/${LOCALIZACAO_WORKSPACE.estado}`,
+            })}
+          />
+        </label>
         <select className="input" value={data.origem} onChange={(e) => onChange({ ...data, origem: e.target.value as OrigemLocalizacao })}>
           <option value="salva">{traduzir("Localização salva")}</option>
           <option value="workspace">{traduzir("Localização do workspace")}</option>
@@ -53,10 +61,6 @@ export function MensagemLocalizacaoForm({ data, onChange }: { data: MensagemLoca
             ))}
           </select>
         </div>
-      ) : null}
-
-      {data.origem === "workspace" ? (
-        <p className="hint">Usa a localização cadastrada em Configurações do workspace: {LOCALIZACAO_WORKSPACE.nome}, {LOCALIZACAO_WORKSPACE.endereco}, {LOCALIZACAO_WORKSPACE.cidade}/{LOCALIZACAO_WORKSPACE.estado}.</p>
       ) : null}
 
       {data.origem === "endereco" ? (

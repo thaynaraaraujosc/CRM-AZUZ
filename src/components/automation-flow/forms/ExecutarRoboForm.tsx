@@ -6,6 +6,7 @@ import type { AreaAutomacao } from "@/lib/canais/capacidades";
 
 import type { ExecutarRoboData } from "@/lib/automation-flow/types";
 import { useIdioma } from "@/lib/idioma-context";
+import { Ajuda } from "@/components/ui";
 
 /**
  * Escolha do robô que este bloco começa.
@@ -53,7 +54,14 @@ export function ExecutarRoboForm({
   return (
     <div className="flow-form">
       <div className="field">
-        <label>{traduzir("Robô")}</label>
+        <label>
+          {traduzir("Robô")}
+          <Ajuda
+            texto={traduzir(
+              "O robô escolhido começa pro mesmo contato, e este fluxo continua no próximo passo. Ele precisa estar publicado pra rodar.",
+            )}
+          />
+        </label>
         <select
           className="input"
           value={data.fluxoId ?? ""}
@@ -71,7 +79,6 @@ export function ExecutarRoboForm({
             </option>
           ))}
         </select>
-        <p className="hint mt8">{traduzir("O robô escolhido começa pro mesmo contato, e este fluxo continua no próximo passo. Ele precisa estar publicado pra rodar.")}</p>
       </div>
     </div>
   );

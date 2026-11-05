@@ -5,6 +5,7 @@ import { useFunis } from "@/lib/funis-context";
 import type { ConfiguracoesFluxo, FluxoAutomacao } from "@/lib/automation-flow/types";
 import { SeletorDeData } from "@/components/seletor-de-data";
 import { useIdioma } from "@/lib/idioma-context";
+import { Ajuda } from "@/components/ui";
 
 const LIMITES: { valor: NonNullable<ConfiguracoesFluxo["limiteExecucao"]>; label: string }[] = [
   { valor: "sempre", label: "Sempre que o gatilho acontecer"},
@@ -137,7 +138,18 @@ export function ConfiguracoesGeraisForm({
         />
       </div>
       <div className="field">
-        <label>{traduzir("Quando o gatilho acontecer fora desse horário")}</label>
+        <label>
+          {traduzir("Quando o gatilho acontecer fora desse horário")}
+          <Ajuda
+            texto={
+              cfg.foraDaJanela === "continuar"
+                ? traduzir("A mensagem sai na hora, mesmo de madrugada.")
+                : cfg.foraDaJanela === "encerrar" || cfg.foraDaJanela === "ignorar"
+                  ? traduzir("O lead não entra na automação e nada é enviado depois.")
+                  : traduzir("O lead fica esperando e a automação continua sozinha quando o horário abrir.")
+            }
+          />
+        </label>
         <select
           className="input"
           value={cfg.foraDaJanela === "ignorar" ? "encerrar" : (cfg.foraDaJanela ?? "aguardar")}
@@ -147,13 +159,6 @@ export function ConfiguracoesGeraisForm({
           <option value="continuar">{traduzir("Continuar mesmo assim")}</option>
           <option value="encerrar">{traduzir("Encerrar a execução")}</option>
         </select>
-        <p className="hint">
-          {cfg.foraDaJanela === "continuar"
-            ? "A mensagem sai na hora, mesmo de madrugada."
-            : cfg.foraDaJanela === "encerrar" || cfg.foraDaJanela === "ignorar"
-              ? "O lead não entra na automação e nada é enviado depois."
-              : "O lead entra na automação e ela fica parada até o próximo dia/horário ativo. Só vale com as esperas de verdade ligadas."}
-        </p>
       </div>
 
       <div className="field">
@@ -175,7 +180,12 @@ export function ConfiguracoesGeraisForm({
       </div>
 
       <div className="field">
-        <label>{traduzir("Limite de execução")}</label>
+        <label>
+          {traduzir("Limite de execução")}
+          <Ajuda
+            texto={traduzir("A contagem usa o histórico de execuções, que só existe com as esperas de verdade ligadas.")}
+          />
+        </label>
         <select
           className="input"
           value={cfg.limiteExecucao ?? "sempre"}
@@ -187,7 +197,6 @@ export function ConfiguracoesGeraisForm({
             </option>
           ))}
         </select>
-        <p className="hint">{traduzir("A contagem usa o histórico de execuções, que só existe com as esperas de verdade ligadas.")}</p>
       </div>
 
       {cfg.limiteExecucao === "no_maximo" ? (
@@ -231,7 +240,14 @@ export function ConfiguracoesGeraisForm({
       </div>
 
       <div className="toggle-row">
-        <span className="tl">{traduzir("Esperas e botões de verdade")}</span>
+        <span className="tl">
+          {traduzir("Esperas e botões de verdade")}
+          <Ajuda
+            texto={traduzir(
+              "Ligado (o normal), o fluxo guarda onde parou: a espera continua depois de horas ou dias, a resposta do contato retoma a conversa e a pergunta sai com as opções. Desligado, ele roda do jeito antigo: a pergunta vai só com o texto e qualquer espera encerra o fluxo. O que roda é sempre a última versão publicada, não o rascunho aberto aqui.",
+            )}
+          />
+        </span>
         <button
           type="button"
           role="switch"
@@ -243,13 +259,6 @@ export function ConfiguracoesGeraisForm({
           <span className="knob" />
         </button>
       </div>
-      <p className="hint">
-        Ligado (o normal), o fluxo guarda onde parou: a espera continua depois de horas ou dias, a
-        resposta do contato retoma a conversa, e a pergunta sai com as opções. Desligado, ele roda
-        do jeito antigo: a pergunta vai só com o texto, sem as opções, e qualquer espera encerra o
-        fluxo. O que roda é sempre a <strong>última versão publicada</strong>, não o rascunho aberto
-        aqui: depois de mexer, publique de novo.
-      </p>
     </div>
   );
 }

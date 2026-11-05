@@ -3,6 +3,7 @@
 import type { IaClassificarData } from "@/lib/automation-flow/types";
 import { IconClose } from "@/components/icons";
 import { useIdioma } from "@/lib/idioma-context";
+import { Ajuda } from "@/components/ui";
 
 /**
  * Configuração do bloco "Classificar com IA".
@@ -49,11 +50,14 @@ export function IaClassificarForm({
       </div>
 
       <div className="field">
-        <label>{traduzir("Categorias")}</label>
-        <p className="hint">
-          Cada uma vira uma saída do bloco. Quando a IA não encaixa a conversa em nenhuma, o fluxo
-          segue pela saída &quot;Não classificado&quot;. Ela não escolhe um caminho no chute.
-        </p>
+        <label>
+          {traduzir("Categorias")}
+          <Ajuda
+            texto={traduzir(
+              "Cada uma vira uma saída do bloco. Quando a IA não encaixa a conversa em nenhuma, o fluxo segue pela saída \"Não classificado\" — ela não escolhe um caminho no chute.",
+            )}
+          />
+        </label>
         {categorias.map((categoria, i) => (
           <div key={i} style={{ display: "flex", gap: 6, marginBottom: 6 }}>
             <input

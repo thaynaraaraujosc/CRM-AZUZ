@@ -11,6 +11,7 @@ import { useFormularios } from "@/lib/formularios-context";
 import { avisoDeJanela, canaisDaAreaParaBloco } from "./canais";
 import type { AreaAutomacao } from "@/lib/canais/capacidades";
 import { useIdioma } from "@/lib/idioma-context";
+import { Ajuda } from "@/components/ui";
 
 
 /**
@@ -67,7 +68,10 @@ export function MensagemForm({
     <div className="flow-form">
       {temCanal ? (
         <div className="field">
-          <label>{traduzir("Canal")}</label>
+          <label>
+            {traduzir("Canal")}
+            {janela ? <Ajuda texto={janela} /> : null}
+          </label>
           <select
             className="input"
             value={String(d.canal ?? canais[0]?.valor ?? "whatsapp")}
@@ -79,13 +83,19 @@ export function MensagemForm({
               </option>
             ))}
           </select>
-          {janela ? <p className="hint mt8">{janela}</p> : null}
         </div>
       ) : null}
 
       {temFormularioOrigem ? (
         <div className="field">
-          <label>{traduzir("Origem do formulário")}</label>
+          <label>
+            {traduzir("Origem do formulário")}
+            <Ajuda
+              texto={traduzir(
+                "No formulário interno, o contato recebe o link público dele — o mesmo do botão Compartilhar. No link externo, você cola o endereço de um formulário de fora.",
+              )}
+            />
+          </label>
           <select
             className="input"
             value={String(d.formularioOrigem ?? "interno")}
@@ -178,7 +188,10 @@ export function MensagemForm({
           mesma coisa que apagar e recriar, sem obrigar a pessoa a fazer isso à mão. */}
       {node.type === "mensagem_texto" && onTrocarTipo ? (
         <div className="field">
-          <label>{traduzir("Botões")}</label>
+          <label>
+            {traduzir("Botões")}
+            <Ajuda texto={traduzir("Com botão, a mensagem vira uma pergunta: ela para e espera a escolha do contato.")} />
+          </label>
           <button
             type="button"
             className="btn ghost block"
@@ -191,9 +204,6 @@ export function MensagemForm({
               onTrocarTipo(node.id, "mensagem_botoes", virarPergunta(d, { rotulo: "", url: "https://" }))
             }
           >{traduzir("+ Botão de URL")}</button>
-          <p className="hint mt8">
-            {traduzir("Com botão, a mensagem vira uma pergunta: ela para e espera a escolha do contato.")}
-          </p>
         </div>
       ) : null}
 
@@ -245,11 +255,11 @@ function EscolherFormulario({
           </option>
         ))}
       </select>
-      <p className="hint mt8">
-        {formularios.length
-          ? "O contato recebe o link público do formulário, o mesmo do botão Compartilhar."
-          : traduzir("Nenhum formulário criado ainda. Crie um em Formulários e volte aqui.")}
-      </p>
+      {/* Só o caso VAZIO continua escrito: ele não é explicação, é o que fazer agora — não há o
+          que escolher na lista, e o caminho pra resolver isso é criar um formulário. */}
+      {formularios.length ? null : (
+        <p className="hint mt8">{traduzir("Nenhum formulário criado ainda. Crie um em Formulários e volte aqui.")}</p>
+      )}
     </>
   );
 }

@@ -10574,27 +10574,56 @@ button.camp-row:hover {
 
 /* ---------------- Bloco "enviar mídia": biblioteca de arquivos (itens 3-9) ---------------- */
 
+/*
+ * OS DOIS BOTÕES DE ORIGEM SÃO UM PAR, e agora parecem um.
+ *
+ * Eram duas caixas soltas, cada uma com borda inteira, altura diferente do resto do formulário e
+ * o texto quebrando em duas linhas dentro de um painel estreito. Um par segmentado — moldura
+ * única, divisória no meio — diz sozinho que são duas faces da mesma escolha.
+ */
 .flow-midia-origem {
   display: flex;
-  gap: var(--space-2);
-  margin-bottom: 8px;
+  margin-bottom: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-2);
+  background: var(--surface-2);
+  overflow: hidden;
 }
 
 .flow-midia-origem-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   flex: 1;
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--line);
-  background: var(--navy-raised);
+  min-height: 36px;
+  padding: 0 10px;
+  border: 0;
+  background: none;
   color: var(--text-muted);
-  font-size: 13px;
-  font-weight: 600;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: var(--fw-semibold);
+  line-height: 1.2;
   cursor: pointer;
-  text-align: center;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.flow-midia-origem-btn + .flow-midia-origem-btn {
+  border-left: 1px solid var(--line);
+}
+
+.flow-midia-origem-btn:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+
+.flow-midia-origem-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .flow-midia-origem-btn.sel {
-  border-color: var(--blue);
   background: var(--blue-soft-2);
   color: var(--blue);
 }
@@ -10667,9 +10696,18 @@ button.camp-row:hover {
 
 .flow-midia-preview-acoes {
   display: flex;
-  gap: var(--space-2);
-  margin-top: 8px;
+  gap: 6px;
+  margin-top: 10px;
   flex-wrap: wrap;
+}
+
+/* Botões de manutenção do arquivo: pequenos e do mesmo tamanho, porque são três ações irmãs e
+   nenhuma delas é a principal da tela. */
+.flow-midia-preview-acoes .btn {
+  flex: 1 1 auto;
+  min-height: 32px;
+  padding: 0 10px;
+  font-size: 12px;
 }
 
 .flow-biblioteca-modal {
@@ -19401,11 +19439,25 @@ table.tbl .name-cell .r {
  * "esqueci". A pastilha acende sozinha nesse caso e, clicada, devolve tudo pro vazio: é também o
  * "restaurar" que a Thaynara pediu, no gesto mais curto.
  */
-/* O "?" ao lado do rótulo: o rótulo é `display: block`, então a linha vira flex só quando há um. */
-.fauto-painel .field label:has(.ajuda) {
+/*
+ * O "?" AO LADO DO RÓTULO, em qualquer campo do CRM.
+ *
+ * O rótulo é `display: block`; a linha só vira flex quando existe um "?" nela, pra não mexer em
+ * nada onde ele não aparece. Antes isto valia só dentro do painel do funil, e o mesmo "?" no
+ * painel de configuração do robô caía embaixo do texto.
+ */
+.field label:has(.ajuda),
+.toggle-row .tl:has(.ajuda),
+.panel-h:has(.ajuda) {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+/* No cabeçalho de seção o "?" anda junto do título: `.panel-h` é `space-between`, e sem isto ele
+   atravessaria o painel inteiro até a borda direita, longe da palavra que explica. */
+.panel-h:has(.ajuda) {
+  justify-content: flex-start;
 }
 
 .fauto-dia-sempre {
@@ -28078,4 +28130,94 @@ td.trafego-col-crm:first-of-type {
 
 .fauto-add:hover {
   background: color-mix(in srgb, var(--acao) 6%, var(--surface-elevated));
+}
+
+
+/* ==========================================================================
+   O PAINEL DE CONFIGURAÇÃO DO ROBÔ: acabamento
+   ==========================================================================
+   "Esse campo de configuração aqui, eu quero melhorar ele, deixar ele mais moderno, os botões
+   mais modernos, espaços."
+
+   O que estava errado não era cor nem fonte: era RITMO. Os campos tinham o mesmo recuo lateral do
+   corpo (dois recuos somados), as divisórias eram tão fortes quanto a do cabeçalho de seção, os
+   controles tinham alturas diferentes entre si e as frases de ajuda empurravam tudo pra baixo —
+   essas últimas viraram "?" no rótulo, que é a outra metade deste acerto.
+   ========================================================================== */
+
+/* O recuo lateral é do CORPO do painel, uma vez só. O campo cuida do espaço vertical. */
+.flow-config .flow-form > .field {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.flow-config .flow-form > .field:last-child {
+  border-bottom: none;
+  padding-bottom: 2px;
+}
+
+.flow-config .flow-form > .field:first-child {
+  padding-top: 2px;
+}
+
+.flow-config .field label {
+  margin-bottom: 7px;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+}
+
+/* Uma altura só pra tudo que se clica ou se preenche: campo, seletor e botão de bloco. Alturas
+   diferentes em controles vizinhos é o que faz um formulário parecer montado aos pedaços. */
+.flow-config .input,
+.flow-config select.input {
+  min-height: 38px;
+  border-radius: 10px;
+}
+
+.flow-config textarea.input {
+  border-radius: 10px;
+  padding-top: 9px;
+}
+
+.flow-config .btn.block {
+  width: 100%;
+  min-height: 36px;
+  border-radius: 10px;
+  font-size: 12.5px;
+}
+
+/* A divisória do cabeçalho de seção é a única forte: é ela que separa um assunto do outro. */
+.flow-config .panel-h {
+  padding: 16px 0 12px;
+}
+
+.flow-config .panel-h.divided {
+  margin-top: 6px;
+  border-top: 1px solid var(--line);
+  border-bottom: none;
+  padding-top: 16px;
+}
+
+.flow-config .panel-h h4 {
+  font-size: 14px;
+}
+
+/* As abas ficam com área de clique de gente e o estado ativo mais claro. */
+.flow-config-tabs .flow-tab {
+  padding: 11px var(--space-2);
+  font-size: 12.5px;
+  letter-spacing: 0.01em;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.flow-config-tabs .flow-tab:hover {
+  color: var(--ink);
+}
+
+/* A área de soltar arquivo: mais baixa e menos "cartaz". Ela dividia o campo com dois botões que
+   fazem a mesma coisa, e ocupava mais altura que o resto do formulário inteiro. */
+.flow-config .flow-midia-dropzone,
+.flow-config .upload-area {
+  padding: 16px 12px;
+  border-radius: 10px;
 }

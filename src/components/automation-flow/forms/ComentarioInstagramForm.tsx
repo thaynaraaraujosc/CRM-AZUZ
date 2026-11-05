@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useIdioma } from "@/lib/idioma-context";
+import { Ajuda } from "@/components/ui";
 
 type Publicacao = {
   id: string;
@@ -98,7 +99,14 @@ export function ComentarioInstagramForm({
   return (
     <div className="flow-form">
       <div className="field">
-        <label>{traduzir("Palavras que disparam")}</label>
+        <label>
+          {traduzir("Palavras que disparam")}
+          <Ajuda
+            texto={traduzir(
+              "Sem palavra nenhuma, QUALQUER comentário dispara a automação. Com palavras, basta uma delas aparecer no comentário.",
+            )}
+          />
+        </label>
         <div className="ig-palavras">
           {palavras.map((palavra) => (
             <span key={palavra} className="ig-palavra-chip">
@@ -126,15 +134,13 @@ export function ComentarioInstagramForm({
           }}
           onBlur={adicionarPalavra}
         />
-        <p className="hint">
-          {palavras.length === 0
-            ? "Sem palavra nenhuma, QUALQUER comentário dispara a automação."
-            : traduzir("Basta uma das palavras aparecer no comentário.")}
-        </p>
       </div>
 
       <div className="field">
-        <label>{traduzir("Como comparar")}</label>
+        <label>
+          {traduzir("Como comparar")}
+          <Ajuda texto={traduzir(MODOS.find((m) => m.valor === (data.modoPalavra ?? "qualquer"))?.ajuda ?? "")} />
+        </label>
         <select
           className="input"
           value={data.modoPalavra ?? "qualquer"}
@@ -146,7 +152,6 @@ export function ComentarioInstagramForm({
             </option>
           ))}
         </select>
-        <p className="hint">{MODOS.find((m) => m.valor === (data.modoPalavra ?? "qualquer"))?.ajuda}</p>
       </div>
 
       <div className="toggle-row">
@@ -156,9 +161,9 @@ export function ComentarioInstagramForm({
             checked={data.ignorarAcentos ?? true}
             onChange={(e) => onChange({ ...data, ignorarAcentos: e.target.checked })}
           />{" "}
-          Ignorar acentos e maiúsculas
+          {traduzir("Ignorar acentos e maiúsculas")}
+          <Ajuda texto={traduzir("Com isso, \"GUIA\", \"guia\" e \"guía\" contam como a mesma palavra.")} />
         </label>
-        <p className="hint">Com isso, &quot;GUIA&quot;, &quot;guia&quot; e &quot;guía&quot; contam como a mesma palavra.</p>
       </div>
 
       <div className="field">
