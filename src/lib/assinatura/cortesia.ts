@@ -1,5 +1,5 @@
 /**
- * CONTA DE CORTESIA: o CRM liberado, sem cobrança, até uma data.
+ * CONTA DE CORTESIA: o CRM liberado, sem cobrança, com ou sem prazo.
  *
  * A regra mora aqui, pura, porque ela decide quem usa o produto sem pagar — e isso precisa de
  * teste. No meio da leitura do banco ou do proxy ela só poderia ser exercitada com sessão,
@@ -13,8 +13,10 @@
 
 export type DadosDaAssinatura = {
   status: string;
+  /** A DECISÃO: esta conta é cortesia? Ver `ehCortesia` pro porquê de ser uma coluna. */
+  cortesia?: boolean | null;
   cortesiaAte?: Date | string | null;
-  /** Vazio quando não existe cobrança de verdade por trás (é o caso de toda cortesia). */
+  /** Vazio quando não existe cobrança de verdade por trás. */
   asaasSubscriptionId?: string | null;
 };
 
@@ -27,20 +29,30 @@ function comoData(valor: Date | string | null | undefined): Date | null {
 /**
  * A CONTA É DE CORTESIA? É sim/não, e o prazo é outra pergunta.
  *
- * Duas formas de ser cortesia, e as duas são de verdade:
- *  - COM PRAZO: tem data, e ela ainda não chegou;
- *  - SEM PRAZO: está liberada e não existe cobrança por trás (`asaasSubscriptionId` vazio). É a
- *    conta dada "pra sempre" — de sócio, de parceiro, de quem nunca vai ser cobrado.
+ * ISTO ERA DEDUZIDO E A DEDUÇÃO ESTAVA ERRADA. A regra antiga dizia: "está liberada e não tem
+ * assinatura na Asaas, logo é cortesia". Ela acertava a conta criada por nós do zero e errava
+ * exatamente o caso que mais importa — a conta que UM DIA teve cobrança de verdade e que a Azuz
+ * decidiu liberar. Marcar "Sim" nela não mudava nada na tela: o `asaasSubscriptionId` continuava
+ * lá, a dedução continuava respondendo "não é cortesia", e o botão voltava sozinho pro "Não".
+ * Foi assim com a Azuz Digital e com a conta da Emilly Thaynara.
  *
- * A segunda não precisa de coluna nova porque ela já é exatamente isto no banco: usar o produto
- * sem nada cobrando. Inventar um booleano ao lado criaria dois jeitos de dizer a mesma coisa, e
- * eles divergiriam no primeiro lugar que esquecesse de atualizar um dos dois.
+ * Agora quem manda é a coluna `cortesia`: uma decisão registrada, não um palpite sobre o estado
+ * da cobrança. Com prazo, ela vale até a data; sem prazo, vale até alguém marcar "Não".
+ *
+ * A dedução continua viva só como LEITURA DO PASSADO, pras linhas gravadas antes da coluna
+ * existir: liberada, sem prazo e sem nada cobrando ainda significa cortesia. Sem isso, toda conta
+ * de cortesia antiga cairia na tela de pagamento no primeiro deploy.
  */
 export function ehCortesia(assinatura: DadosDaAssinatura, agora: Date = new Date()): boolean {
+  const temPrazo = comoData(assinatura.cortesiaAte) !== null;
+
+  // Dito de propósito: com prazo, vale enquanto a data não chega; sem prazo, vale sempre.
+  if (assinatura.cortesia === true) return temPrazo ? cortesiaValendo(assinatura, agora) : true;
+  if (assinatura.cortesia === false) return false;
+
   if (cortesiaValendo(assinatura, agora)) return true;
   const semCobranca = !assinatura.asaasSubscriptionId?.trim();
-  const semPrazo = comoData(assinatura.cortesiaAte) === null;
-  return semCobranca && semPrazo && assinatura.status === "ativa";
+  return semCobranca && !temPrazo && assinatura.status === "ativa";
 }
 
 /** A cortesia COM PRAZO ainda está valendo nesta data? Sem prazo responde `false`: ver `ehCortesia`. */
@@ -57,7 +69,9 @@ export function cortesiaValendo(assinatura: DadosDaAssinatura, agora: Date = new
  * entrando. Calculando na leitura, o acesso acaba no segundo marcado, com rodada ou sem.
  */
 export function statusEfetivo(assinatura: DadosDaAssinatura, agora: Date = new Date()): string {
-  if (cortesiaValendo(assinatura, agora)) return "ativa";
+  // Cortesia valendo é acesso liberado, ponto — inclusive na conta que tem cobrança de verdade na
+  // Asaas e que a Azuz decidiu liberar. Lá a cobrança segue existindo; aqui o acesso está dado.
+  if (ehCortesia(assinatura, agora)) return "ativa";
 
   const ate = comoData(assinatura.cortesiaAte);
   const teveCortesia = ate !== null;

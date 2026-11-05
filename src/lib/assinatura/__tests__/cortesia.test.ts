@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { cortesiaValendo, diasDeCortesia, fimDaCortesia, statusEfetivo } from "../cortesia";
+import { cortesiaValendo, diasDeCortesia, ehCortesia, fimDaCortesia, statusEfetivo } from "../cortesia";
 
 const AGORA = new Date("2026-11-05T12:00:00Z");
 
@@ -41,6 +41,39 @@ describe("conta de cortesia", () => {
     // precisa ser limpa junto. Enquanto ela estiver lá, o prazo é o que vale.
     const a = { status: "cancelada", cortesiaAte: new Date("2027-01-05T12:00:00Z") };
     expect(statusEfetivo(a, AGORA)).toBe("ativa");
+  });
+
+  it("conta COM assinatura na Asaas marcada como cortesia é cortesia", () => {
+    /*
+     * O DEFEITO QUE ESTA COLUNA EXISTE PRA CORRIGIR.
+     *
+     * Enquanto a cortesia era deduzida ("não tem cobrança, logo é cortesia"), marcar “Sim” numa
+     * conta que tem assinatura de verdade na Asaas não mudava nada: a dedução continuava
+     * respondendo “não”, a tela recarregava e o botão voltava sozinho pro “Não”. Foi o que
+     * aconteceu com a Azuz Digital e com a conta da Emilly Thaynara.
+     */
+    const a = { status: "ativa", cortesia: true, asaasSubscriptionId: "sub_123" };
+    expect(ehCortesia(a, AGORA)).toBe(true);
+    expect(statusEfetivo(a, AGORA)).toBe("ativa");
+  });
+
+  it("cortesia dita com prazo termina no prazo, mesmo marcada", () => {
+    const a = { status: "ativa", cortesia: true, cortesiaAte: new Date("2026-10-05T12:00:00Z") };
+    expect(ehCortesia(a, AGORA)).toBe(false);
+    expect(statusEfetivo(a, AGORA)).toBe("pendente");
+  });
+
+  it("“Não” marcado vence a dedução antiga", () => {
+    // Conta liberada e sem nada cobrando: a dedução diria “cortesia”. A decisão registrada manda.
+    const a = { status: "ativa", cortesia: false, asaasSubscriptionId: "" };
+    expect(ehCortesia(a, AGORA)).toBe(false);
+  });
+
+  it("linha antiga, sem a coluna, continua lida como antes", () => {
+    // Gravada antes da coluna existir: liberada, sem prazo e sem cobrança ainda é cortesia. Sem
+    // esta leitura, toda cortesia antiga cairia na tela de pagamento no primeiro deploy.
+    expect(ehCortesia({ status: "ativa", asaasSubscriptionId: "" }, AGORA)).toBe(true);
+    expect(ehCortesia({ status: "ativa", asaasSubscriptionId: "sub_9" }, AGORA)).toBe(false);
   });
 
   it("conta os dias que faltam", () => {

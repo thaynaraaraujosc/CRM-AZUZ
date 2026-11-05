@@ -1220,6 +1220,18 @@ model Assinatura {
   proximoVencimento DateTime?
   canceladaEm       DateTime?
 
+  /// ESTA CONTA É DE CORTESIA? Sim/não, dito de propósito.
+  ///
+  /// Antes isto era DEDUZIDO: "está liberada e não tem assinatura na Asaas, logo é cortesia". A
+  /// dedução quebrava justamente no caso que mais importa — a conta que um dia teve cobrança de
+  /// verdade e que a Azuz decidiu liberar. Marcar "Sim" nela não mudava nada na tela, porque o
+  /// `asaasSubscriptionId` continuava lá e a dedução continuava respondendo "não é cortesia".
+  ///
+  /// Com a coluna, cortesia é uma DECISÃO registrada, e não um palpite sobre o estado da cobrança.
+  /// Ela não cancela nada na Asaas: liberar o acesso aqui e encerrar a cobrança lá são duas ações,
+  /// e a tela diz isso quando a conta tem assinatura de verdade.
+  cortesia Boolean @default(false)
+
   /// ATÉ QUANDO ESTA CONTA É DE CORTESIA.
   ///
   /// Nulo é o normal: a conta paga. Com data, a empresa usa o CRM inteiro sem nenhuma cobrança

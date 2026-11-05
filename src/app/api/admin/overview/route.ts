@@ -16,7 +16,7 @@ export async function GET() {
     prisma.membro.count(),
     prisma.membro.count({ where: { ativo: true } }),
     prisma.assinatura.findMany({
-      select: { status: true, valor: true, cortesiaAte: true, asaasSubscriptionId: true },
+      select: { status: true, valor: true, cortesia: true, cortesiaAte: true, asaasSubscriptionId: true },
     }),
   ]);
 
@@ -29,12 +29,13 @@ export async function GET() {
    * não paga não é um número aproximado — ele responde errado à única pergunta que justifica
    * existir.
    *
-   * Pagante é quem tem assinatura de verdade na Asaas (`asaasSubscriptionId`) e não está em
-   * cortesia. Cortesia e teste aparecem contados à parte, porque saber quantas contas usam o CRM
+   * Pagante é quem tem assinatura de verdade na Asaas (`asaasSubscriptionId`) e não está marcada
+   * como cortesia — a pergunta é `ehCortesia`, e não "a cortesia tem prazo valendo": existe conta
+   * com cobrança lá na Asaas que a Azuz liberou aqui sem prazo nenhum, e ela não é receita. Cortesia e teste aparecem contados à parte, porque saber quantas contas usam o CRM
    * de graça também é informação — só não é receita.
    */
   const ehPagante = (a: (typeof assinaturas)[number]) =>
-    statusEfetivo(a) === "ativa" && Boolean(a.asaasSubscriptionId?.trim()) && !cortesiaValendo(a);
+    statusEfetivo(a) === "ativa" && Boolean(a.asaasSubscriptionId?.trim()) && !ehCortesia(a);
 
   const pagantes = assinaturas.filter(ehPagante);
   const mrr = pagantes.reduce((soma, a) => soma + Number(a.valor), 0);

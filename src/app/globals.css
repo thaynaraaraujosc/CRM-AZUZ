@@ -23719,9 +23719,68 @@ table.tbl .name-cell .r {
   border-color: var(--danger);
 }
 
-/* Os prazos ficam numa segunda fileira, abaixo do Sim/Não: são duas perguntas, não uma. */
+/*
+ * OS SELETORES DO PAINEL: um grupo só, e o escolhido PREENCHIDO DE DOURADO.
+ *
+ * O estado ligado era um azul claro com texto marinho — tão perto do desligado que a pergunta
+ * "qual deles está marcado?" exigia comparar os dois lado a lado. Num seletor de duas opções
+ * (Sim/Não) isso é o bastante pra alguém mudar o que não queria mudar.
+ *
+ * Dourado é a cor de ação da marca, e é a única no painel: o que está dourado é o que vale.
+ */
+.admin-view .seg-picker {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+
+.admin-view .seg-chip {
+  padding: 6px 14px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  font-size: 12.5px;
+  font-weight: var(--fw-semibold);
+  color: var(--text-muted);
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.admin-view .seg-chip:hover:not(.on):not(:disabled) {
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+
+.admin-view .seg-chip.on {
+  background: var(--acao);
+  color: var(--acao-texto);
+  border-color: transparent;
+  box-shadow: var(--shadow-xs);
+}
+
+.admin-view .seg-chip:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* A segunda fileira é a continuação da pergunta, não outra seção: 8px, e não um vão. */
 .admin-view .admin-prazos {
   margin-top: 8px;
+}
+
+/* Encerrar a cortesia é destrutivo e fica fora do grupo: ele não é uma opção entre outras. */
+.admin-view .seg-chip.perigo.on,
+.admin-view .seg-chip.perigo {
+  color: var(--danger);
+  background: none;
+}
+
+.admin-view .seg-chip.perigo:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
 }
 
 .admin-view .field > label {

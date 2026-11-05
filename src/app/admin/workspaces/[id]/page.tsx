@@ -150,6 +150,30 @@ export default function AdminWorkspaceDetalhePage({ params }: { params: Promise<
   const temCobranca = Boolean(workspace.assinatura?.asaasSubscriptionId?.trim());
   const cortesiaLigada = Boolean(workspace.assinatura?.ehCortesia);
 
+  /**
+   * O estado da cortesia em uma frase, pro "?" — porque ele muda de conta pra conta.
+   *
+   * Quando existe cobrança de verdade na Asaas, a frase diz isso em voz alta: marcar cortesia
+   * aqui LIBERA O ACESSO e não encerra nada lá. São dois sistemas, e quem esquece do segundo
+   * descobre pela fatura do cliente.
+   */
+  const avisoDaAsaas = temCobranca
+    ? " A cobrança na Asaas continua existindo: liberar o acesso aqui não cancela a assinatura lá."
+    : "";
+  const explicacaoDaCortesia = !cortesiaLigada
+    ? (temCobranca
+        ? "Esta conta tem cobrança de verdade na Asaas. Marcando “Sim”, ela passa a usar o CRM sem cobrança."
+        : "Sem cortesia: a conta precisa pagar pra usar o CRM. Marcando “Sim”, ela é liberada sem nenhuma cobrança.") +
+      avisoDaAsaas
+    : (cortesiaAte
+        ? `Grátis até ${cortesiaAte.toLocaleDateString("pt-BR")}${
+            diasRestantes !== null && diasRestantes >= 0
+              ? ` — faltam ${diasRestantes} dias, e depois disso a cobrança começa a contar.`
+              : " — o prazo já venceu, e a conta está na tela de pagamento."
+          }`
+        : "De graça por tempo indeterminado, até alguém marcar “Não” aqui. Escolha um prazo se quiser que a cobrança comece sozinha em alguma data.") +
+      avisoDaAsaas;
+
   return (
     <div className="view">
       <Topbar title={workspace.nome} sub={`/${workspace.slug}`} />
@@ -198,7 +222,10 @@ export default function AdminWorkspaceDetalhePage({ params }: { params: Promise<
         <div className="field admin-secao">
           <label>
             Conta de cortesia
-            <Ajuda texto="Sim libera o CRM sem nenhuma cobrança. Com prazo, a conta cai na tela de pagamento sozinha no dia marcado, e a cobrança começa a contar dali. Sem prazo, ela fica liberada até alguém encerrar aqui." />
+            {/* A situação da cortesia mora no "?" junto da explicação: ela muda de conta pra
+                conta, e uma frase embaixo dos botões vira parágrafo que ninguém lê depois da
+                segunda vez. Quem precisa do prazo de relance lê na lista de empresas. */}
+            <Ajuda texto={explicacaoDaCortesia} />
           </label>
           <div className="seg-picker" role="group" aria-label="Conta de cortesia">
             <button
@@ -222,46 +249,38 @@ export default function AdminWorkspaceDetalhePage({ params }: { params: Promise<
           </div>
 
           {cortesiaLigada ? (
-            <>
-              <div className="seg-picker admin-prazos" role="group" aria-label="Prazo da cortesia">
+            <div className="seg-picker admin-prazos" role="group" aria-label="Prazo da cortesia">
+              <button
+                type="button"
+                className={`seg-chip${cortesiaAte ? "" : " on"}`}
+                aria-pressed={!cortesiaAte}
+                disabled={salvandoAssinatura}
+                onClick={() => alterarCortesia(true, 0)}
+              >
+                Sem prazo
+              </button>
+              {/* O PRAZO ESCOLHIDO APARECE COMO A OPÇÃO MARCADA, e não como uma frase embaixo.
+                  Os botões de prazo somam meses a partir de hoje: nenhum deles "é" a data que já
+                  está valendo, então ela é a própria marca de seleção. Sem isto, com prazo
+                  definido nenhum botão ficava aceso e a tela parecia não ter escolha nenhuma. */}
+              {cortesiaAte ? (
+                <span className="seg-chip on" aria-current="true">
+                  {cortesiaAte.toLocaleDateString("pt-BR")}
+                </span>
+              ) : null}
+              {PRAZOS_DE_CORTESIA.map((pr) => (
                 <button
+                  key={pr.meses}
                   type="button"
-                  className={`seg-chip${cortesiaAte ? "" : " on"}`}
-                  aria-pressed={!cortesiaAte}
+                  className="seg-chip"
                   disabled={salvandoAssinatura}
-                  onClick={() => alterarCortesia(true, 0)}
+                  onClick={() => alterarCortesia(true, pr.meses)}
                 >
-                  Sem prazo
+                  {pr.label}
                 </button>
-                {PRAZOS_DE_CORTESIA.map((pr) => (
-                  <button
-                    key={pr.meses}
-                    type="button"
-                    className="seg-chip"
-                    disabled={salvandoAssinatura}
-                    onClick={() => alterarCortesia(true, pr.meses)}
-                  >
-                    {pr.label}
-                  </button>
-                ))}
-              </div>
-              <p className="hint" style={{ marginTop: 6 }}>
-                {cortesiaAte
-                  ? `Grátis até ${cortesiaAte.toLocaleDateString("pt-BR")}${
-                      diasRestantes !== null && diasRestantes >= 0
-                        ? ` — faltam ${diasRestantes} dias. Depois disso a cobrança começa a contar.`
-                        : " — o prazo já venceu, e a conta está na tela de pagamento."
-                    }`
-                  : "De graça por tempo indeterminado. Escolha um prazo acima se quiser que a cobrança comece sozinha em alguma data."}
-              </p>
-            </>
-          ) : (
-            <p className="hint" style={{ marginTop: 6 }}>
-              {temCobranca
-                ? "Esta conta tem cobrança de verdade na Asaas."
-                : "Sem cortesia: a conta precisa pagar pra usar o CRM."}
-            </p>
-          )}
+              ))}
+            </div>
+          ) : null}
         </div>
       </div>
 

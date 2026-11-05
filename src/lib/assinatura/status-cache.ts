@@ -44,7 +44,7 @@ export async function statusDaAssinatura(workspaceId: string): Promise<string | 
   limpar(agora);
   const assinatura = await prisma.assinatura.findUnique({
     where: { workspaceId },
-    select: { status: true, cortesiaAte: true, asaasSubscriptionId: true },
+    select: { status: true, cortesia: true, cortesiaAte: true, asaasSubscriptionId: true },
   });
   /*
    * A CORTESIA É CALCULADA NA LEITURA, e não guardada como mudança de coluna.

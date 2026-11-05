@@ -115,14 +115,25 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/admin/work
    * exatamente isto: liberada, sem nada cobrando.
    * Não: a data sai e o acesso vira "pendente", que é o que manda a pessoa pra tela de pagamento.
    * Sem limpar a data, o prazo continuaria valendo por cima do acesso.
+   *
+   * A coluna `cortesia` é gravada JUNTO, e é ela que a tela lê de volta. Enquanto a cortesia era
+   * deduzida da ausência de cobrança na Asaas, marcar "Sim" numa conta que tem assinatura de
+   * verdade não mudava nada: a resposta do GET vinha "não é cortesia" e o botão voltava sozinho.
+   * Nada aqui cancela a cobrança na Asaas — liberar o acesso e encerrar a cobrança são duas
+   * ações, e a tela avisa isso.
    */
   const dadosDaCortesia = !mexeNaCortesia
     ? {}
     : cortesia
       ? cortesiaMeses > 0
-        ? { cortesiaAte: fimDaCortesia(cortesiaMeses), proximoVencimento: fimDaCortesia(cortesiaMeses), status: "ativa" }
-        : { cortesiaAte: null, proximoVencimento: null, status: "ativa" }
-      : { cortesiaAte: null, status: status ?? "pendente" };
+        ? {
+            cortesia: true,
+            cortesiaAte: fimDaCortesia(cortesiaMeses),
+            proximoVencimento: fimDaCortesia(cortesiaMeses),
+            status: "ativa",
+          }
+        : { cortesia: true, cortesiaAte: null, proximoVencimento: null, status: "ativa" }
+      : { cortesia: false, cortesiaAte: null, status: status ?? "pendente" };
 
   const dados = { ...(status ? { status } : {}), ...dadosDaCortesia };
 
@@ -135,6 +146,7 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/admin/work
       valor: PLANOS.completo.valor,
       status: dados.status ?? "pendente",
       asaasCustomerId: "",
+      cortesia: dadosDaCortesia.cortesia ?? false,
       cortesiaAte: dadosDaCortesia.cortesiaAte ?? null,
     },
     update: dados,

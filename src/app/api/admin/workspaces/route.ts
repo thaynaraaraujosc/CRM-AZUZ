@@ -30,6 +30,7 @@ export async function GET() {
           status: true,
           valor: true,
           proximoVencimento: true,
+          cortesia: true,
           cortesiaAte: true,
           asaasSubscriptionId: true,
         },
@@ -211,6 +212,8 @@ export async function POST(request: Request) {
          */
         status: cortesia ? "ativa" : "pendente",
         asaasCustomerId: "",
+        // Dito, não deduzido: ver `lib/assinatura/cortesia.ts`.
+        cortesia,
         cortesiaAte,
         // A primeira cobrança parte do fim da cortesia: é o que a tela de pagamento mostra.
         proximoVencimento: cortesiaAte,

@@ -33,7 +33,9 @@ export async function GET() {
         select: {
           id: true,
           nome: true,
-          assinatura: { select: { status: true, cortesiaAte: true, asaasSubscriptionId: true, valor: true } },
+          assinatura: {
+            select: { status: true, cortesia: true, cortesiaAte: true, asaasSubscriptionId: true, valor: true },
+          },
         },
       },
     },
