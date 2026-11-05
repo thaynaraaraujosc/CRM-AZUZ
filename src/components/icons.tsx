@@ -1068,3 +1068,12 @@ export function IconVarinha(props: Props) {
     </svg>
   );
 }
+
+/** Funil: a condição que filtra quem segue por um caminho. */
+export function IconFiltro(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M3 5h18l-7 8v6l-4-2v-4Z" />
+    </svg>
+  );
+}

@@ -33,20 +33,20 @@ export function CondicaoRamosForm({
       {ramos.map((ramo, i) => (
         <div className="field" key={ramo.id}>
           <label>
-            {traduzir("Caminho")} {i + 1}
+            {traduzir("Condição")} {i + 1}
           </label>
           <div className="cond-ramo-painel-topo">
             <input
               className="input"
               value={ramo.rotulo ?? ""}
-              placeholder={traduzir("Nome deste caminho (opcional)")}
+              placeholder={traduzir("Nome desta condição (opcional)")}
               onChange={(e) => trocar(ramos.map((r) => (r.id === ramo.id ? { ...r, rotulo: e.target.value } : r)))}
             />
             {ramos.length > 1 ? (
               <button
                 type="button"
                 className="icon-btn subtle"
-                aria-label={traduzir("Tirar este caminho")}
+                aria-label={traduzir("Tirar esta condição")}
                 onClick={() => trocar(ramos.filter((r) => r.id !== ramo.id))}
               >
                 <IconClose width={12} height={12} />
@@ -62,10 +62,10 @@ export function CondicaoRamosForm({
 
       <div className="field">
         <label>
-          {traduzir("Ordem dos caminhos")}
+          {traduzir("Ordem das condições")}
           <Ajuda
             texto={traduzir(
-              "Vale o primeiro caminho que bater, de cima pra baixo. Quem não bater em nenhum sai por \"Nenhuma das condições\", que existe sempre e não se apaga.",
+              "Vale a primeira condição que bater, de cima pra baixo. Quem não bater em nenhuma sai por \"Nenhuma das condições\", que existe sempre e não se apaga.",
             )}
           />
         </label>

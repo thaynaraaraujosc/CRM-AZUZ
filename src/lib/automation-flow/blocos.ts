@@ -508,9 +508,9 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     tipo: "condicao_ramos",
     categoria: "condicao",
     grupo: "decisoes",
-    label: "Condição: regras por caminho",
+    label: "Condição: um caminho por condição",
     descricao:
-      "Cada caminho tem as suas regras. Vale o primeiro que bater, de cima pra baixo; quem não bate em nenhum sai por \"Nenhuma das condições\".",
+      "Cada condição é um cartão com as suas regras e a sua saída. Vale a primeira que bater, de cima pra baixo; quem não bate em nenhuma sai por \"Nenhuma das condições\".",
     icone: "GitBranch",
     corClasse: corDaCategoria("condicao"),
     // Nasce com UM ramo vazio: é o mínimo pra a pessoa ver a forma do bloco (um ramo + a saída

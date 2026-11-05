@@ -28524,11 +28524,17 @@ td.trafego-col-crm:first-of-type {
   font-weight: var(--fw-semibold);
 }
 
-/* ---------------- O bloco "Condição: regras por caminho", no cartão ----------------
+/* ---------------- O bloco "Condição", no cartão ----------------
  *
- * Um cartão por ramo, as regras dentro dele e as duas ações embaixo ("Adicionar condição (e)" e
- * "Adicionar próxima condição"). A hierarquia é a da referência: o ramo é uma caixa clara dentro
- * do bloco, e as regras são linhas dentro da caixa.
+ * CADA CONDIÇÃO É UM CARTÃO INDEPENDENTE, com a sua saída na borda direita.
+ *
+ * Antes era um quadro só: as regras empilhadas dentro do bloco e as ligações todas embaixo dele,
+ * numa lista de rótulos. Pra saber qual linha saía de qual condição era preciso contar de cima
+ * pra baixo nos dois lugares. Agora a condição é a peça: cartão branco sobre o fundo do bloco,
+ * número, nome, as regras como frase e o ponto de ligação grudado nela — igual à referência.
+ *
+ * As regras dentro do cartão são texto com sublinhado tracejado, não caixas de formulário: é o
+ * que faz a condição ser LIDA ("Se mensagem contém: orçamento") em vez de preenchida.
  */
 .cond-ramos {
   display: flex;
@@ -28538,36 +28544,57 @@ td.trafego-col-crm:first-of-type {
 }
 
 .cond-ramo {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 8px;
-  border: 1px solid var(--line-soft);
+  gap: 5px;
+  padding: 8px 9px;
+  border: 1px solid var(--line);
   border-radius: 8px;
-  background: var(--surface-2);
+  background: var(--surface-elevated);
+  box-shadow: var(--shadow-xs);
+}
+
+/* Editando uma regra, o cartão todo se acende: num bloco com cinco condições, é o que diz em
+   qual delas o que você está digitando vai entrar. */
+.cond-ramo:focus-within {
+  border-color: var(--acao);
 }
 
 .cond-ramo-topo {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
 
-/* O número é o mesmo da saída desenhada embaixo do cartão: é por ele que se liga uma coisa à
-   outra sem contar linhas. */
+/* O funil é o mesmo ícone da referência: ele diz "aqui se filtra quem passa" sem gastar palavra.
+   Em cinza, e não no dourado da ação: num bloco com cinco condições, cinco funis dourados viram
+   a coisa mais colorida da tela e brigam com os próprios títulos. */
+.cond-ramo-icone {
+  flex: none;
+  color: var(--text-faint);
+}
+
+/* O número é o mesmo da ordem de avaliação: vale o primeiro cartão que bater, de cima pra baixo. */
 .cond-ramo-num {
   flex: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
   border-radius: 5px;
-  background: var(--surface-elevated);
-  border: 1px solid var(--line);
+  background: var(--surface-2);
   font-size: 10.5px;
   font-weight: var(--fw-semibold);
   color: var(--text-muted);
+}
+
+.cond-num-senao {
+  background: none;
+  border: 1px dashed var(--line-strong);
+  color: var(--text-faint);
 }
 
 .cond-ramo-nome {
@@ -28582,15 +28609,32 @@ td.trafego-col-crm:first-of-type {
 }
 
 .cond-ramo-nome::placeholder {
-  font-weight: var(--fw-regular);
+  font-weight: var(--fw-semibold);
   color: var(--text-faint);
 }
 
+.cond-senao-texto {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
 .cond-regra {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 4px;
+  /* Espaço reservado pro "tirar", que fica FORA do fluxo: dentro dele, um botão de 18px era o que
+     empurrava o valor pra uma segunda linha e fazia cada regra ocupar duas. */
+  padding-right: 16px;
+}
+
+.cond-regra > .cond-tirar {
+  position: absolute;
+  top: -1px;
+  right: -4px;
 }
 
 .cond-regra-e {
@@ -28600,12 +28644,12 @@ td.trafego-col-crm:first-of-type {
 }
 
 /* Seletores sem cara de formulário: na referência eles são texto com sublinhado tracejado, e é o
-   que deixa o ramo legível como uma frase em vez de uma fila de caixas. */
+   que deixa a condição legível como uma frase em vez de uma fila de caixas. */
 .cond-campo,
 .cond-operador,
 .cond-valor {
   min-width: 0;
-  padding: 3px 4px;
+  padding: 2px 3px;
   border: 0;
   border-bottom: 1px dashed var(--line-strong);
   border-radius: 0;
@@ -28615,8 +28659,11 @@ td.trafego-col-crm:first-of-type {
   color: var(--ink);
 }
 
+/* O campo leva a primeira linha e a comparação leva a segunda — como na referência, onde a regra
+   é lida em duas linhas ("Cliente enviar" / "Contém: orçamento"). Os três numa linha só cabem
+   truncados, e "Última mensa… conté… orçamen…" não é uma frase: é um enigma. */
 .cond-campo {
-  flex: 1 1 96px;
+  flex: 1 1 120px;
 }
 
 .cond-operador {
@@ -28624,8 +28671,25 @@ td.trafego-col-crm:first-of-type {
   color: var(--text-muted);
 }
 
+/* A comparação e o valor como um pedaço só da frase: ou cabem na linha do campo, ou descem
+   juntos. Um valor sozinho numa linha nova não diz de que regra ele é. */
+.cond-comp {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  flex: 1 1 130px;
+  min-width: 0;
+}
+
+.cond-dois-pontos {
+  flex: none;
+  margin-left: -2px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
 .cond-valor {
-  flex: 1 1 70px;
+  flex: 1 1 60px;
 }
 
 .cond-campo:focus,
@@ -28635,6 +28699,8 @@ td.trafego-col-crm:first-of-type {
   border-bottom-color: var(--acao);
 }
 
+/* O "tirar" só aparece com o ponteiro no cartão: com cinco condições abertas, cinco lixeirinhas
+   vermelhas competindo com o texto era o que fazia o bloco parecer uma planilha. */
 .cond-tirar {
   flex: none;
   display: inline-flex;
@@ -28648,6 +28714,13 @@ td.trafego-col-crm:first-of-type {
   background: none;
   color: var(--text-faint);
   cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.cond-ramo:hover .cond-tirar,
+.cond-tirar:focus-visible {
+  opacity: 1;
 }
 
 .cond-tirar:hover {
@@ -28661,38 +28734,113 @@ td.trafego-col-crm:first-of-type {
   color: var(--text-muted);
 }
 
-.cond-add-e,
+/* "Adicionar condição (e)" é o divisor tracejado da referência: a linha diz que o que vem depois
+   se soma ao que está em cima (E), e o texto fica no meio dela. */
+.cond-add-e {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 1px 0;
+  border: 0;
+  background: none;
+  color: var(--text-faint);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.cond-add-e::before,
+.cond-add-e::after {
+  content: "";
+  flex: 1;
+  border-top: 1px dashed var(--line-strong);
+}
+
+.cond-add-e:hover {
+  color: var(--acao);
+}
+
+.cond-add-e:hover::before,
+.cond-add-e:hover::after {
+  border-top-color: var(--acao);
+}
+
+/* "Adicionar próxima condição" é outra coisa: cria um CARTÃO novo, um caminho novo. Por isso ela
+   é um botão de largura inteira entre os cartões, e não um divisor dentro de um deles. */
 .cond-add-ramo {
   width: 100%;
-  padding: 5px;
+  padding: 7px;
   border: 1px dashed var(--line-strong);
-  border-radius: 6px;
+  border-radius: 8px;
   background: none;
   color: var(--text-muted);
   font: inherit;
   font-size: 11.5px;
+  font-weight: var(--fw-semibold);
   cursor: pointer;
 }
 
-.cond-add-e:hover,
 .cond-add-ramo:hover {
   border-color: var(--acao);
   color: var(--acao);
 }
 
-.cond-add-ramo {
-  padding: 7px;
-  font-weight: var(--fw-semibold);
+/* A saída padrão não se edita, mas é um cartão como os outros — com ligação própria. Quem olha
+   precisa saber que ela existe antes de procurar por que um lead sumiu no meio do fluxo. */
+.cond-senao {
+  background: none;
+  border-style: dashed;
+  box-shadow: none;
 }
 
-/* A saída padrão não se edita, mas aparece: quem olha precisa saber que ela existe antes de
-   procurar por que um lead sumiu no meio do fluxo. */
-.cond-senao {
-  padding: 7px 9px;
-  border: 1px dashed var(--line);
-  border-radius: 8px;
-  font-size: 11.5px;
+/*
+ * O "+" DA CONDIÇÃO, grudado na beirada direita do cartão dela.
+ *
+ * É o mesmo gesto do "+" da bolha de mensagem: abre "adicionar próximo passo" já ligado nesta
+ * saída. Quando a condição já tem caminho ele vira "×", que desfaz só essa ligação.
+ */
+.cond-saida {
+  position: absolute;
+  top: 50%;
+  right: -11px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  background: var(--surface-elevated);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.cond-saida:hover {
+  border-color: var(--acao);
+  background: color-mix(in srgb, var(--acao) 14%, var(--surface-elevated));
+}
+
+.cond-saida-tirar {
   color: var(--text-muted);
+}
+
+.cond-saida-tirar:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 12%, var(--surface-elevated));
+}
+
+/* O ponto fica EMBAIXO do "+", na mesma altura e no mesmo lugar: é dele que a linha parte, e
+   dois círculos colados na beirada viram um nó na casinha. Quando a condição já tem caminho, o
+   "+" vira "×" e continua cobrindo o ponto. */
+.cond-ramo .cond-handle {
+  right: 0;
 }
 
 /* O nome do caminho e o "tirar" lado a lado, no painel do bloco de condição. */

@@ -307,7 +307,7 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
       problemas.push({
         id: proximoIdProblema(),
         severidade: "erro",
-        mensagem: `Bloco "${n.titulo ?? n.type}" não tem nenhum caminho: só sobra "Nenhuma das condições".`,
+        mensagem: `Bloco "${n.titulo ?? n.type}" não tem nenhuma condição: só sobra "Nenhuma das condições".`,
         nodeId: n.id,
       });
     }
@@ -320,8 +320,8 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
           id: proximoIdProblema(),
           severidade: temRamoAbaixo ? "erro" : "aviso",
           mensagem: temRamoAbaixo
-            ? `Bloco "${n.titulo ?? n.type}": o caminho ${i + 1} está sem regra, então ele pega todo mundo e os caminhos abaixo dele nunca acontecem.`
-            : `Bloco "${n.titulo ?? n.type}": o caminho ${i + 1} está sem regra, então ele pega todo mundo.`,
+            ? `Bloco "${n.titulo ?? n.type}": a condição ${i + 1} está sem regra, então ela pega todo mundo e as condições abaixo dela nunca acontecem.`
+            : `Bloco "${n.titulo ?? n.type}": a condição ${i + 1} está sem regra, então ela pega todo mundo.`,
           nodeId: n.id,
         });
       }
@@ -334,7 +334,7 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
           problemas.push({
             id: proximoIdProblema(),
             severidade: "erro",
-            mensagem: `Bloco "${n.titulo ?? n.type}": uma regra do caminho ${i + 1} está sem valor pra comparar.`,
+            mensagem: `Bloco "${n.titulo ?? n.type}": uma regra da condição ${i + 1} está sem valor pra comparar.`,
             nodeId: n.id,
           });
         }
@@ -342,7 +342,7 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
           problemas.push({
             id: proximoIdProblema(),
             severidade: "erro",
-            mensagem: `Bloco "${n.titulo ?? n.type}": a regra "entre" do caminho ${i + 1} precisa dos dois limites.`,
+            mensagem: `Bloco "${n.titulo ?? n.type}": a regra "entre" da condição ${i + 1} precisa dos dois limites.`,
             nodeId: n.id,
           });
         }
@@ -354,7 +354,7 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
         problemas.push({
           id: proximoIdProblema(),
           severidade: "aviso",
-          mensagem: `Bloco "${n.titulo ?? n.type}": o caminho ${i + 1} não leva a lugar nenhum. Quem sair por ele para aqui.`,
+          mensagem: `Bloco "${n.titulo ?? n.type}": a condição ${i + 1} não leva a lugar nenhum. Quem sair por ela para aqui.`,
           nodeId: n.id,
         });
       }
@@ -364,7 +364,7 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
       problemas.push({
         id: proximoIdProblema(),
         severidade: "aviso",
-        mensagem: `Bloco "${n.titulo ?? n.type}": "Nenhuma das condições" não leva a lugar nenhum. Quem não bater em nenhum caminho para aqui.`,
+        mensagem: `Bloco "${n.titulo ?? n.type}": "Nenhuma das condições" não leva a lugar nenhum. Quem não bater em nenhuma condição para aqui.`,
         nodeId: n.id,
       });
     }

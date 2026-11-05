@@ -386,9 +386,9 @@ export function resumoNo(node: FlowNode, funis?: Funil[]): string {
     case "condicao_ramos": {
       const data = node.data as CondicaoRamosData;
       const ramos = data.ramos ?? [];
-      if (!ramos.length) return "Sem nenhum caminho definido";
+      if (!ramos.length) return "Sem nenhuma condição definida";
       const vazios = ramos.filter((r) => !r.grupo?.regras?.length && !r.grupo?.subgrupos?.length).length;
-      const texto = `${ramos.length} ${ramos.length === 1 ? "caminho" : "caminhos"} + "Nenhuma das condições"`;
+      const texto = `${ramos.length} ${ramos.length === 1 ? "condição" : "condições"} + "Nenhuma das condições"`;
       return vazios ? `${texto} · ${vazios} sem regra` : texto;
     }
     case "mensagem_texto": {

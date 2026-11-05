@@ -260,6 +260,17 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
    */
   const saidaPadrao = ehCartaoDeMensagem ? saidas.find((sa) => sa.handleId === undefined) : undefined;
   const saidasDeCaminho = saidas.filter((sa) => !saidasDeOpcao.includes(sa) && sa !== saidaPadrao);
+  /*
+   * O BLOCO "CONDIÇÃO" DESENHA AS SAÍDAS DENTRO DO CARTÃO, uma em cada condição.
+   *
+   * Ver `CartaoCondicaoRamos`: cada condição é um cartão com a sua própria saída na borda, porque
+   * a pergunta e o que acontece quando ela bate são a mesma peça. Então a pilha de rótulos de
+   * baixo não pode aparecer também: seriam dois pontos de ligação com o mesmo id, e o React Flow
+   * não teria como saber de qual deles a linha sai.
+   */
+  const ehCondicaoNoCartao = flowNode.type === "condicao_ramos" && !!aoMudarCampo;
+  /** O que ainda se desenha EMBAIXO do cartão, em lista de rótulos. */
+  const saidasEmbaixo = ehCondicaoNoCartao ? [] : ehCartaoDeMensagem ? saidasDeCaminho : saidas;
   const temErro = problemas.some((p) => p.severidade === "erro");
   const temAviso = !temErro && problemas.some((p) => p.severidade === "aviso");
   const classes = [
@@ -886,12 +897,15 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
             ) : null}
           </div>
         </>
-      ) : flowNode.type === "condicao_ramos" && aoMudarCampo ? (
+      ) : ehCondicaoNoCartao ? (
         /* O bloco "Condição" se edita no cartão: ver `CartaoCondicaoRamos`. As saídas continuam
            desenhadas embaixo, uma por caminho, como em todo bloco que ramifica. */
         <CartaoCondicaoRamos
           data={(flowNode.data ?? { ramos: [] }) as CondicaoRamosData}
-          aoMudar={(ramos) => aoMudarCampo("ramos", ramos)}
+          aoMudar={(ramos) => aoMudarCampo?.("ramos", ramos)}
+          saidasConectadas={saidasConectadas}
+          onAdicionarApos={onAdicionarApos}
+          aoDesligarSaida={aoDesligarSaida}
         />
       ) : flowNode.type === "aguardar" && aoMudarCronometro ? (
         /*
@@ -1008,9 +1022,9 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
           linha deixava o bloco sem jeito de tratar envio que não saiu. Nos outros cartões o
           critério continua sendo dois: lá a saída única é a normal, sem rótulo, e uma linha vazia
           embaixo do bloco não diz nada. */}
-      {(ehCartaoDeMensagem ? saidasDeCaminho.length > 0 : saidas.length > 1) ? (
+      {(ehCartaoDeMensagem ? saidasEmbaixo.length > 0 : saidasEmbaixo.length > 1) ? (
         <div className={`flow-node-handles${ehCartaoDeMensagem ? " msg-saidas" : ""}`}>
-          {(ehCartaoDeMensagem ? saidasDeCaminho : saidas).map((s) => {
+          {saidasEmbaixo.map((s) => {
             const chave = s.handleId ?? "__default__";
             const conectada = saidasConectadas?.has(chave) ?? false;
             /* Condição binária (item 8): "Sim"/"Não" tem que ler como uma bifurcação clara, não só
@@ -1076,7 +1090,7 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
             );
           })}
         </div>
-      ) : (ehCartaoDeMensagem ? saidasDeCaminho : saidas).length === 1 ? (
+      ) : saidasEmbaixo.length === 1 ? (
         <div className="flow-node-saida-unica">
           {/* "Próximo passo" escrito: o ponto de conexão sozinho não diz o que ele é, e quem
               nunca montou um fluxo não descobre que se arrasta dali pra ligar no bloco seguinte. */}
