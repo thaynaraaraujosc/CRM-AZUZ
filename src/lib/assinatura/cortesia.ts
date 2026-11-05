@@ -24,7 +24,26 @@ function comoData(valor: Date | string | null | undefined): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-/** A cortesia ainda está valendo nesta data? */
+/**
+ * A CONTA É DE CORTESIA? É sim/não, e o prazo é outra pergunta.
+ *
+ * Duas formas de ser cortesia, e as duas são de verdade:
+ *  - COM PRAZO: tem data, e ela ainda não chegou;
+ *  - SEM PRAZO: está liberada e não existe cobrança por trás (`asaasSubscriptionId` vazio). É a
+ *    conta dada "pra sempre" — de sócio, de parceiro, de quem nunca vai ser cobrado.
+ *
+ * A segunda não precisa de coluna nova porque ela já é exatamente isto no banco: usar o produto
+ * sem nada cobrando. Inventar um booleano ao lado criaria dois jeitos de dizer a mesma coisa, e
+ * eles divergiriam no primeiro lugar que esquecesse de atualizar um dos dois.
+ */
+export function ehCortesia(assinatura: DadosDaAssinatura, agora: Date = new Date()): boolean {
+  if (cortesiaValendo(assinatura, agora)) return true;
+  const semCobranca = !assinatura.asaasSubscriptionId?.trim();
+  const semPrazo = comoData(assinatura.cortesiaAte) === null;
+  return semCobranca && semPrazo && assinatura.status === "ativa";
+}
+
+/** A cortesia COM PRAZO ainda está valendo nesta data? Sem prazo responde `false`: ver `ehCortesia`. */
 export function cortesiaValendo(assinatura: DadosDaAssinatura, agora: Date = new Date()): boolean {
   const ate = comoData(assinatura.cortesiaAte);
   return ate !== null && ate.getTime() > agora.getTime();

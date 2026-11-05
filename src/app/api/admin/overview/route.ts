@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { exigirSuperAdmin } from "@/lib/admin/guard";
-import { cortesiaValendo, statusEfetivo } from "@/lib/assinatura/cortesia";
+import { cortesiaValendo, ehCortesia, statusEfetivo } from "@/lib/assinatura/cortesia";
 
 /** GET agrega números da plataforma inteira (todos os workspaces) pro dashboard do super-admin:
  * totais, MRR (soma das assinaturas ativas) e crescimento de workspaces nos últimos 6 meses. Tudo
@@ -39,6 +39,7 @@ export async function GET() {
   const pagantes = assinaturas.filter(ehPagante);
   const mrr = pagantes.reduce((soma, a) => soma + Number(a.valor), 0);
   const emCortesia = assinaturas.filter((a) => cortesiaValendo(a)).length;
+  const cortesiasSemPrazo = assinaturas.filter((a) => ehCortesia(a) && !cortesiaValendo(a)).length;
   const liberadasSemCobranca = assinaturas.filter(
     (a) => statusEfetivo(a) === "ativa" && !a.asaasSubscriptionId?.trim(),
   ).length;
@@ -81,6 +82,7 @@ export async function GET() {
     /** Quantas contas pagam de verdade. É o par do MRR: receita sem contagem não se confere. */
     pagantes: pagantes.length,
     emCortesia,
+    cortesiasSemPrazo,
     liberadasSemCobranca,
     porStatus,
     crescimento,

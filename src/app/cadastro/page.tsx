@@ -8,6 +8,7 @@ import Link from "next/link";
 import { IconNovaConta } from "@/components/icons";
 import { useIdioma } from "@/lib/idioma-context";
 import { SeletorIdioma } from "@/components/seletor-idioma";
+import { CampoDeSenha } from "@/components/campo-de-senha";
 
 export default function CadastroPage() {
   const { t: traduzir } = useIdioma();
@@ -112,10 +113,8 @@ export default function CadastroPage() {
 
         <div className="field">
           <label htmlFor="senha">{traduzir("Senha")}</label>
-          <input
+          <CampoDeSenha
             id="senha"
-            type="password"
-            className="input"
             placeholder={traduzir("Senha")}
             value={senha}
             onChange={(e) => setSenha(e.target.value)}

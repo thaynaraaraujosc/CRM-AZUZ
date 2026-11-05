@@ -76,7 +76,15 @@ export async function POST(request: Request, ctx: RouteContext<"/api/convite/[id
   // link, só a primeira encontra o convite de pé. A segunda atualiza zero linhas.
   const { count } = await prisma.membro.updateMany({
     where: { id, convitePendente: true },
-    data: { senha: hash, ativo: true, convitePendente: false, conviteTokenHash: null, conviteExpiraEm: null },
+    data: {
+      senha: hash,
+      ativo: true,
+      convitePendente: false,
+      conviteTokenHash: null,
+      conviteExpiraEm: null,
+      // Quem aceita o convite escolhe a própria senha: não existe cópia nossa pra guardar.
+      senhaEntregue: null,
+    },
   });
   if (count === 0) return NextResponse.json(NAO_ENCONTRADO, { status: 404 });
 

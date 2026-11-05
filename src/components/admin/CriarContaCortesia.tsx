@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 
 import { Ajuda } from "@/components/ui";
+import { CampoDeSenha } from "@/components/campo-de-senha";
 import { PRAZOS_DE_CORTESIA, fimDaCortesia } from "@/lib/assinatura/cortesia";
 import { useIdioma } from "@/lib/idioma-context";
 
@@ -35,6 +36,8 @@ export function CriarContaCortesia({ aoCriar }: { aoCriar: () => void }) {
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  /* Cortesia é sim/não, e o prazo é a pergunta seguinte: ver o bloco no detalhe da empresa. */
+  const [cortesia, setCortesia] = useState(true);
   const [meses, setMeses] = useState(3);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -48,7 +51,15 @@ export function CriarContaCortesia({ aoCriar }: { aoCriar: () => void }) {
       const resposta = await fetch("/api/admin/workspaces", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ empresa, nome, email, senha: senha || undefined, meses }),
+        body: JSON.stringify({
+          empresa,
+          nome,
+          email,
+          senha: senha || undefined,
+          cortesia,
+          // Sem cortesia não há prazo nenhum: a conta nasce cobrável.
+          meses: cortesia ? meses : 0,
+        }),
       });
       const dados = await resposta.json().catch(() => null);
       if (!resposta.ok) {
@@ -75,12 +86,14 @@ export function CriarContaCortesia({ aoCriar }: { aoCriar: () => void }) {
         <p className="config-bloco-titulo">{traduzir("Conta criada e liberada")}</p>
         <p className="hint">
           <strong>{criada.workspaceId}</strong>
-          {ate ? ` · de graça até ${ate}, e cobrável a partir dessa data.` : " · de graça, sem prazo."}
+          {ate ? ` · de graça até ${ate}, e cobrável a partir dessa data.` : " · criada e liberada."}
         </p>
 
         {criada.comSenha ? (
           <p className="hint">
-            {traduzir("A pessoa já pode entrar com o e-mail e a senha que você definiu.")}
+            {criada.emailEnviado
+              ? "O e-mail com o endereço e a senha foi enviado pra pessoa. Ela já pode entrar."
+              : `O e-mail não saiu (${criada.motivoEmail ?? "motivo não informado"}) — passe o e-mail e a senha pra pessoa na mão, porque sem eles ela não tem como entrar.`}
           </p>
         ) : (
           <>
@@ -126,7 +139,7 @@ export function CriarContaCortesia({ aoCriar }: { aoCriar: () => void }) {
     );
   }
 
-  const terminaEm = meses > 0 ? fimDaCortesia(meses).toLocaleDateString("pt-BR") : null;
+  const terminaEm = cortesia && meses > 0 ? fimDaCortesia(meses).toLocaleDateString("pt-BR") : null;
 
   return (
     <form className="admin-bloco config-bloco" onSubmit={enviar}>
@@ -182,14 +195,12 @@ export function CriarContaCortesia({ aoCriar }: { aoCriar: () => void }) {
             {traduzir("Senha")}
             <Ajuda
               texto={traduzir(
-                "Opcional. Com senha, a conta já entra e você entrega e-mail e senha na mão. Em branco, sai um link de convite por e-mail e quem cria a senha é a própria pessoa — que é o normal.",
+                "Opcional. Com senha, a conta já entra e a pessoa recebe um e-mail com o endereço e a senha, pedindo pra trocá-la no primeiro acesso. Em branco, sai um convite e quem cria a senha é ela mesma — que é o mais seguro, porque aí ninguém além dela chega a saber a senha.",
               )}
             />
           </label>
-          <input
+          <CampoDeSenha
             id="cortesia-senha"
-            className="input"
-            type="text"
             autoComplete="new-password"
             value={senha}
             onChange={(e) => setSenha(e.target.value)}
@@ -200,41 +211,72 @@ export function CriarContaCortesia({ aoCriar }: { aoCriar: () => void }) {
       </div>
 
       <div className="field">
-        <label htmlFor="cortesia-prazo">
-          {traduzir("Tempo de cortesia")}
+        <label>
+          {traduzir("Conta de cortesia")}
           <Ajuda
             texto={traduzir(
-              "Por quanto tempo esta conta usa o CRM de graça. No dia seguinte ao fim do prazo ela cai na tela de pagamento sozinha, e a primeira cobrança parte dessa data. Pode mudar depois, no detalhe da empresa.",
+              "Sim libera o CRM sem nenhuma cobrança. Não cria a conta já cobrável, como a de qualquer cliente que se cadastra sozinho.",
             )}
           />
         </label>
-        <div className="seg-picker" role="group" aria-label={traduzir("Tempo de cortesia")}>
-          {PRAZOS_DE_CORTESIA.map((p) => (
-            <button
-              key={p.meses}
-              type="button"
-              className={`seg-chip${meses === p.meses ? " on" : ""}`}
-              aria-pressed={meses === p.meses}
-              onClick={() => setMeses(p.meses)}
-            >
-              {traduzir(p.label)}
-            </button>
-          ))}
+        <div className="seg-picker" role="group" aria-label={traduzir("Conta de cortesia")}>
           <button
             type="button"
-            className={`seg-chip${meses === 0 ? " on" : ""}`}
-            aria-pressed={meses === 0}
-            onClick={() => setMeses(0)}
+            className={`seg-chip${cortesia ? " on" : ""}`}
+            aria-pressed={cortesia}
+            onClick={() => setCortesia(true)}
           >
-            {traduzir("Sem prazo")}
+            {traduzir("Sim")}
+          </button>
+          <button
+            type="button"
+            className={`seg-chip${cortesia ? "" : " on"}`}
+            aria-pressed={!cortesia}
+            onClick={() => setCortesia(false)}
+          >
+            {traduzir("Não")}
           </button>
         </div>
-        <p className="hint" style={{ marginTop: 6 }}>
-          {terminaEm
-            ? `Grátis até ${terminaEm}. A partir daí, R$ 197,00/mês.`
-            : "De graça por tempo indeterminado, até alguém encerrar à mão."}
-        </p>
       </div>
+
+      {cortesia ? (
+        <div className="field">
+          <label>
+            {traduzir("Por quanto tempo")}
+            <Ajuda
+              texto={traduzir(
+                "Com prazo, a conta cai na tela de pagamento sozinha no dia marcado, e a primeira cobrança parte dessa data. Sem prazo, ela fica de graça até alguém encerrar no detalhe da empresa.",
+              )}
+            />
+          </label>
+          <div className="seg-picker" role="group" aria-label={traduzir("Por quanto tempo")}>
+            <button
+              type="button"
+              className={`seg-chip${meses === 0 ? " on" : ""}`}
+              aria-pressed={meses === 0}
+              onClick={() => setMeses(0)}
+            >
+              {traduzir("Sem prazo")}
+            </button>
+            {PRAZOS_DE_CORTESIA.map((p) => (
+              <button
+                key={p.meses}
+                type="button"
+                className={`seg-chip${meses === p.meses ? " on" : ""}`}
+                aria-pressed={meses === p.meses}
+                onClick={() => setMeses(p.meses)}
+              >
+                {traduzir(p.label)}
+              </button>
+            ))}
+          </div>
+          <p className="hint" style={{ marginTop: 6 }}>
+            {terminaEm
+              ? `Grátis até ${terminaEm}. A partir daí, R$ 197,00/mês.`
+              : "De graça por tempo indeterminado, até alguém encerrar no detalhe da empresa."}
+          </p>
+        </div>
+      ) : null}
 
       {erro && <p className="auth-erro">{erro}</p>}
 

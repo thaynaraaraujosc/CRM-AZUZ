@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { SeletorIdioma } from "@/components/seletor-idioma";
 import { useIdioma } from "@/lib/idioma-context";
+import { CampoDeSenha } from "@/components/campo-de-senha";
 
 export default function RedefinirSenhaPage({ params }: { params: Promise<{ token: string }> }) {
   const { t: traduzir } = useIdioma();
@@ -66,10 +67,8 @@ export default function RedefinirSenhaPage({ params }: { params: Promise<{ token
           <form onSubmit={handleSubmit}>
             <div className="field">
               <label htmlFor="senha">{traduzir("Nova senha")}</label>
-              <input
+              <CampoDeSenha
                 id="senha"
-                type="password"
-                className="input"
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
                 required
@@ -81,10 +80,8 @@ export default function RedefinirSenhaPage({ params }: { params: Promise<{ token
 
             <div className="field">
               <label htmlFor="confirmarSenha">{traduzir("Confirmar nova senha")}</label>
-              <input
+              <CampoDeSenha
                 id="confirmarSenha"
-                type="password"
-                className="input"
                 value={confirmarSenha}
                 onChange={(e) => setConfirmarSenha(e.target.value)}
                 required

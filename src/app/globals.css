@@ -23462,52 +23462,56 @@ table.tbl .name-cell .r {
  * Aqui a medida é uma só, declarada uma vez, e tudo dentro do painel a respeita.
  */
 
+/* ====================== O PAINEL DE ADMIN ======================
+ *
+ * DUAS COISAS ESTAVAM ERRADAS, e a primeira não era estética.
+ *
+ * 1. A PÁGINA NÃO ROLAVA. `.shell` tem altura de tela e `.overflow: hidden`, e `.main` também —
+ *    as telas do CRM rolam numa caixa própria (`.content`), que o admin nunca teve. Medido: 1059px
+ *    de conteúdo numa janela de 800px, e a roda do mouse não movia nada. O último bloco da página
+ *    ("Pessoas", justamente onde ficam os botões) era inalcançável: aparecia cortado e não havia
+ *    como chegar nele. Agora o `.view` é a caixa que rola, e o cabeçalho fica grudado no topo.
+ *
+ * 2. OS BLOCOS ERAM CHAPADOS. Moldura de 1px sobre o mesmo fundo, encostados uns nos outros, com
+ *    o conteúdo colado na borda. Agora eles são cartões: fundo elevado, canto maior, sombra leve e
+ *    respiro entre eles — a mesma linguagem do resto do CRM.
+ */
 .admin-view {
   --admin-gutter: var(--space-6);
   --admin-ritmo: var(--space-5);
 }
 
 /*
- * O recuo lateral de todo conteúdo do painel.
- *
- * `.topbar` fica de FORA: ele já traz o próprio `padding-inline` e o valor é o mesmo. A primeira
- * versão desta folha zerava o do cabeçalho e aplicava o daqui, o que deu na conta errada: o título
- * nascia 30px à esquerda de tudo que vinha abaixo dele. Título desalinhado do conteúdo é a
- * primeira coisa que o olho pega ao abrir uma tela, e foi exatamente o que apareceu.
+ * A CAIXA QUE ROLA. `min-height: 0` não é enfeite: sem ele, um filho de flex se recusa a encolher
+ * abaixo do próprio conteúdo e o `overflow` nunca entra em ação — a barra não aparece e a página
+ * continua cortada, que era exatamente o sintoma.
  */
-.admin-view > .view > *:not(.topbar):not(.panel-h),
-.admin-view .admin-secao {
-  padding-inline: var(--admin-gutter);
-}
-
-/* Respiro entre o cabeçalho da tela e o que vem abaixo. Antes era zero: o título ficava colado
-   no primeiro botão. */
 .admin-view > .view {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
   gap: var(--admin-ritmo);
-  padding-block-end: var(--space-6);
+  padding-block-end: var(--space-7);
+  background: var(--canvas);
 }
 
-/*
- * Sem isto a tabela larga empurra a largura do container e o conteúdo vaza pela direita: item de
- * flex nasce com `min-width: auto`, ou seja, se recusa a encolher abaixo do próprio conteúdo. Foi
- * o que cortou os cartões da tela de Usuários no lado direito.
- */
 .admin-view > .view > * {
   min-width: 0;
 }
 
-/*
- * O cabeçalho da tela, com mais ar em cima e a linha de apoio solta do título.
- *
- * Estava com o título colado no topo e o subtítulo grudado nele: as duas linhas liam como um
- * bloco só. Altura e respiro são o que dá a um painel a aparência de coisa acabada, e custam
- * apenas espaço.
- */
+/* O cabeçalho acompanha a rolagem: numa lista de trinta empresas, perder de vista de qual tela se
+   está olhando é o tipo de coisa que faz clicar na linha errada. */
 .admin-view > .view > .topbar {
-  padding-block: var(--space-6) var(--space-5);
+  position: sticky;
+  top: 0;
+  z-index: 3;
   align-items: flex-start;
+  padding: var(--space-6) var(--admin-gutter) var(--space-4);
+  background: var(--canvas);
+  border-bottom: 1px solid var(--line-soft);
 }
 
 .admin-view > .view > .topbar h1,
@@ -23519,40 +23523,64 @@ table.tbl .name-cell .r {
   margin: 0;
 }
 
-/* Bloco de conteúdo do painel: cartão com ar por dentro e separação por fora. */
-.admin-view .admin-bloco {
-  margin-inline: var(--admin-gutter);
-  padding-block: var(--space-2);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--surface);
+.admin-view > .view > *:not(.topbar):not(.panel-h),
+.admin-view .admin-secao {
+  padding-inline: var(--admin-gutter);
 }
 
-.admin-view .admin-bloco .config-bloco-titulo {
-  padding: var(--space-4) var(--space-4) var(--space-1);
+/*
+ * OS CARTÕES FLUTUANTES.
+ *
+ * Fundo elevado, canto de 12px e sombra leve: é o que separa um bloco do outro sem precisar de
+ * linha divisória, e é o que o resto do CRM já faz. A margem lateral é a mesma do cabeçalho, pra
+ * tudo alinhar numa coluna só.
+ */
+.admin-view .config-bloco,
+.admin-view .admin-bloco,
+.admin-view .admin-grupo,
+.admin-view > .view > .config-tabela-scroll,
+.admin-view .card {
+  margin-inline: var(--admin-gutter);
+  padding-inline: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-elevated);
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-view .config-bloco,
+.admin-view .admin-bloco {
+  padding-block: var(--space-2) var(--space-4);
+}
+
+.admin-view .config-bloco > *:not(.config-tabela-scroll):not(.config-acoes),
+.admin-view .admin-bloco > *:not(.config-tabela-scroll):not(.config-acoes) {
+  padding-inline: var(--space-5);
+}
+
+.admin-view .config-bloco-titulo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-block: var(--space-4) var(--space-3);
+  font-family: var(--display);
+  font-size: var(--fs-section-title);
+  font-weight: var(--fw-bold);
+  color: var(--ink);
+  letter-spacing: var(--track-tight);
 }
 
 .admin-view .admin-bloco .hint {
-  padding-inline: var(--space-4);
-  padding-block-end: var(--space-2);
   max-width: 68ch;
 }
 
-/* Botões separados. Estavam encostados um no outro, o que faz "Montar conta" e "Cancelar"
-   parecerem um controle só e convida ao clique errado numa ação destrutiva. */
 .admin-view .config-acoes {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-3);
-  padding: var(--space-4);
-  border-top: 1px solid var(--line-soft);
+  padding: var(--space-4) var(--space-5) 0;
 }
 
-.admin-view .admin-bloco > .config-acoes:only-of-type {
-  border-top: none;
-}
-
-/* A ação principal da tela, solta acima do conteúdo. */
 .admin-view .admin-acoes-topo {
   display: flex;
   flex-wrap: wrap;
@@ -23560,7 +23588,6 @@ table.tbl .name-cell .r {
   padding-inline: var(--admin-gutter);
 }
 
-/* Lista de cartões (tela de Usuários). */
 .admin-view .admin-lista {
   display: flex;
   flex-direction: column;
@@ -23568,34 +23595,26 @@ table.tbl .name-cell .r {
   padding-inline: var(--admin-gutter);
 }
 
-/*
- * A linha de empresa: nome e resumo precisavam de ar entre si e de altura de linha própria.
- * Estavam empilhados sem respiro, e o nome (que é a informação que se procura ao varrer a lista)
- * não se destacava do texto de apoio.
- */
-.admin-view .admin-linha-empresa {
-  padding: var(--space-4) var(--space-5);
+/* A tabela dentro de um cartão não ganha moldura própria: duas molduras encaixadas é o desenho
+   de formulário antigo que esta tela estava tentando deixar de ser. */
+.admin-view .config-bloco .config-tabela-scroll,
+.admin-view .admin-grupo .config-tabela-scroll {
+  margin-inline: 0;
+  border: 0;
+  border-top: 1px solid var(--line-soft);
+  border-radius: 0;
+  box-shadow: none;
+  background: none;
 }
 
-.admin-view .admin-linha-empresa strong {
-  display: block;
-  font-family: var(--display);
-  font-size: var(--fs-section-title);
-  font-weight: var(--fw-bold);
-  color: var(--ink);
-  letter-spacing: var(--track-tight);
-  margin-block-end: var(--space-1);
+.admin-view > .view > .config-tabela-scroll {
+  overflow-x: auto;
 }
 
-.admin-view .admin-linha-empresa .hint {
-  padding: 0;
-  margin: 0;
+.admin-view .admin-grupo {
+  overflow: hidden;
 }
 
-/*
- * A tabela. Linha de 8px de altura interna espremia empresa, plano e status num bloco só, e era
- * o ponto mais citado de "está feio": a coluna do nome encostava na de usuários.
- */
 .admin-view .config-tabela-notif th,
 .admin-view .config-tabela-notif td {
   padding: var(--space-3) var(--space-4);
@@ -23617,36 +23636,16 @@ table.tbl .name-cell .r {
   font-weight: var(--fw-bold);
 }
 
-.admin-view .config-tabela-scroll {
-  margin-inline: var(--admin-gutter);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  overflow: hidden;
+/* A linha inteira responde ao ponteiro: é ela que se clica pra abrir a empresa. */
+.admin-view .config-tabela-notif tbody tr:hover {
+  background: var(--surface-hover);
 }
 
-/* Os cartões de número do Dashboard, com a mesma medida do resto. */
 .admin-view .grid.kpi4 {
   padding-inline: var(--admin-gutter);
   gap: var(--space-4);
 }
 
-@media (max-width: 720px) {
-  .admin-view {
-    --admin-gutter: var(--space-4);
-  }
-
-  .admin-view .config-tabela-notif th,
-  .admin-view .config-tabela-notif td {
-    padding: var(--space-3);
-  }
-}
-
-/*
- * Nome da empresa e linha de apoio, na lista de Usuários.
- *
- * Estavam com 2px entre si e o nome em 13px: as duas linhas liam como um bloco só de texto cinza,
- * e o nome, que é justamente o que se procura ao varrer a lista, não se destacava de nada.
- */
 .admin-view .admin-titulo-linha {
   display: flex;
   flex-direction: column;
@@ -23671,32 +23670,76 @@ table.tbl .name-cell .r {
   margin: 0;
 }
 
-/*
- * Bloco informativo: fundo azul suave em vez de branco.
- *
- * Vem de uma referência que a Thaynara trouxe: o aviso que explica o que fazer aparece sobre um
- * azul bem claro, e não num cartão branco igual a todos os outros. O ganho é de leitura, não de
- * enfeite: numa tela onde tudo é branco sobre branco, o bloco que EXPLICA fica indistinguível do
- * bloco que LISTA, e o olho tem que ler os dois pra descobrir qual é qual. O tom separa os dois
- * papéis antes da primeira palavra.
- *
- * O tom sai de `--blue-soft`, que é o azul translúcido do próprio produto e já tem versão própria
- * no tema escuro. Escolher um azul novo aqui criaria mais uma linguagem visual convivendo com as
- * que já existem, que é justamente o que a unificação vinha resolvendo.
- *
- * Translúcido, e não cor chapada: assim ele funciona sobre qualquer superfície onde for colocado,
- * clara ou escura, sem precisar de uma variante por contexto.
- */
+.admin-view .admin-linha-empresa {
+  padding: var(--space-4) var(--space-5);
+}
+
+.admin-view .admin-linha-empresa strong {
+  display: block;
+  font-family: var(--display);
+  font-size: var(--fs-section-title);
+  font-weight: var(--fw-bold);
+  color: var(--ink);
+  letter-spacing: var(--track-tight);
+  margin-block-end: var(--space-1);
+}
+
+.admin-view .admin-linha-empresa .hint {
+  padding: 0;
+  margin: 0;
+}
+
+/* Os botões do painel: menores que os do produto e com o mesmo peso entre si. O que decide a
+   hierarquia é a COR (o "Apagar" é o único vermelho), não o tamanho. */
+.admin-view .btn {
+  border-radius: 8px;
+}
+
+.admin-view .admin-acoes-linha {
+  justify-content: flex-end;
+}
+
+.admin-view .admin-acoes-linha .btn {
+  padding: 5px 11px;
+  font-size: 12px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+/* O "Apagar" é contornado, não preenchido: numa fileira de três botões, um bloco vermelho sólido
+   puxa o olho e o dedo pra justamente o que não tem volta. Vermelho ele continua. */
+.admin-view .admin-acoes-linha .btn.ghost.danger {
+  background: none;
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, transparent);
+  color: var(--danger);
+}
+
+.admin-view .admin-acoes-linha .btn.ghost.danger:hover {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  border-color: var(--danger);
+}
+
+/* Os prazos ficam numa segunda fileira, abaixo do Sim/Não: são duas perguntas, não uma. */
+.admin-view .admin-prazos {
+  margin-top: 8px;
+}
+
+.admin-view .field > label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
 .admin-view .admin-bloco-info {
   background: var(--blue-soft);
   border-color: transparent;
+  box-shadow: none;
 }
 
 .admin-view .admin-bloco-info .config-bloco-titulo {
   color: var(--ink);
 }
 
-/* A ação de dentro precisa continuar visível sobre o tom, então ganha fundo próprio. */
 .admin-view .admin-bloco-info .config-acoes {
   border-top: none;
   padding-block-start: var(--space-2);
@@ -29397,4 +29440,48 @@ td.trafego-col-crm:first-of-type {
 
 .seg-chip.perigo:hover {
   background: color-mix(in srgb, var(--danger) 12%, transparent);
+}
+
+/* ---------------- O campo de senha, com o olhinho ----------------
+ *
+ * O botão fica DENTRO do campo, encostado na direita, e o campo ganha espaço à direita pra o
+ * texto não passar por baixo dele. Sem esse espaço, uma senha longa fica escondida atrás do
+ * próprio botão que existe pra mostrá-la.
+ */
+.campo-senha {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.campo-senha > .input {
+  width: 100%;
+  padding-inline-end: 38px;
+}
+
+.campo-senha-olho {
+  position: absolute;
+  inset-inline-end: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.campo-senha-olho:hover {
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+
+.campo-senha-olho:focus-visible {
+  outline: 2px solid var(--acao);
+  outline-offset: 1px;
 }

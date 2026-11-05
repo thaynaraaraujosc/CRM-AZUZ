@@ -14,6 +14,8 @@ type Membro = {
   papel: string;
   papelTipo: string;
   ativo: boolean;
+  /** Existe uma senha que NÓS entregamos e que a pessoa ainda não trocou? */
+  temSenhaNossa: boolean;
 };
 
 type Integracao = {
@@ -31,6 +33,7 @@ type Assinatura = {
   asaasSubscriptionId: string | null;
   /** Contado no servidor: ler o relógio durante o render é proibido pelo compilador do React. */
   diasDeCortesia: number | null;
+  ehCortesia: boolean;
 } | null;
 
 type WorkspaceDetalhe = {
@@ -55,6 +58,8 @@ export default function AdminWorkspaceDetalhePage({ params }: { params: Promise<
   const { id } = use(params);
   const [workspace, setWorkspace] = useState<WorkspaceDetalhe | null>(null);
   const [salvandoAssinatura, setSalvandoAssinatura] = useState(false);
+  const [vendoSenha, setVendoSenha] = useState<string | null>(null);
+  const [senhaDoMembro, setSenhaDoMembro] = useState<{ id: string; senha: string | null; motivo?: string } | null>(null);
   const { senhaGerada, setSenhaGerada, carregandoId, resetarSenha, entrarComo } = useAcoesMembro();
 
   function carregar() {
@@ -76,16 +81,39 @@ export default function AdminWorkspaceDetalhePage({ params }: { params: Promise<
     setSalvandoAssinatura(false);
   }
 
-  /** Dar, estender ou encerrar a cortesia. 0 meses encerra e manda a conta pra tela de pagamento. */
-  async function alterarCortesia(meses: number) {
+  /**
+   * Liga, desliga ou muda o prazo da cortesia.
+   *
+   * `cortesia: false` encerra e manda a conta pra tela de pagamento. `true` sem meses é cortesia
+   * sem prazo — a conta dada pra sempre; com meses, é cortesia até a data.
+   */
+  async function alterarCortesia(cortesia: boolean, meses = 0) {
     setSalvandoAssinatura(true);
     await fetch(`/api/admin/workspaces/${id}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ assinatura: { cortesiaMeses: meses } }),
+      body: JSON.stringify({ assinatura: { cortesia, cortesiaMeses: meses } }),
     });
     carregar();
     setSalvandoAssinatura(false);
+  }
+
+  /**
+   * Mostra a senha que a Azuz entregou — enquanto ela ainda é a nossa.
+   *
+   * A senha não vem junto da lista: ela é buscada no clique, por uma rota própria que registra
+   * quem olhou. Numa resposta de lista ela ficaria no cache do navegador e na memória de uma aba
+   * aberta a tarde inteira, pra todos os usuários de uma vez.
+   */
+  async function verSenha(membroId: string) {
+    setVendoSenha(membroId);
+    try {
+      const resposta = await fetch(`/api/admin/membros/${membroId}/senha`);
+      const dados = (await resposta.json().catch(() => ({}))) as { senha?: string | null; motivo?: string };
+      setSenhaDoMembro({ id: membroId, senha: dados.senha ?? null, motivo: dados.motivo });
+    } finally {
+      setVendoSenha(null);
+    }
   }
 
   async function apagarMembro(membroId: string, nome: string) {
@@ -120,6 +148,7 @@ export default function AdminWorkspaceDetalhePage({ params }: { params: Promise<
   const cortesiaAte = workspace.assinatura?.cortesiaAte ? new Date(workspace.assinatura.cortesiaAte) : null;
   const diasRestantes = workspace.assinatura?.diasDeCortesia ?? null;
   const temCobranca = Boolean(workspace.assinatura?.asaasSubscriptionId?.trim());
+  const cortesiaLigada = Boolean(workspace.assinatura?.ehCortesia);
 
   return (
     <div className="view">
@@ -159,51 +188,80 @@ export default function AdminWorkspaceDetalhePage({ params }: { params: Promise<
         </div>
 
         {/*
-          A CORTESIA É O CONTROLE QUE FALTAVA.
+          CORTESIA É SIM/NÃO, e o prazo é a pergunta seguinte.
           
-          Antes, liberar uma conta de graça era pôr o status em "ativa" — e ela ficava assim pra
-          sempre, porque ninguém volta nesta tela pra encerrar. Com prazo, a conta vira cobrável
-          sozinha no dia marcado, e é dessa data que a primeira cobrança parte.
+          Antes eram só os botões de prazo, e faltava dizer a coisa mais simples: esta conta é de
+          cortesia? Sem essa resposta não havia como dar a conta "pra sempre" — que é metade dos
+          casos (sócio, parceiro, quem nunca vai ser cobrado) — nem como encerrar sem adivinhar
+          qual botão faz isso.
         */}
         <div className="field admin-secao">
           <label>
-            Cortesia
-            <Ajuda texto="Por quanto tempo esta empresa usa o CRM de graça, a partir de hoje. Depois da data ela cai na tela de pagamento sozinha, e a cobrança começa a contar dali." />
+            Conta de cortesia
+            <Ajuda texto="Sim libera o CRM sem nenhuma cobrança. Com prazo, a conta cai na tela de pagamento sozinha no dia marcado, e a cobrança começa a contar dali. Sem prazo, ela fica liberada até alguém encerrar aqui." />
           </label>
-          <div className="seg-picker" role="group" aria-label="Tempo de cortesia">
-            {PRAZOS_DE_CORTESIA.map((p) => (
-              <button
-                key={p.meses}
-                type="button"
-                className="seg-chip"
-                disabled={salvandoAssinatura}
-                onClick={() => alterarCortesia(p.meses)}
-              >
-                + {p.label}
-              </button>
-            ))}
-            {cortesiaAte ? (
-              <button
-                type="button"
-                className="seg-chip perigo"
-                disabled={salvandoAssinatura}
-                onClick={() => alterarCortesia(0)}
-              >
-                Encerrar agora
-              </button>
-            ) : null}
+          <div className="seg-picker" role="group" aria-label="Conta de cortesia">
+            <button
+              type="button"
+              className={`seg-chip${cortesiaLigada ? " on" : ""}`}
+              aria-pressed={cortesiaLigada}
+              disabled={salvandoAssinatura}
+              onClick={() => alterarCortesia(true, 0)}
+            >
+              Sim
+            </button>
+            <button
+              type="button"
+              className={`seg-chip${cortesiaLigada ? "" : " on"}`}
+              aria-pressed={!cortesiaLigada}
+              disabled={salvandoAssinatura}
+              onClick={() => alterarCortesia(false)}
+            >
+              Não
+            </button>
           </div>
-          <p className="hint" style={{ marginTop: 6 }}>
-            {cortesiaAte
-              ? `De graça até ${cortesiaAte.toLocaleDateString("pt-BR")}${
-                  diasRestantes !== null && diasRestantes >= 0
-                    ? ` — faltam ${diasRestantes} dias.`
-                    : " — o prazo já venceu, e a conta está na tela de pagamento."
-                }`
-              : temCobranca
+
+          {cortesiaLigada ? (
+            <>
+              <div className="seg-picker admin-prazos" role="group" aria-label="Prazo da cortesia">
+                <button
+                  type="button"
+                  className={`seg-chip${cortesiaAte ? "" : " on"}`}
+                  aria-pressed={!cortesiaAte}
+                  disabled={salvandoAssinatura}
+                  onClick={() => alterarCortesia(true, 0)}
+                >
+                  Sem prazo
+                </button>
+                {PRAZOS_DE_CORTESIA.map((pr) => (
+                  <button
+                    key={pr.meses}
+                    type="button"
+                    className="seg-chip"
+                    disabled={salvandoAssinatura}
+                    onClick={() => alterarCortesia(true, pr.meses)}
+                  >
+                    {pr.label}
+                  </button>
+                ))}
+              </div>
+              <p className="hint" style={{ marginTop: 6 }}>
+                {cortesiaAte
+                  ? `Grátis até ${cortesiaAte.toLocaleDateString("pt-BR")}${
+                      diasRestantes !== null && diasRestantes >= 0
+                        ? ` — faltam ${diasRestantes} dias. Depois disso a cobrança começa a contar.`
+                        : " — o prazo já venceu, e a conta está na tela de pagamento."
+                    }`
+                  : "De graça por tempo indeterminado. Escolha um prazo acima se quiser que a cobrança comece sozinha em alguma data."}
+              </p>
+            </>
+          ) : (
+            <p className="hint" style={{ marginTop: 6 }}>
+              {temCobranca
                 ? "Esta conta tem cobrança de verdade na Asaas."
-                : "Sem prazo de cortesia. Escolha um acima pra marcar quando a cobrança deve começar."}
-          </p>
+                : "Sem cortesia: a conta precisa pagar pra usar o CRM."}
+            </p>
+          )}
         </div>
       </div>
 
@@ -258,6 +316,46 @@ export default function AdminWorkspaceDetalhePage({ params }: { params: Promise<
           </div>
         ) : null}
 
+        {/* A senha pedida fica num aviso próprio, acima da tabela — e não dentro da linha, onde
+            ela passaria despercebida e ficaria na tela sem ninguém notar. */}
+        {senhaDoMembro ? (
+          <div className="config-grid-2 admin-secao">
+            <div className="field" style={{ padding: 0, gridColumn: "1 / -1" }}>
+              <label>
+                Senha de {workspace.membros.find((m) => m.id === senhaDoMembro.id)?.nome ?? "—"}
+                <Ajuda texto="É a senha que a Azuz entregou. Ela some daqui no momento em que a pessoa trocar a senha por conta própria — e aí nem o painel tem como ver." />
+              </label>
+              {senhaDoMembro.senha ? (
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input
+                    className="input"
+                    style={{ width: "100%", fontFamily: "monospace" }}
+                    readOnly
+                    value={senhaDoMembro.senha}
+                  />
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    onClick={() => navigator.clipboard.writeText(senhaDoMembro.senha ?? "")}
+                  >
+                    Copiar
+                  </button>
+                  <button type="button" className="btn ghost" onClick={() => setSenhaDoMembro(null)}>
+                    Fechar
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <p className="hint" style={{ flex: 1, padding: 0 }}>{senhaDoMembro.motivo}</p>
+                  <button type="button" className="btn ghost" onClick={() => setSenhaDoMembro(null)}>
+                    Fechar
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : null}
+
         <div className="config-tabela-scroll">
           <table className="config-tabela-notif">
             <thead>
@@ -294,6 +392,18 @@ export default function AdminWorkspaceDetalhePage({ params }: { params: Promise<
                   </td>
                   <td>
                     <div className="admin-acoes-linha">
+                      {/* "Ver senha" só aparece onde ele tem o que mostrar: conta que a Azuz
+                          entregou pronta e que a pessoa ainda não trocou. */}
+                      {m.temSenhaNossa ? (
+                        <button
+                          type="button"
+                          className="btn ghost"
+                          disabled={vendoSenha === m.id}
+                          onClick={() => void verSenha(m.id)}
+                        >
+                          {vendoSenha === m.id ? "Abrindo…" : "Ver senha"}
+                        </button>
+                      ) : null}
                       <button type="button" className="btn ghost" disabled={carregandoId === m.id} onClick={() => resetarSenha(m.id)}>
                         Nova senha
                       </button>

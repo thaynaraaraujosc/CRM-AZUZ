@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { exigirSuperAdmin } from "@/lib/admin/guard";
-import { cortesiaValendo, statusEfetivo } from "@/lib/assinatura/cortesia";
+import { ehCortesia, statusEfetivo } from "@/lib/assinatura/cortesia";
 
 /** GET lista todo mundo que tem login no CRM, de qualquer workspace: "todos os usuários" que o
  * super-admin pediu pra enxergar num lugar só. */
@@ -51,7 +51,7 @@ export async function GET() {
           // não paga, de propósito), ou não paga e não deveria estar usando.
           pagamento: !a
             ? "sem-assinatura"
-            : cortesiaValendo(a)
+            : ehCortesia(a)
               ? "cortesia"
               : statusEfetivo(a) === "ativa" && a.asaasSubscriptionId?.trim()
                 ? "pagando"

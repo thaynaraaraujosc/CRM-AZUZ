@@ -12,6 +12,7 @@ import { IconEntrar } from "@/components/icons";
 import { ROTA_INICIAL } from "@/lib/rota-inicial";
 import { useIdioma } from "@/lib/idioma-context";
 import { SeletorIdioma } from "@/components/seletor-idioma";
+import { CampoDeSenha } from "@/components/campo-de-senha";
 
 /**
  * Só deixa voltar pra um endereço DENTRO do CRM.
@@ -138,10 +139,8 @@ function LoginForm() {
 
         <div className="field">
           <label htmlFor="senha">{traduzir("Senha")}</label>
-          <input
+          <CampoDeSenha
             id="senha"
-            type="password"
-            className="input"
             placeholder={traduzir("Senha")}
             value={senha}
             onChange={(e) => setSenha(e.target.value)}

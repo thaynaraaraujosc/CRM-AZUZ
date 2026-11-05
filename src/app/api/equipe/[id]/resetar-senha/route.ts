@@ -22,7 +22,9 @@ export async function POST(_request: Request, ctx: RouteContext<"/api/equipe/[id
 
   const { count } = await prisma.membro.updateMany({
     where: { id, workspaceId: sessao.user.workspaceId },
-    data: { senha: hash },
+    // Senha gerada pelo admin DA EMPRESA, não pela Azuz: nós não guardamos cópia dela, e uma
+    // cópia antiga nossa deixaria de valer agora de qualquer jeito.
+    data: { senha: hash, senhaEntregue: null },
   });
   if (count === 0) return NextResponse.json({ erro: "Membro não encontrado" }, { status: 404 });
 

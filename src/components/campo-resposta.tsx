@@ -15,6 +15,7 @@ import { escolhasMarcadas } from "@/lib/formularios/escolhas";
 import { SeletorDeData } from "@/components/seletor-de-data";
 import { AreaDeUpload } from "@/components/area-de-upload";
 import { useIdioma } from "@/lib/idioma-context";
+import { CampoDeSenha } from "@/components/campo-de-senha";
 
 function lerComoDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -339,10 +340,9 @@ export function CampoResposta({
       );
     case "senha":
       return (
-        <input
+        <CampoDeSenha
           className="input form-resposta-campo"
           style={{ width: "100%" }}
-          type="password"
           placeholder={pergunta.placeholder || "••••••••"}
           disabled={disabled}
           {...props}

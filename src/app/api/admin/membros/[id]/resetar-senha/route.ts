@@ -4,13 +4,17 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { exigirSuperAdmin } from "@/lib/admin/guard";
 import { gerarSenhaAleatoria } from "@/lib/senha-aleatoria";
+import { encriptar } from "@/lib/integracoes/crypto";
 
 /**
- * POST gera uma senha nova aleatória pro membro e já salva o hash dela no banco. A senha em
- * texto puro só existe nesta resposta, uma vez; não fica guardada em lugar nenhum depois disso
- * (nem loga). É a alternativa seguro pra "eu preciso conseguir resolver o acesso de alguém": em
- * vez de guardar a senha antiga (impossível, ela é hash de mão única. Ver `auth.ts`), gera uma
- * nova que o super-admin repassa pro cliente.
+ * POST gera uma senha nova aleatória pro membro e já salva o hash dela no banco.
+ *
+ * A senha gerada também fica guardada CRIPTOGRAFADA em `senhaEntregue`, pelo mesmo motivo da
+ * conta entregue pronta: quem recebe uma senha gerada por outra pessoa perde essa senha, e aí
+ * gerar mais uma derruba de novo quem estiver usando. Ela some no instante em que a pessoa trocar
+ * a senha por conta própria.
+ *
+ * O login continua usando o hash bcrypt, que não tem volta nem pra nós.
  */
 export async function POST(_request: Request, ctx: RouteContext<"/api/admin/membros/[id]/resetar-senha">) {
   const guarda = await exigirSuperAdmin();
@@ -21,7 +25,7 @@ export async function POST(_request: Request, ctx: RouteContext<"/api/admin/memb
   const hash = await bcrypt.hash(novaSenha, 10);
 
   try {
-    await prisma.membro.update({ where: { id }, data: { senha: hash } });
+    await prisma.membro.update({ where: { id }, data: { senha: hash, senhaEntregue: encriptar(novaSenha) } });
   } catch {
     return NextResponse.json({ erro: "Membro não encontrado" }, { status: 404 });
   }

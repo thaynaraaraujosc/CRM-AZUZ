@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 import { useIdioma } from "@/lib/idioma-context";
+import { CampoDeSenha } from "@/components/campo-de-senha";
 
 type SessaoReal = { id: string; dispositivo: string; ip: string | null; criadoEm: string; atual: boolean };
 
@@ -117,7 +118,7 @@ export function SegurancaSecao() {
           <div className="config-grid-2">
             <div className="field">
               <label>{traduzir("Senha atual")}</label>
-              <input className="input" type="password" value={senhaAtual} onChange={(e) => setSenhaAtual(e.target.value)} placeholder={traduzir("Confirme sua senha")} />
+              <CampoDeSenha value={senhaAtual} onChange={(e) => setSenhaAtual(e.target.value)} placeholder={traduzir("Confirme sua senha")} />
             </div>
             <div className="field">
               <label>{traduzir("Novo e-mail")}</label>

@@ -5,12 +5,14 @@ import { esquecerStatus } from "@/lib/assinatura/status-cache";
 import { exigirSuperAdmin } from "@/lib/admin/guard";
 import bcrypt from "bcryptjs";
 
+import { encriptar } from "@/lib/integracoes/crypto";
+
 import { slugId } from "@/lib/ids";
-import { diasDeCortesia, fimDaCortesia, statusEfetivo } from "@/lib/assinatura/cortesia";
+import { diasDeCortesia, ehCortesia, fimDaCortesia, statusEfetivo } from "@/lib/assinatura/cortesia";
 import { PLANOS } from "@/lib/assinatura/planos";
 import { VALIDADE_CONVITE_MS, gerarTokenConvite, hashDoToken } from "@/lib/equipe/convite";
 import { auditar } from "@/lib/seguranca/auditoria";
-import { enviarEmailContandoFalha, templateConvite } from "@/lib/email";
+import { enviarEmailContandoFalha, templateAcessoCriado, templateConvite } from "@/lib/email";
 
 /** GET lista todos os workspaces da plataforma (cross-tenant, só o super-admin chega aqui) com o
  * essencial pra tabela: quantos membros, plano/status da assinatura, quando foi criado. */
@@ -51,7 +53,7 @@ export async function GET() {
             status: statusEfetivo(w.assinatura),
             statusGravado: w.assinatura.status,
             // Cortesia é o que não entra no MRR: a conta usa o produto e não paga nada.
-            ehCortesia: Boolean(w.assinatura.cortesiaAte) || !w.assinatura.asaasSubscriptionId?.trim(),
+            ehCortesia: ehCortesia(w.assinatura),
             diasDeCortesia: diasDeCortesia(w.assinatura),
           }
         : null,
@@ -87,14 +89,17 @@ export async function POST(request: Request) {
     nome?: string;
     email?: string;
     senha?: string;
-    /** Quantos meses de cortesia. 0 = sem prazo (a conta já nasce cobrável). */
+    /** A conta é de cortesia? Ausente conta como sim: é o que esta rota sempre fez. */
+    cortesia?: boolean;
+    /** Quantos meses de cortesia. 0 = sem prazo (liberada até alguém encerrar). */
     meses?: number;
   };
   const empresa = corpo.empresa?.trim();
   const nome = corpo.nome?.trim();
   const email = corpo.email?.trim().toLowerCase();
   const senha = corpo.senha?.trim();
-  const meses = Number(corpo.meses ?? 0);
+  const cortesia = corpo.cortesia ?? true;
+  const meses = cortesia ? Number(corpo.meses ?? 0) : 0;
 
   if (!empresa || !nome || !email) {
     return NextResponse.json({ erro: "Campos obrigatórios: empresa, nome e e-mail." }, { status: 400 });
@@ -151,7 +156,15 @@ export async function POST(request: Request) {
    */
   const comSenha = Boolean(senha);
   const senhaHash = senha ? await bcrypt.hash(senha, 10) : null;
-  const cortesiaAte = meses > 0 ? fimDaCortesia(meses) : null;
+  /*
+   * A SENHA ENTREGUE FICA GUARDADA — criptografada, e só a que NÓS demos.
+   *
+   * Conta entregue pronta é conta cuja senha a pessoa vai perder, e gerar outra derruba quem
+   * estiver usando. O login continua usando o hash bcrypt, que não tem volta nem pra nós; esta
+   * cópia é AES e some no instante em que a pessoa troca a senha (ver `esquecerSenhaEntregue`).
+   */
+  const senhaGuardada = senha ? encriptar(senha) : null;
+  const cortesiaAte = cortesia && meses > 0 ? fimDaCortesia(meses) : null;
 
   await prisma.$transaction(async (tx) => {
     await tx.workspace.create({ data: { id: slug, nome: empresa, slug } });
@@ -164,6 +177,7 @@ export async function POST(request: Request) {
         nome,
         email,
         senha: senhaHash,
+        senhaEntregue: senhaGuardada,
         papel: "Administrador",
         papelTipo: "admin",
         leads: "-",
@@ -191,7 +205,11 @@ export async function POST(request: Request) {
         workspaceId: slug,
         plano: "completo",
         valor: PLANOS.completo.valor,
-        status: "ativa",
+        /*
+         * Cortesia nasce LIBERADA; sem cortesia nasce pendente, como quem se cadastra sozinho.
+         * Era sempre "ativa", e é isso que fazia toda conta criada por aqui parecer cliente.
+         */
+        status: cortesia ? "ativa" : "pendente",
         asaasCustomerId: "",
         cortesiaAte,
         // A primeira cobrança parte do fim da cortesia: é o que a tela de pagamento mostra.
@@ -208,25 +226,36 @@ export async function POST(request: Request) {
     membroId: sessao.user.id,
     email: sessao.user.email,
     recurso: slug,
-    detalhe: `conta de cortesia criada para ${email}${cortesiaAte ? ` até ${cortesiaAte.toISOString().slice(0, 10)}` : " sem prazo"}`,
+    detalhe: `conta criada para ${email} · ${
+      cortesia ? (cortesiaAte ? `cortesia até ${cortesiaAte.toISOString().slice(0, 10)}` : "cortesia sem prazo") : "sem cortesia"
+    }`,
   });
 
-  // Com senha definida não há convite pra mandar: a conta já entra, e um e-mail pedindo pra criar
-  // senha confundiria quem acabou de receber a senha na mão.
-  const link = comSenha ? null : `${process.env.APP_URL ?? "https://azuzcrm.com.br"}/convite/${membroId}?t=${token}`;
-  const envio = link
-    ? await enviarEmailContandoFalha({
-        to: email,
-        subject: "Seu acesso ao CRM AZUZ",
-        html: templateConvite(nome, empresa, link),
-      })
-    : { ok: true as const, motivo: undefined };
+  /*
+   * O E-MAIL SAI NOS DOIS CAMINHOS, e é por isso que ele é escolhido aqui e não antes.
+   *
+   * Sem senha: vai o convite, e quem cria a senha é a própria pessoa.
+   * Com senha: vai a senha. Sem ela, a pessoa recebe a notícia de que tem uma conta e nenhum
+   * jeito de entrar — e a entrega morre aí. É uma troca consciente (e-mail não é canal seguro, e
+   * a mensagem fica na caixa de entrada), e por isso o texto pede a troca no primeiro acesso.
+   */
+  const base = process.env.APP_URL ?? "https://azuzcrm.com.br";
+  const link = comSenha ? `${base}/login` : `${base}/convite/${membroId}?t=${token}`;
+  const envio = await enviarEmailContandoFalha({
+    to: email,
+    subject: comSenha ? "Seu acesso ao CRM AZUZ" : "Seu convite para o CRM AZUZ",
+    html: comSenha
+      ? templateAcessoCriado({ nome, workspaceNome: empresa, email, senha: senha!, link, cortesiaAte })
+      : templateConvite(nome, empresa, link),
+  });
 
   return NextResponse.json(
     {
       workspaceId: slug,
       membroId,
-      linkConvite: link,
+      // Só faz sentido mostrar e copiar o link quando ele é o convite: com senha, o "link" é a
+      // tela de login, que não é segredo nenhum.
+      linkConvite: comSenha ? null : link,
       comSenha,
       cortesiaAte: cortesiaAte?.toISOString() ?? null,
       emailEnviado: envio.ok,

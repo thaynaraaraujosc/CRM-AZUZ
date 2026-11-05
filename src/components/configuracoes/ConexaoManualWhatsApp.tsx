@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { IconAlerta } from "@/components/icons";
 import { useIdioma } from "@/lib/idioma-context";
+import { CampoDeSenha } from "@/components/campo-de-senha";
 
 /**
  * Conexão direta de uma conta do WhatsApp Business que JÁ existe no Business Manager da pessoa.
@@ -101,9 +102,7 @@ export function ConexaoManualWhatsApp({ aoConectar }: { aoConectar?: () => void 
 
       <div className="field">
         <label>{traduzir("Token de acesso permanente")}</label>
-        <input
-          className="input"
-          type="password"
+        <CampoDeSenha
           autoComplete="off"
           placeholder="EAAG..."
           value={accessToken}

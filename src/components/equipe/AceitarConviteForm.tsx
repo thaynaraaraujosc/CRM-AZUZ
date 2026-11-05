@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useIdioma } from "@/lib/idioma-context";
+import { CampoDeSenha } from "@/components/campo-de-senha";
 
 /** `token` é o que autoriza o convite (ver `lib/equipe/convite.ts`). O id sozinho é adivinhável e
  * não vale como autorização; ele só diz de quem é o convite. */
@@ -62,10 +63,8 @@ export function AceitarConviteForm({ id, email, token }: { id: string; email: st
 
       <div className="field">
         <label htmlFor="senha">{traduzir("Crie sua senha")}</label>
-        <input
+        <CampoDeSenha
           id="senha"
-          className="input"
-          type="password"
           autoComplete="new-password"
           placeholder={traduzir("Mínimo 8 caracteres")}
           value={senha}
@@ -78,10 +77,8 @@ export function AceitarConviteForm({ id, email, token }: { id: string; email: st
 
       <div className="field">
         <label htmlFor="senha2">{traduzir("Confirme sua senha")}</label>
-        <input
+        <CampoDeSenha
           id="senha2"
-          className="input"
-          type="password"
           autoComplete="new-password"
           placeholder={traduzir("Repita a senha")}
           value={confirmarSenha}

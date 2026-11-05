@@ -35,7 +35,11 @@ export async function POST(request: Request) {
 
   const hash = await bcrypt.hash(novaSenha, 10);
   await prisma.$transaction([
-    prisma.membro.update({ where: { id: registro.membroId }, data: { senha: hash } }),
+    prisma.membro.update({
+      where: { id: registro.membroId },
+      // A cópia que o super-admin podia ler morre aqui: a senha passa a ser só dela.
+      data: { senha: hash, senhaEntregue: null },
+    }),
     prisma.tokenRedefinicaoSenha.update({ where: { id: registro.id }, data: { usadoEm: new Date() } }),
   ]);
 

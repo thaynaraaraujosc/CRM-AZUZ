@@ -127,6 +127,53 @@ export function templateEmailAlterado(nome: string, novoEmail: string): string {
   `;
 }
 
+/**
+ * O E-MAIL DE QUEM RECEBE A CONTA PRONTA, com a senha dentro.
+ *
+ * Quando o super-admin cria a conta já com senha, não existe convite pra aceitar: a conta entra
+ * na hora. E aí o e-mail precisa carregar a senha — sem ela, a pessoa recebe o aviso de que tem
+ * uma conta e nenhum jeito de entrar nela.
+ *
+ * MANDAR SENHA POR E-MAIL É UMA TROCA CONSCIENTE, não um descuido: e-mail não é canal seguro, a
+ * mensagem fica na caixa de entrada por anos e quem tiver acesso a ela tem acesso ao CRM. Por
+ * isso o texto pede a troca no primeiro acesso, e o caminho padrão continua sendo o convite, em
+ * que ninguém além da própria pessoa chega a saber a senha.
+ */
+export function templateAcessoCriado(params: {
+  nome: string;
+  workspaceNome: string;
+  email: string;
+  senha: string;
+  link: string;
+  cortesiaAte?: Date | null;
+}): string {
+  const primeiroNome = params.nome.split(" ")[0];
+  const ate = params.cortesiaAte
+    ? `<p>Seu acesso está liberado sem nenhuma cobrança até <strong>${params.cortesiaAte.toLocaleDateString("pt-BR")}</strong>.</p>`
+    : "";
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+      <h2 style="color: #0b1533;">Seu acesso ao CRM AZUZ está pronto</h2>
+      <p>Olá, ${primeiroNome}.</p>
+      <p>A conta da <strong>${params.workspaceNome}</strong> foi criada e já está liberada. Estes são os seus dados de acesso:</p>
+      <div style="background: #f4f6fb; border-radius: 10px; padding: 16px; margin: 20px 0;">
+        <p style="margin: 0 0 8px;"><strong>E-mail:</strong> ${params.email}</p>
+        <p style="margin: 0;"><strong>Senha:</strong> <code style="font-size: 15px;">${params.senha}</code></p>
+      </div>
+      ${ate}
+      <p style="margin: 28px 0;">
+        <a href="${params.link}" style="background: #2e6bff; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+          Entrar no CRM
+        </a>
+      </p>
+      <p style="font-size: 13px; color: #6e7694;">
+        Por segurança, troque esta senha no primeiro acesso, em Configurações. Quem tiver acesso a
+        este e-mail consegue entrar na sua conta até você trocá-la.
+      </p>
+    </div>
+  `;
+}
+
 export function templateConvite(nome: string, workspaceNome: string, link: string): string {
   const primeiroNome = nome.split(" ")[0];
   return `

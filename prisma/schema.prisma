@@ -706,15 +706,30 @@ model Membro {
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
 
-  initials  String
-  nome      String
-  email     String  @unique
-  senha     String?
-  papel     String
-  papelTipo String
-  papelNota String?
-  leads     String
-  enxerga   String
+  initials String
+  nome     String
+  email    String  @unique
+  senha    String?
+
+  /// A SENHA QUE O SUPER-ADMIN ENTREGOU, guardada de forma recuperável — e só essa.
+  ///
+  /// POR QUE EXISTE. Conta de cortesia é entregue pronta: a Azuz cria, define a senha e passa pra
+  /// pessoa. Quando essa pessoa perde a senha (e perde), alguém precisa poder dizer qual é — e
+  /// gerar outra é pior, porque derruba quem estiver usando e obriga a avisar todo mundo.
+  ///
+  /// É CRIPTOGRAFADA, NÃO É A COLUNA DE LOGIN. O login continua sendo `senha`, que é um hash
+  /// bcrypt e não tem volta nem pra nós. Esta aqui é AES-256-GCM, com a mesma chave dos tokens de
+  /// integração — quem tiver o banco sem a chave não lê nada.
+  ///
+  /// E ELA MORRE NO MINUTO EM QUE A PESSOA TROCA A SENHA. Trocar a senha, redefinir por e-mail ou
+  /// aceitar convite limpa este campo: a partir daí a senha é só dela, e o painel passa a dizer
+  /// exatamente isso em vez de mostrar uma senha velha que não vale mais.
+  senhaEntregue String? @db.Text
+  papel         String
+  papelTipo     String
+  papelNota     String?
+  leads         String
+  enxerga       String
 
   // MySQL não tem array nativo. Permissoes vira JSON (lista de strings).
   permissoes Json

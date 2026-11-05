@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth";
 import { ehRotaPublica } from "@/lib/rotas-publicas";
 import { decidirAcesso } from "@/lib/assinatura/acesso";
 import { statusDaAssinatura } from "@/lib/assinatura/status-cache";
-import { ROTA_INICIAL } from "@/lib/rota-inicial";
+import { ROTA_INICIAL, ROTA_SEM_PERMISSAO, primeiraRotaPermitida } from "@/lib/rota-inicial";
 
 /** Módulo do CRM que cada rota pertence, pro bloqueio de permissão (item 4 do pedido: "se eu
  * restringir Formulários/Automações/Configurações, o membro realmente não pode mexer"). Checa só
@@ -94,7 +94,24 @@ export default async function proxy(request: NextRequest) {
     const rotaBase = "/" + pathname.split("/")[1];
     const permissaoNecessaria = ROTA_PERMISSAO[rotaBase];
     if (permissaoNecessaria && !sessao.user.permissoes.includes(permissaoNecessaria)) {
-      return NextResponse.redirect(new URL(ROTA_INICIAL, request.url));
+      /*
+       * O DESTINO NÃO PODE SER UMA ROTA QUE ELA TAMBÉM NÃO PODE VER.
+       *
+       * Era sempre `ROTA_INICIAL`, que é `/conversas` — e `/conversas` é uma das rotas
+       * restringíveis. Quem não tinha permissão de Conversas era mandado pra Conversas, de novo e
+       * de novo: o navegador desistia com "redireções em excesso" e a conta ficava inutilizável,
+       * sem nenhuma mensagem dizendo o que estava acontecendo.
+       *
+       * Agora o destino é a primeira rota que ela CONSEGUE abrir; não havendo nenhuma, ela vai
+       * pra uma tela que explica isso em vez de um laço.
+       */
+      const destino = primeiraRotaPermitida({
+        papelTipo: sessao.user.papelTipo,
+        permissoes: sessao.user.permissoes,
+      });
+      const alvo = destino && destino !== rotaBase ? destino : ROTA_SEM_PERMISSAO;
+      if (pathname === alvo) return NextResponse.next();
+      return NextResponse.redirect(new URL(alvo, request.url));
     }
   }
 

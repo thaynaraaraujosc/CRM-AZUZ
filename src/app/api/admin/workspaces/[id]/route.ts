@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { esquecerStatus } from "@/lib/assinatura/status-cache";
 import { exigirSuperAdmin } from "@/lib/admin/guard";
 import { PLANOS } from "@/lib/assinatura/planos";
-import { diasDeCortesia, fimDaCortesia, statusEfetivo } from "@/lib/assinatura/cortesia";
+import { diasDeCortesia, ehCortesia, fimDaCortesia, statusEfetivo } from "@/lib/assinatura/cortesia";
 import { apagarWorkspace } from "@/lib/admin/apagar-workspace";
 import { auditar } from "@/lib/seguranca/auditoria";
 
@@ -35,6 +35,9 @@ export async function GET(_request: Request, ctx: RouteContext<"/api/admin/works
           convitePendente: true,
           criadoEm: true,
           ultimoAcesso: true,
+          /* Só pra saber se o botão "ver senha" tem o que mostrar. A senha em si sai por uma rota
+             própria, chamada no clique: ver `/api/admin/membros/[id]/senha`. */
+          senhaEntregue: true,
         },
       },
       integracoes: {
@@ -54,11 +57,14 @@ export async function GET(_request: Request, ctx: RouteContext<"/api/admin/works
    */
   return NextResponse.json({
     ...workspace,
+    // A senha nunca trafega aqui: só o fato de existir uma guardada por nós.
+    membros: workspace.membros.map(({ senhaEntregue, ...m }) => ({ ...m, temSenhaNossa: Boolean(senhaEntregue) })),
     assinatura: workspace.assinatura
       ? {
           ...workspace.assinatura,
           status: statusEfetivo(workspace.assinatura),
           diasDeCortesia: diasDeCortesia(workspace.assinatura),
+          ehCortesia: ehCortesia(workspace.assinatura),
         }
       : null,
   });
@@ -67,7 +73,9 @@ export async function GET(_request: Request, ctx: RouteContext<"/api/admin/works
 type CorpoAtualizarWorkspace = {
   assinatura?: {
     status?: string;
-    /** Meses a partir de hoje. 0 encerra a cortesia; ausente não mexe nela. */
+    /** Liga/desliga a cortesia. Ausente não mexe nela. */
+    cortesia?: boolean;
+    /** Meses a partir de hoje, quando a cortesia é COM prazo. 0 ou ausente = sem prazo. */
     cortesiaMeses?: number;
   };
 };
@@ -86,8 +94,9 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/admin/work
   const corpo = (await request.json()) as CorpoAtualizarWorkspace;
 
   const status = corpo.assinatura?.status;
-  const cortesiaMeses = corpo.assinatura?.cortesiaMeses;
-  const mexeNaCortesia = cortesiaMeses !== undefined;
+  const cortesia = corpo.assinatura?.cortesia;
+  const cortesiaMeses = Number(corpo.assinatura?.cortesiaMeses ?? 0);
+  const mexeNaCortesia = cortesia !== undefined;
 
   if (!status && !mexeNaCortesia) return NextResponse.json({ erro: "Nada para atualizar." }, { status: 400 });
   if (status && !["pendente", "ativa", "atrasada", "cancelada"].includes(status)) {
@@ -98,18 +107,22 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/admin/work
   }
 
   /*
-   * MEXER NA CORTESIA É MEXER EM DUAS COISAS, e elas andam juntas.
+   * CORTESIA É SIM/NÃO; O PRAZO É OUTRA PERGUNTA.
    *
-   * Dar prazo: a data vai pra `cortesiaAte`, o status vira "ativa" (a conta precisa entrar hoje) e
-   * o primeiro vencimento passa a ser o fim da cortesia — é dessa data que a cobrança parte.
-   * Encerrar (0 meses): a data sai e o status vira "pendente", que é o que manda a pessoa pra
-   * tela de pagamento. Sem limpar a data, o prazo continuaria valendo por cima do status.
+   * Sim COM prazo: a data vai pra `cortesiaAte`, o acesso vira "ativa" e o primeiro vencimento
+   * passa a ser o fim da cortesia — é dessa data que a cobrança parte.
+   * Sim SEM prazo: acesso "ativa" e nenhuma data. É a conta dada pra sempre, que no banco é
+   * exatamente isto: liberada, sem nada cobrando.
+   * Não: a data sai e o acesso vira "pendente", que é o que manda a pessoa pra tela de pagamento.
+   * Sem limpar a data, o prazo continuaria valendo por cima do acesso.
    */
-  const dadosDaCortesia = mexeNaCortesia
-    ? cortesiaMeses > 0
-      ? { cortesiaAte: fimDaCortesia(cortesiaMeses), proximoVencimento: fimDaCortesia(cortesiaMeses), status: "ativa" }
-      : { cortesiaAte: null, status: status ?? "pendente" }
-    : {};
+  const dadosDaCortesia = !mexeNaCortesia
+    ? {}
+    : cortesia
+      ? cortesiaMeses > 0
+        ? { cortesiaAte: fimDaCortesia(cortesiaMeses), proximoVencimento: fimDaCortesia(cortesiaMeses), status: "ativa" }
+        : { cortesiaAte: null, proximoVencimento: null, status: "ativa" }
+      : { cortesiaAte: null, status: status ?? "pendente" };
 
   const dados = { ...(status ? { status } : {}), ...dadosDaCortesia };
 
