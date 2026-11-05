@@ -29936,6 +29936,33 @@ td.trafego-col-crm:first-of-type {
   color: var(--text-muted);
 }
 
+/*
+ * A COR É EXCEÇÃO, E SIGNIFICA ALGUMA COISA.
+ *
+ * Um dos quatro números é o que justifica o painel existir: quanto entra por mês. Esse ganha
+ * cor; os outros três são contagem e ficam brancos. Pintar os quatro seria o mesmo que não
+ * pintar nenhum — se tudo é destaque, nada é.
+ *
+ * O azul é declarado aqui, e não com `var(--blue)`, porque esse token vira DOURADO no tema
+ * escuro (o produto troca o acento lá). Este precisa continuar azul nos dois temas: é a cor que
+ * a Thaynara pediu pra receita, e "azul que às vezes é dourado" não é uma cor, é um acidente.
+ */
+.painel-kpi.azul {
+  --painel-tinta: #1b4f8a;
+  background: #eaf2fb;
+  border-color: #cfe0f3;
+}
+
+.painel-kpi.azul .painel-kpi-valor {
+  color: var(--painel-tinta);
+}
+
+:root[data-theme="dark"] .painel-kpi.azul {
+  --painel-tinta: #a9ccf2;
+  background: rgba(107, 163, 232, 0.14);
+  border-color: rgba(107, 163, 232, 0.3);
+}
+
 /* ---- o gráfico ---- */
 .painel-grafico {
   padding: 16px 18px 14px;
@@ -29960,11 +29987,14 @@ td.trafego-col-crm:first-of-type {
 
 /* O eixo distribui as marcas na MESMA altura da área de desenho, pra cada número cair em cima da
    sua linha de grade. `space-between` com a última marca em 0 é o que alinha os dois. */
+/* A ALTURA ACOMPANHA A TELA. Em 132px fixos, três barras magras ficavam perdidas no meio de um
+   quadro branco com meia tela de vazio embaixo. `clamp` dá um piso pra não espremer em janela
+   baixa e um teto pra não virar um paredão em monitor grande. */
 .painel-eixo {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  height: 132px;
+  height: clamp(240px, 32vh, 330px);
   padding-bottom: 22px; /* a faixa dos meses, embaixo da área */
   font-size: 11px;
   font-variant-numeric: tabular-nums;
@@ -29988,7 +30018,7 @@ td.trafego-col-crm:first-of-type {
 
 .painel-area {
   position: relative;
-  height: 132px;
+  height: clamp(240px, 32vh, 330px);
   padding-bottom: 22px;
 }
 
@@ -30052,6 +30082,7 @@ td.trafego-col-crm:first-of-type {
 
 /* Barra fina, no máximo 24px: a barra nunca preenche a faixa — o que sobra é ar. Canto de 4px só
    na ponta de cima; embaixo ela é reta, porque nasce da linha de base. */
+/* Teto de 24px: a barra nunca preenche a faixa — o que sobra é ar. */
 .painel-barra {
   width: 100%;
   max-width: 24px;
@@ -30097,7 +30128,7 @@ td.trafego-col-crm:first-of-type {
 /* ---- a linha de baixo: o gráfico e a situação das contas ---- */
 .painel-linha {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
   /* `start`, e não o `stretch` padrão: esticado, o cartão mais curto ganha um vazio embaixo do
      tamanho da diferença — que é justamente o defeito que esta tela tinha. Cada um fica do
      tamanho do que tem dentro. */
@@ -30174,6 +30205,112 @@ td.trafego-col-crm:first-of-type {
   width: 9px;
   height: 9px;
   border-radius: 50%;
+}
+
+/* ---- as últimas empresas ---- */
+.painel-empresas {
+  padding: 16px 18px 10px;
+  margin-bottom: 16px;
+}
+
+.painel-link {
+  /* O marinho no claro, o dourado no escuro: é o token que o produto já troca entre os temas. */
+  color: var(--blue);
+  font-weight: 600;
+}
+
+.painel-link:hover {
+  text-decoration: underline;
+}
+
+.painel-empresas-lista {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.painel-empresas-lista li + li {
+  border-top: 1px solid var(--line-soft);
+}
+
+/* Grade, não flex com espaçador: assim o nome, a contagem, o selo e a data ficam em colunas
+   alinhadas de uma linha pra outra, em vez de cada uma cair onde o texto terminou. */
+.painel-empresas-lista a {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 90px 92px 84px;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 2px;
+  color: inherit;
+  text-decoration: none;
+  border-radius: 8px;
+}
+
+.painel-empresas-lista a:hover {
+  background: var(--surface-hover);
+}
+
+.painel-empresa-nome {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.painel-empresa-gente,
+.painel-empresa-data {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.painel-empresa-data {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.painel-empresa-selo {
+  justify-self: start;
+  padding: 2px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-2);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.painel-empresa-selo.ativa {
+  border-color: rgba(10, 122, 77, 0.3);
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.painel-empresa-selo.cortesia {
+  border-color: rgba(210, 163, 102, 0.4);
+  background: rgba(210, 163, 102, 0.14);
+  color: #8a6a37;
+}
+
+:root[data-theme="dark"] .painel-empresa-selo.cortesia {
+  color: #e2bb84;
+}
+
+@media (max-width: 900px) {
+  .painel-empresas-lista a {
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: 2px;
+  }
+
+  .painel-empresa-gente,
+  .painel-empresa-data {
+    display: none;
+  }
 }
 
 @media (max-width: 1100px) {

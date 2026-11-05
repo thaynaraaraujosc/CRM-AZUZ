@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { Topbar } from "@/components/ui";
@@ -15,6 +16,22 @@ type Overview = {
   liberadasSemCobranca: number;
   porStatus: Record<string, number>;
   crescimento: { mes: string; total: number }[];
+};
+
+/** O que a lista de empresas do painel precisa saber. É um recorte de `/api/admin/workspaces`. */
+type EmpresaNaLista = {
+  id: string;
+  nome: string;
+  criadoEm: string;
+  _count: { membros: number };
+  assinatura: { status: string; ehCortesia: boolean } | null;
+};
+
+const ROTULO_STATUS: Record<string, string> = {
+  ativa: "Ativo",
+  pendente: "Pendente",
+  atrasada: "Atrasado",
+  cancelada: "Cancelado",
 };
 
 function formatarMoeda(valor: number): string {
@@ -39,9 +56,20 @@ const MES_POR_EXTENSO = [
  * fica esticado à altura dos outros e vira um retângulo oco. Se não há o que dizer embaixo do
  * número, o cartão não precisa existir.
  */
-function Indicador({ rotulo, valor, sub }: { rotulo: string; valor: string; sub: string }) {
+function Indicador({
+  rotulo,
+  valor,
+  sub,
+  tom,
+}: {
+  rotulo: string;
+  valor: string;
+  sub: string;
+  /** A cor é exceção e significa dinheiro: ver o bloco `.painel-kpi.azul` no globals.css. */
+  tom?: "azul";
+}) {
   return (
-    <div className="painel-kpi">
+    <div className={`painel-kpi${tom ? ` ${tom}` : ""}`}>
       <p className="painel-kpi-rotulo">{rotulo}</p>
       <p className="painel-kpi-valor">{valor}</p>
       <p className="painel-kpi-sub">{sub}</p>
@@ -200,10 +228,59 @@ function SituacaoDasContas({ dados }: { dados: Overview }) {
   );
 }
 
+/**
+ * AS ÚLTIMAS EMPRESAS, no painel.
+ *
+ * Não é a tela de Workspaces de novo: ali estão todas, com apagar, criar e o detalhe de cada
+ * uma. Aqui são as seis mais recentes, só pra ler — é o que responde "o que entrou ultimamente?"
+ * sem sair do painel, e é o que faz esta tela ser uma página em vez de quatro números e um
+ * gráfico boiando numa área cinza.
+ */
+function UltimasEmpresas({ empresas }: { empresas: EmpresaNaLista[] | null }) {
+  if (empresas === null) return null;
+
+  return (
+    <section className="card painel-empresas">
+      <div className="panel-h painel-grafico-topo">
+        <h4>Últimas empresas</h4>
+        <Link className="painel-grafico-nota painel-link" href="/admin/workspaces">
+          Ver todas
+        </Link>
+      </div>
+
+      {empresas.length === 0 ? (
+        <p className="hint">Nenhuma empresa cadastrada ainda.</p>
+      ) : (
+        <ul className="painel-empresas-lista">
+          {empresas.slice(0, 6).map((e) => {
+            const status = e.assinatura?.status ?? "pendente";
+            const cortesia = Boolean(e.assinatura?.ehCortesia);
+            return (
+              <li key={e.id}>
+                <Link href={`/admin/workspaces/${e.id}`}>
+                  <span className="painel-empresa-nome">{e.nome}</span>
+                  <span className="painel-empresa-gente">
+                    {e._count.membros === 1 ? "1 pessoa" : `${e._count.membros} pessoas`}
+                  </span>
+                  <span className={`painel-empresa-selo${cortesia ? " cortesia" : status === "ativa" ? " ativa" : ""}`}>
+                    {cortesia ? "Cortesia" : ROTULO_STATUS[status] ?? status}
+                  </span>
+                  <span className="painel-empresa-data">{new Date(e.criadoEm).toLocaleDateString("pt-BR")}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 /** Dashboard do super-admin: visão geral da plataforma inteira — quantas empresas e pessoas
  *  existem, quanto entra por mês de verdade, quantas usam de graça, e o crescimento recente. */
 export default function AdminDashboardPage() {
   const [dados, setDados] = useState<Overview | null>(null);
+  const [empresas, setEmpresas] = useState<EmpresaNaLista[] | null>(null);
   const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => {
@@ -211,6 +288,13 @@ export default function AdminDashboardPage() {
       .then((r) => r.json())
       .then(setDados)
       .catch(() => setErro("Falha ao carregar os dados."));
+    /* A lista é um segundo pedido de propósito: o painel abre com os números assim que eles
+       chegam, em vez de esperar as duas respostas pra mostrar qualquer coisa. Se esta falhar, a
+       lista simplesmente não aparece — ela não é o motivo da tela existir. */
+    fetch("/api/admin/workspaces")
+      .then((r) => r.json())
+      .then((lista) => setEmpresas(Array.isArray(lista) ? lista : []))
+      .catch(() => setEmpresas([]));
   }, []);
 
   const novasNoMes = dados?.crescimento[dados.crescimento.length - 1]?.total ?? 0;
@@ -244,6 +328,7 @@ export default function AdminDashboardPage() {
               informação, só não é dinheiro.
             */}
             <Indicador
+              tom="azul"
               rotulo="Receita por mês"
               valor={formatarMoeda(dados.mrr)}
               sub={`${dados.pagantes} ${dados.pagantes === 1 ? "conta pagando" : "contas pagando"}`}
@@ -263,6 +348,8 @@ export default function AdminDashboardPage() {
             <GraficoCrescimento crescimento={dados.crescimento} />
             <SituacaoDasContas dados={dados} />
           </div>
+
+          <UltimasEmpresas empresas={empresas} />
         </>
       ) : !erro ? (
         <p className="admin-secao" style={{ color: "var(--text-muted)" }}>Carregando…</p>
