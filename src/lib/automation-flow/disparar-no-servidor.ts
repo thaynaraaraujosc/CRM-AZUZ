@@ -169,17 +169,31 @@ async function dispararAutomacoes(params: {
 
   const contatoNoBanco = await prisma.contato.findUnique({
     where: { workspaceId_nome: { workspaceId, nome: contatoNome } },
+    /*
+     * O RASTREIO DE ORIGEM VEM JUNTO, e é o que destrava decidir por ele dentro da automação.
+     *
+     * `OrigemDoLead` guarda UTM, código do clique e os ids de campanha/conjunto/anúncio desde que
+     * o rastreio de tráfego existe. Até aqui nenhuma automação conseguia ler nada disso: dava pra
+     * mandar a venda de volta pro Google, e não dava pra responder diferente a quem chegou pelo
+     * anúncio. É uma relação 1-1 opcional, então o `include` custa um join e nada mais.
+     */
+    include: { origemDoLead: true },
   });
 
   const contato = {
     // `etiquetas` vem como Json do banco (pode ser null) e o motor espera sempre uma lista. Por
     // isso é normalizada DEPOIS do espalhamento, não antes.
     ...(contatoNoBanco ?? {}),
+    ...rastreioParaCondicoes(contatoNoBanco?.origemDoLead),
     nome: contatoNome,
     etiquetas: Array.isArray(contatoNoBanco?.etiquetas) ? (contatoNoBanco.etiquetas as string[]) : [],
     // Disponíveis pras condições do fluxo ("mensagem contém…", "canal é…").
     canal: canalDoGatilho(canal),
     mensagem: textoRecebido,
+    // O COMENTÁRIO é um campo próprio, e não só "a mensagem": num fluxo que responde comentário e
+    // segue no Direct, "o que a pessoa comentou" e "o que ela respondeu no Direct" são duas
+    // coisas diferentes, e as duas precisam poder ser perguntadas depois.
+    ...(ehGatilhoDeComentario(params.tipoGatilho) ? { comentario: textoRecebido } : {}),
     ...(params.funilId ? { funilId: params.funilId } : {}),
     ...(params.etapaTitulo ? { etapaTitulo: params.etapaTitulo } : {}),
   };
@@ -343,6 +357,69 @@ export function areaCombina(fluxo: FluxoAutomacao, areaDoEvento: AreaAutomacao):
   return fluxo.area === areaDoEvento;
 }
 
+
+/** Gatilhos cujo texto recebido é um COMENTÁRIO, e não uma mensagem de conversa. */
+const GATILHOS_DE_COMENTARIO = new Set(["comentario_instagram", "comentario_tiktok", "instagram_resposta_comentario"]);
+
+export function ehGatilhoDeComentario(tipo: string): boolean {
+  return GATILHOS_DE_COMENTARIO.has(tipo);
+}
+
+/**
+ * O RASTREIO DE ORIGEM achatado nos nomes que a condição usa.
+ *
+ * A tabela guarda o código do clique numa coluna só (`cliqueId`) com o TIPO ao lado
+ * (`tipoDoClique`): "gclid" e "wbraid" no Google, "fbclid" e "ctwa_clid" na Meta. Eles não são
+ * intercambiáveis, e é por isso que a condição pergunta por um ou por outro — não por "o clique".
+ *
+ * Campo sem valor fica de fora em vez de virar string vazia: "existe"/"não existe" precisa
+ * distinguir "não veio de anúncio" de "veio com o campo em branco".
+ */
+export function rastreioParaCondicoes(
+  origem:
+    | {
+        utmSource?: string | null;
+        utmMedium?: string | null;
+        utmCampaign?: string | null;
+        utmContent?: string | null;
+        utmTerm?: string | null;
+        paginaEntrada?: string | null;
+        cliqueId?: string | null;
+        tipoDoClique?: string | null;
+        campanhaId?: string | null;
+        campanhaNome?: string | null;
+        conjuntoId?: string | null;
+        anuncioId?: string | null;
+        anuncioNome?: string | null;
+      }
+    | null
+    | undefined,
+): Record<string, string> {
+  if (!origem) return {};
+  const fora: Record<string, string> = {};
+  const por = (chave: string, valor: string | null | undefined) => {
+    if (typeof valor === "string" && valor.trim()) fora[chave] = valor;
+  };
+  por("utm_source", origem.utmSource);
+  por("utm_medium", origem.utmMedium);
+  por("utm_campaign", origem.utmCampaign);
+  por("utm_content", origem.utmContent);
+  por("utm_term", origem.utmTerm);
+  por("pagina_entrada", origem.paginaEntrada);
+  por("meta_ads_campanha", origem.campanhaId);
+  por("meta_ads_conjunto", origem.conjuntoId);
+  por("meta_ads_anuncio", origem.anuncioId);
+  // Campanha e anúncio pelo NOME: é o que a pessoa que montou o anúncio reconhece. O id fica nos
+  // campos do Meta Ads, pra quem precisa casar com o gerenciador.
+  por("campanha", origem.campanhaNome);
+  por("anuncio", origem.anuncioNome);
+  if (origem.cliqueId?.trim()) {
+    const tipo = (origem.tipoDoClique ?? "").toLowerCase();
+    if (tipo === "gclid" || tipo === "wbraid" || tipo === "gbraid") fora.gclid = origem.cliqueId;
+    if (tipo === "fbclid" || tipo === "ctwa_clid") fora.fbclid = origem.cliqueId;
+  }
+  return fora;
+}
 
 /** O gatilho guarda o canal em minúsculas ("whatsapp"/"instagram"); a conversa guarda o rótulo. */
 function canalDoGatilho(canalDaConversa: string): string {

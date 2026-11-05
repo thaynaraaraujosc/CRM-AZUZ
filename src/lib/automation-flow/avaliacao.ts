@@ -19,6 +19,8 @@ import type {
   GrupoCondicoes,
 } from "./types";
 import { nosDeGatilho, tipoDoGatilhoQueCasa } from "./gatilhos-do-fluxo";
+import { ehCampoPersonalizado, idDoCampoPersonalizado } from "./campos-condicao";
+import { preencher } from "@/lib/automacoes/preencher-variaveis";
 
 /* -------------------------------------------------------------------------- */
 /* Contrato de execução                                                      */
@@ -60,13 +62,25 @@ function saidasDoNo(edges: FlowEdge[], nodeId: string): FlowEdge[] {
   return edges.filter((e) => e.source === nodeId);
 }
 
-/** Lê um "campo" de condição a partir do contato do contexto. Melhor esforço, nem todo campo tem um valor real disponível na simulação. */
+/**
+ * O VALOR QUE UM CAMPO DE CONDIÇÃO TEM, pra este contato.
+ *
+ * O contexto da execução carrega a linha do contato inteira (ver `disparar-no-servidor.ts`), mais
+ * o que o próprio evento trouxe — a mensagem, o canal, o comentário — e o rastreio de origem já
+ * achatado em `utm_source`, `gclid` e companhia. Por isso a maioria dos campos cai no acesso
+ * direto lá embaixo: o nome do campo É o nome da coluna.
+ *
+ * Os casos nomeados aqui são os em que não é: ou o nome na tela difere do nome no banco
+ * ("Telefone (Cel.)" é `whatsapp`), ou a resposta é uma conta e não uma coluna ("Possui
+ * agendamento" é "tem reunião futura carregada no contexto?").
+ */
 function valorDoCampo(campo: string, contato: ContextoExecucao["contato"]): string | undefined {
+  const simOuNao = (v: unknown) => (v ? "sim" : "nao");
   switch (campo) {
     case "origem":
       return contato.origem;
     case "etapa":
-      return contato.etapaTitulo;
+      return contato.etapaTitulo ?? (typeof contato.etapa === "string" ? contato.etapa : undefined);
     case "funil":
       return contato.funilId;
     case "etiqueta":
@@ -75,13 +89,55 @@ function valorDoCampo(campo: string, contato: ContextoExecucao["contato"]): stri
     case "equipe":
       return contato.responsavel;
     case "respondeu":
-      return contato.ultimaRespostaEm ? "sim" : "nao";
+      return texto(contato.respondeu) ?? simOuNao(contato.ultimaRespostaEm);
+    /* Nomes de tela que não são os nomes das colunas. O nome do CAMPO ganha do nome da coluna:
+       o simulador monta o contato com as chaves da condição, e um fluxo testado ali precisa se
+       comportar igual quando rodar de verdade. */
+    case "telefone_celular":
+      return texto(contato.telefone_celular) ?? texto(contato.whatsapp);
+    case "telefone_comercial":
+      return texto(contato.telefone_comercial) ?? texto(contato.telefoneFixo);
+    case "valor_negocio":
+      return texto(contato.valor_negocio) ?? texto(contato.valor);
+    /* Perguntas de sim/não que são uma conta, não uma coluna. */
+    case "consentimento": {
+      // `undefined` é "não se sabe" e não pode virar "não": todo contato anterior a esta coluna
+      // nasceu sem ela, e tratar ausência como recusa cortaria quem já vinha conversando.
+      const doCampo = texto(contato.consentimento);
+      if (doCampo !== undefined) return doCampo;
+      return contato.consentimentoWhatsApp === undefined || contato.consentimentoWhatsApp === null
+        ? undefined
+        : simOuNao(contato.consentimentoWhatsApp);
+    }
+    case "numero_salvo":
+      return texto(contato.numero_salvo) ?? simOuNao(contato.salvoEm);
+    case "possui_agendamento":
+      return texto(contato.possui_agendamento) ?? simOuNao(contato.reuniao);
     default: {
       const direto = contato[campo];
       if (typeof direto === "string") return direto;
+      if (typeof direto === "number") return String(direto);
       return contato.camposPersonalizados?.[campo];
     }
   }
+}
+
+function texto(v: unknown): string | undefined {
+  return typeof v === "string" ? v : typeof v === "number" ? String(v) : undefined;
+}
+
+/**
+ * O QUE O INSTAGRAM CONTA sobre quem escreveu, como resposta de sim/não.
+ *
+ * As três colunas (`igSegueVoce`, `igVoceSegue`, `igVerificado`) vêm do perfil que a Meta devolve
+ * pra quem mandou mensagem pra conta conectada. Nulo é "a conta não concedeu essa permissão", e
+ * isso NÃO é o mesmo que "não segue": por isso o indefinido sobe como indefinido, e uma regra
+ * "Cliente é um seguidor" não manda ninguém pelo caminho errado quando o dado não existe.
+ */
+function perfilDoInstagram(opcao: string | undefined, contato: ContextoExecucao["contato"]): boolean | undefined {
+  const bruto =
+    opcao === "seguidor" ? contato.igSegueVoce : opcao === "seguido" ? contato.igVoceSegue : opcao === "verificado" ? contato.igVerificado : undefined;
+  return typeof bruto === "boolean" ? bruto : undefined;
 }
 
 /**
@@ -102,14 +158,90 @@ function textoComparavel(texto: string | undefined): string {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
+/**
+ * "R$ 4.800,50" VIRA 4800.5, e não NaN.
+ *
+ * O valor do negócio é texto no banco, do jeito que foi digitado — com cifrão, com ponto de milhar
+ * e com vírgula decimal. `Number("R$ 4.800")` é NaN, e uma comparação com NaN é SEMPRE falsa: a
+ * regra "valor do negócio maior que 1000" nunca batia, pra nenhum lead, e o caminho ficava morto
+ * sem nenhum aviso.
+ *
+ * O ponto sozinho seguido de exatamente três dígitos é milhar ("1.200"), que é como se escreve
+ * dinheiro aqui; nos outros casos ele é decimal ("1.5"), que é como se digita num campo de número.
+ */
+export function numeroDeTexto(valor: string | undefined): number | undefined {
+  if (valor === undefined) return undefined;
+  const limpo = valor.replace(/[^\d,.-]/g, "").trim();
+  if (!limpo) return undefined;
+  const temVirgula = limpo.includes(",");
+  const normalizado = temVirgula
+    ? limpo.replace(/\./g, "").replace(",", ".")
+    : /\.\d{3}(\D|$)/.test(limpo)
+      ? limpo.replace(/\./g, "")
+      : limpo;
+  const n = Number(normalizado);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+/**
+ * ORDENAR DOIS VALORES que podem ser número, data, hora ou texto.
+ *
+ * Antes era `Number(a) > Number(b)` sempre. Data ("2026-11-05") e hora ("14:30") viram NaN ali, e
+ * NaN não é maior nem menor que nada: "data da última conversa antes de 01/11" era falsa pra todo
+ * mundo. Como data ISO e hora "HH:MM" se ordenam igual como texto, a comparação de texto resolve
+ * as duas — e o número continua sendo comparado como número quando os dois lados são números.
+ *
+ * Devolve `undefined` quando um dos lados não existe: ausência não é maior nem menor, é ausência.
+ */
+function ordenar(a: string | undefined, b: string | undefined): number | undefined {
+  if (a === undefined || a === "" || b === undefined || b === "") return undefined;
+  const na = numeroDeTexto(a);
+  const nb = numeroDeTexto(b);
+  if (na !== undefined && nb !== undefined) return na - nb;
+  const ta = textoComparavel(a);
+  const tb = textoComparavel(b);
+  return ta < tb ? -1 : ta > tb ? 1 : 0;
+}
+
+/**
+ * O VALOR COM QUE A REGRA COMPARA, que nem sempre é o texto digitado.
+ *
+ * "manual" (o normal) é o texto como ele está. "vazio" compara com nada preenchido. Qualquer outra
+ * fonte é um token de mensagem (`{primeiro_nome}`, `{etapa_funil}`) resolvido pro contato do
+ * momento — é o que permite escrever "a última mensagem contém o nome do responsável" em vez de só
+ * comparar com texto fixo.
+ */
+function alvoDaRegra(regra: GrupoCondicoes["regras"][number], contato: ContextoExecucao["contato"]): string | undefined {
+  const fonte = regra.fonteValor;
+  if (!fonte || fonte === "manual") return regra.valor;
+  if (fonte === "vazio") return "";
+  return preencher(fonte, contato as Record<string, unknown>);
+}
+
 function avaliarRegra(regra: GrupoCondicoes["regras"][number], contato: ContextoExecucao["contato"]): boolean {
-  const valorCampo =
-    regra.campo === "campo_personalizado"
-      ? contato.camposPersonalizados?.[regra.campoPersonalizadoNome ?? ""]
+  /*
+   * CAMPO CRIADO PELA EMPRESA: `cp:<id>`. O valor mora em `camposExtras` (o JSON do contato, com o
+   * id do campo como chave) ou em `camposPersonalizados`, que é como o simulador monta o contato.
+   */
+  const valorCampo = ehCampoPersonalizado(regra.campo)
+    ? valorDoCampoPersonalizado(idDoCampoPersonalizado(regra.campo), contato)
+    : regra.campo === "campo_personalizado"
+      ? valorDoCampoPersonalizado(regra.campoPersonalizadoNome ?? "", contato)
       : valorDoCampo(regra.campo, contato);
 
+  // "Cliente é um seguidor no Instagram" é a única regra cuja resposta depende da OPÇÃO escolhida,
+  // e não do valor de uma coluna só: cada opção lê uma coluna diferente.
+  if (regra.campo === "cliente_perfil") {
+    const resposta = perfilDoInstagram(regra.valor, contato);
+    if (resposta === undefined) return regra.operador === "nao_existe";
+    if (regra.operador === "existe") return true;
+    if (regra.operador === "nao_existe") return false;
+    return regra.operador === "diferente" ? !resposta : resposta;
+  }
+
+  const alvoBruto = alvoDaRegra(regra, contato);
   const campo = textoComparavel(valorCampo);
-  const alvo = textoComparavel(regra.valor);
+  const alvo = textoComparavel(alvoBruto);
 
   switch (regra.operador) {
     case "existe":
@@ -136,18 +268,36 @@ function avaliarRegra(regra: GrupoCondicoes["regras"][number], contato: Contexto
       return campo.startsWith(alvo);
     case "termina_com":
       return campo.endsWith(alvo);
-    case "maior_que":
-      return Number(valorCampo ?? 0) > Number(regra.valor ?? 0);
-    case "menor_que":
-      return Number(valorCampo ?? 0) < Number(regra.valor ?? 0);
-    case "entre":
-      return (
-        Number(valorCampo ?? 0) >= Number(regra.valor ?? 0) &&
-        Number(valorCampo ?? 0) <= Number(regra.valorFim ?? 0)
-      );
+    case "maior_que": {
+      const d = ordenar(valorCampo, alvoBruto);
+      return d !== undefined && d > 0;
+    }
+    case "menor_que": {
+      const d = ordenar(valorCampo, alvoBruto);
+      return d !== undefined && d < 0;
+    }
+    case "entre": {
+      const deBaixo = ordenar(valorCampo, alvoBruto);
+      const deCima = ordenar(valorCampo, regra.valorFim);
+      return deBaixo !== undefined && deCima !== undefined && deBaixo >= 0 && deCima <= 0;
+    }
     default:
       return true;
   }
+}
+
+/** O valor de um campo criado pela empresa, venha ele do banco (`camposExtras`) ou do simulador. */
+function valorDoCampoPersonalizado(chave: string, contato: ContextoExecucao["contato"]): string | undefined {
+  if (!chave) return undefined;
+  const doSimulador = contato.camposPersonalizados?.[chave];
+  if (typeof doSimulador === "string") return doSimulador;
+  const extras = contato.camposExtras;
+  if (extras && typeof extras === "object") {
+    const v = (extras as Record<string, unknown>)[chave];
+    if (typeof v === "string") return v;
+    if (typeof v === "number") return String(v);
+  }
+  return undefined;
 }
 
 export function avaliarGrupoCondicoes(grupo: GrupoCondicoes, contato: ContextoExecucao["contato"]): boolean {

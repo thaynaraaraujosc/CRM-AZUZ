@@ -87,6 +87,8 @@ export type FlowRFNodeData = {
   aoMudarCanal?: (canal: string) => void;
   /** Escrever um campo qualquer do bloco a partir do cartão (o botão "Canais" usa este). */
   aoMudarCampo?: (campo: string, valor: unknown) => void;
+  /** O "!" do bloco: seleciona o bloco e abre o painel já na aba Problemas. */
+  aoAbrirProblemas?: () => void;
   /** O tempo do cronômetro, em minutos, editado no próprio cartão do bloco de espera. */
   aoMudarCronometro?: (minutos: number) => void;
 };

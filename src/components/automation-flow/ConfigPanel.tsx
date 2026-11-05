@@ -279,6 +279,7 @@ export function ConfigPanel({
   onRemoverOpcaoAresta,
   onTrocarTipo,
   onSelecionarNode,
+  abaPedida,
   ehSocial,
   onFechar,
   onSalvar,
@@ -295,6 +296,15 @@ export function ConfigPanel({
   /** Troca o tipo do bloco. É o que transforma uma mensagem de texto em pergunta com botões. */
   onTrocarTipo?: (nodeId: string, tipo: FlowNodeType, data: Record<string, unknown>) => void;
   onSelecionarNode: (nodeId: string) => void;
+  /**
+   * O PAINEL ABERTO JÁ NUMA ABA, a pedido de quem está no canvas.
+   *
+   * É o que o "!" do bloco faz: clicar no alerta leva direto à lista de pendências DAQUELE bloco,
+   * em vez de abrir "Configurar" e deixar a pessoa procurar a aba. O `token` é o que distingue
+   * dois pedidos seguidos pela mesma aba — sem ele, pedir "problemas" depois de a pessoa ter
+   * voltado pra "Configurar" na mão não mudaria nada.
+   */
+  abaPedida?: { aba: "configurar" | "problemas"; token: number };
   /**
    * NO SOCIAL SELLER O PAINEL TEM OUTRA CABEÇA.
    *
@@ -314,6 +324,13 @@ export function ConfigPanel({
 }) {
   const { t: traduzir } = useIdioma();
   const [aba, setAba] = useState<"configurar" | "problemas">("configurar");
+  // Ajustar estado DURANTE o render quando a prop muda é o jeito que o React documenta pra isto —
+  // e o único que não é um `useEffect` que escreve estado, que a regra do compilador proíbe.
+  const [ultimoPedido, setUltimoPedido] = useState<number | undefined>(abaPedida?.token);
+  if (abaPedida && abaPedida.token !== ultimoPedido) {
+    setUltimoPedido(abaPedida.token);
+    setAba(abaPedida.aba);
+  }
   const node = selectedNodes.length === 1 ? selectedNodes[0] : null;
   const { funis } = useFunis();
 

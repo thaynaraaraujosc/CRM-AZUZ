@@ -267,6 +267,8 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const clipboardRef = useRef<DomainFlowNode[]>([]);
   /** O bloco que está piscando agora, depois de alguém clicar num problema. */
   const [nodePiscando, setNodePiscando] = useState<string | null>(null);
+  /** Qual aba o painel deve mostrar, quando alguém pede do canvas (o "!" de um bloco). */
+  const [abaPedida, setAbaPedida] = useState<{ aba: "configurar" | "problemas"; token: number } | undefined>(undefined);
   const piscarRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /**
@@ -725,8 +727,25 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           }
         : n,
     );
+    /*
+     * APAGAR UMA CONDIÇÃO APAGA A LIGAÇÃO DELA JUNTO.
+     *
+     * A saída de cada condição é identificada pelo id dela. Tirando a condição e deixando a
+     * aresta, sobra uma ligação que aponta pra uma saída que não existe mais: ela some da tela
+     * (o React Flow não acha o ponto) e continua gravada no fluxo, aparecendo de novo no
+     * histórico de versões e na exportação. É a mesma limpeza que os botões de resposta já
+     * fazem ao serem apagados (ver `mudarOpcoesDoBloco`).
+     */
+    let novoEdges = rfEdges;
+    if (campo === "ramos") {
+      const vivos = new Set((valor as { id: string }[] | undefined)?.map((r) => r.id) ?? []);
+      novoEdges = rfEdges.filter(
+        (e) => e.source !== nodeId || !e.sourceHandle || e.sourceHandle === "senao" || vivos.has(e.sourceHandle),
+      );
+      if (novoEdges.length !== rfEdges.length) setRfEdges(novoEdges);
+    }
     setRfNodes(novoNodes);
-    persist(novoNodes, rfEdges);
+    persist(novoNodes, novoEdges);
   }
 
   /** Tira a ligação que sai desta saída. Uma saída tem no máximo um caminho. */
@@ -778,9 +797,11 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     if (!bloco || !origem) return;
     /* O passo seguinte nasce AO LADO no Social Seller e ABAIXO no funil: no mesmo sentido em que
        a pessoa lê o fluxo. Nascer no sentido errado obriga a arrastar todo bloco criado. */
-    const pos = ehSocial
-      ? { x: origem.position.x + 380, y: origem.position.y }
-      : { x: origem.position.x, y: origem.position.y + 170 };
+    const pos = posicaoLivre(
+      ehSocial ? { x: origem.position.x + 380, y: origem.position.y } : { x: origem.position.x, y: origem.position.y + 170 },
+      rfNodes,
+      ehSocial,
+    );
     const novoDomain: DomainFlowNode = {
       id: novoIdNo(),
       type: tipo,
@@ -1357,6 +1378,14 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           aoMudarCampo: modoConstrucao
             ? (campo: string, valor: unknown) => editarCampoDoBloco(n.id, campo, valor)
             : undefined,
+          // Só no funil: no Social Seller o painel não tem abas, e as pendências ficam no
+          // cabeçalho do editor (ver `ConfigPanel`).
+          aoAbrirProblemas: ehSocial
+            ? undefined
+            : () => {
+                setSelectedNodeIds([n.id]);
+                setAbaPedida({ aba: "problemas", token: Date.now() });
+              },
           /* O cronômetro só aparece no modo de tempo puro: "até a resposta" e "até tal data" não
              têm minutos pra editar, e um campo de minutos ali mentiria sobre o que o bloco faz. */
           aoMudarCronometro:
@@ -1422,8 +1451,17 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     const alvo = rfNodes.find((n) => n.id === idDoPrimeiroBloco);
     if (!alvo && !modoConstrucao) return null;
 
+    /*
+     * A PASTILHA NASCE À ESQUERDA DO PRIMEIRO BLOCO — E SEM ENCOSTAR NELE.
+     *
+     * Eram 200px fixos, decididos quando a pastilha media 150. No funil ela mede 230, porque tem
+     * uma segunda linha ("Lead entra em …"): 230 de largura em 200 de distância é a pastilha
+     * COBRINDO 30px do primeiro bloco. O afastamento passa a sair da largura dela mais a folga,
+     * em vez de um número que vale pra um dos dois tamanhos.
+     */
+    const larguraDoInicio = inicioNoFunil ? 230 : 150;
     const posicaoPadrao = alvo
-      ? { x: alvo.position.x - 200, y: alvo.position.y + 6 }
+      ? { x: alvo.position.x - (larguraDoInicio + 70), y: alvo.position.y + 6 }
       : { x: 120, y: 120 };
     const no: FlowRFNode = {
       id: ID_INICIO,
@@ -1558,7 +1596,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
       if (escolhendoProximoPasso?.nodeId)
         adicionarBlocoConectado(tipo, escolhendoProximoPasso.nodeId, escolhendoProximoPasso.handleId);
       // Ao lado da pastilha, e não numa coordenada fixa: ver `posicaoDoInicio`.
-      else adicionarBloco(tipo, { x: posicaoDoInicio.x + 260, y: posicaoDoInicio.y - 6 });
+      else adicionarBloco(tipo, posicaoLivre({ x: posicaoDoInicio.x + 300, y: posicaoDoInicio.y - 6 }, rfNodes, ehSocial));
       setAcaoRapida(null);
     },
     onFollowUp: () => {
@@ -1985,6 +2023,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           onRemoverOpcaoAresta={removerOpcaoAresta}
           onTrocarTipo={trocarTipoDoNode}
           onSelecionarNode={irParaONode}
+          abaPedida={abaPedida}
           ehSocial={ehSocial}
           onFechar={() => {
             setSelectedNodeIds([]);
@@ -2061,6 +2100,49 @@ function retanguloDoNo(nodeId: string): DOMRect | undefined {
   return elemento?.getBoundingClientRect();
 }
 
+
+/**
+ * UM LUGAR LIVRE PRO BLOCO NOVO, a partir de onde ele deveria nascer.
+ *
+ * O passo seguinte nascia num deslocamento fixo — 380 à direita no Social Seller, 170 abaixo no
+ * funil — e, quando aquele lugar já estava ocupado, o bloco novo nascia EM CIMA do que já estava
+ * lá. Com um bloco alto (uma condição com quatro caminhos é alta), isso acontece sempre que o
+ * fluxo tem mais de um ramo.
+ *
+ * A busca anda no sentido perpendicular ao da leitura: no Social Seller, que lê da esquerda pra
+ * direita, o bloco desce; no funil, que lê de cima pra baixo, ele vai pra direita. Assim a linha
+ * continua saindo na direção em que a pessoa lê, sem volta por cima.
+ */
+function posicaoLivre(
+  desejada: { x: number; y: number },
+  nodes: FlowRFNode[],
+  ehSocial: boolean,
+): { x: number; y: number } {
+  const LARGURA = 300;
+  const ALTURA = 170;
+  const FOLGA = 28;
+  const cruza = (p: { x: number; y: number }) =>
+    nodes.some((n) => {
+      const l = n.measured?.width ?? LARGURA;
+      const a = n.measured?.height ?? ALTURA;
+      return (
+        p.x < n.position.x + l + FOLGA &&
+        p.x + LARGURA + FOLGA > n.position.x &&
+        p.y < n.position.y + a + FOLGA &&
+        p.y + ALTURA + FOLGA > n.position.y
+      );
+    });
+
+  let tentativa = desejada;
+  // Vinte tentativas e desiste: num canvas tão cheio assim, insistir só joga o bloco pra longe
+  // demais pra ser encontrado. Melhor nascer encostado e a pessoa arrastar.
+  for (let i = 1; i <= 20 && cruza(tentativa); i++) {
+    tentativa = ehSocial
+      ? { x: desejada.x, y: desejada.y + i * (ALTURA + FOLGA) }
+      : { x: desejada.x + i * (LARGURA + FOLGA), y: desejada.y };
+  }
+  return tentativa;
+}
 
 /** O nó/aresta é apenas desenhado (nunca salvo)? Ver `InicioNode`. */
 function ehDesenhado(id: string): boolean {

@@ -7,8 +7,17 @@
  */
 
 import type { Funil } from "@/lib/data";
+import {
+  ehCampoPersonalizado,
+  pedeValor,
+  rotuloDaFonte,
+  rotuloDoCampo,
+  rotuloDoOperador,
+} from "./campos-condicao";
 import type {
   AguardarData,
+  CampoCondicao,
+  RegraCondicao,
   CondicaoRamosData,
   CondicaoGrupoData,
   DecisaoMultiplaData,
@@ -216,61 +225,52 @@ function truncar(texto: string, max = 64): string {
   return t.length > max ? `${t.slice(0, max - 1)}…` : t;
 }
 
-const ROTULO_OPERADOR: Record<string, string> = {
-  igual: "é",
-  diferente: "não é",
-  contem: "contém",
-  nao_contem: "não contém",
-  comeca_com: "começa com",
-  termina_com: "termina com",
-  maior_que: ">",
-  menor_que: "<",
-  entre: "entre",
-  existe: "existe",
-  nao_existe: "não existe",
-};
+/**
+ * O NOME DO CAMPO E DO OPERADOR SAEM DO CATÁLOGO, não de um mapa daqui.
+ *
+ * Eram duas listas: uma no formulário (o que a pessoa escolhe) e outra aqui (o que a saída do
+ * bloco escreve). Elas divergiram, e o jeito que isso apareceu na tela foi o pior possível — a
+ * regra mostrava um campo e a saída do bloco anunciava outro. Agora é uma lista só, em
+ * `campos-condicao.ts`, e o rótulo do operador vem COM o campo: o mesmo `menor_que` é "menor que"
+ * num valor e "antes de" numa data.
+ */
+function rotuloDaRegra(r: RegraCondicao): { campo: string; operador: string } {
+  const campo =
+    r.campo === "campo_personalizado" || ehCampoPersonalizado(r.campo)
+      ? r.campoPersonalizadoNome?.trim() || "Campo personalizado"
+      : rotuloDoCampo(r.campo);
+  return { campo, operador: rotuloDoOperador(r.operador, r.campo) };
+}
 
-/** Nome amigável de cada campo de condição. Usado no resumo do node e na frase em linguagem natural,
- * pra nunca mostrar o identificador técnico ("valor_negocio") pro usuário final. */
-const ROTULO_CAMPO_CONDICAO: Record<string, string> = {
-  mensagem: "Resposta do contato",
-  origem: "Origem",
-  canal: "Canal",
-  etapa: "Etapa atual",
-  funil: "Funil atual",
-  etiqueta: "Etiqueta",
-  responsavel: "Responsável",
-  equipe: "Equipe",
-  numero_salvo: "Número salvo",
-  campo_personalizado: "Campo personalizado",
-  cidade: "Cidade",
-  estado: "Estado",
-  data_ultima_conversa: "Data da última conversa",
-  horario_ultima_mensagem: "Horário da última mensagem",
-  respondeu: "Contato respondeu",
-  tentativas: "Tentativas",
-  recebeu_automacao: "Recebeu automação",
-  em_outra_automacao: "Está em outra automação",
-  possui_agendamento: "Possui agendamento",
-  situacao_agendamento: "Situação do agendamento",
-  valor_negocio: "Valor do negócio",
-  campanha: "Campanha",
-  anuncio: "Anúncio",
-  palavra_chave: "Palavra-chave",
-  consentimento: "Consentimento",
-  dia_semana: "Dia da semana",
-  horario: "Horário",
-};
+/**
+ * O VALOR DA REGRA, como ele aparece na saída do bloco.
+ *
+ * Três casos que antes saíam errados: operador que não compara nada ("existe") mostrava um valor
+ * vazio entre aspas; "entre" sem os limites escrevia `entre " e ?"`, que parece defeito do
+ * programa e não regra pela metade; e valor que vem de OUTRO campo (`{primeiro_nome}`) aparecia
+ * como o token cru, do jeito que o motor lê, não do jeito que a pessoa escolheu.
+ */
+function valorDaRegraEmTexto(r: RegraCondicao): string {
+  if (!pedeValor(r.operador)) return "";
+  if (r.fonteValor && r.fonteValor !== "manual") {
+    return r.fonteValor === "vazio" ? " nada preenchido" : ` ${rotuloDaFonte(r.fonteValor)}`;
+  }
+  const de = r.valor?.trim();
+  if (r.operador === "entre") {
+    const ate = r.valorFim?.trim();
+    return de && ate ? ` "${de}" e "${ate}"` : " (preencha os valores)";
+  }
+  return de ? ` "${de}"` : " (sem valor)";
+}
 
-function resumoGrupoCondicoes(grupo: GrupoCondicoes | undefined): string {
+/** A condição inteira em uma frase. Exportada pro cartão mostrar o que ele não sabe editar. */
+export function resumoGrupoCondicoes(grupo: GrupoCondicoes | undefined): string {
   if (!grupo || (grupo.regras.length === 0 && grupo.subgrupos.length === 0)) return "sem regras definidas";
 
   const partes: string[] = [];
   grupo.regras.forEach((r) => {
-    const campo = r.campo === "campo_personalizado" ? (r.campoPersonalizadoNome || "campo") : (ROTULO_CAMPO_CONDICAO[r.campo] ?? r.campo);
-    const op = ROTULO_OPERADOR[r.operador] ?? r.operador;
-    const valor = r.operador === "entre" ? `${r.valor ?? "?"} e ${r.valorFim ?? "?"}` : r.valor;
-    partes.push(valor ? `${campo} ${op} "${valor}"` : `${campo} ${op}`);
+    const { campo, operador } = rotuloDaRegra(r);
+    partes.push(`${campo} ${operador}${valorDaRegraEmTexto(r)}`);
   });
   grupo.subgrupos.forEach((g) => partes.push(`(${resumoGrupoCondicoes(g)})`));
 
@@ -294,7 +294,7 @@ export function rotulosSaidaCondicao(grupo: GrupoCondicoes | undefined): { simLa
   if (r.campo === "em_outra_automacao") return { simLabel: "Está em outra automação", naoLabel: "Não está em outra automação" };
   if (r.campo === "recebeu_automacao") return { simLabel: "Recebeu a automação", naoLabel: "Não recebeu a automação" };
 
-  const campo = ROTULO_CAMPO_CONDICAO[r.campo] ?? r.campo;
+  const { campo } = rotuloDaRegra(r);
   if (r.campo === "etiqueta" && r.valor) {
     return r.operador === "diferente" || r.operador === "nao_existe"
       ? { simLabel: `Não possui etiqueta "${r.valor}"`, naoLabel: `Possui etiqueta "${r.valor}"` }
@@ -304,7 +304,10 @@ export function rotulosSaidaCondicao(grupo: GrupoCondicoes | undefined): { simLa
     return { simLabel: `Está em ${r.valor}`, naoLabel: `Não está em ${r.valor}` };
   }
   if (r.valor) {
-    return { simLabel: `${campo} ${ROTULO_OPERADOR[r.operador] ?? r.operador} "${r.valor}"`, naoLabel: `Não: ${campo.toLowerCase()}` };
+    return {
+      simLabel: `${campo} ${rotuloDoOperador(r.operador, r.campo)} "${r.valor}"`,
+      naoLabel: `Não: ${campo.toLowerCase()}`,
+    };
   }
   return generico;
 }
@@ -406,7 +409,7 @@ export function resumoNo(node: FlowNode, funis?: Funil[]): string {
       const data = node.data as DecisaoMultiplaData;
       const caminhos = (data.caminhos ?? []).filter((c) => c.valor?.trim());
       if (!caminhos.length) return "Sem caminhos definidos";
-      return `${ROTULO_CAMPO_CONDICAO[data.campo] ?? data.campo}: ${caminhos.map((c) => c.rotulo || c.valor).join(" · ")}`;
+      return `${rotuloDoCampo(data.campo as CampoCondicao)}: ${caminhos.map((c) => c.rotulo || c.valor).join(" · ")}`;
     }
     case "ia_responder": {
       const instrucao = String(d.instrucao ?? "").trim();

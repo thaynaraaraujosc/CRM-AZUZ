@@ -11401,9 +11401,23 @@ button.camp-row:hover {
 }
 
 .flow-node-warn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  color: inherit;
   font-size: 14px;
-  cursor: help;
+  /* `pointer` e não `help`: ele LEVA à lista de pendências do bloco, não explica no lugar. */
+  cursor: pointer;
   flex: 0 0 auto;
+}
+
+button.flow-node-warn:hover {
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  color: var(--danger);
 }
 
 .flow-node-body {
@@ -28734,6 +28748,17 @@ td.trafego-col-crm:first-of-type {
   color: var(--text-muted);
 }
 
+/* O que foi montado no painel (OU, NÃO, subgrupos) aparece no cartão como frase, sem edição: o
+   cartão edita a lista de regras somadas com E, e fingir que edita o resto seria pior. */
+.cond-avancado {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
 /* "Adicionar condição (e)" é o divisor tracejado da referência: a linha diz que o que vem depois
    se soma ao que está em cima (E), e o texto fica no meio dela. */
 .cond-add-e {
@@ -28841,6 +28866,241 @@ td.trafego-col-crm:first-of-type {
    "+" vira "×" e continua cobrindo o ponto. */
 .cond-ramo .cond-handle {
   right: 0;
+}
+
+/* ---------------- O seletor com busca (campo, comparação, valor) ----------------
+ *
+ * O `<select>` nativo não dá conta de quase cinquenta campos em seis grupos: não tem busca, e
+ * pior, quando o `value` não está entre as opções ele mostra a PRIMEIRA em silêncio — foi assim
+ * que "Cliente enviar" virou "Canal" na tela sem nada mudar no dado.
+ *
+ * O gatilho herda a classe de quem o usa (`cond-campo` no cartão, `input` no painel), então aqui
+ * só mora o que é do seletor: o texto que trunca, e o menu, que é portalizado em `document.body`
+ * com `position: fixed` pra não ser cortado pelo recorte do nó no canvas.
+ */
+.sb-caixa {
+  display: contents;
+}
+
+.sb-gatilho {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sb-valor {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sb-vazio {
+  color: var(--text-faint);
+}
+
+/* No painel o gatilho é um campo de formulário: a seta diz que ele abre uma lista. */
+.input.sb-gatilho {
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.input.sb-gatilho::after,
+.cond-campo.sb-gatilho::after,
+.cond-operador.sb-gatilho::after,
+.cond-valor.sb-gatilho::after {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin-left: 4px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+  opacity: 0.5;
+}
+
+.sb-menu {
+  position: fixed;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  max-height: 320px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-elevated);
+  box-shadow: var(--shadow-lg);
+}
+
+.sb-busca {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--text-faint);
+}
+
+.sb-busca input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--ink);
+  outline: none;
+}
+
+.sb-lista {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.sb-grupo + .sb-grupo {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.sb-grupo-nome {
+  margin: 2px 8px 2px;
+  font-size: 10px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.sb-opcao {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  font: inherit;
+  font-size: 12.5px;
+  text-align: left;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.sb-opcao.destacada {
+  background: var(--surface-hover);
+}
+
+.sb-opcao.on {
+  font-weight: var(--fw-semibold);
+}
+
+.sb-tique {
+  flex: none;
+  display: inline-flex;
+  width: 12px;
+  color: var(--acao);
+}
+
+.sb-opcao-texto {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sb-opcao-texto em {
+  display: block;
+  font-style: normal;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.sb-nada {
+  margin: 0;
+  padding: 10px 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ---------------- O valor da regra: fonte, "até" e o chip ----------------
+ *
+ * "De onde vem o valor" fica atrás de um botãozinho: quase toda regra compara com texto digitado,
+ * e um seletor a mais em cada linha faria a condição parecer formulário de imposto. Quem precisa
+ * de "contém o nome do responsável" acha; quem não precisa não repara.
+ */
+.cond-fonte.sb-gatilho {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  justify-content: center;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--text-faint);
+}
+
+.cond-fonte.sb-gatilho .sb-valor {
+  display: none;
+}
+
+.cond-fonte.sb-gatilho::after {
+  content: "";
+  width: 5px;
+  height: 5px;
+  margin: 0;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+  opacity: 0.8;
+}
+
+.cond-fonte.sb-gatilho:hover {
+  background: var(--surface-hover);
+  color: var(--acao);
+}
+
+/* Valor que vem de outro campo do lead: pastilha, não campo de texto. Não se digita dentro. */
+.cond-fonte-chip {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 2px 6px;
+  border: 0;
+  border-bottom: 1px dashed var(--acao);
+  font-size: 11.5px;
+  color: var(--acao);
+}
+
+.cond-ate {
+  flex: none;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* No painel a regra é uma linha de campos de formulário: cada peça cresce até caber e quebra pra
+   linha de baixo quando não cabe mais, em vez de espremer as três numa largura de coluna. */
+.flow-cond-regra .sb-gatilho,
+.flow-cond-regra .cond-comp {
+  flex: 1 1 150px;
+  max-width: 100%;
+}
+
+.flow-cond-regra .cond-comp {
+  gap: 6px;
+}
+
+.flow-cond-regra .cond-fonte.sb-gatilho {
+  flex: none;
 }
 
 /* O nome do caminho e o "tirar" lado a lado, no painel do bloco de condição. */

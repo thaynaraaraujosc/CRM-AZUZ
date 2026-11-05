@@ -119,6 +119,7 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
     aoMudarCanal,
     aoMudarCampo,
     aoMudarCronometro,
+    aoAbrirProblemas,
   } = data;
 
   const [menuAberto, setMenuAberto] = useState(false);
@@ -529,10 +530,28 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
               })()
             ) : null}
             {flowNode.desativado ? <span className="flow-node-pausado-badge">{traduzir("Pausado")}</span> : null}
+            {/* O "!" é CLICÁVEL: ele abre o painel já na lista de pendências deste bloco. Era só
+                um ícone com `title`, e a frase inteira num balão do sistema operacional — que não
+                quebra linha, some ao mexer o mouse e não leva a lugar nenhum. */}
             {temErro || temAviso ? (
-              <span className="flow-node-warn" title={problemas.map((p) => p.mensagem).join(" · ")}>
-                <IconAlerta width={13} height={13} />
-              </span>
+              aoAbrirProblemas ? (
+                <button
+                  type="button"
+                  className="flow-node-warn nodrag"
+                  title={problemas.map((p) => p.mensagem).join(" · ")}
+                  aria-label={traduzir("Ver os problemas deste bloco")}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    aoAbrirProblemas();
+                  }}
+                >
+                  <IconAlerta width={13} height={13} />
+                </button>
+              ) : (
+                <span className="flow-node-warn" title={problemas.map((p) => p.mensagem).join(" · ")}>
+                  <IconAlerta width={13} height={13} />
+                </span>
+              )
             ) : null}
             {/*
               O "⋯" DO BLOCO.

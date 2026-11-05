@@ -5,6 +5,7 @@
  * dois nós soltos na mesma sessão).
  */
 
+import { novoRamoDeCondicao } from "./campos-condicao";
 import type { FlowNodeCategory, FlowNodeType } from "./types";
 
 /**
@@ -513,16 +514,16 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
       "Cada condição é um cartão com as suas regras e a sua saída. Vale a primeira que bater, de cima pra baixo; quem não bate em nenhuma sai por \"Nenhuma das condições\".",
     icone: "GitBranch",
     corClasse: corDaCategoria("condicao"),
-    // Nasce com UM ramo vazio: é o mínimo pra a pessoa ver a forma do bloco (um ramo + a saída
-    // padrão) e começar a preencher, sem ter que descobrir que precisa criar o primeiro.
-    dataPadrao: () => ({
-      ramos: [
-        {
-          id: `ramo-${Date.now()}`,
-          grupo: { id: `grupo-${Date.now()}`, tipo: "E", regras: [], subgrupos: [] },
-        },
-      ],
-    }),
+    /*
+     * NASCE COM UMA CONDIÇÃO E COM UMA REGRA DENTRO DELA.
+     *
+     * Era uma condição VAZIA, e isso parecia inofensivo: "a pessoa preenche". Só que um grupo "E"
+     * sem regra é verdadeiro — todo mundo passa num `every` de lista vazia —, então o bloco recém-
+     * criado mandava todos os leads pelo primeiro caminho e "Nenhuma das condições" nunca
+     * acontecia. Com a regra padrão ("Cliente enviar é igual a …"), o bloco nasce no estado em
+     * que quase toda condição começa e a aba Problemas cobra o valor que falta.
+     */
+    dataPadrao: () => ({ ramos: [novoRamoDeCondicao()] }),
   },
   {
     tipo: "decisao_multipla",

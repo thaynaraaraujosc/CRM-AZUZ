@@ -1,86 +1,24 @@
 "use client";
 
-import { useEquipe } from "@/lib/equipe-context";
-import { useFunis } from "@/lib/funis-context";
-import type {
-  CampoCondicao,
-  GrupoCondicoes,
-  OperadorCondicao,
-  RegraCondicao,
-} from "@/lib/automation-flow/types";
-import { useEquipesDisponiveis } from "./useEquipesDisponiveis";
-import { useEtiquetasDisponiveis } from "./EtiquetaSelect";
-import { SeletorDeData } from "@/components/seletor-de-data";
+import type { GrupoCondicoes, RegraCondicao } from "@/lib/automation-flow/types";
+import { regraPadrao } from "@/lib/automation-flow/campos-condicao";
 import { IconClose } from "@/components/icons";
 import { useIdioma } from "@/lib/idioma-context";
+import { RegraDeCondicao } from "./RegraDeCondicao";
+import { useCamposDeCondicao } from "./useCamposDeCondicao";
 
-type CategoriaCampo = "Conversa" | "Funil / Negócio" | "Contato" | "Atividade";
-
-/** Exportados pro cartão de "Condição: regras por caminho" usar a MESMA lista: duas listas de
- *  campos divergiriam na primeira vez que alguém acrescentasse um campo só num lado. */
-export const CAMPOS_CONDICAO: { valor: CampoCondicao; label: string; categoria: CategoriaCampo }[] = [
-  { valor: "canal", label: "Canal", categoria: "Conversa" },
-  { valor: "numero_salvo", label: "Número salvo", categoria: "Conversa" },
-  { valor: "data_ultima_conversa", label: "Data da última conversa", categoria: "Conversa" },
-  { valor: "horario_ultima_mensagem", label: "Horário da última mensagem", categoria: "Conversa" },
-  { valor: "respondeu", label: "Respondeu", categoria: "Conversa" },
-  { valor: "tentativas", label: "Tentativas", categoria: "Conversa" },
-  { valor: "recebeu_automacao", label: "Recebeu automação", categoria: "Conversa" },
-  { valor: "em_outra_automacao", label: "Está em outra automação", categoria: "Conversa" },
-  { valor: "palavra_chave", label: "Palavra-chave", categoria: "Conversa" },
-
-  { valor: "etapa", label: "Etapa", categoria: "Funil / Negócio"},
-  { valor: "funil", label: "Funil", categoria: "Funil / Negócio"},
-  { valor: "valor_negocio", label: "Valor do negócio", categoria: "Funil / Negócio"},
-
-  { valor: "origem", label: "Origem", categoria: "Contato" },
-  { valor: "etiqueta", label: "Etiqueta", categoria: "Contato" },
-  { valor: "responsavel", label: "Responsável", categoria: "Contato" },
-  { valor: "equipe", label: "Equipe", categoria: "Contato" },
-  { valor: "cidade", label: "Cidade", categoria: "Contato" },
-  { valor: "estado", label: "Estado", categoria: "Contato" },
-  { valor: "campanha", label: "Campanha", categoria: "Contato" },
-  { valor: "anuncio", label: "Anúncio", categoria: "Contato" },
-  { valor: "consentimento", label: "Consentimento", categoria: "Contato" },
-  { valor: "campo_personalizado", label: "Campo personalizado", categoria: "Contato" },
-
-  { valor: "possui_agendamento", label: "Possui agendamento", categoria: "Atividade" },
-  { valor: "situacao_agendamento", label: "Situação do agendamento", categoria: "Atividade" },
-  { valor: "dia_semana", label: "Dia da semana", categoria: "Atividade" },
-  { valor: "horario", label: "Horário", categoria: "Atividade" },
-];
-
-export const CATEGORIAS_CONDICAO: CategoriaCampo[] = ["Conversa", "Funil / Negócio", "Contato", "Atividade"];
-
-const CAMPOS_SIM_NAO = new Set<CampoCondicao>(["respondeu", "recebeu_automacao", "em_outra_automacao", "possui_agendamento", "consentimento"]);
-const DIAS_SEMANA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 /**
- * Os canais que uma condição pode comparar.
+ * O EDITOR COMPLETO DE CONDIÇÃO: E/OU/NÃO, regras e subgrupos aninhados.
  *
- * TikTok saiu: não existe integração, então nenhuma conversa jamais tem esse canal, e a condição
- * "canal é TikTok" seria um caminho do fluxo que nunca é seguido. É a mesma regra do botão falso,
- * do lado da decisão: opção que não pode acontecer é pior que opção ausente, porque a pessoa monta
- * um ramo inteiro em volta dela e fica esperando.
+ * O cartão do canvas edita a maioria dos casos (uma condição = regras somadas com E). Aqui cabe o
+ * que não cabe lá: OU dentro da mesma condição, NÃO, e grupos dentro de grupos.
+ *
+ * A LINHA DA REGRA é a mesma dos dois lados (`RegraDeCondicao`). Eram duas, escritas separado, e
+ * tinham divergido no pior lugar possível: o painel oferecia onze operadores pra qualquer campo
+ * — "Data da última conversa começa com" — e a lista de campos do painel não tinha "Cliente
+ * enviar", o campo mais usado de todos, o que fazia o `<select>` mostrar "Canal" enquanto o dado
+ * gravado continuava sendo a mensagem.
  */
-const CANAIS = [
-  { valor: "whatsapp", label: "WhatsApp" },
-  { valor: "instagram", label: "Instagram" },
-  { valor: "email", label: "E-mail" },
-];
-
-export const OPERADORES_CONDICAO: { valor: OperadorCondicao; label: string }[] = [
-  { valor: "igual", label: "é igual a" },
-  { valor: "diferente", label: "é diferente de" },
-  { valor: "contem", label: "contém" },
-  { valor: "nao_contem", label: "não contém" },
-  { valor: "comeca_com", label: "começa com" },
-  { valor: "termina_com", label: "termina com" },
-  { valor: "maior_que", label: "maior que" },
-  { valor: "menor_que", label: "menor que" },
-  { valor: "entre", label: "entre" },
-  { valor: "existe", label: "existe" },
-  { valor: "nao_existe", label: "não existe" },
-];
 
 let contador = 0;
 function novoId(prefixo: string): string {
@@ -89,14 +27,14 @@ function novoId(prefixo: string): string {
 }
 
 export function novoGrupoCondicoes(): GrupoCondicoes {
-  return { id: novoId("grupo"), tipo: "E", regras: [], subgrupos: [] };
+  // Nasce COM regra: grupo "E" vazio é verdadeiro, e uma condição verdadeira pega todo mundo.
+  return { id: novoId("grupo"), tipo: "E", regras: [novaRegra()], subgrupos: [] };
 }
 
 function novaRegra(): RegraCondicao {
-  return { id: novoId("regra"), campo: "origem", operador: "igual", valor: "" };
+  return regraPadrao(novoId("regra"));
 }
 
-/** Editor recursivo de `GrupoCondicoes`: E/OU/NÃO + regras + subgrupos aninhados. */
 export function CondicaoForm({
   grupo,
   onChange,
@@ -107,11 +45,16 @@ export function CondicaoForm({
   nivel?: number;
 }) {
   const { t: traduzir } = useIdioma();
+  const campos = useCamposDeCondicao();
+
   function atualizarRegra(id: string, patch: Partial<RegraCondicao>) {
     onChange({ ...grupo, regras: grupo.regras.map((r) => (r.id === id ? { ...r, ...patch } : r)) });
   }
+  /** Tirar a última regra devolve a padrão: grupo sem regra nenhuma passa sempre. */
   function removerRegra(id: string) {
-    onChange({ ...grupo, regras: grupo.regras.filter((r) => r.id !== id) });
+    const sobraram = grupo.regras.filter((r) => r.id !== id);
+    const temSubgrupo = grupo.subgrupos.length > 0;
+    onChange({ ...grupo, regras: sobraram.length || temSubgrupo ? sobraram : [novaRegra()] });
   }
   function atualizarSubgrupo(id: string, novo: GrupoCondicoes) {
     onChange({ ...grupo, subgrupos: grupo.subgrupos.map((g) => (g.id === id ? novo : g)) });
@@ -120,116 +63,7 @@ export function CondicaoForm({
     onChange({ ...grupo, subgrupos: grupo.subgrupos.filter((g) => g.id !== id) });
   }
 
-  const { funis } = useFunis();
-  const { membros } = useEquipe();
-  const equipes = useEquipesDisponiveis();
-  const etapas = Array.from(new Set(funis.flatMap((f) => f.colunas.map((c) => c.titulo))));
-  const etiquetas = useEtiquetasDisponiveis();
-
-  function renderValorInput(regra: RegraCondicao) {
-    const onChangeValor = (valor: string) => atualizarRegra(regra.id, { valor });
-
-    if (CAMPOS_SIM_NAO.has(regra.campo)) {
-      return (
-        <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label={traduzir("Valor")}>
-          <option value="">{traduzir("Selecione…")}</option>
-          <option value="sim">{traduzir("Sim")}</option>
-          <option value="nao">{traduzir("Não")}</option>
-        </select>
-      );
-    }
-    if (regra.campo === "canal") {
-      return (
-        <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label={traduzir("Valor")}>
-          <option value="">{traduzir("Selecione…")}</option>
-          {CANAIS.map((c) => (
-            <option key={c.valor} value={c.valor}>
-              {traduzir(c.label)}
-            </option>
-          ))}
-        </select>
-      );
-    }
-    if (regra.campo === "etiqueta") {
-      return (
-        <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label={traduzir("Valor")}>
-          <option value="">{traduzir("Selecione…")}</option>
-          {etiquetas.map((nome) => (
-            <option key={nome} value={nome}>
-              {nome}
-            </option>
-          ))}
-        </select>
-      );
-    }
-    if (regra.campo === "funil") {
-      return (
-        <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label={traduzir("Valor")}>
-          <option value="">{traduzir("Selecione…")}</option>
-          {funis.map((f) => (
-            <option key={f.id} value={f.nome}>
-              {f.nome}
-            </option>
-          ))}
-        </select>
-      );
-    }
-    if (regra.campo === "etapa") {
-      return (
-        <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label={traduzir("Valor")}>
-          <option value="">{traduzir("Selecione…")}</option>
-          {etapas.map((titulo) => (
-            <option key={titulo} value={titulo}>
-              {titulo}
-            </option>
-          ))}
-        </select>
-      );
-    }
-    if (regra.campo === "responsavel") {
-      return (
-        <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label={traduzir("Valor")}>
-          <option value="">{traduzir("Selecione…")}</option>
-          {membros.map((m) => (
-            <option key={m.id} value={m.nome}>
-              {m.nome}
-            </option>
-          ))}
-        </select>
-      );
-    }
-    if (regra.campo === "equipe") {
-      return (
-        <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label={traduzir("Valor")}>
-          <option value="">{traduzir("Selecione…")}</option>
-          {equipes.map((nome) => (
-            <option key={nome} value={nome}>
-              {nome}
-            </option>
-          ))}
-        </select>
-      );
-    }
-    if (regra.campo === "dia_semana") {
-      return (
-        <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label={traduzir("Valor")}>
-          <option value="">{traduzir("Selecione…")}</option>
-          {DIAS_SEMANA.map((d) => (
-            <option key={d} value={d}>
-              {d}
-            </option>
-          ))}
-        </select>
-      );
-    }
-    if (regra.campo === "horario" || regra.campo === "horario_ultima_mensagem") {
-      return <input className="input" type="time" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label={traduzir("Valor")} />;
-    }
-    if (regra.campo === "data_ultima_conversa") {
-      return <SeletorDeData valor={regra.valor ?? ""} onChange={onChangeValor} curto />;
-    }
-    return <input className="input" placeholder={traduzir("Valor")} value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label={traduzir("Valor")} />;
-  }
+  const funilEscolhido = grupo.regras.find((r) => r.campo === "funil")?.valor?.trim() || undefined;
 
   return (
     <div className="flow-cond-grupo" style={{ marginLeft: nivel > 0 ? 12 : 0 }}>
@@ -251,53 +85,13 @@ export function CondicaoForm({
 
       {grupo.regras.map((regra) => (
         <div className="flow-cond-regra" key={regra.id}>
-          <select
-            className="input"
-            value={regra.campo}
-            onChange={(e) => atualizarRegra(regra.id, { campo: e.target.value as CampoCondicao })}
-            aria-label={traduzir("Campo da condição")}
-          >
-            {CATEGORIAS_CONDICAO.map((cat) => (
-              <optgroup key={cat} label={cat}>
-                {CAMPOS_CONDICAO.filter((c) => c.categoria === cat).map((c) => (
-                  <option key={c.valor} value={c.valor}>
-                    {c.label}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
-          {regra.campo === "campo_personalizado" ? (
-            <input
-              className="input"
-              placeholder={traduzir("Nome do campo")}
-              value={regra.campoPersonalizadoNome ?? ""}
-              onChange={(e) => atualizarRegra(regra.id, { campoPersonalizadoNome: e.target.value })}
-              aria-label={traduzir("Nome do campo personalizado")}
-            />
-          ) : null}
-          <select
-            className="input"
-            value={regra.operador}
-            onChange={(e) => atualizarRegra(regra.id, { operador: e.target.value as OperadorCondicao })}
-            aria-label={traduzir("Operador")}
-          >
-            {OPERADORES_CONDICAO.map((o) => (
-              <option key={o.valor} value={o.valor}>
-                {traduzir(o.label)}
-              </option>
-            ))}
-          </select>
-          {regra.operador !== "existe" && regra.operador !== "nao_existe" ? renderValorInput(regra) : null}
-          {regra.operador === "entre" ? (
-            <input
-              className="input"
-              placeholder={traduzir("Até")}
-              value={regra.valorFim ?? ""}
-              onChange={(e) => atualizarRegra(regra.id, { valorFim: e.target.value })}
-              aria-label={traduzir("Valor final (entre)")}
-            />
-          ) : null}
+          <RegraDeCondicao
+            regra={regra}
+            campos={campos}
+            variante="painel"
+            funilEscolhido={funilEscolhido}
+            aoMudar={(patch) => atualizarRegra(regra.id, patch)}
+          />
           <button
             type="button"
             className="remove-chip"
@@ -312,11 +106,7 @@ export function CondicaoForm({
       {grupo.subgrupos.map((sub) => (
         <div className="flow-cond-subgrupo" key={sub.id}>
           <CondicaoForm grupo={sub} onChange={(novo) => atualizarSubgrupo(sub.id, novo)} nivel={nivel + 1} />
-          <button
-            type="button"
-            className="btn ghost mt8"
-            onClick={() => removerSubgrupo(sub.id)}
-          >
+          <button type="button" className="btn ghost mt8" onClick={() => removerSubgrupo(sub.id)}>
             {traduzir("Remover subgrupo")}
           </button>
         </div>
@@ -328,7 +118,7 @@ export function CondicaoForm({
           className="btn ghost"
           onClick={() => onChange({ ...grupo, regras: [...grupo.regras, novaRegra()] })}
         >
-          + Regra
+          + {traduzir("Regra")}
         </button>
         {nivel < 2 ? (
           <button
@@ -336,7 +126,7 @@ export function CondicaoForm({
             className="btn ghost"
             onClick={() => onChange({ ...grupo, subgrupos: [...grupo.subgrupos, novoGrupoCondicoes()] })}
           >
-            + Subgrupo
+            + {traduzir("Subgrupo")}
           </button>
         ) : null}
       </div>

@@ -2,19 +2,12 @@
 
 import { Handle, Position } from "@xyflow/react";
 
-import {
-  CAMPOS_CONDICAO,
-  CATEGORIAS_CONDICAO,
-  OPERADORES_CONDICAO,
-} from "@/components/automation-flow/forms/CondicaoForm";
+import { RegraDeCondicao } from "@/components/automation-flow/forms/RegraDeCondicao";
+import { useCamposDeCondicao } from "@/components/automation-flow/forms/useCamposDeCondicao";
+import { novoRamoDeCondicao, regraPadrao } from "@/lib/automation-flow/campos-condicao";
+import { resumoGrupoCondicoes } from "@/lib/automation-flow/resumo";
 import { IconFiltro, IconLixeira } from "@/components/icons";
-import type {
-  CampoCondicao,
-  CondicaoRamosData,
-  OperadorCondicao,
-  RamoDeCondicao,
-  RegraCondicao,
-} from "@/lib/automation-flow/types";
+import type { CondicaoRamosData, RamoDeCondicao, RegraCondicao } from "@/lib/automation-flow/types";
 import { useIdioma } from "@/lib/idioma-context";
 
 /**
@@ -40,21 +33,10 @@ function novoId(prefixo: string): string {
   return `${prefixo}-${Date.now()}-${contador}`;
 }
 
-export function novoRamoDeCondicao(): RamoDeCondicao {
-  return {
-    id: novoId("ramo"),
-    grupo: { id: novoId("grupo"), tipo: "E", regras: [], subgrupos: [] },
-  };
-}
-
+/* Nascer com regra é o que impede a condição de pegar todo mundo: ver `novoRamoDeCondicao`. */
 function novaRegra(): RegraCondicao {
-  // "A última mensagem do contato contém …" é a regra que quase todo roteador de atendimento
-  // começa escrevendo. Nascer nela economiza dois cliques na maioria das vezes.
-  return { id: novoId("regra"), campo: "mensagem", operador: "contem", valor: "" };
+  return regraPadrao(novoId("regra"));
 }
-
-/** Operadores que não comparam valor nenhum: o campo de texto some com eles. */
-const SEM_VALOR: OperadorCondicao[] = ["existe", "nao_existe"];
 
 /** O que a condição liga: o "+" que abre o próximo passo, o "×" que desfaz, e o ponto da linha. */
 function SaidaDaCondicao({
@@ -127,6 +109,7 @@ export function CartaoCondicaoRamos({
   aoDesligarSaida?: (handleId: string | undefined) => void;
 }) {
   const { t: traduzir } = useIdioma();
+  const campos = useCamposDeCondicao();
   const ramos = data.ramos ?? [];
 
   function mudarRamo(ramoId: string, mudanca: (r: RamoDeCondicao) => RamoDeCondicao) {
@@ -141,6 +124,25 @@ export function CartaoCondicaoRamos({
         regras: r.grupo.regras.map((regra) => (regra.id === regraId ? { ...regra, ...patch } : regra)),
       },
     }));
+  }
+
+  /**
+   * Tirar a ÚLTIMA regra devolve a regra padrão em vez de deixar a condição vazia.
+   *
+   * Condição sem regra nenhuma pega todo mundo e apaga as de baixo. O "×" é pra trocar a pergunta,
+   * não pra transformar o bloco num desvio que sempre segue pelo primeiro caminho.
+   */
+  function tirarRegra(ramo: RamoDeCondicao, regraId: string) {
+    const sobraram = ramo.grupo.regras.filter((x) => x.id !== regraId);
+    mudarRamo(ramo.id, (r) => ({
+      ...r,
+      grupo: { ...r.grupo, regras: sobraram.length ? sobraram : [novaRegra()] },
+    }));
+  }
+
+  /** O funil que esta condição já escolheu, pra "Etapa" listar só as etapas dele. */
+  function funilDaCondicao(ramo: RamoDeCondicao): string | undefined {
+    return ramo.grupo.regras.find((r) => r.campo === "funil")?.valor?.trim() || undefined;
   }
 
   return (
@@ -173,82 +175,38 @@ export function CartaoCondicaoRamos({
 
           {ramo.grupo.regras.map((regra, j) => (
             <div className="cond-regra" key={regra.id}>
-              <span className="cond-regra-e">{j === 0 ? traduzir("Se") : traduzir("e")}</span>
-              <select
-                className="cond-campo"
-                value={regra.campo}
-                aria-label={traduzir("Campo")}
-                onChange={(e) =>
-                  // Trocar o campo zera o valor: "origem é INSTAGRAM" com o campo trocado pra
-                  // "valor do negócio" viraria "valor é INSTAGRAM", que nunca bate e ninguém vê.
-                  mudarRegra(ramo.id, regra.id, { campo: e.target.value as CampoCondicao, valor: "" })
-                }
-              >
-                {CATEGORIAS_CONDICAO.map((cat) => (
-                  <optgroup key={cat} label={cat}>
-                    {CAMPOS_CONDICAO.filter((c) => c.categoria === cat).map((c) => (
-                      <option key={c.valor} value={c.valor}>
-                        {traduzir(c.label)}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-              {/* Comparação e valor andam JUNTOS quando a linha não cabe: "contém: orçamento"
-                  desce inteiro pra segunda linha, em vez de o valor descer sozinho e virar um
-                  campo solto embaixo, sem dizer do que ele é o valor. */}
-              <span className="cond-comp">
-                <select
-                  className="cond-operador"
-                  value={regra.operador}
-                  aria-label={traduzir("Comparação")}
-                  onChange={(e) => mudarRegra(ramo.id, regra.id, { operador: e.target.value as OperadorCondicao })}
-                >
-                  {OPERADORES_CONDICAO.map((o) => (
-                    <option key={o.valor} value={o.valor}>
-                      {traduzir(o.label)}
-                    </option>
-                  ))}
-                </select>
-                {SEM_VALOR.includes(regra.operador) ? null : (
-                  <>
-                    <span className="cond-dois-pontos" aria-hidden="true">
-                      :
-                    </span>
-                    <input
-                      className="cond-valor"
-                      value={regra.valor ?? ""}
-                      placeholder={traduzir("valor")}
-                      aria-label={traduzir("Valor")}
-                      onChange={(e) => mudarRegra(ramo.id, regra.id, { valor: e.target.value })}
-                    />
-                    {regra.operador === "entre" ? (
-                      <input
-                        className="cond-valor"
-                        value={regra.valorFim ?? ""}
-                        placeholder={traduzir("até")}
-                        aria-label={traduzir("Valor final")}
-                        onChange={(e) => mudarRegra(ramo.id, regra.id, { valorFim: e.target.value })}
-                      />
-                    ) : null}
-                  </>
-                )}
-              </span>
+              <RegraDeCondicao
+                regra={regra}
+                campos={campos}
+                variante="cartao"
+                primeira={j === 0}
+                funilEscolhido={funilDaCondicao(ramo)}
+                aoMudar={(patch) => mudarRegra(ramo.id, regra.id, patch)}
+              />
               <button
                 type="button"
                 className="cond-tirar"
                 aria-label={traduzir("Tirar esta regra")}
-                onClick={() =>
-                  mudarRamo(ramo.id, (r) => ({
-                    ...r,
-                    grupo: { ...r.grupo, regras: r.grupo.regras.filter((x) => x.id !== regra.id) },
-                  }))
-                }
+                onClick={() => tirarRegra(ramo, regra.id)}
               >
                 <IconLixeira width={10} height={10} />
               </button>
             </div>
           ))}
+
+          {/*
+            O QUE O CARTÃO NÃO SABE EDITAR, ELE PELO MENOS MOSTRA.
+            
+            O painel da direita faz OU, NÃO e grupos dentro de grupos; o cartão só faz a lista de
+            regras somadas com E, que é a forma de quase toda condição. Sem esta linha, uma
+            condição montada no painel aparecia no cartão como as regras do primeiro nível — a
+            mesma condição dizendo duas coisas diferentes em duas telas.
+          */}
+          {ramo.grupo.subgrupos.length > 0 || ramo.grupo.tipo !== "E" ? (
+            <p className="cond-avancado" title={resumoGrupoCondicoes(ramo.grupo)}>
+              {traduzir("Montada no painel")}: {resumoGrupoCondicoes(ramo.grupo)}
+            </p>
+          ) : null}
 
           {/*
             CONDIÇÃO SEM REGRA PEGA TODO MUNDO, e isso precisa estar escrito no cartão.

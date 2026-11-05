@@ -4,6 +4,14 @@
  * depois, pra destacar problema em cada nó no canvas.
  */
 
+import {
+  campoDeCondicaoExiste,
+  fontePedeTexto,
+  operadoresDoCampo,
+  pedeValor,
+  rotuloDoCampo,
+} from "./campos-condicao";
+import { numeroDeTexto } from "./avaliacao";
 import type {
   CondicaoRamosData,
   AgendarConsultaData,
@@ -22,6 +30,8 @@ import type {
   FlowNode,
   FluxoAutomacao,
   GatilhoEtapaData,
+  GrupoCondicoes,
+  RegraCondicao,
   MensagemBotoesData,
   MensagemContatoData,
   MensagemEmailData,
@@ -313,23 +323,61 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
     }
 
     ramos.forEach((ramo, i) => {
-      const vazio = !ramo.grupo?.regras?.length && !ramo.grupo?.subgrupos?.length;
+      const regras = ramo.grupo?.regras ?? [];
+      const vazio = !regras.length && !ramo.grupo?.subgrupos?.length;
+      /*
+       * CONDIÇÃO SEM REGRA É ERRO, SEMPRE — e não só quando tem outra embaixo.
+       *
+       * Era aviso na última: "um caminho largo" parecia aceitável. Não é. Um grupo "E" vazio é
+       * verdadeiro, então ela pega TODO MUNDO antes de "Nenhuma das condições", que vira um
+       * caminho morto — e o bloco inteiro deixa de decidir qualquer coisa continuando com cara de
+       * configurado. Desde que toda condição nasce com uma regra (ver `regraPadrao`), chegar aqui
+       * vazio só acontece apagando a última regra de propósito.
+       */
       if (vazio) {
-        const temRamoAbaixo = i < ramos.length - 1;
         problemas.push({
           id: proximoIdProblema(),
-          severidade: temRamoAbaixo ? "erro" : "aviso",
-          mensagem: temRamoAbaixo
-            ? `Bloco "${n.titulo ?? n.type}": a condição ${i + 1} está sem regra, então ela pega todo mundo e as condições abaixo dela nunca acontecem.`
-            : `Bloco "${n.titulo ?? n.type}": a condição ${i + 1} está sem regra, então ela pega todo mundo.`,
+          severidade: "erro",
+          mensagem:
+            i < ramos.length - 1
+              ? `Bloco "${n.titulo ?? n.type}": a condição ${i + 1} está sem regra, então ela pega todo mundo e as condições abaixo dela nunca acontecem.`
+              : `Bloco "${n.titulo ?? n.type}": a condição ${i + 1} está sem regra, então ela pega todo mundo e "Nenhuma das condições" nunca acontece.`,
           nodeId: n.id,
         });
       }
 
-      (ramo.grupo?.regras ?? []).forEach((regra) => {
+      regras.forEach((regra) => {
+        // Campo que saiu do produto (ou foi gravado por uma versão anterior): a regra é
+        // inavaliável, e deixar publicar seria deixar o fluxo decidir por um dado que não existe.
+        if (!campoDeCondicaoExiste(regra.campo)) {
+          problemas.push({
+            id: proximoIdProblema(),
+            severidade: "erro",
+            mensagem: `Bloco "${n.titulo ?? n.type}": a condição ${i + 1} usa um campo que não existe mais ("${regra.campo}").`,
+            nodeId: n.id,
+          });
+          return;
+        }
+        /*
+         * COMPARAÇÃO QUE NÃO COMBINA COM O TIPO DO CAMPO: aviso, não erro.
+         *
+         * "Data da última conversa começa com" é uma regra que a tela aceitava e que quase nunca
+         * pode ser verdadeira. Mas há fluxos PUBLICADOS com regras assim, gravadas quando todo
+         * campo oferecia os mesmos onze operadores — e o motor continua avaliando todas elas. Virar
+         * erro impediria de republicar um fluxo que está rodando hoje, por causa de uma escolha que
+         * o próprio produto ofereceu. Avisa, e quem abrir o bloco troca em dois cliques.
+         */
+        if (!operadoresDoCampo(regra.campo).some((o) => o.valor === regra.operador)) {
+          problemas.push({
+            id: proximoIdProblema(),
+            severidade: "aviso",
+            mensagem: `Bloco "${n.titulo ?? n.type}": a condição ${i + 1} compara "${rotuloDoCampo(regra.campo)}" de um jeito que não combina com esse tipo de campo, e pode nunca ser verdadeira.`,
+            nodeId: n.id,
+          });
+        }
         // "existe"/"não existe" não comparam valor nenhum: cobrar um campo preenchido neles seria
-        // pedir uma informação que a regra não usa.
-        const precisaValor = !["existe", "nao_existe"].includes(regra.operador);
+        // pedir uma informação que a regra não usa. Valor que vem de outro campo também não.
+        const precisaValor = pedeValor(regra.operador) && fontePedeTexto(regra.fonteValor);
         if (precisaValor && ehTextoVazio(regra.valor)) {
           problemas.push({
             id: proximoIdProblema(),
@@ -338,15 +386,43 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
             nodeId: n.id,
           });
         }
-        if (regra.operador === "entre" && (ehTextoVazio(regra.valor) || ehTextoVazio(regra.valorFim))) {
-          problemas.push({
-            id: proximoIdProblema(),
-            severidade: "erro",
-            mensagem: `Bloco "${n.titulo ?? n.type}": a regra "entre" da condição ${i + 1} precisa dos dois limites.`,
-            nodeId: n.id,
-          });
+        if (regra.operador === "entre") {
+          if (ehTextoVazio(regra.valor) || ehTextoVazio(regra.valorFim)) {
+            problemas.push({
+              id: proximoIdProblema(),
+              severidade: "erro",
+              mensagem: `Bloco "${n.titulo ?? n.type}": a regra "entre" da condição ${i + 1} precisa dos dois limites.`,
+              nodeId: n.id,
+            });
+          } else if (intervaloInvertido(regra.valor, regra.valorFim)) {
+            // "entre 500 e 100" não é um intervalo: é um intervalo vazio, e nada cai dentro dele.
+            problemas.push({
+              id: proximoIdProblema(),
+              severidade: "erro",
+              mensagem: `Bloco "${n.titulo ?? n.type}": a regra "entre" da condição ${i + 1} começa depois de onde termina ("${regra.valor}" a "${regra.valorFim}").`,
+              nodeId: n.id,
+            });
+          }
         }
       });
+
+      /*
+       * CONDIÇÃO QUE NUNCA ACONTECE porque uma de cima já pega todo mundo que ela pegaria.
+       *
+       * "contém consulta" em cima e "é igual a consulta" embaixo: a segunda nunca é alcançada,
+       * porque vale a primeira que bater. É aviso e não erro — o fluxo roda, só que com um caminho
+       * morto — e a conta é conservadora: só acusa quando toda regra da de cima é mais larga que
+       * uma regra da de baixo (ver `condicaoCobre`).
+       */
+      const cobertaPor = ramos.findIndex((anterior, j) => j < i && condicaoCobre(anterior.grupo, ramo.grupo));
+      if (cobertaPor >= 0) {
+        problemas.push({
+          id: proximoIdProblema(),
+          severidade: "aviso",
+          mensagem: `Bloco "${n.titulo ?? n.type}": a condição ${i + 1} nunca acontece, porque a condição ${cobertaPor + 1} já pega todo mundo que ela pegaria.`,
+          nodeId: n.id,
+        });
+      }
 
       // Caminho desenhado e sem ligação: avisa, não impede. Pode ser um ramo que a pessoa ainda
       // vai ligar, e bloquear a publicação do fluxo inteiro por causa disso seria demais.
@@ -733,4 +809,73 @@ function detectarCiclosDeLoopInfinito(
   });
 
   return problematicos;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Intervalo e cobertura entre condições                                      */
+/* -------------------------------------------------------------------------- */
+
+/** "entre 500 e 100": um intervalo que começa depois de onde termina não contém nada. */
+export function intervaloInvertido(de: string | undefined, ate: string | undefined): boolean {
+  if (!de?.trim() || !ate?.trim()) return false;
+  const a = numeroDeTexto(de);
+  const b = numeroDeTexto(ate);
+  if (a !== undefined && b !== undefined) return a > b;
+  // Data ISO e hora "HH:MM" se ordenam como texto; qualquer outro texto também, e aí a conta
+  // continua valendo pra quem digitou "de Z a A".
+  return de.trim().toLowerCase() > ate.trim().toLowerCase();
+}
+
+function comparavel(v: string | undefined): string {
+  return (v ?? "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+/**
+ * A REGRA `a` PEGA TUDO QUE A REGRA `b` PEGARIA?
+ *
+ * Conservadora de propósito: na dúvida, responde "não". Um aviso errado de "esta condição nunca
+ * acontece" é pior que aviso nenhum — manda a pessoa apagar um caminho que funciona.
+ */
+export function regraCobre(a: RegraCondicao, b: RegraCondicao): boolean {
+  if (a.campo !== b.campo) return false;
+  // Valor que vem de outro campo muda a cada lead: não dá pra afirmar nada sobre ele aqui.
+  if ((a.fonteValor && a.fonteValor !== "manual") || (b.fonteValor && b.fonteValor !== "manual")) return false;
+  const va = comparavel(a.valor);
+  const vb = comparavel(b.valor);
+  if (a.operador === "existe") return b.operador !== "nao_existe" && Boolean(vb);
+  if (a.operador === b.operador && va === vb) return true;
+  if (a.operador === "contem") {
+    if (b.operador === "igual" || b.operador === "contem" || b.operador === "comeca_com" || b.operador === "termina_com") {
+      return Boolean(va) && vb.includes(va);
+    }
+  }
+  if (a.operador === "comeca_com" && (b.operador === "igual" || b.operador === "comeca_com")) {
+    return Boolean(va) && vb.startsWith(va);
+  }
+  if (a.operador === "termina_com" && (b.operador === "igual" || b.operador === "termina_com")) {
+    return Boolean(va) && vb.endsWith(va);
+  }
+  return false;
+}
+
+/**
+ * A condição `a`, que está ACIMA, já pega todo mundo que a condição `b` pegaria?
+ *
+ * Só vale pra grupos "E" sem subgrupos, que é o que o cartão escreve: com OU e NÃO no meio, a
+ * conta deixa de ser uma comparação regra a regra e um palpite errado custa mais que o aviso vale.
+ */
+export function condicaoCobre(a: GrupoCondicoes | undefined, b: GrupoCondicoes | undefined): boolean {
+  if (!a || !b) return false;
+  if (a.tipo !== "E" || b.tipo !== "E") return false;
+  if (a.subgrupos?.length || b.subgrupos?.length) return false;
+  const deA = a.regras ?? [];
+  const deB = b.regras ?? [];
+  if (!deA.length || !deB.length) return false;
+  // Toda regra da de cima precisa ser mais larga que alguma da de baixo. Se ela exige algo que a
+  // de baixo não exige, quem passa na de baixo pode não passar na de cima — e aí não cobre.
+  return deA.every((ra) => deB.some((rb) => regraCobre(ra, rb)));
 }

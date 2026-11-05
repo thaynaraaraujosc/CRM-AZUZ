@@ -162,7 +162,44 @@ export type CampoCondicao =
   | "palavra_chave"
   | "consentimento"
   | "dia_semana"
-  | "horario";
+  | "horario"
+  /* ------------------------------------------------------------------------
+   * Campos que chegaram com o bloco "Condição" completo.
+   *
+   * Todos saem de dado que o CRM JÁ GUARDA: o comentário que acionou o fluxo, o perfil do
+   * Instagram de quem escreveu (`Contato.igSegueVoce` e companhia), as colunas de contato que
+   * nunca tinham sido oferecidas numa condição, e a tabela `OrigemDoLead`, que guarda UTM,
+   * código do clique e os ids do Meta Ads desde que o rastreio de tráfego existe — e que até
+   * aqui não dava pra consultar de dentro de uma automação.
+   * --------------------------------------------------------------------- */
+  | "comentario"
+  | "cliente_perfil"
+  | "cargo"
+  | "email"
+  | "telefone_celular"
+  | "telefone_comercial"
+  | "empresa"
+  | "utm_source"
+  | "utm_medium"
+  | "utm_campaign"
+  | "utm_content"
+  | "utm_term"
+  | "pagina_entrada"
+  | "gclid"
+  | "fbclid"
+  | "meta_ads_campanha"
+  | "meta_ads_conjunto"
+  | "meta_ads_anuncio"
+  /**
+   * UM CAMPO CRIADO PELA PRÓPRIA EMPRESA, como `cp:<id do campo>`.
+   *
+   * A definição (nome, tipo, opções) mora em `Preferencia`, chave `campos-do-contato`, e o valor
+   * mora no contato, em `camposExtras`. Guardar o ID e não o nome é o que faz a regra sobreviver
+   * a renomear o campo: o nome é o que a pessoa lê, o id é o que amarra.
+   *
+   * O antigo `campo_personalizado` + nome digitado continua existindo pros fluxos publicados.
+   */
+  | `cp:${string}`;
 
 export type OperadorCondicao =
   | "igual"
@@ -186,6 +223,14 @@ export type RegraCondicao = {
   valorFim?: string;
   /** Só usado quando `campo === "campo_personalizado"`. */
   campoPersonalizadoNome?: string;
+  /**
+   * DE ONDE SAI O VALOR COMPARADO. Ausente é "manual": o texto de `valor` vale como ele é.
+   *
+   * "vazio" compara com nada preenchido; qualquer outro valor é um token de mensagem
+   * (`{primeiro_nome}`, `{etapa_funil}`), resolvido pro contato do momento. Ver `FonteDeValor`
+   * em `campos-condicao.ts`.
+   */
+  fonteValor?: string;
 };
 
 /** Grupo recursivo: permite montar árvores tipo "(A E B) OU (NÃO C)". */
