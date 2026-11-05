@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { destinoExternoPermitido } from "@/lib/seguranca/destino-externo";
-import { enviarTextoPeloCanal } from "@/lib/conversas/enviar-pelo-canal";
+import { enviarTextoPeloCanal, iniciarConversaEEnviarTexto } from "@/lib/conversas/enviar-pelo-canal";
 import { registrarMensagemEnviada } from "@/lib/conversas/registrar-saida";
 import {
   enviarContatoPeloCanal,
@@ -52,7 +52,15 @@ const falha = (detalhe: string, erroTecnico?: string): ResultadoAcao => ({ ok: f
 
 export type AcoesDoMotor = {
   /** Envia texto pelo canal da conversa daquele contato. */
-  enviarTexto: (params: { contatoNome: string; texto: string; canal?: string }) => Promise<ResultadoAcao>;
+  enviarTexto: (params: {
+    contatoNome: string;
+    texto: string;
+    canal?: string;
+    /** Começar a conversa quando ela não existe, em vez de desistir. Ver `iniciarConversaEEnviarTexto`. */
+    iniciarSemConversa?: boolean;
+    /** Canais que o bloco deixa usar quando é preciso começar a conversa. */
+    canaisPermitidos?: string[];
+  }) => Promise<ResultadoAcao>;
   /** Envia uma pergunta com opções no melhor formato que o canal suporta (botão, lista, resposta
    * rápida ou menu numerado). O `detalhe` diz qual formato saiu. A pessoa precisa ver isso. */
   perguntar: (params: { contatoNome: string; texto: string; opcoes: OpcaoPergunta[] }) => Promise<ResultadoAcao>;
@@ -129,10 +137,33 @@ export function acoesReais(params: {
 }): AcoesDoMotor {
   const { workspaceId } = params;
   return {
-    async enviarTexto({ contatoNome, texto }) {
+    async enviarTexto({ contatoNome, texto, iniciarSemConversa, canaisPermitidos }) {
       if (!texto.trim()) return falha("Mensagem vazia: nada foi enviado.");
       try {
         const r = await enviarTextoPeloCanal({ workspaceId, conversaNome: contatoNome, texto });
+
+        /*
+         * SEM CONVERSA, O ROBÔ COMEÇA UMA — quando o bloco pede.
+         *
+         * Um lead que entrou por importação, por formulário ou pela mão de alguém tem cadastro e
+         * número, e nenhuma mensagem. O envio normal escolhe o canal PELA conversa, então aqui ele
+         * não tinha por onde sair e a automação parava. Só acontece com a chave ligada no bloco:
+         * falar com quem nunca escreveu é uma decisão de quem monta, não um padrão.
+         */
+        if (!r.enviado && iniciarSemConversa && r.motivo === "conversa sem destinatário") {
+          const inicio = await iniciarConversaEEnviarTexto({
+            workspaceId,
+            contatoNome,
+            texto,
+            canaisPermitidos,
+          });
+          if (!inicio.enviado) {
+            return falha(`Não foi possível começar a conversa: ${inicio.motivo ?? "motivo desconhecido"}`);
+          }
+          await registrarMensagemEnviada({ workspaceId, contatoNome, texto, origem: "automacao" });
+          return ok(`Conversa iniciada e mensagem enviada: "${resumir(texto)}"`);
+        }
+
         if (!r.enviado) return falha(`Não foi possível enviar: ${r.motivo ?? "motivo desconhecido"}`);
         // A mensagem entra na conversa. Sem isto quem abre a tela vê a resposta do cliente sem a
         // pergunta que a automação fez.

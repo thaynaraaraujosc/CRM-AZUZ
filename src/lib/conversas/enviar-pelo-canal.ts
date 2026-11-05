@@ -6,6 +6,11 @@ import { explicarErroDoInstagram } from "@/lib/integracoes/erro-instagram";
 import { contaConectada, enviarPelaCloudApi, janelaDeAtendimentoAberta } from "@/lib/integracoes/whatsapp-oficial";
 import { dentroDaJanelaDirect } from "@/lib/social/janela-direct";
 import { enviarModeloDeRetomada } from "./retomada-envio";
+import { upsertConversaAoReceberMensagem } from "./upsert";
+import {
+  MOTIVO_SEM_CONSENTIMENTO,
+  bloqueadoPorFaltaDeConsentimento,
+} from "@/lib/integracoes/consentimento-whatsapp";
 
 /**
  * Manda um texto pelo canal de uma conversa. Do lado do SERVIDOR.
@@ -169,4 +174,108 @@ async function qrCodeConectado(workspaceId: string): Promise<boolean> {
     })
     .catch(() => null);
   return integracao?.status === "conectado";
+}
+
+
+/**
+ * COMEÇAR A CONVERSA PRA PODER FALAR: o envio pra quem nunca escreveu.
+ *
+ * `enviarTextoPeloCanal` escolhe o canal PELA CONVERSA, e isso é certo — mas quer dizer que, sem
+ * conversa, ele não tem por onde mandar e devolve "conversa sem destinatário". Para um lead que
+ * entrou por importação, por formulário ou pela mão de alguém, é esse o estado: existe cadastro,
+ * existe número, e nunca houve mensagem. O robô simplesmente não falava com ele.
+ *
+ * Aqui a conversa é CRIADA pelo envio, como o disparo em massa já faz: manda pro número e abre a
+ * thread. As duas travas que valem pro disparo valem aqui também, pelo mesmo motivo:
+ *
+ * - CONSENTIMENTO. Quem marcou que não quer receber WhatsApp não recebe por este caminho. Quem
+ *   escreveu primeiro já consentiu na prática; quem nunca escreveu, não.
+ * - CANAL. Só o WhatsApp inicia conversa: no Instagram, a Meta não deixa escrever pra quem nunca
+ *   mandou mensagem, e não existe modelo aprovado pra isso no Direct.
+ *
+ * No WhatsApp OFICIAL, texto livre só sai dentro da janela de 24 horas — que, por definição, não
+ * existe aqui. Então o caminho é a conexão por QR Code; com só a oficial conectada, a função diz
+ * exatamente isso em vez de falhar com o erro cru da Meta.
+ */
+/**
+ * As condições pra começar uma conversa, numa função só e sem tocar no banco.
+ *
+ * Mora separada do envio porque é a parte que PRECISA de teste: consentimento e canal marcado são
+ * as duas travas que impedem o robô de escrever pra quem não quer, ou por onde não pode — e elas
+ * não podem depender de alguém ler o código do envio pra conferir se continuam lá.
+ *
+ * Devolve o motivo do impedimento, ou `null` quando pode seguir.
+ */
+export function motivoParaNaoIniciarConversa(params: {
+  /** Os canais que o bloco deixa usar. Vazio/ausente = qualquer um. */
+  canaisPermitidos?: string[];
+  /** O número do cadastro, como está guardado (com máscara ou sem). */
+  numero: string | null | undefined;
+  consentimento: boolean | null | undefined;
+}): string | null {
+  // O vocabulário é o do BLOCO ("whatsapp", "instagram"), o mesmo que a pessoa marca no botão
+  // "Canais" do cartão. Só o WhatsApp inicia conversa; o Instagram não deixa escrever primeiro.
+  if (params.canaisPermitidos?.length && !params.canaisPermitidos.includes("whatsapp")) {
+    return "só o WhatsApp inicia conversa com quem nunca escreveu, e ele não está marcado neste bloco";
+  }
+  const numero = (params.numero ?? "").replace(/\D/g, "");
+  if (!numero) return "o contato não tem número de WhatsApp no cadastro";
+  if (numero.length < 10) return "número de WhatsApp incompleto no cadastro";
+  if (bloqueadoPorFaltaDeConsentimento(params.consentimento)) return MOTIVO_SEM_CONSENTIMENTO;
+  return null;
+}
+
+export async function iniciarConversaEEnviarTexto(params: {
+  workspaceId: string;
+  contatoNome: string;
+  texto: string;
+  /** Os canais que o bloco deixa usar. Vazio/ausente = qualquer um que esteja conectado. */
+  canaisPermitidos?: string[];
+}): Promise<{ enviado: boolean; motivo?: string }> {
+  const { workspaceId, contatoNome, texto } = params;
+  if (!texto.trim()) return { enviado: false, motivo: "mensagem vazia" };
+
+  const contato = await prisma.contato.findUnique({
+    where: { workspaceId_nome: { workspaceId, nome: contatoNome } },
+    select: { id: true, whatsapp: true, consentimentoWhatsApp: true },
+  });
+
+  const impedimento = motivoParaNaoIniciarConversa({
+    canaisPermitidos: params.canaisPermitidos,
+    numero: contato?.whatsapp,
+    consentimento: contato?.consentimentoWhatsApp,
+  });
+  if (impedimento) return { enviado: false, motivo: impedimento };
+
+  const numero = (contato?.whatsapp ?? "").replace(/\D/g, "");
+
+  let wamid: string | null = null;
+  try {
+    wamid = await enviarMensagemWhatsAppNaoOficial(workspaceId, numero, texto);
+  } catch (erro) {
+    const cru = erro instanceof Error ? erro.message : "falha ao enviar";
+    // Com a oficial conectada e a de QR Code não, a explicação certa é a da janela — e não o erro
+    // de conexão, que faria procurar defeito no lugar errado.
+    const oficial = await contaConectada(workspaceId);
+    return {
+      enviado: false,
+      motivo: oficial
+        ? "o WhatsApp oficial não inicia conversa com texto livre: fora da janela de 24 horas só sai modelo aprovado. Conecte o WhatsApp por QR Code pra o robô falar com quem nunca escreveu."
+        : cru,
+    };
+  }
+
+  // A conversa só nasce DEPOIS do envio dar certo: uma thread vazia na caixa de entrada, criada
+  // por uma mensagem que não saiu, é pior do que não ter nada.
+  await upsertConversaAoReceberMensagem({
+    workspaceId,
+    nome: contatoNome,
+    canal: "WhatsApp",
+    contato: numero,
+    contatoId: contato?.id,
+    origem: "automacao",
+    contarComoNaoLida: false,
+  }).catch(() => {});
+
+  return { enviado: true, motivo: wamid ?? undefined };
 }

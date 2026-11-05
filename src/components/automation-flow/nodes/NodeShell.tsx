@@ -115,20 +115,23 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
     aoMudarOpcoes,
     aoDesligarSaida,
     aoMudarCanal,
+    aoMudarCampo,
     aoMudarCronometro,
   } = data;
 
   const [menuAberto, setMenuAberto] = useState(false);
   const [renomeando, setRenomeando] = useState(false);
   const [variaveisAbertas, setVariaveisAbertas] = useState(false);
+  const [canaisAberto, setCanaisAberto] = useState(false);
   const entradaDeArquivo = useRef<HTMLInputElement>(null);
   const campoDoTexto = useRef<HTMLTextAreaElement>(null);
   const { documentos } = useBibliotecaDocumentos();
   const fecharMenus = useCallback(() => {
     setMenuAberto(false);
     setVariaveisAbertas(false);
+    setCanaisAberto(false);
   }, []);
-  useFecharMenuDeLinha(menuAberto || variaveisAbertas, fecharMenus);
+  useFecharMenuDeLinha(menuAberto || variaveisAbertas || canaisAberto, fecharMenus);
 
   const gravador = useGravadorDeAudio((audio) => {
     aoAnexar?.({
@@ -420,6 +423,95 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
                   {canaisPossiveis.find((c) => c.valor === canalDoBloco)?.label ?? canalDoBloco}
                 </span>
               )
+            ) : null}
+            {/*
+              "CANAIS": POR ONDE ELA PODE SAIR, e o que fazer com quem nunca escreveu.
+              
+              O seletor ao lado diz o canal da mensagem; este diz as CONEXÕES que o robô pode usar
+              e — a parte que faltava — se ele deve começar a conversa quando não existe nenhuma.
+              Um lead importado, vindo de formulário ou cadastrado à mão tem número e não tem
+              conversa: o envio escolhe o canal pela conversa, então ele simplesmente não saía.
+              
+              É uma chave por bloco, desligada por padrão: falar com quem nunca escreveu é decisão
+              de quem monta, não comportamento automático.
+            */}
+            {ehCartaoDeMensagem && aoMudarCampo ? (
+              (() => {
+                const dados = (flowNode.data ?? {}) as {
+                  canaisPermitidos?: string[];
+                  iniciarSemConversa?: boolean;
+                };
+                const marcados = dados.canaisPermitidos ?? [];
+                const todos = marcados.length === 0 || marcados.length === canaisPossiveis.length;
+                const resumo = todos
+                  ? traduzir("Todos")
+                  : marcados.length === 1
+                    ? (canaisPossiveis.find((c) => c.valor === marcados[0])?.label ?? marcados[0])
+                    : traduzir("{n} marcados", { n: String(marcados.length) });
+                return (
+                  <div className="msg-canais-caixa" data-menu-de-linha="">
+                    <button
+                      type="button"
+                      className="msg-canal msg-canais-alvo nodrag"
+                      aria-expanded={canaisAberto}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCanaisAberto((v) => !v);
+                      }}
+                    >
+                      {traduzir("Canais")}: <b>{resumo}</b>
+                    </button>
+                    {canaisAberto ? (
+                      <div className="msg-canais-menu nodrag nowheel">
+                        <div className="msg-canais-chave">
+                          <span>{traduzir("Se você nunca conversou com a pessoa:")}</span>
+                          <label>
+                            <input
+                              type="checkbox"
+                              checked={!!dados.iniciarSemConversa}
+                              onChange={(e) => aoMudarCampo("iniciarSemConversa", e.target.checked)}
+                            />
+                            {traduzir("Tentar enviar mesmo assim")}
+                          </label>
+                          <em>
+                            {traduzir(
+                              "Começa a conversa pelo WhatsApp, usando o número do cadastro. Respeita o consentimento do contato.",
+                            )}
+                          </em>
+                        </div>
+                        <hr />
+                        <label className="msg-canais-item">
+                          <input
+                            type="checkbox"
+                            checked={todos}
+                            onChange={() => aoMudarCampo("canaisPermitidos", todos ? [canaisPossiveis[0]?.valor] : [])}
+                          />
+                          {traduzir("Selecionar tudo")}
+                        </label>
+                        {canaisPossiveis.map((c) => {
+                          const marcado = todos || marcados.includes(c.valor);
+                          return (
+                            <label className="msg-canais-item" key={c.valor}>
+                              <input
+                                type="checkbox"
+                                checked={marcado}
+                                onChange={() => {
+                                  const base = todos ? canaisPossiveis.map((x) => x.valor) : marcados;
+                                  const novo = marcado
+                                    ? base.filter((x) => x !== c.valor)
+                                    : [...base, c.valor];
+                                  aoMudarCampo("canaisPermitidos", novo);
+                                }}
+                              />
+                              {c.label}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })()
             ) : null}
             {flowNode.desativado ? <span className="flow-node-pausado-badge">{traduzir("Pausado")}</span> : null}
             {temErro || temAviso ? (

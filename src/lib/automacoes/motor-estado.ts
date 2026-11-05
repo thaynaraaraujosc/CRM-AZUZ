@@ -466,10 +466,20 @@ async function executarNo(params: {
         mensagem?: string;
         canal?: string;
         esperaMinutos?: number;
+        iniciarSemConversa?: boolean;
+        canaisPermitidos?: string[];
       };
       const texto = preencher((data.texto ?? data.mensagem ?? "").trim(), contato);
       if (!texto) return { tipo: "erro", detalhe: "Bloco de mensagem sem texto configurado." };
-      const envio = await acoes.enviarTexto({ contatoNome: nome, texto, canal: data.canal });
+      const envio = await acoes.enviarTexto({
+        contatoNome: nome,
+        texto,
+        canal: data.canal,
+        // "Se nunca conversou, tente mesmo assim": a chave do próprio bloco (ver o botão "Canais"
+        // no cartão). Sem ela, o comportamento é o de sempre — fala só com quem já tem conversa.
+        iniciarSemConversa: data.iniciarSemConversa,
+        canaisPermitidos: data.canaisPermitidos,
+      });
       if (!envio.ok) return falhaDeEnvio(no, edges, envio);
 
       /*

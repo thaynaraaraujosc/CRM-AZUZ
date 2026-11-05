@@ -1350,6 +1350,9 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
             modoConstrucao && n.data.flowNode.category === "mensagem"
               ? (canal: string) => editarCampoDoBloco(n.id, "canal", canal)
               : undefined,
+          aoMudarCampo: modoConstrucao
+            ? (campo: string, valor: unknown) => editarCampoDoBloco(n.id, campo, valor)
+            : undefined,
           /* O cronômetro só aparece no modo de tempo puro: "até a resposta" e "até tal data" não
              têm minutos pra editar, e um campo de minutos ali mentiria sobre o que o bloco faz. */
           aoMudarCronometro:
