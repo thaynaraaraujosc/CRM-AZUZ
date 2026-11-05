@@ -269,7 +269,14 @@ export function DadosDoContato({
    * uma ficha faz: mostrar o que existe, numa linha cada, e esconder o que está vazio atrás do
    * botão de editar. Quem quer preencher clica em "Editar" e vê tudo.
    */
-  type CampoDaFicha = { rotulo: string; valor: string; editor: ReactNode; erro?: ReactNode };
+  type CampoDaFicha = {
+    rotulo: string;
+    /** Em leitura, onde o rótulo divide a linha com o valor, um nome curto cabe melhor. */
+    rotuloCurto?: string;
+    valor: string;
+    editor: ReactNode;
+    erro?: ReactNode;
+  };
 
   const campos: CampoDaFicha[] = [
     {
@@ -327,6 +334,7 @@ export function DadosDoContato({
     },
     {
       rotulo: traduzir("Cidade / Estado / País"),
+      rotuloCurto: traduzir("Cidade"),
       valor: [cidadeContato, estadoContato, paisContato].filter(Boolean).join(" · "),
       editor: (
         <div className="ficha-trio">
@@ -404,6 +412,7 @@ export function DadosDoContato({
     },
     {
       rotulo: traduzir("Melhor horário pra contato"),
+      rotuloCurto: traduzir("Melhor horário"),
       valor: melhorHorarioContato,
       editor: (
         <input
@@ -503,7 +512,7 @@ export function DadosDoContato({
         <div className="ficha-lista">
           {preenchidos.map((c) => (
             <div className="ficha-linha" key={c.rotulo}>
-              <span className="ficha-rotulo">{c.rotulo}</span>
+              <span className="ficha-rotulo">{c.rotuloCurto ?? c.rotulo}</span>
               <span className="ficha-valor">{c.valor}</span>
             </div>
           ))}

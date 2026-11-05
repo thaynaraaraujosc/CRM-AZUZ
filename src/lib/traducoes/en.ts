@@ -2720,4 +2720,5 @@ export const TRADUCOES_EN: Record<string, string> = {
   "campos ainda em branco": "fields still blank",
   "1 campo ainda em branco": "1 field still blank",
   "Preencher": "Fill in",
+  "Melhor horário": "Best time",
 };

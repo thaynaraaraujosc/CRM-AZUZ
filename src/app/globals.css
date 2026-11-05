@@ -504,6 +504,25 @@
   --acao-texto: #002037;
 }
 
+/*
+ * O BOTÃO BASE NO TEMA ESCURO: ele não tinha regra nenhuma.
+ *
+ * `.btn` nasceu com `background: #fff` escrito à mão e `color: var(--ink)`. No tema escuro `--ink`
+ * é quase branco, então todo botão secundário virava um retângulo branco com texto branco dentro:
+ * legível só ao passar o mouse, e invisível no resto do tempo. O mesmo descuido que `.input` já
+ * tinha tido, e pela mesma razão — a cor fixa que ninguém reviu quando o tema escuro chegou.
+ *
+ * Aqui o botão passa a ser a superfície elevada do tema, com a borda do tema. A lista de `:not`
+ * não é enfeite: `:root[data-theme="dark"] .btn` pesa mais que `.btn.ghost` e `.btn.danger`, e
+ * sem ela esta regra apagaria as variantes todas no escuro — trocando um defeito por três.
+ */
+:root[data-theme="dark"]
+  .btn:not(.primary):not(.ghost):not(.secondary):not(.danger):not(.destructive):not(.escuro):not(.link) {
+  background: var(--surface-elevated);
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
 /* Estes três passaram a ter FUNDO marinho (`--acao`) nos dois temas, então o texto é branco nos
    dois. Antes o fundo era claro no tema escuro e precisava de tinta escura por cima. A regra
    continua aqui, agora dizendo o contrário, porque a cor do texto acompanha o fundo. */
