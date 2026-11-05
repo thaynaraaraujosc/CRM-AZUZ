@@ -15,6 +15,34 @@ import { slugId } from "@/lib/ids";
 import { somenteCamposDeContato } from "@/lib/contatos/campos-editaveis";
 import { aplicarOrigemPelaUrl } from "@/lib/rastreio/aplicar";
 
+/** As chaves de rastreio que o script do site escreve nos campos escondidos do formulário. */
+const MARCAS_CONHECIDAS = [
+  "gclid", "wbraid", "gbraid", "fbclid", "ttclid",
+  "utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "utm_referrer",
+  "campaignid", "campaign_id", "adgroupid", "adset_id", "creative", "creative_id", "ad_id",
+  "keyword", "matchtype", "source", "ref", "referrer", "landing_page",
+  "consent", "consentimento", "gcs",
+];
+
+function texto(valor: unknown): string | undefined {
+  return typeof valor === "string" && valor.trim() ? valor.trim().slice(0, 1000) : undefined;
+}
+
+/**
+ * Pesca as marcas de rastreio no meio dos dados do contato.
+ *
+ * Lista fechada, e não "tudo que não for campo de contato": o corpo desta rota é público, e
+ * aceitar qualquer chave faria do rastreio um lugar onde um site qualquer escreve o que quiser.
+ */
+function marcasEntreOsDados(dados: Record<string, unknown>): Record<string, string> | undefined {
+  const fora: Record<string, string> = {};
+  for (const chave of MARCAS_CONHECIDAS) {
+    const valor = texto(dados[chave]);
+    if (valor) fora[chave] = valor;
+  }
+  return Object.keys(fora).length ? fora : undefined;
+}
+
 function iniciais(nome: string) {
   return nome.split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]).join("").toUpperCase();
 }
@@ -95,8 +123,12 @@ export async function POST(request: Request, ctx: RouteContext<"/api/formularios
   await aplicarOrigemPelaUrl(prisma, {
     workspaceId,
     contatoId: linha.id,
-    marcas: marcasDaUrl,
-    paginaEntrada,
+    // As marcas podem chegar de dois jeitos. No campo próprio, que é o que a tela do CRM manda; ou
+    // misturadas aos dados, que é o que acontece quando o formulário é de OUTRO site e os campos
+    // escondidos do script (ver `script-do-site.ts`) vão junto com o resto. Aceitar os dois é o
+    // que faz o script valer pra quem não usa a tela do CRM — que é quem mais precisa dele.
+    marcas: marcasDaUrl ?? marcasEntreOsDados(dados),
+    paginaEntrada: paginaEntrada ?? texto(dados.landing_page),
   });
 
   return NextResponse.json(paraContato(linha), { status: existente ? 200 : 201 });

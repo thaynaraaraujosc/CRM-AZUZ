@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { avaliarGrupoCondicoes } from "@/lib/automation-flow/avaliacao";
 import { iniciarFluxoComEstado } from "@/lib/automacoes/iniciar";
+import { rastreioParaCondicoes } from "@/lib/rastreio/para-condicoes";
 import type { GrupoCondicoes } from "@/lib/automation-flow/types";
 import {
   ACAO_ROTULO,
@@ -171,9 +172,14 @@ async function executarUmGatilho(params: {
 
   const contatoNoBanco = await prisma.contato.findUnique({
     where: { workspaceId_nome: { workspaceId, nome: contatoNome } },
+    // A origem vem junto: um gatilho de etapa é exatamente onde se quer perguntar "este lead veio
+    // de anúncio?" — e sem o `include` a condição não enxergava nada disso, enquanto o mesmo robô
+    // disparado por mensagem enxergava. O mesmo robô, dois comportamentos, por causa da leitura.
+    include: { origemDoLead: true },
   });
   const contato = {
     ...(contatoNoBanco ?? {}),
+    ...rastreioParaCondicoes(contatoNoBanco?.origemDoLead),
     nome: contatoNome,
     etiquetas: Array.isArray(contatoNoBanco?.etiquetas) ? (contatoNoBanco.etiquetas as string[]) : [],
     canal: "crm",

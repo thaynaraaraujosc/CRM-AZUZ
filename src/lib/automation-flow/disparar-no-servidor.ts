@@ -365,61 +365,11 @@ export function ehGatilhoDeComentario(tipo: string): boolean {
   return GATILHOS_DE_COMENTARIO.has(tipo);
 }
 
-/**
- * O RASTREIO DE ORIGEM achatado nos nomes que a condição usa.
- *
- * A tabela guarda o código do clique numa coluna só (`cliqueId`) com o TIPO ao lado
- * (`tipoDoClique`): "gclid" e "wbraid" no Google, "fbclid" e "ctwa_clid" na Meta. Eles não são
- * intercambiáveis, e é por isso que a condição pergunta por um ou por outro — não por "o clique".
- *
- * Campo sem valor fica de fora em vez de virar string vazia: "existe"/"não existe" precisa
- * distinguir "não veio de anúncio" de "veio com o campo em branco".
- */
-export function rastreioParaCondicoes(
-  origem:
-    | {
-        utmSource?: string | null;
-        utmMedium?: string | null;
-        utmCampaign?: string | null;
-        utmContent?: string | null;
-        utmTerm?: string | null;
-        paginaEntrada?: string | null;
-        cliqueId?: string | null;
-        tipoDoClique?: string | null;
-        campanhaId?: string | null;
-        campanhaNome?: string | null;
-        conjuntoId?: string | null;
-        anuncioId?: string | null;
-        anuncioNome?: string | null;
-      }
-    | null
-    | undefined,
-): Record<string, string> {
-  if (!origem) return {};
-  const fora: Record<string, string> = {};
-  const por = (chave: string, valor: string | null | undefined) => {
-    if (typeof valor === "string" && valor.trim()) fora[chave] = valor;
-  };
-  por("utm_source", origem.utmSource);
-  por("utm_medium", origem.utmMedium);
-  por("utm_campaign", origem.utmCampaign);
-  por("utm_content", origem.utmContent);
-  por("utm_term", origem.utmTerm);
-  por("pagina_entrada", origem.paginaEntrada);
-  por("meta_ads_campanha", origem.campanhaId);
-  por("meta_ads_conjunto", origem.conjuntoId);
-  por("meta_ads_anuncio", origem.anuncioId);
-  // Campanha e anúncio pelo NOME: é o que a pessoa que montou o anúncio reconhece. O id fica nos
-  // campos do Meta Ads, pra quem precisa casar com o gerenciador.
-  por("campanha", origem.campanhaNome);
-  por("anuncio", origem.anuncioNome);
-  if (origem.cliqueId?.trim()) {
-    const tipo = (origem.tipoDoClique ?? "").toLowerCase();
-    if (tipo === "gclid" || tipo === "wbraid" || tipo === "gbraid") fora.gclid = origem.cliqueId;
-    if (tipo === "fbclid" || tipo === "ctwa_clid") fora.fbclid = origem.cliqueId;
-  }
-  return fora;
-}
+/* A tradução das colunas de origem pros campos da condição mora em `rastreio/para-condicoes.ts`:
+   dois lugares montam o contexto do contato, e com ela escrita num só metade dos robôs enxergava
+   a origem do lead. O re-export mantém quem já importava daqui. */
+import { rastreioParaCondicoes } from "@/lib/rastreio/para-condicoes";
+export { rastreioParaCondicoes } from "@/lib/rastreio/para-condicoes";
 
 /** O gatilho guarda o canal em minúsculas ("whatsapp"/"instagram"); a conversa guarda o rótulo. */
 function canalDoGatilho(canalDaConversa: string): string {

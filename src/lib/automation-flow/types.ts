@@ -187,9 +187,23 @@ export type CampoCondicao =
   | "pagina_entrada"
   | "gclid"
   | "fbclid"
+  | "utm_referrer"
+  | "referrer"
+  | "ttclid"
   | "meta_ads_campanha"
   | "meta_ads_conjunto"
   | "meta_ads_anuncio"
+  | "meta_ads_criativo"
+  | "meta_source"
+  | "meta_ref"
+  | "origem_caminho"
+  | "primeiro_toque_em"
+  | "ultimo_utm_source"
+  | "ultimo_utm_campaign"
+  | "ultimo_campanha"
+  | "ultimo_anuncio"
+  | "ultimo_caminho"
+  | "ultimo_toque_em"
   /**
    * UM CAMPO CRIADO PELA PRÓPRIA EMPRESA, como `cp:<id do campo>`.
    *

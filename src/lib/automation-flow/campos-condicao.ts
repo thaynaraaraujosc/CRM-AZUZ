@@ -117,9 +117,30 @@ export const CAMPOS_CONDICAO: CampoCondicaoInfo[] = [
   { valor: "pagina_entrada", label: "Página de entrada", grupo: "Rastreio", tipo: "texto" },
   { valor: "gclid", label: "gclid (clique do Google)", grupo: "Rastreio", tipo: "texto" },
   { valor: "fbclid", label: "fbclid (clique da Meta)", grupo: "Rastreio", tipo: "texto" },
+  { valor: "utm_referrer", label: "utm_referrer", grupo: "Rastreio", tipo: "texto" },
+  { valor: "referrer", label: "De onde a pessoa veio (referrer)", grupo: "Rastreio", tipo: "texto" },
+  { valor: "ttclid", label: "ttclid (clique do TikTok)", grupo: "Rastreio", tipo: "texto" },
   { valor: "meta_ads_campanha", label: "Meta Ads: ID da campanha", grupo: "Rastreio", tipo: "texto" },
   { valor: "meta_ads_conjunto", label: "Meta Ads: ID do conjunto", grupo: "Rastreio", tipo: "texto" },
   { valor: "meta_ads_anuncio", label: "Meta Ads: ID do anúncio", grupo: "Rastreio", tipo: "texto" },
+  { valor: "meta_ads_criativo", label: "Meta Ads: ID do criativo", grupo: "Rastreio", tipo: "texto" },
+  { valor: "meta_source", label: "Meta: superfície do clique (ig/fb)", grupo: "Rastreio", tipo: "texto" },
+  { valor: "meta_ref", label: "Meta: referência do anúncio", grupo: "Rastreio", tipo: "texto" },
+  { valor: "origem_caminho", label: "Por onde o lead entrou", grupo: "Rastreio", tipo: "texto" },
+  { valor: "primeiro_toque_em", label: "Data do primeiro toque", grupo: "Rastreio", tipo: "data" },
+  /*
+   * O ÚLTIMO TOQUE, com os campos que decidem alguma coisa.
+   *
+   * O primeiro toque explica como a pessoa conheceu a empresa; o último, por que ela voltou agora.
+   * São poucos de propósito: repetir as vinte colunas com prefixo transformaria a lista de campos
+   * num catálogo que ninguém lê até o fim. A ficha do lead mostra o último toque inteiro.
+   */
+  { valor: "ultimo_utm_source", label: "Último toque: utm_source", grupo: "Rastreio", tipo: "texto" },
+  { valor: "ultimo_utm_campaign", label: "Último toque: utm_campaign", grupo: "Rastreio", tipo: "texto" },
+  { valor: "ultimo_campanha", label: "Último toque: campanha", grupo: "Rastreio", tipo: "texto" },
+  { valor: "ultimo_anuncio", label: "Último toque: anúncio", grupo: "Rastreio", tipo: "texto" },
+  { valor: "ultimo_caminho", label: "Último toque: por onde entrou", grupo: "Rastreio", tipo: "texto" },
+  { valor: "ultimo_toque_em", label: "Data do último toque", grupo: "Rastreio", tipo: "data" },
 
   /* --------------------------------- Atividade --------------------------------- */
   { valor: "possui_agendamento", label: "Possui agendamento", grupo: "Atividade", tipo: "booleano" },

@@ -671,6 +671,15 @@ export async function POST(request: Request) {
             contatoId,
             referencia: evento.referral ?? mensagem?.referral,
             caminho: "instagram",
+            /*
+             * O IGSID, guardado junto da origem.
+             *
+             * É o id da pessoa DENTRO da conta de Instagram conectada, e é ele que a Conversions
+             * API pede no `user_data` quando o evento nasce de uma conversa — no lugar do e-mail,
+             * que num Direct ninguém tem. Sem ele, uma venda que nasceu no Direct só pode ser
+             * devolvida se a pessoa também tiver deixado telefone em algum momento.
+             */
+            idNoCanal: remetenteId,
           });
         }
 

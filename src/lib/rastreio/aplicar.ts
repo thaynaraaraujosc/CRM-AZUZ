@@ -72,6 +72,98 @@ async function registrarToque(
 }
 
 /**
+ * AS COLUNAS DA ORIGEM, montadas num lugar só.
+ *
+ * A mesma lista estava escrita três vezes — uma por caminho de entrada (código na mensagem,
+ * referência da Meta, URL do formulário) —, e elas já tinham começado a divergir: o caminho da
+ * Meta não gravava UTM nenhuma. Pior que a repetição é o que ela garante: todo campo novo precisa
+ * ser lembrado em três lugares, e o que for esquecido num deles vira um lead que perde aquele dado
+ * dependendo de por onde entrou. E dado de origem não se recupera depois.
+ */
+function colunasDaOrigem(
+  origem: OrigemCapturada,
+  caminho: string,
+  consentimento: string | null,
+): Omit<Prisma.OrigemDoLeadCreateInput, "id" | "workspace" | "contato"> {
+  return {
+    plataforma: origem.plataforma,
+    cliqueId: origem.cliqueId || null,
+    tipoDoClique: origem.tipoDoClique || null,
+    campanhaId: texto(origem.campanhaId),
+    campanhaNome: texto(origem.campanhaNome),
+    conjuntoId: texto(origem.conjuntoId),
+    conjuntoNome: texto(origem.conjuntoNome),
+    anuncioId: texto(origem.anuncioId),
+    anuncioNome: texto(origem.anuncioNome),
+    criativoId: texto(origem.criativoId),
+    metaSource: texto(origem.metaSource),
+    metaRef: origem.metaRef ?? null,
+    palavraChave: texto(origem.palavraChave),
+    utmSource: texto(origem.utmSource),
+    utmMedium: texto(origem.utmMedium),
+    utmCampaign: texto(origem.utmCampaign),
+    utmContent: texto(origem.utmContent),
+    utmTerm: texto(origem.utmTerm),
+    utmReferrer: origem.utmReferrer ?? null,
+    referrer: origem.referrer ?? null,
+    paginaEntrada: origem.paginaEntrada ?? null,
+    gclientid: texto(origem.gclientid),
+    fbp: origem.fbp ?? null,
+    fbc: origem.fbc ?? null,
+    ttclid: origem.ttclid ?? null,
+    ttp: texto(origem.ttp),
+    consentimento,
+    caminho,
+    bruto: (origem.bruto ?? {}) as Prisma.InputJsonValue,
+  };
+}
+
+/**
+ * O ÚLTIMO TOQUE, gravado a cada encosto — inclusive no primeiro.
+ *
+ * O primeiro toque explica como a pessoa conheceu a empresa e nunca é sobrescrito. O último
+ * explica por que ela voltou AGORA, e essa é outra pergunta: um lead que viu o anúncio da Meta em
+ * janeiro e fechou depois de pesquisar no Google em março tem duas respostas certas, e com uma só
+ * delas alguém desliga a campanha que estava alimentando a outra.
+ *
+ * Nunca lança: é registro de apoio e não pode atrapalhar a conversa nem a atribuição principal.
+ */
+async function registrarUltimoToque(
+  cliente: PrismaClient,
+  contatoId: string,
+  origem: OrigemCapturada,
+  caminho: string,
+): Promise<void> {
+  try {
+    await cliente.origemDoLead.updateMany({
+      where: { contatoId },
+      data: {
+        ultimoToque: {
+          plataforma: origem.plataforma,
+          cliqueId: origem.cliqueId || null,
+          tipoDoClique: origem.tipoDoClique || null,
+          campanhaId: origem.campanhaId ?? null,
+          campanhaNome: origem.campanhaNome ?? null,
+          anuncioId: origem.anuncioId ?? null,
+          anuncioNome: origem.anuncioNome ?? null,
+          utmSource: origem.utmSource ?? null,
+          utmMedium: origem.utmMedium ?? null,
+          utmCampaign: origem.utmCampaign ?? null,
+          utmContent: origem.utmContent ?? null,
+          utmTerm: origem.utmTerm ?? null,
+          paginaEntrada: origem.paginaEntrada ?? null,
+          referrer: origem.referrer ?? null,
+          caminho,
+        } as Prisma.InputJsonValue,
+        ultimoToqueEm: new Date(),
+      },
+    });
+  } catch (erro) {
+    console.error("[rastreio] falha ao registrar o último toque:", erro);
+  }
+}
+
+/**
  * Procura o código na mensagem e, achando, cola a origem no contato.
  *
  * `workspaceId` vem de quem recebeu o webhook, nunca da mensagem. Sem isso, bastaria alguém
@@ -128,6 +220,8 @@ export async function aplicarOrigemPelaMensagem(
     });
 
     if (jaTem) {
+      // Não ganha a atribuição, mas É o último toque: é ele que explica por que a pessoa voltou.
+      await registrarUltimoToque(cliente, params.contatoId, origem, "whatsapp");
       await cliente.cliqueRastreado.update({ where: { codigo }, data: { consumidoEm: new Date() } });
       return { atribuido: false, motivo: "ja-tem-origem" };
     }
@@ -137,27 +231,10 @@ export async function aplicarOrigemPelaMensagem(
         id: `origem-${randomBytes(12).toString("hex")}`,
         workspaceId: params.workspaceId,
         contatoId: params.contatoId,
-        plataforma: origem.plataforma,
-        cliqueId: origem.cliqueId,
-        tipoDoClique: origem.tipoDoClique,
-        campanhaId: texto(origem.campanhaId),
-        campanhaNome: texto(origem.campanhaNome),
-        conjuntoId: texto(origem.conjuntoId),
-        conjuntoNome: texto(origem.conjuntoNome),
-        anuncioId: texto(origem.anuncioId),
-        anuncioNome: texto(origem.anuncioNome),
-        palavraChave: texto(origem.palavraChave),
-        utmSource: texto(origem.utmSource),
-        utmMedium: texto(origem.utmMedium),
-        utmCampaign: texto(origem.utmCampaign),
-        utmContent: texto(origem.utmContent),
-        utmTerm: texto(origem.utmTerm),
-        paginaEntrada: origem.paginaEntrada ?? null,
-        consentimento: consentimentoDoClique,
-        caminho: "whatsapp",
-        bruto: (origem.bruto ?? {}) as Prisma.InputJsonValue,
-      },
+        ...colunasDaOrigem(origem, "whatsapp", consentimentoDoClique),
+      } as Prisma.OrigemDoLeadUncheckedCreateInput,
     });
+    await registrarUltimoToque(cliente, params.contatoId, origem, "whatsapp");
     await cliente.cliqueRastreado.update({ where: { codigo }, data: { consumidoEm: new Date() } });
 
     return { atribuido: true, campanhaNome: texto(origem.campanhaNome) ?? undefined };
@@ -181,7 +258,9 @@ export async function aplicarOrigemPelaReferenciaDaMeta(
     workspaceId: string;
     contatoId: string;
     referencia: { source_id?: string; ad_id?: string; ctwa_clid?: string; headline?: string; source_type?: string } | null | undefined;
-    caminho: "whatsapp" | "instagram";
+    caminho: "whatsapp" | "instagram" | "messenger";
+    /** O id da pessoa dentro do canal: IGSID no Instagram, PSID no Messenger. */
+    idNoCanal?: string | null;
   },
 ): Promise<ResultadoDaAtribuicao> {
   const ref = params.referencia;
@@ -204,25 +283,38 @@ export async function aplicarOrigemPelaReferenciaDaMeta(
       primeiro: !jaTem,
     });
 
-    if (jaTem) return { atribuido: false, motivo: "ja-tem-origem" };
+    const comoOrigemCapturada: OrigemCapturada = {
+      plataforma: "meta",
+      // `ctwa_clid` é o equivalente do gclid pro clique que vai direto pra conversa. Quando ele
+      // não vem, o anúncio sozinho ainda permite atribuir a campanha na tela, só não permite
+      // devolver a conversão por clique.
+      cliqueId: clique ?? "",
+      tipoDoClique: clique ? "ctwa_clid" : "",
+      anuncioId: anuncioId ?? undefined,
+      anuncioNome: texto(ref?.headline) ?? undefined,
+      // "ig" ou "fb": de qual superfície da Meta veio o clique. Vem no próprio `referral`.
+      metaSource: texto(ref?.source_type) ?? undefined,
+      bruto: (ref ?? {}) as Record<string, string>,
+    };
+
+    if (jaTem) {
+      await registrarUltimoToque(cliente, params.contatoId, comoOrigemCapturada, params.caminho);
+      return { atribuido: false, motivo: "ja-tem-origem" };
+    }
 
     await cliente.origemDoLead.create({
       data: {
         id: `origem-${randomBytes(12).toString("hex")}`,
         workspaceId: params.workspaceId,
         contatoId: params.contatoId,
-        plataforma: "meta",
-        // `ctwa_clid` é o equivalente do gclid pro clique que vai direto pra conversa. Quando ele
-        // não vem, o anúncio sozinho ainda permite atribuir a campanha na tela, só não permite
-        // devolver a conversão por clique.
-        cliqueId: clique,
-        tipoDoClique: clique ? "ctwa_clid" : null,
-        anuncioId,
-        anuncioNome: texto(ref?.headline),
-        caminho: params.caminho,
-        bruto: (ref ?? {}) as Prisma.InputJsonValue,
-      },
+        ...colunasDaOrigem(comoOrigemCapturada, params.caminho, null),
+        // Quem é a pessoa DENTRO do canal: é isto que a Conversions API pede no `user_data`
+        // quando o evento nasce de uma conversa, no lugar do e-mail.
+        igSid: params.caminho === "instagram" ? (params.idNoCanal ?? null) : null,
+        psid: params.caminho === "messenger" ? (params.idNoCanal ?? null) : null,
+      } as Prisma.OrigemDoLeadUncheckedCreateInput,
     });
+    await registrarUltimoToque(cliente, params.contatoId, comoOrigemCapturada, params.caminho);
     return { atribuido: true };
   } catch (erro) {
     console.error("[rastreio] falha ao atribuir pela referência da Meta:", erro);
@@ -262,7 +354,9 @@ export async function aplicarOrigemPelaUrl(
   }
 
   const busca = new URLSearchParams(params.marcas);
-  const origem = lerOrigemDaUrl(busca, params.paginaEntrada);
+  // O `referrer` chega como marca junto das outras: quem o lê é o script do site, que o copia do
+  // navegador — aqui ele já é só mais um parâmetro.
+  const origem = lerOrigemDaUrl(busca, params.paginaEntrada, { referrer: params.marcas.referrer });
   const consentimento = lerConsentimento(busca);
   // Sem marca de anúncio nenhuma: visita orgânica. Não é erro, e inventar origem aqui contaminaria
   // justamente o número que a tela de Tráfego existe pra mostrar.
@@ -285,34 +379,20 @@ export async function aplicarOrigemPelaUrl(
       primeiro: !jaTem,
     });
 
-    if (jaTem) return { atribuido: false, motivo: "ja-tem-origem" };
+    if (jaTem) {
+      await registrarUltimoToque(cliente, params.contatoId, origem, "formulario");
+      return { atribuido: false, motivo: "ja-tem-origem" };
+    }
 
     await cliente.origemDoLead.create({
       data: {
         id: `origem-${randomBytes(12).toString("hex")}`,
         workspaceId: params.workspaceId,
         contatoId: params.contatoId,
-        plataforma: origem.plataforma,
-        cliqueId: origem.cliqueId,
-        tipoDoClique: origem.tipoDoClique,
-        campanhaId: texto(origem.campanhaId),
-        campanhaNome: texto(origem.campanhaNome),
-        conjuntoId: texto(origem.conjuntoId),
-        conjuntoNome: texto(origem.conjuntoNome),
-        anuncioId: texto(origem.anuncioId),
-        anuncioNome: texto(origem.anuncioNome),
-        palavraChave: texto(origem.palavraChave),
-        utmSource: texto(origem.utmSource),
-        utmMedium: texto(origem.utmMedium),
-        utmCampaign: texto(origem.utmCampaign),
-        utmContent: texto(origem.utmContent),
-        utmTerm: texto(origem.utmTerm),
-        paginaEntrada: origem.paginaEntrada ?? null,
-        consentimento,
-        caminho: "formulario",
-        bruto: (origem.bruto ?? {}) as Prisma.InputJsonValue,
-      },
+        ...colunasDaOrigem(origem, "formulario", consentimento),
+      } as Prisma.OrigemDoLeadUncheckedCreateInput,
     });
+    await registrarUltimoToque(cliente, params.contatoId, origem, "formulario");
     return { atribuido: true, campanhaNome: texto(origem.campanhaNome) ?? undefined };
   } catch (erro) {
     console.error("[rastreio] falha ao atribuir pela URL do formulário:", erro);

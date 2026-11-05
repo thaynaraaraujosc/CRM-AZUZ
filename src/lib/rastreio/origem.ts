@@ -12,7 +12,7 @@
  */
 
 /** Os códigos de clique, e por que são vários. */
-const CODIGOS: { chave: string; plataforma: "google" | "meta" }[] = [
+const CODIGOS: { chave: string; plataforma: PlataformaDeOrigem }[] = [
   // O clique normal do Google. É o que aparece na esmagadora maioria dos casos.
   { chave: "gclid", plataforma: "google" },
   // Quando o iOS impede o gclid, o Google manda um destes. Eles NÃO são gclid e não entram no
@@ -22,10 +22,24 @@ const CODIGOS: { chave: string; plataforma: "google" | "meta" }[] = [
   { chave: "gbraid", plataforma: "google" },
   // A marca da Meta no tráfego que passa por site.
   { chave: "fbclid", plataforma: "meta" },
+  // A marca do TikTok. Mesmo papel do gclid, nome de lá.
+  { chave: "ttclid", plataforma: "tiktok" },
 ];
 
+/**
+ * "outro" é o tráfego MARCADO e não comprado: newsletter, link de parceiro, QR code de panfleto.
+ *
+ * Ele não tem código de clique nenhum — e é exatamente por isso que precisa existir. Antes, visita
+ * sem código voltava `null` e a UTM que a pessoa tinha configurado com cuidado era jogada fora: o
+ * lead entrava sem origem, e "de onde vieram os leads da newsletter?" não tinha resposta. A
+ * plataforma continua sendo afirmada só pelo código do clique, que é prova; a UTM é guardada como
+ * o que ela é, uma marcação escrita à mão.
+ */
+export type PlataformaDeOrigem = "google" | "meta" | "tiktok" | "outro";
+
 export type OrigemCapturada = {
-  plataforma: "google" | "meta";
+  plataforma: PlataformaDeOrigem;
+  /** Vazio quando a visita só trazia UTM: não houve clique comprado pra identificar. */
   cliqueId: string;
   tipoDoClique: string;
   campanhaId?: string;
@@ -40,7 +54,19 @@ export type OrigemCapturada = {
   utmCampaign?: string;
   utmContent?: string;
   utmTerm?: string;
+  utmReferrer?: string;
+  referrer?: string;
   paginaEntrada?: string;
+  /** O id do navegador no Google Analytics, que o Measurement Protocol exige como `client_id`. */
+  gclientid?: string;
+  /** Os dois cookies do pixel da Meta. `fbc` é MONTADO a partir do `fbclid`, nunca copiado cru. */
+  fbp?: string;
+  fbc?: string;
+  ttclid?: string;
+  ttp?: string;
+  criativoId?: string;
+  metaSource?: string;
+  metaRef?: string;
   bruto: Record<string, string>;
 };
 
@@ -61,9 +87,26 @@ function texto(valor: string | null | undefined, limite = 255): string | undefin
  * UTM sozinha não basta pra afirmar plataforma: `utm_source=google` é texto que qualquer um
  * escreve, inclusive por engano num link de e-mail. Só o código do clique é prova.
  */
-export function lerOrigemDaUrl(parametros: URLSearchParams, paginaEntrada?: string): OrigemCapturada | null {
+export function lerOrigemDaUrl(
+  parametros: URLSearchParams,
+  paginaEntrada?: string,
+  opcoes?: { referrer?: string; agora?: Date },
+): OrigemCapturada | null {
   const achado = CODIGOS.map((c) => ({ ...c, valor: texto(parametros.get(c.chave), 512) })).find((c) => c.valor);
-  if (!achado?.valor) return null;
+
+  /*
+   * SEM CÓDIGO DE CLIQUE, A UTM AINDA VALE — se houver uma.
+   *
+   * Visita de verdade sem marca nenhuma continua devolvendo `null`, que é o caso da maioria e não
+   * é erro: inventar origem pra tráfego orgânico contamina o número que a tela de Tráfego existe
+   * pra mostrar. O que mudou é o meio-termo, que antes caía no mesmo balde do nada: quem chega por
+   * um link com `utm_source=newsletter` trouxe sim uma marcação, e jogá-la fora era perder a única
+   * resposta possível pra "de onde vieram esses leads?".
+   */
+  const temUtm = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"].some((c) =>
+    texto(parametros.get(c)),
+  );
+  if (!achado?.valor && !temUtm) return null;
 
   // Guarda tudo que veio, inclusive o que não tem coluna. Parâmetro novo que a plataforma invente
   // continua gravado, e lead mal atribuído vira investigação em vez de mistério.
@@ -72,10 +115,12 @@ export function lerOrigemDaUrl(parametros: URLSearchParams, paginaEntrada?: stri
     if (valor) bruto[chave.slice(0, 64)] = valor.slice(0, 512);
   }
 
+  const fbclid = texto(parametros.get("fbclid"), 512);
+
   return {
-    plataforma: achado.plataforma,
-    cliqueId: achado.valor,
-    tipoDoClique: achado.chave,
+    plataforma: achado?.plataforma ?? "outro",
+    cliqueId: achado?.valor ?? "",
+    tipoDoClique: achado?.chave ?? "",
     // Os nomes abaixo são os do ValueTrack do Google e os equivalentes da Meta. Quem configura o
     // anúncio escolhe mandá-los ou não; quando não vêm, ficam vazios e a campanha é resolvida
     // depois pelo id, na própria API da plataforma.
@@ -91,9 +136,51 @@ export function lerOrigemDaUrl(parametros: URLSearchParams, paginaEntrada?: stri
     utmCampaign: texto(parametros.get("utm_campaign")),
     utmContent: texto(parametros.get("utm_content")),
     utmTerm: texto(parametros.get("utm_term")),
+    utmReferrer: texto(parametros.get("utm_referrer"), 1000),
+    referrer: texto(opcoes?.referrer, 1000),
     paginaEntrada: texto(paginaEntrada, 1000),
+    gclientid: idDoAnalytics(parametros),
+    fbp: texto(parametros.get("fbp") ?? parametros.get("_fbp"), 512),
+    fbc: montarFbc(fbclid, texto(parametros.get("fbc") ?? parametros.get("_fbc"), 512), opcoes?.agora),
+    ttclid: texto(parametros.get("ttclid"), 512),
+    ttp: texto(parametros.get("ttp") ?? parametros.get("_ttp"), 512),
+    // O criativo e os dois campos que a Meta manda no anúncio de Click-to-WhatsApp.
+    criativoId: texto(parametros.get("creative_id") ?? parametros.get("ad_creative_id")),
+    metaSource: texto(parametros.get("source") ?? parametros.get("meta_source"), 64),
+    metaRef: texto(parametros.get("ref") ?? parametros.get("meta_ref"), 512),
     bruto,
   };
+}
+
+/**
+ * O `client_id` do Google Analytics, que é o que o Measurement Protocol exige.
+ *
+ * Ele pode chegar de duas formas. Pelo parâmetro explícito (`gclientid`), quando o script do site
+ * o copia do cookie; ou dentro do cookie `_ga` cru, que tem o formato `GA1.1.<id>.<momento>` — e aí
+ * o `client_id` são as DUAS últimas partes juntas, não o cookie inteiro. Mandar o cookie inteiro
+ * faz o GA4 aceitar o evento e contá-lo como um usuário novo a cada envio.
+ */
+function idDoAnalytics(parametros: URLSearchParams): string | undefined {
+  const direto = texto(parametros.get("gclientid") ?? parametros.get("client_id"), 64);
+  if (direto) return direto;
+  const ga = texto(parametros.get("_ga"), 64);
+  if (!ga) return undefined;
+  const partes = ga.split(".");
+  return partes.length >= 4 ? `${partes[2]}.${partes[3]}` : ga;
+}
+
+/**
+ * O `fbc` no formato que a Meta exige: `fb.1.<momento em milissegundos>.<fbclid>`.
+ *
+ * O `fbclid` cru num campo de `fbc` é ACEITO pela Conversions API e descartado em silêncio — o
+ * pior resultado possível, porque a chamada responde 200 e o evento não casa com anúncio nenhum.
+ * Quando o cookie `_fbc` já veio montado pelo pixel do site, ele ganha: foi o próprio pixel que o
+ * escreveu, com o momento certo do clique.
+ */
+export function montarFbc(fbclid: string | undefined, fbcPronto?: string, agora: Date = new Date()): string | undefined {
+  if (fbcPronto?.startsWith("fb.")) return fbcPronto;
+  if (!fbclid) return undefined;
+  return `fb.1.${agora.getTime()}.${fbclid}`;
 }
 
 /**
@@ -102,10 +189,10 @@ export function lerOrigemDaUrl(parametros: URLSearchParams, paginaEntrada?: stri
  * Aceita endereço quebrado sem derrubar nada: um lead com origem ilegível ainda é um lead, e
  * perder o cadastro por causa do rastreio seria trocar o essencial pelo acessório.
  */
-export function lerOrigemDoEndereco(endereco: string): OrigemCapturada | null {
+export function lerOrigemDoEndereco(endereco: string, referrer?: string): OrigemCapturada | null {
   try {
     const url = new URL(endereco);
-    return lerOrigemDaUrl(url.searchParams, `${url.origin}${url.pathname}`);
+    return lerOrigemDaUrl(url.searchParams, `${url.origin}${url.pathname}`, { referrer });
   } catch {
     return null;
   }

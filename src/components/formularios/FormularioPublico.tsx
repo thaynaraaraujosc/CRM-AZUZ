@@ -160,18 +160,47 @@ function registrarRespostaPublica(formularioId: string, valores: Record<string, 
  * que um terceiro resolvesse pendurar no link, e isso acabaria gravado no banco como origem.
  */
 const CHAVES_DE_ANUNCIO = [
-  "gclid", "wbraid", "gbraid", "fbclid",
-  "utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term",
-  "campaignid", "adgroupid", "creative", "keyword", "matchtype",
+  "gclid", "wbraid", "gbraid", "fbclid", "ttclid",
+  "utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "utm_referrer",
+  "campaignid", "adgroupid", "creative", "creative_id", "ad_id", "keyword", "matchtype",
+  // De qual superfície da Meta veio o clique, e a referência livre configurada no anúncio.
+  "source", "ref", "referrer",
   // O que a pessoa escolheu no aviso de cookies do site, quando o site informa. O CRM não tem
   // banner próprio: ele só carrega adiante o que vier.
   "consent", "consentimento", "gcs",
 ];
 
+/**
+ * O que o script do site guardou, quando ele está nesta mesma origem.
+ *
+ * O cookie é primário: ele só é legível quando o formulário está no MESMO domínio em que a pessoa
+ * caiu vinda do anúncio. É o caso de quem publica o formulário no próprio site; não é o caso de
+ * quem manda o link do CRM por WhatsApp — e aí a URL continua sendo a fonte, como sempre foi.
+ *
+ * O cookie PERDE pra URL: se a pessoa acabou de chegar por um anúncio, o que está na barra de
+ * endereço é mais recente do que o que estava guardado de uma visita anterior.
+ */
+function lerMarcasDoCookie(): Record<string, string> {
+  if (typeof document === "undefined") return {};
+  const achado = document.cookie.split("; ").find((c) => c.startsWith("azuz_origem="));
+  if (!achado) return {};
+  try {
+    const dados = JSON.parse(decodeURIComponent(achado.slice("azuz_origem=".length))) as Record<string, unknown>;
+    const marcas: Record<string, string> = {};
+    for (const chave of CHAVES_DE_ANUNCIO) {
+      const valor = dados[chave];
+      if (typeof valor === "string" && valor) marcas[chave] = valor.slice(0, 512);
+    }
+    return marcas;
+  } catch {
+    return {};
+  }
+}
+
 function lerMarcasDaUrl(): Record<string, string> {
   if (typeof window === "undefined") return {};
   const busca = new URLSearchParams(window.location.search);
-  const marcas: Record<string, string> = {};
+  const marcas: Record<string, string> = { ...lerMarcasDoCookie() };
   for (const chave of CHAVES_DE_ANUNCIO) {
     const valor = busca.get(chave);
     if (valor) marcas[chave] = valor.slice(0, 512);

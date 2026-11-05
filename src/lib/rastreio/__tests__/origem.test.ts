@@ -47,15 +47,21 @@ describe("lerOrigemDaUrl", () => {
   });
 
   /**
-   * A regra mais importante do arquivo: sem código de clique, não há origem.
+   * A regra mais importante do arquivo CONTINUA VALENDO: a PLATAFORMA só é afirmada por código de
+   * clique, que é prova. O que mudou é o que acontece com a UTM quando não há código nenhum.
    *
    * `utm_source=google` é texto livre que qualquer pessoa escreve, inclusive por engano num link
-   * de e-mail ou de post orgânico. Tratar isso como "veio do Google Ads" contaminaria justamente
-   * o número que a tela de Tráfego existe pra mostrar. Lead sem origem é melhor que lead com
-   * origem errada.
+   * de e-mail ou de post orgânico — então ele nunca vira "veio do Google Ads". Mas ele também não
+   * pode ser jogado fora: quem manda uma newsletter com `utm_source=newsletter` marcou aquele
+   * tráfego de propósito, e devolver `null` ali fazia o lead entrar sem origem e a pergunta "de
+   * onde vieram esses leads?" ficar sem resposta possível. A marcação é guardada como o que ela
+   * é — plataforma "outro", sem código de clique.
    */
-  it("não inventa origem a partir de UTM solta", () => {
-    expect(lerOrigemDaUrl(params("utm_source=google&utm_medium=cpc"))).toBeNull();
+  it("guarda a UTM solta, mas sem afirmar plataforma", () => {
+    const origem = lerOrigemDaUrl(params("utm_source=newsletter&utm_medium=email"));
+    expect(origem?.plataforma).toBe("outro");
+    expect(origem?.cliqueId).toBe("");
+    expect(origem?.utmSource).toBe("newsletter");
   });
 
   it("não inventa origem quando não veio nada", () => {

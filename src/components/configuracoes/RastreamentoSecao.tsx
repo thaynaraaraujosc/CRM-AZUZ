@@ -32,6 +32,10 @@ export function RastreamentoSecao() {
   const [dados, setDados] = useState<Resposta | null>(null);
   const [conversoes, setConversoes] = useState<Conversoes | null>(null);
   const [copiado, setCopiado] = useState(false);
+  const [scriptCopiado, setScriptCopiado] = useState(false);
+  /* Montada no navegador porque o endereço do CRM muda por ambiente, e o que vale é o domínio de
+     onde a pessoa está olhando a tela: é dele que o site dela vai carregar o arquivo. */
+  const tagDoScript = `<script src="${typeof window === "undefined" ? "" : window.location.origin}/api/rastreio/script" async></script>`;
 
   useEffect(() => {
     fetch("/api/rastreio/link")
@@ -54,6 +58,16 @@ export function RastreamentoSecao() {
     } catch {
       // Navegador que bloqueia a área de transferência: o campo continua selecionável na mão.
       setCopiado(false);
+    }
+  }
+
+  async function copiarScript() {
+    try {
+      await navigator.clipboard.writeText(tagDoScript);
+      setScriptCopiado(true);
+      setTimeout(() => setScriptCopiado(false), 2500);
+    } catch {
+      setScriptCopiado(false);
     }
   }
 
@@ -102,6 +116,45 @@ export function RastreamentoSecao() {
             endereço — é esse pulo que apaga a informação.
           </p>
         </div>
+      </div>
+
+      {/*
+        O SCRIPT DO SITE, que é o quarto caminho — o de quem tem site próprio com formulário próprio.
+        
+        O link rastreado resolve o botão de WhatsApp; o formulário do CRM resolve quem cai direto
+        nele. Quem tem um site com formulário próprio continuava sem nada: a pessoa clicava no
+        anúncio, caía na página, preenchia o formulário DALI, e o `gclid` que estava na barra de
+        endereço ia embora junto com a página. O script copia essas marcas pro próprio domínio do
+        cliente e as devolve escondidas no envio do formulário.
+      */}
+      <div className="config-bloco">
+        <p className="config-bloco-titulo">{traduzir("Script para o seu site")}</p>
+        <div className="rastreio-link-linha">
+          <input
+            id="script-do-site"
+            className="input rastreio-link-campo"
+            readOnly
+            value={tagDoScript}
+            aria-label={traduzir("Script para o seu site")}
+            onFocus={(e) => e.currentTarget.select()}
+          />
+          <button type="button" className="btn primary" onClick={() => void copiarScript()}>
+            {scriptCopiado ? "Copiado" : "Copiar"}
+          </button>
+        </div>
+        <p className="hint rastreio-nota">
+          Cole antes do <code>&lt;/body&gt;</code> das páginas em que os seus anúncios caem. Ele
+          guarda, no seu próprio domínio, de qual anúncio a pessoa veio — e preenche sozinho os
+          campos escondidos dos formulários daquela página. Não manda nada pra lugar nenhum e não lê
+          o que a pessoa digita.
+        </p>
+        <p className="hint rastreio-nota">
+          O primeiro toque nunca é sobrescrito: quem chegou pelo anúncio em janeiro e voltou pela
+          newsletter em março continua sendo do anúncio, com a newsletter registrada como último
+          toque. Se o seu site tem aviso de cookies, chame{" "}
+          <code>azuzConsentimento(false)</code> quando a pessoa recusar, e o script apaga o que
+          guardou.
+        </p>
       </div>
 
       <div className="config-bloco">

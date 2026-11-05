@@ -80,14 +80,14 @@ model Contato {
   // @ do Instagram (sem arroba). Preenchido sozinho quando a pessoa chega pelo Direct e o CRM
   // resolve o username na primeira mensagem. É o equivalente do `whatsapp` pro outro canal: sem
   // ele, um lead vindo do Direct virava contato sem nenhuma forma de reencontrar a pessoa.
-  instagram String?
+  instagram          String?
   /// IGSID: o identificador da pessoa dentro da conta conectada. É a chave ESTÁVEL do Instagram.
   ///
   /// O `instagram` acima é o @, e @ muda: a pessoa troca o nome de usuário e, deduplicando só por
   /// ele, a mesma pessoa volta a entrar como lead novo, com card novo, perdendo o histórico e
   /// enchendo o funil de duplicata. O IGSID não muda enquanto a conta existir. O @ continua sendo
   /// gravado porque é o que a equipe lê e procura; o IGSID é o que o CRM compara.
-  instagramId String?
+  instagramId        String?
   /// Quantos seguidores a conta tem, quantas vezes o perfil foi visto como verificado, e a relação
   /// de seguir nos dois sentidos.
   ///
@@ -95,12 +95,12 @@ model Contato {
   /// esses: não é uma consulta livre a qualquer perfil do Instagram, que a API não permite. Fica
   /// gravado porque a tela de contatos precisa ordenar e filtrar por isso sem uma chamada por
   /// linha, e vazio quando a conta não concedeu a permissão desses campos.
-  igSeguidores      Int?
-  igVerificado      Boolean?
+  igSeguidores       Int?
+  igVerificado       Boolean?
   /// A pessoa segue a conta conectada.
-  igSegueVoce       Boolean?
+  igSegueVoce        Boolean?
   /// A conta conectada segue a pessoa.
-  igVoceSegue       Boolean?
+  igVoceSegue        Boolean?
   igPerfilAtualizado DateTime?
   /// Foto de perfil da pessoa, já baixada e guardada.
   ///
@@ -110,7 +110,7 @@ model Contato {
   /// mesmo lead.
   ///
   /// Guardada (não um link do CDN da Meta, que expira em horas) pelo mesmo motivo das miniaturas.
-  fotoUrl   String? @db.Text
+  fotoUrl            String?   @db.Text
 
   // MySQL não tem array nativo. Etiquetas vira JSON (lista de strings) pra não inflar o
   // escopo do piloto com uma tabela relacionada agora.
@@ -139,7 +139,7 @@ model Contato {
   conversas          Conversa[]
   execucoesAutomacao ExecucaoAutomacao[]
 
-  origemDoLead OrigemDoLead?
+  origemDoLead    OrigemDoLead?
   toquesDeAnuncio ToqueDeAnuncio[]
 
   criadoEm     DateTime @default(now())
@@ -189,15 +189,15 @@ model OrigemDoLead {
   /// de devolver a conversão, e mandar no campo errado faz a plataforma aceitar e ignorar.
   tipoDoClique String?
 
-  campanhaId    String?
-  campanhaNome  String?
+  campanhaId   String?
+  campanhaNome String?
   /// Grupo de anúncios (Google) ou conjunto de anúncios (Meta). Mesmo papel, nome diferente.
-  conjuntoId    String?
-  conjuntoNome  String?
-  anuncioId     String?
-  anuncioNome   String?
+  conjuntoId   String?
+  conjuntoNome String?
+  anuncioId    String?
+  anuncioNome  String?
   /// Só Google, e só rede de pesquisa: a palavra que a pessoa realmente digitou.
-  palavraChave  String?
+  palavraChave String?
 
   utmSource   String?
   utmMedium   String?
@@ -207,6 +207,55 @@ model OrigemDoLead {
 
   /// Onde a pessoa caiu, quando passou por um site antes de virar conversa.
   paginaEntrada String? @db.Text
+
+  /// DE ONDE A PESSOA VEIO ANTES DE CAIR NA PÁGINA, e o `utm_referrer` quando o link traz os dois.
+  /// `paginaEntrada` é onde ela caiu; isto é de onde ela saiu — e são perguntas diferentes quando
+  /// o tráfego passa por um comparador, um agregador ou um link de outro site.
+  referrer    String? @db.Text
+  utmReferrer String? @db.Text
+
+  /// O ID DO NAVEGADOR NO GOOGLE ANALYTICS (`_ga`). É o `client_id` que o Measurement Protocol
+  /// exige: sem ele, um evento mandado pro GA4 não se junta à sessão que o produziu e vira um
+  /// usuário novo em cada envio.
+  gclientid String?
+
+  /// OS DOIS COOKIES DO PIXEL DA META. `fbp` identifica o navegador; `fbc` carrega o clique e é
+  /// montado a partir do `fbclid` no formato que a Meta exige (`fb.1.<momento>.<fbclid>`) — o
+  /// `fbclid` cru num campo de `fbc` é aceito e descartado em silêncio.
+  fbp String? @db.Text
+  fbc String? @db.Text
+
+  /// O clique e o cookie do TikTok. Mesma dupla do par da Meta, com os nomes de lá.
+  ttclid String? @db.Text
+  ttp    String?
+
+  /// O CRIATIVO e os dois campos que a Meta manda no anúncio de Click-to-WhatsApp: a origem
+  /// ("ig"/"fb") e a referência livre configurada no anúncio.
+  criativoId String?
+  metaSource String?
+  metaRef    String? @db.Text
+
+  /// QUEM É A PESSOA DENTRO DO CANAL. `igSid` é o id dela na conta de Instagram conectada e
+  /// `psid` o equivalente no Messenger: são eles que a Conversions API pede no `user_data` quando
+  /// o evento nasce de uma conversa, no lugar do e-mail.
+  igSid String?
+  psid  String?
+
+  /// O id do formulário instantâneo do Meta (Lead Ads). É por ele que o funil de leads devolve as
+  /// mudanças de etapa, e não pelo clique.
+  leadgenId String?
+
+  /// O ÚLTIMO TOQUE, inteiro, como ele chegou.
+  ///
+  /// O resto desta linha é o PRIMEIRO toque e nunca é sobrescrito: é ele que explica como a pessoa
+  /// conheceu a empresa, e deixar o último apagá-lo é o erro clássico de atribuição. Só que o
+  /// último também importa — é ele que explica por que ela voltou agora — e as duas respostas
+  /// precisam caber na mesma ficha.
+  ///
+  /// JSON e não vinte colunas espelhadas: o último toque é lido inteiro, nunca filtrado coluna a
+  /// coluna, e a história completa de todos os toques já mora em `ToqueDeAnuncio`.
+  ultimoToque   Json?
+  ultimoToqueEm DateTime?
 
   /// Por onde o CRM ficou sabendo: "formulario" | "whatsapp" | "instagram" | "manual". Guardado
   /// porque a confiabilidade de cada caminho é diferente, e na hora de explicar um número
@@ -613,7 +662,7 @@ model Membro {
   conviteExpiraEm  DateTime?
   // Foto hoje é gravada como data URL (base64 inline). Pode ficar grande, então usa TEXT em vez
   // do VARCHAR padrão.
-  foto            String? @db.Text
+  foto             String?   @db.Text
 
   criadoEm     DateTime  @default(now())
   atualizadoEm DateTime  @updatedAt
@@ -686,8 +735,8 @@ model FunilEtapa {
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
 
-  titulo   String
-  ordem    Int
+  titulo String
+  ordem  Int
 
   /// A COR DA ETAPA, como `#RRGGBB`. Nula = a cor automática, pela posição.
   ///
@@ -875,8 +924,10 @@ model Formulario {
   descricao    String?
   status       String
   paginas      Json
-  /** A capa de apresentação: título, texto e texto do botão. Opcional, e nula em todo formulário
-   *  criado antes dela — `migrarFormulario` lê nulo como "sem capa", que é o certo. */
+  /**
+   * A capa de apresentação: título, texto e texto do botão. Opcional, e nula em todo formulário
+   * criado antes dela — `migrarFormulario` lê nulo como "sem capa", que é o certo.
+   */
   capa         Json?
   paginaFinal  Json
   tema         Json
@@ -939,29 +990,29 @@ model FluxoAutomacao {
   /// motor, as execuções e o versionamento são os mesmos. A área diz quais canais estão em jogo e,
   /// portanto, quais blocos fazem sentido oferecer no construtor. O padrão é comercial porque todo
   /// fluxo que já existe é comercial.
-  area               String    @default("comercial")
+  area               String          @default("comercial")
   /// Pasta em que o robô está guardado, quando está em alguma. Nulo = na raiz.
   pastaId            String?
   pasta              PastaAutomacao? @relation(fields: [pastaId], references: [id], onDelete: SetNull)
   // Texto livre: alguns fluxos de demonstração passam de 191 caracteres (VARCHAR padrão), por
   // isso @db.Text (mesmo motivo do `objetivo` abaixo).
-  descricao          String?   @db.Text
+  descricao          String?         @db.Text
   funilId            String?
   etapaId            String?
   categoria          String?
   status             String
-  ativa              Boolean   @default(false)
+  ativa              Boolean         @default(false)
   nodes              Json
   edges              Json
   versaoAtual        Int
   configuracoes      Json
-  execucoes          Int       @default(0)
+  execucoes          Int             @default(0)
   historicoVersoes   Json
   publicadoEm        DateTime?
   publicadoPor       String?
-  arquivada          Boolean   @default(false)
-  modeloDemonstracao Boolean   @default(false)
-  objetivo           String?   @db.Text
+  arquivada          Boolean         @default(false)
+  modeloDemonstracao Boolean         @default(false)
+  objetivo           String?         @db.Text
 
   /// O TIPO do bloco de gatilho deste fluxo, copiado de `nodes` pra uma coluna.
   ///
@@ -976,10 +1027,10 @@ model FluxoAutomacao {
   ///
   /// Nulo = ainda não calculado. A própria varredura preenche na primeira vez que encontra um
   /// nulo, então não precisa de migração à parte e fluxo novo se resolve sozinho.
-  gatilhoTipo        String?
+  gatilhoTipo String?
 
-  criadoEm           DateTime  @default(now())
-  atualizadoEm       DateTime  @updatedAt
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
 
   /// Publicações e execuções: ver `VersaoAutomacao` e `ExecucaoAutomacao`. `historicoVersoes`
   /// (Json acima) continua existindo enquanto a migração roda; a fonte da verdade passa a ser a
@@ -1735,13 +1786,13 @@ model RegistroDeAuditoria {
   email       String?
 
   /// O que aconteceu, em chave estável: "login.sucesso", "membro.papel_alterado"...
-  acao    String
+  acao      String
   /// O recurso afetado, quando há um: id do membro, da integração, da campanha.
-  recurso String?
+  recurso   String?
   /// "ok" ou "recusado".
   resultado String
   /// Contexto curto pra investigação. Nunca valor sensível.
-  detalhe String? @db.Text
+  detalhe   String? @db.Text
 
   /// De onde veio. Ajuda a distinguir acesso da pessoa de acesso de outro lugar.
   ip String?
@@ -1772,7 +1823,7 @@ model ChaveDeIntegracao {
   provedor String
 
   /// Os primeiros caracteres, pra exibir ("azflow_AbC12…").
-  prefixo String
+  prefixo     String
   /// SHA-256 em hex da chave inteira. `@unique` porque é por ele que a rota acha a chave, e
   /// duas linhas com o mesmo hash tornariam a busca ambígua.
   hashDaChave String @unique
@@ -1786,7 +1837,7 @@ model ChaveDeIntegracao {
   ultimoUsoEm DateTime?
   /// Revogada continua na tabela: apagar perderia o registro de que ela existiu, que é o que
   /// responde "quem tinha acesso em março?".
-  revogadaEm DateTime?
+  revogadaEm  DateTime?
 
   @@index([workspaceId, provedor])
 }
@@ -1807,7 +1858,7 @@ model LeadRecebido {
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
 
   /// "azuz_flow".
-  origem String
+  origem       String
   /// O identificador da entrega no produto de origem (o `respostaId` do Flow).
   chaveExterna String
 
@@ -1834,7 +1885,6 @@ model LeadRecebido {
   @@unique([workspaceId, origem, chaveExterna])
   @@index([workspaceId, criadoEm])
 }
-
 
 // ============================================================================
 // Confirmação de reunião do AZUZ Flow
