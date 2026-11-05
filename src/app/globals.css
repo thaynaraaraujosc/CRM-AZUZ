@@ -29544,3 +29544,218 @@ td.trafego-col-crm:first-of-type {
   outline: 2px solid var(--acao);
   outline-offset: 1px;
 }
+
+/* ============================================================================
+   ESTADO VAZIO — a tela de quem acabou de criar a conta
+   ----------------------------------------------------------------------------
+   Sem caixa branca: era ela que fazia o vazio parecer defeito. O que organiza é
+   o espaço em volta e o alinhamento ao centro. Ver `components/estado-vazio.tsx`.
+   ========================================================================== */
+.estado-vazio {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 48px 24px 64px;
+  text-align: center;
+}
+
+.estado-vazio-icone {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 2px;
+  border-radius: 14px;
+  background: var(--navy-raised-2);
+  color: var(--text-muted);
+}
+
+.estado-vazio-icone svg {
+  width: 24px;
+  height: 24px;
+}
+
+.estado-vazio-titulo {
+  font-size: 16px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.estado-vazio-texto {
+  max-width: 44ch;
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.estado-vazio-acao {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* ============================================================================
+   FICHA DO CONTATO — leitura compacta, edição completa
+   ----------------------------------------------------------------------------
+   Em leitura, cada informação é UMA LINHA: rótulo à esquerda, valor à direita.
+   Antes cada campo era uma caixa branca de 44px com "Não informado" dentro, e
+   treze delas empilhadas davam dois metros de ficha pra mostrar três dados.
+   Ver `components/contato/DadosDoContato.tsx`.
+   ========================================================================== */
+.ficha-topo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 2px 0 12px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.ficha-nome {
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.ficha-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.ficha-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 21px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--navy-raised-2);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.ficha-lista {
+  display: flex;
+  flex-direction: column;
+  padding: 2px 0 4px;
+}
+
+/* Rótulo e valor na MESMA linha: é o que encurta a ficha de verdade. Com o rótulo
+   em cima, cada campo custa duas linhas e o painel volta a rolar sem fim. */
+.ficha-linha {
+  display: grid;
+  grid-template-columns: minmax(84px, 38%) minmax(0, 1fr);
+  gap: 10px;
+  align-items: baseline;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.ficha-linha:last-child {
+  border-bottom: 0;
+}
+
+.ficha-rotulo {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.ficha-valor {
+  font-size: 13px;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+/* O que falta não some: vira uma linha discreta que também é o botão de preencher. */
+.ficha-faltando {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.ficha-faltando:hover {
+  border-color: var(--acao);
+  color: var(--text);
+}
+
+.ficha-faltando span {
+  font-weight: 650;
+  color: var(--acao);
+}
+
+/* O "Editar" do cabeçalho era um link azul solto; agora é botão, do tamanho de um. */
+.ficha-editar {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+/* Campo + botão na mesma linha, sem `style` inline espalhado pelo componente. */
+.ficha-dupla {
+  display: flex;
+  gap: 6px;
+}
+
+.ficha-dupla .input {
+  flex: 1;
+  min-width: 0;
+}
+
+.ficha-etiqueta-nova {
+  margin-top: 8px;
+}
+
+.ficha-trio {
+  display: flex;
+  gap: 6px;
+}
+
+.ficha-trio .input {
+  min-width: 0;
+  flex: 2;
+}
+
+.ficha-trio .input:nth-child(2) {
+  flex: 1;
+}
+
+/* Em edição o campo ocupa a largura toda. Era um `style={{ width: "100%" }}` repetido em cada
+   um dos treze campos; a regra vale pro bloco e os `style` saíram do componente. */
+.ficha-campo .input,
+.ficha-campo select.input {
+  width: 100%;
+}
+
+.wa-status-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}

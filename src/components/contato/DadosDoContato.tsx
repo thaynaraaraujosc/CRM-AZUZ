@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { CamposPersonalizados } from "@/components/conversas/CamposPersonalizados";
-import { IconCheck, IconClose } from "@/components/icons";
+import { IconCheck, IconClose, IconEdit } from "@/components/icons";
 import { nomeAindaEhIdCru, nomeExibido } from "@/lib/conversas/exibicao";
 import {
   lerCamposDoContato,
@@ -11,6 +11,7 @@ import {
   type CampoDoContato,
   type ValoresDeCampos,
 } from "@/lib/contatos/campos-do-contato";
+import { tempoDeRelacionamento } from "@/lib/contatos/relacionamento";
 import { useContatos } from "@/lib/contatos-context";
 import { useConversas } from "@/lib/conversas-context";
 import { useIdioma } from "@/lib/idioma-context";
@@ -257,43 +258,221 @@ export function DadosDoContato({
     }
   }
 
+  /**
+   * OS CAMPOS, DESCRITOS UMA VEZ SÓ.
+   *
+   * Eram treze blocos iguais, cada um com o seu `{editando ? <input/> : <div className="input"/>}`.
+   * Treze caixas brancas de 44px empilhadas, quase todas dizendo "Não informado": a ficha ficava
+   * com dois metros de altura pra mostrar, na prática, três informações.
+   *
+   * Descritos assim, leitura e edição saem da MESMA lista — e a leitura pode então fazer o que
+   * uma ficha faz: mostrar o que existe, numa linha cada, e esconder o que está vazio atrás do
+   * botão de editar. Quem quer preencher clica em "Editar" e vê tudo.
+   */
+  type CampoDaFicha = { rotulo: string; valor: string; editor: ReactNode; erro?: ReactNode };
+
+  const campos: CampoDaFicha[] = [
+    {
+      rotulo: traduzir("Sobrenome"),
+      valor: sobrenomeContato,
+      editor: (
+        <input
+          className="input"
+          value={sobrenomeContato}
+          onChange={(e) => setSobrenomeContato(e.target.value)}
+          placeholder={traduzir("Sobrenome do contato")}
+        />
+      ),
+    },
+    {
+      rotulo: "WhatsApp",
+      valor: whatsappContato,
+      editor: (
+        <input
+          className="input"
+          type="text"
+          value={whatsappContato}
+          onChange={(e) => setWhatsappContato(e.target.value)}
+          placeholder="(00) 90000-0000"
+        />
+      ),
+    },
+    {
+      rotulo: traduzir("E-mail"),
+      valor: emailContato,
+      editor: (
+        <input
+          className={`input${!emailValido(emailContato) ? " wa-input-invalido" : ""}`}
+          type="email"
+          value={emailContato}
+          onChange={(e) => setEmailContato(e.target.value)}
+          placeholder="nome@empresa.com"
+        />
+      ),
+      erro: !emailValido(emailContato) ? (
+        <span className="wa-campo-erro">{traduzir("E-mail inválido")}</span>
+      ) : null,
+    },
+    {
+      rotulo: traduzir("Aniversário"),
+      valor: nascimentoContato,
+      editor: (
+        <input
+          className="input"
+          value={nascimentoContato}
+          onChange={(e) => setNascimentoContato(e.target.value)}
+          placeholder="DD/MM/AAAA"
+        />
+      ),
+    },
+    {
+      rotulo: traduzir("Cidade / Estado / País"),
+      valor: [cidadeContato, estadoContato, paisContato].filter(Boolean).join(" · "),
+      editor: (
+        <div className="ficha-trio">
+          <input
+            className="input"
+            value={cidadeContato}
+            onChange={(e) => setCidadeContato(e.target.value)}
+            placeholder={traduzir("Cidade")}
+          />
+          <input
+            className="input"
+            value={estadoContato}
+            onChange={(e) => setEstadoContato(e.target.value)}
+            placeholder="UF"
+          />
+          <input
+            className="input"
+            value={paisContato}
+            onChange={(e) => setPaisContato(e.target.value)}
+            placeholder={traduzir("País")}
+          />
+        </div>
+      ),
+    },
+    {
+      rotulo: traduzir("Endereço"),
+      valor: enderecoContato,
+      editor: (
+        <input
+          className="input"
+          value={enderecoContato}
+          onChange={(e) => setEnderecoContato(e.target.value)}
+          placeholder={traduzir("Rua, número, bairro")}
+        />
+      ),
+    },
+    {
+      rotulo: traduzir("Empresa"),
+      valor: empresaContato,
+      editor: (
+        <input
+          className="input"
+          value={empresaContato}
+          onChange={(e) => setEmpresaContato(e.target.value)}
+          placeholder={traduzir("Nome da empresa (opcional pra B2C)")}
+        />
+      ),
+    },
+    {
+      rotulo: traduzir("Cargo"),
+      valor: cargoContato,
+      editor: (
+        <input
+          className="input"
+          value={cargoContato}
+          onChange={(e) => setCargoContato(e.target.value)}
+          placeholder={traduzir("Cargo na empresa")}
+        />
+      ),
+    },
+    {
+      rotulo: traduzir("Canal preferido"),
+      valor: canalPreferidoContato,
+      editor: (
+        <select
+          className="input"
+          style={{ cursor: "pointer" }}
+          value={canalPreferidoContato}
+          onChange={(e) => setCanalPreferidoContato(e.target.value as Canal)}
+        >
+          <option value="WhatsApp">WhatsApp</option>
+          <option value="Instagram">Instagram</option>
+        </select>
+      ),
+    },
+    {
+      rotulo: traduzir("Melhor horário pra contato"),
+      valor: melhorHorarioContato,
+      editor: (
+        <input
+          className="input"
+          value={melhorHorarioContato}
+          onChange={(e) => setMelhorHorarioContato(e.target.value)}
+          placeholder={traduzir("Ex.: Tardes, depois das 14h")}
+        />
+      ),
+    },
+  ];
+
+  const preenchidos = campos.filter((c) => c.valor.trim());
+  const vazios = campos.length - preenchidos.length;
+
+  /* Há quanto tempo essa pessoa é contato nosso. O `new Date()` acontece dentro da função, e não
+     aqui: ler o relógio no corpo do componente é impuro pro compilador do React. */
+  const tempoDeContato = tempoDeRelacionamento(contato?.criadoEm);
+
   return (
     <>
       <div className="panel-h">
         <h4>{traduzir("Dados do contato")}</h4>
         {!editandoContato ? (
-          <button
-            type="button"
-            className="link"
-            onClick={() => setEditandoContato(true)}
-          >
+          <button type="button" className="btn ficha-editar" onClick={() => setEditandoContato(true)}>
+            <IconEdit width={12} height={12} />
             {traduzir("Editar")}
           </button>
         ) : null}
       </div>
 
       {/*
+        O CABEÇALHO DA FICHA: quem é, e há quanto tempo.
+        
+        "Cliente desde quando?" é a primeira pergunta de quem abre a ficha de alguém, e era a
+        única que o painel não respondia — ele tinha treze campos de cadastro e nenhum número.
+      */}
+      {!editandoContato ? (
+        <div className="ficha-topo">
+          <strong className="ficha-nome">{nomeExibido(nome, canal)}</strong>
+          <div className="ficha-chips">
+            {tempoDeContato ? (
+              <span className="ficha-chip">
+                {traduzir("Contato há")} {tempoDeContato}
+              </span>
+            ) : null}
+            {contato?.etapa ? <span className="ficha-chip">{contato.etapa}</span> : null}
+            {contato?.origem ? <span className="ficha-chip">{contato.origem}</span> : null}
+          </div>
+        </div>
+      ) : null}
+
+      {/*
         O NOME, E A CAIXA PRA DAR UM quando ainda não há.
         
-        Conversa de número desconhecido nasce com o telefone no lugar do nome. Quem
-        atende descobre o nome na terceira linha da conversa e não tinha onde escrevê-lo:
-        o painel mostrava o número e acabava ali. Agora escreve, salva, e o CRM inteiro
-        passa a chamar a pessoa pelo nome — conversa, contato e card do funil.
+        Conversa de número desconhecido nasce com o telefone no lugar do nome. Quem atende
+        descobre o nome na terceira linha da conversa e não tinha onde escrevê-lo. Agora escreve,
+        salva, e o CRM inteiro passa a chamar a pessoa pelo nome — conversa, contato e card.
         
-        Pra quem JÁ TEM nome o campo continua só leitura: trocar o nome de um contato
-        existente mexeria em automação e filtro salvos que apontam pra ele. Isso é outra
-        operação, e ninguém pediu por ela.
+        Pra quem JÁ TEM nome o campo não aparece: trocar o nome de um contato existente mexeria em
+        automação e filtro salvos que apontam pra ele. Isso é outra operação, e ninguém pediu.
       */}
       {nomeAindaEhIdCru(nome) ? (
         <div className="field">
           <label>{traduzir("Nome")}</label>
-          <p className="wa-sem-nome">
-            {traduzir("Este número ainda não tem nome salvo.")}
-          </p>
-          <div style={{ display: "flex", gap: 6 }}>
+          <p className="wa-sem-nome">{traduzir("Este número ainda não tem nome salvo.")}</p>
+          <div className="ficha-dupla">
             <input
               className="input"
-              style={{ flex: 1, minWidth: 0 }}
               value={nomeParaONumero}
               maxLength={80}
               placeholder={traduzir("Nome de quem está falando")}
@@ -304,206 +483,62 @@ export function DadosDoContato({
               type="button"
               className="btn primary"
               onClick={nomearONumero}
-              disabled={
-                statusNomearNumero === "salvando" || nomeParaONumero.trim().length < 2
-              }
+              disabled={statusNomearNumero === "salvando" || nomeParaONumero.trim().length < 2}
             >
               {statusNomearNumero === "salvando" ? traduzir("Salvando…") : traduzir("Salvar")}
             </button>
           </div>
-          <span className="hint">{nomeExibido(nome, canal)}</span>
-          {erroNomearNumero ? (
-            <span className="wa-campo-erro">{erroNomearNumero}</span>
+          {erroNomearNumero ? <span className="wa-campo-erro">{erroNomearNumero}</span> : null}
+        </div>
+      ) : null}
+
+      {/*
+        LEITURA: uma linha por informação, e só as que existem.
+        
+        Campo vazio vira caixa branca com "Não informado" dentro — treze delas empilhadas era o
+        que fazia a ficha parecer um formulário em branco. O que falta é contado numa linha só,
+        que é também o atalho pra preencher.
+      */}
+      {!editandoContato ? (
+        <div className="ficha-lista">
+          {preenchidos.map((c) => (
+            <div className="ficha-linha" key={c.rotulo}>
+              <span className="ficha-rotulo">{c.rotulo}</span>
+              <span className="ficha-valor">{c.valor}</span>
+            </div>
+          ))}
+          {vazios > 0 ? (
+            <button type="button" className="ficha-faltando" onClick={() => setEditandoContato(true)}>
+              {vazios === 1
+                ? traduzir("1 campo ainda em branco")
+                : `${vazios} ${traduzir("campos ainda em branco")}`}
+              <span>{traduzir("Preencher")}</span>
+            </button>
           ) : null}
         </div>
       ) : (
-        <div className="field">
-          <label>{traduzir("Nome")}</label>
-          <div className="input">{nome}</div>
-        </div>
+        campos.map((c) => (
+          <div className="field ficha-campo" key={c.rotulo}>
+            <label>{c.rotulo}</label>
+            {c.editor}
+            {c.erro}
+          </div>
+        ))
       )}
-      <div className="field">
-        <label>{traduzir("Sobrenome")}</label>
-        {editandoContato ? (
-          <input
-            className="input"
-            style={{ width: "100%" }}
-            value={sobrenomeContato}
-            onChange={(e) => setSobrenomeContato(e.target.value)}
-            placeholder={traduzir("Sobrenome do contato")}
-          />
-        ) : (
-          <div className="input">{sobrenomeContato || "Não informado"}</div>
-        )}
-      </div>
-      <div className="field">
-        <label>{traduzir("E-mail")}</label>
-        {editandoContato ? (
-          <input
-            className={`input${!emailValido(emailContato) ? " wa-input-invalido" : ""}`}
-            style={{ width: "100%" }}
-            type="email"
-            value={emailContato}
-            onChange={(e) => setEmailContato(e.target.value)}
-            placeholder="nome@empresa.com"
-          />
-        ) : (
-          <div className="input">{emailContato || "Não informado"}</div>
-        )}
-        {editandoContato && !emailValido(emailContato) ? (
-          <span className="wa-campo-erro">{traduzir("E-mail inválido")}</span>
-        ) : null}
-      </div>
-      <div className="field">
-        <label>WhatsApp</label>
-        {editandoContato ? (
-          <input
-            className="input"
-            style={{ width: "100%" }}
-            type="text"
-            value={whatsappContato}
-            onChange={(e) => setWhatsappContato(e.target.value)}
-            placeholder="(00) 90000-0000"
-          />
-        ) : (
-          <div className="input">{whatsappContato || "Não informado"}</div>
-        )}
-      </div>
-      <div className="field">
-        <label>{traduzir("Empresa")}</label>
-        {editandoContato ? (
-          <input
-            className="input"
-            style={{ width: "100%" }}
-            value={empresaContato}
-            onChange={(e) => setEmpresaContato(e.target.value)}
-            placeholder={traduzir("Nome da empresa (opcional pra B2C)")}
-          />
-        ) : (
-          <div className="input">{empresaContato || "Não informado"}</div>
-        )}
-      </div>
-      <div className="field">
-        <label>{traduzir("Cargo")}</label>
-        {editandoContato ? (
-          <input
-            className="input"
-            style={{ width: "100%" }}
-            value={cargoContato}
-            onChange={(e) => setCargoContato(e.target.value)}
-            placeholder={traduzir("Cargo na empresa")}
-          />
-        ) : (
-          <div className="input">{cargoContato || "Não informado"}</div>
-        )}
-      </div>
-      <div className="field">
-        <label>{traduzir("Aniversário")}</label>
-        {editandoContato ? (
-          <input
-            className="input"
-            style={{ width: "100%" }}
-            value={nascimentoContato}
-            onChange={(e) => setNascimentoContato(e.target.value)}
-            placeholder="DD/MM/AAAA"
-          />
-        ) : (
-          <div className="input">{nascimentoContato || "Não informado"}</div>
-        )}
-      </div>
-      <div className="field">
-        <label>{traduzir("Endereço")}</label>
-        {editandoContato ? (
-          <input
-            className="input"
-            style={{ width: "100%" }}
-            value={enderecoContato}
-            onChange={(e) => setEnderecoContato(e.target.value)}
-            placeholder={traduzir("Rua, número, bairro")}
-          />
-        ) : (
-          <div className="input">{enderecoContato || "Não informado"}</div>
-        )}
-      </div>
-      <div className="field">
-        <label>{traduzir("Cidade / Estado / País")}</label>
-        {editandoContato ? (
-          <div style={{ display: "flex", gap: 6 }}>
-            <input
-              className="input"
-              style={{ flex: 2 }}
-              value={cidadeContato}
-              onChange={(e) => setCidadeContato(e.target.value)}
-              placeholder={traduzir("Cidade")}
-            />
-            <input
-              className="input"
-              style={{ flex: 1 }}
-              value={estadoContato}
-              onChange={(e) => setEstadoContato(e.target.value)}
-              placeholder="UF"
-            />
-            <input
-              className="input"
-              style={{ flex: 2 }}
-              value={paisContato}
-              onChange={(e) => setPaisContato(e.target.value)}
-              placeholder={traduzir("País")}
-            />
-          </div>
-        ) : (
-          <div className="input">
-            {[cidadeContato, estadoContato, paisContato].filter(Boolean).join(" · ") ||
-              "Não informado"}
-          </div>
-        )}
-      </div>
-      <div className="field">
-        <label>{traduzir("Canal preferido")}</label>
-        {editandoContato ? (
-          <select
-            className="input"
-            style={{ width: "100%", cursor: "pointer" }}
-            value={canalPreferidoContato}
-            onChange={(e) => setCanalPreferidoContato(e.target.value as Canal)}
-          >
-            <option value="WhatsApp">WhatsApp</option>
-            <option value="Instagram">Instagram</option>
-          </select>
-        ) : (
-          <div className="input">{canalPreferidoContato}</div>
-        )}
-      </div>
-      <div className="field">
-        <label>{traduzir("Melhor horário pra contato")}</label>
-        {editandoContato ? (
-          <input
-            className="input"
-            style={{ width: "100%" }}
-            value={melhorHorarioContato}
-            onChange={(e) => setMelhorHorarioContato(e.target.value)}
-            placeholder={traduzir("Ex.: Tardes, depois das 14h")}
-          />
-        ) : (
-          <div className="input">{melhorHorarioContato || "Não informado"}</div>
-        )}
-      </div>
 
       {/*
         OS CAMPOS QUE A PRÓPRIA EMPRESA CRIOU.
         
-        Vêm depois dos fixos e antes das etiquetas de propósito: os de cima são os que
-        todo CRM tem, estes são os desta empresa, e etiqueta é outra coisa (marcação
-        solta, não campo com valor). Ver `CamposPersonalizados.tsx`.
+        Vêm depois dos fixos e antes das etiquetas de propósito: os de cima são os que todo CRM
+        tem, estes são os desta empresa, e etiqueta é outra coisa (marcação solta, não campo com
+        valor). Ver `CamposPersonalizados.tsx`.
       */}
       <CamposPersonalizados
         campos={camposDoContato}
         valores={valoresCampos}
         editando={editandoContato}
         salvandoDefinicoes={salvandoCamposDefs}
-        onMudarValor={(id, valor) =>
-          setValoresCampos((prev) => ({ ...prev, [id]: valor }))
-        }
+        onMudarValor={(id, valor) => setValoresCampos((prev) => ({ ...prev, [id]: valor }))}
         onSalvarDefinicoes={salvarDefinicoesDeCampos}
       />
 
@@ -527,10 +562,9 @@ export function DadosDoContato({
             ))
           )}
         </div>
-        <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+        <div className="ficha-dupla ficha-etiqueta-nova">
           <input
             className="input"
-            style={{ flex: 1 }}
             placeholder={traduzir("Nova etiqueta…")}
             value={novaEtiquetaTexto}
             onChange={(e) => setNovaEtiquetaTexto(e.target.value)}
@@ -538,23 +572,18 @@ export function DadosDoContato({
           />
           <button
             type="button"
-            className="btn ghost"
+            className="btn"
             onClick={adicionarEtiquetaRapida}
             disabled={!novaEtiquetaTexto.trim()}
           >
-            + Adicionar
+            + {traduzir("Adicionar")}
           </button>
         </div>
       </div>
 
       {editandoContato ? (
         <div className="section-foot">
-          <button
-            type="button"
-            className="btn ghost"
-            style={{ flex: 1 }}
-            onClick={cancelarEdicaoContato}
-          >
+          <button type="button" className="btn ghost" style={{ flex: 1 }} onClick={cancelarEdicaoContato}>
             {traduzir("Cancelar")}
           </button>
           <button
@@ -564,16 +593,16 @@ export function DadosDoContato({
             onClick={salvarDados}
             disabled={statusSalvarContato === "salvando" || !emailValido(emailContato)}
           >
-            {statusSalvarContato === "salvando" ? "Salvando…" : "Salvar"}
+            {statusSalvarContato === "salvando" ? traduzir("Salvando…") : traduzir("Salvar")}
           </button>
         </div>
       ) : null}
       {statusSalvarContato === "sucesso" ? (
-        <p className="wa-status-inline wa-status-sucesso" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <p className="wa-status-inline wa-status-sucesso">
           <IconCheck width={13} height={13} /> {traduzir("Dados salvos")}
         </p>
       ) : statusSalvarContato === "erro" ? (
-        <p className="wa-status-inline wa-status-erro" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <p className="wa-status-inline wa-status-erro">
           <IconClose width={13} height={13} /> {traduzir("Não deu pra salvar: confira o e-mail")}
         </p>
       ) : null}

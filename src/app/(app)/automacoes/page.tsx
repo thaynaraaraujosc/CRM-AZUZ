@@ -6,6 +6,8 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { AcoesNoTopo } from "@/lib/topo-da-pagina";
 import { AutomacaoDoFunil } from "@/components/funil/AutomacaoDoFunil";
+import { EstadoVazio } from "@/components/estado-vazio";
+import { IconPipeline } from "@/components/icons";
 import { useFunis } from "@/lib/funis-context";
 import { slugId } from "@/lib/ids";
 import { useIdioma } from "@/lib/idioma-context";
@@ -93,11 +95,23 @@ function AutomacoesConteudo() {
             }
           />
         ) : (
-          <section className="card">
-            <p className="hint">
-              {traduzir("Nenhum funil criado ainda. Crie um em Funil pra automatizar as etapas.")}
-            </p>
-          </section>
+          /*
+            CONTA NOVA NÃO TEM FUNIL, e esta é a primeira tela que o cliente abre em Automações.
+            Era uma faixa branca colada no topo com uma frase cinza dentro — a tela parecia ter
+            quebrado. Agora o vazio diz o que falta e oferece o caminho, num clique.
+          */
+          <EstadoVazio
+            icone={<IconPipeline />}
+            titulo={traduzir("Nenhum funil criado ainda")}
+            descricao={traduzir(
+              "A automação acontece nas etapas do funil: cada etapa pode disparar mensagem, tarefa ou etiqueta. Crie o primeiro funil pra começar.",
+            )}
+            acao={
+              <Link className="btn primary" href="/funil">
+                {traduzir("Criar funil")}
+              </Link>
+            }
+          />
         )}
       </div>
 

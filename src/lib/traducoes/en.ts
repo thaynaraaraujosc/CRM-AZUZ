@@ -1194,7 +1194,9 @@ export const TRADUCOES_EN: Record<string, string> = {
   "Nenhum contato tem etiqueta ainda.": "No contact has a tag yet.",
   "Nenhum disparo ainda.": "No broadcasts yet.",
   "Nenhum específico": "No specific one",
-  "Nenhum funil criado ainda. Crie um em Funil pra automatizar as etapas.": "No pipeline created yet. Create one in Pipeline to automate the stages.",
+  "Nenhum funil criado ainda": "No pipeline created yet",
+  "A automação acontece nas etapas do funil: cada etapa pode disparar mensagem, tarefa ou etiqueta. Crie o primeiro funil pra começar.":
+    "Automation happens in the pipeline stages: each stage can trigger a message, a task or a tag. Create your first pipeline to get started.",
   "Nenhum item pra organizar agora. Tudo em dia por aqui.": "Nothing to sort out right now. All caught up here.",
   "Nenhum lead atribuído no momento.": "No leads assigned at the moment.",
   "Nenhum motivo de perda registrado ainda.": "No loss reason recorded yet.",
