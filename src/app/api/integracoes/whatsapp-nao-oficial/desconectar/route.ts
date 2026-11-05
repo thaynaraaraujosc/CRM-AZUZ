@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { esquecerConexoes } from "@/lib/integracoes/conexoes-cache";
 import { auditar } from "@/lib/seguranca/auditoria";
 import { desconectarWhatsAppNaoOficial } from "@/lib/integracoes/evolution";
 import { limparDadosDoWhatsApp } from "@/lib/integracoes/limpar-dados-whatsapp";
@@ -66,6 +67,7 @@ export async function POST(request: Request) {
       metadados: { qrDataUrl: null, numero: null, ...(webhook ? { webhook } : {}) },
     },
   });
+  esquecerConexoes(workspaceId);
 
   // Sem isso, o espelho do WhatsApp (contatos, cards no funil, pendências no Início, conversa
   // órfã) fica para trás depois de desconectar e se mistura com o do próximo canal conectado.

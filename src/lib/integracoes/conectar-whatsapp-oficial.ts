@@ -2,6 +2,7 @@ import { randomInt } from "node:crypto";
 
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
+import { esquecerConexoes } from "@/lib/integracoes/conexoes-cache";
 import { encriptar } from "@/lib/integracoes/crypto";
 import { chamarGraph } from "@/lib/integracoes/meta";
 
@@ -162,6 +163,7 @@ export async function finalizarConexaoWhatsapp({
         erroMensagem: null,
       },
     });
+    esquecerConexoes(workspaceId);
 
     // O PIN só sai daqui nesta resposta, uma vez: depois disso fica só criptografado no banco.
     return {
@@ -211,4 +213,5 @@ export async function salvarFalhaConexao({
     },
     update: { status: "erro", erroMensagem: mensagem, metadados, ...token },
   });
+  esquecerConexoes(workspaceId);
 }

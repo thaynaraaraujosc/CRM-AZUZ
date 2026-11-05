@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { esquecerConexoes } from "@/lib/integracoes/conexoes-cache";
 import { auditar } from "@/lib/seguranca/auditoria";
 import { limparDadosDoWhatsApp } from "@/lib/integracoes/limpar-dados-whatsapp";
 
@@ -43,6 +44,7 @@ export async function POST(request: Request) {
       erroMensagem: null,
     },
   });
+  esquecerConexoes(sessao.user.workspaceId);
 
   const limpeza =
     limparDados && provedor === "meta_whatsapp"

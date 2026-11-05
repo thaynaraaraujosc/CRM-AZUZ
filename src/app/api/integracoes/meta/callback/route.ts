@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
+import { esquecerConexoes } from "@/lib/integracoes/conexoes-cache";
 import { encriptar } from "@/lib/integracoes/crypto";
 import { META_GRAPH_URL, verificarState } from "@/lib/integracoes/meta";
 import { envLimpo } from "@/lib/integracoes/env-limpo";
@@ -185,6 +186,7 @@ export async function GET(request: Request) {
         erroMensagem: null,
       },
     });
+    esquecerConexoes(workspaceId);
   } catch (erro) {
     const mensagem = erro instanceof Error ? erro.message : "Falha desconhecida ao conectar a integração.";
     await prisma.integracao.upsert({
@@ -198,6 +200,7 @@ export async function GET(request: Request) {
       },
       update: { status: "erro", erroMensagem: mensagem },
     });
+    esquecerConexoes(workspaceId);
     redirecionarConfig.searchParams.set("integracaoErro", mensagem);
     return NextResponse.redirect(redirecionarConfig);
   }

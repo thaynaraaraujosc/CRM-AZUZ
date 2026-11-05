@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { conexoesDeConversa } from "@/lib/integracoes/conexoes-cache";
 
 /**
  * Identidade de uma conexão de WhatsApp: `<provedor>:<identificador do número>`.
@@ -41,17 +41,12 @@ export type ContasVisiveis = {
  * sempre depois desta mudança.
  */
 export async function contasCanalVisiveis(workspaceId: string): Promise<ContasVisiveis> {
-  const integracoes = await prisma.integracao.findMany({
-    where: {
-      workspaceId,
-      status: "conectado",
-      // Instagram entra aqui junto com os dois WhatsApp: a regra é a mesma pra qualquer canal de
-      // conversa. Deixá-lo de fora fazia a mensagem do Direct ser gravada e nunca aparecer, porque
-      // nenhuma conexão ativa reivindicava aquelas linhas.
-      provedor: { in: ["whatsapp_nao_oficial", "meta_whatsapp", "meta_instagram"] },
-    },
-    select: { provedor: true, metadados: true },
-  });
+  // A consulta vive em `conexoes-cache.ts`, com memória de poucos segundos: esta função e
+  // `provedoresConectados` eram DUAS consultas idênticas à mesma tabela, e as duas rodavam a cada
+  // batida de 5 segundos das Conversas. Ver lá o porquê. Instagram entra junto com os dois
+  // WhatsApp: a regra é a mesma pra qualquer canal de conversa. Deixá-lo de fora fazia a mensagem
+  // do Direct ser gravada e nunca aparecer, porque nenhuma conexão ativa reivindicava as linhas.
+  const integracoes = await conexoesDeConversa(workspaceId);
 
   const contas: (string | null)[] = [];
   /**
@@ -150,14 +145,7 @@ export function filtroContaCanal(visiveis: ContasVisiveis) {
  * `whatsapp_nao_oficial`).
  */
 export async function provedoresConectados(workspaceId: string): Promise<string[]> {
-  const integracoes = await prisma.integracao.findMany({
-    where: {
-      workspaceId,
-      status: "conectado",
-      provedor: { in: [CANAL_NAO_OFICIAL, CANAL_OFICIAL, CANAL_INSTAGRAM] },
-    },
-    select: { provedor: true },
-  });
+  const integracoes = await conexoesDeConversa(workspaceId);
   return integracoes.map((i) => i.provedor);
 }
 

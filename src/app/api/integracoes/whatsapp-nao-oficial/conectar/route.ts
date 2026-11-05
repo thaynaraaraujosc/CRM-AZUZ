@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { esquecerConexoes } from "@/lib/integracoes/conexoes-cache";
 import { auditar } from "@/lib/seguranca/auditoria";
 import { conectarWhatsAppNaoOficial } from "@/lib/integracoes/evolution";
 
@@ -68,6 +69,7 @@ export async function POST() {
         erroMensagem: avisoWebhook ?? null,
       },
     });
+    esquecerConexoes(workspaceId);
 
     return NextResponse.json({ ok: true, status, qrDataUrl, avisoWebhook: avisoWebhook ?? null });
   } catch (erro) {
@@ -83,6 +85,7 @@ export async function POST() {
       },
       update: { status: "erro", erroMensagem: mensagem },
     });
+    esquecerConexoes(workspaceId);
     return NextResponse.json({ erro: mensagem }, { status: 502 });
   }
 }

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import type { Prisma } from "@/generated/prisma/client";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { esquecerConexoes } from "@/lib/integracoes/conexoes-cache";
 
 /** GET devolve o status da integração da Meta (`?provedor=`, default `meta_whatsapp`) do workspace
  * de quem está logado: nunca o token, só o que a UI precisa mostrar (status, dados, erro). */
@@ -53,6 +54,7 @@ export async function PATCH(request: Request) {
     data: { metadados: { ...metadadosAtuais, ...metadados } as Prisma.InputJsonValue },
     select: { status: true, metadados: true, erroMensagem: true, atualizadoEm: true },
   });
+  esquecerConexoes(sessao.user.workspaceId);
 
   return NextResponse.json(atualizada);
 }

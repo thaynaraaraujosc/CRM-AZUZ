@@ -6,6 +6,7 @@ import { importarConversasRecentesDoInstagram } from "@/lib/integracoes/historic
 
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
+import { esquecerConexoes } from "@/lib/integracoes/conexoes-cache";
 import { encriptar } from "@/lib/integracoes/crypto";
 import {
   trocarCodePorTokenInstagram,
@@ -104,6 +105,7 @@ export async function GET(request: Request) {
         erroMensagem: null,
       },
     });
+    esquecerConexoes(workspaceId);
 
     /*
      * Traz as conversas recentes do Direct, DEPOIS de responder o redirecionamento.
@@ -138,6 +140,7 @@ export async function GET(request: Request) {
       },
       update: { status: "erro", erroMensagem: mensagem },
     });
+    esquecerConexoes(workspaceId);
     redirecionarConfig.searchParams.set("integracaoErro", mensagem);
     return NextResponse.redirect(redirecionarConfig);
   }
