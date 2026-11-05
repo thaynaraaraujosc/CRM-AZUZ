@@ -410,6 +410,98 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
                 {flowNode.titulo || (bloco?.label ? traduzir(bloco.label) : flowNode.type)}
               </span>
             )}
+            {flowNode.desativado ? <span className="flow-node-pausado-badge">{traduzir("Pausado")}</span> : null}
+            {/* O "!" é CLICÁVEL: ele abre o painel já na lista de pendências deste bloco. Era só
+                um ícone com `title`, e a frase inteira num balão do sistema operacional — que não
+                quebra linha, some ao mexer o mouse e não leva a lugar nenhum. */}
+            {temErro || temAviso ? (
+              aoAbrirProblemas ? (
+                <button
+                  type="button"
+                  className="flow-node-warn nodrag"
+                  title={problemas.map((p) => p.mensagem).join(" · ")}
+                  aria-label={traduzir("Ver os problemas deste bloco")}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    aoAbrirProblemas();
+                  }}
+                >
+                  <IconAlerta width={13} height={13} />
+                </button>
+              ) : (
+                <span className="flow-node-warn" title={problemas.map((p) => p.mensagem).join(" · ")}>
+                  <IconAlerta width={13} height={13} />
+                </span>
+              )
+            ) : null}
+            {/*
+              O "⋯" DO BLOCO.
+              
+              Renomear, duplicar, testar e excluir estavam espalhados: o nome só no painel da
+              direita, duplicar e apagar em botões que só apareciam no Social Seller com o bloco
+              selecionado, e excluir também na tecla Delete — que ninguém descobre olhando. Aqui
+              ficam os quatro, no mesmo lugar em que a referência os põe.
+            */}
+            {aoRenomear || aoDuplicar || aoRemover || aoTestar ? (
+              <div className="msg-mais-caixa">
+                <button
+                  type="button"
+                  className="msg-mais nodrag"
+                  aria-label={traduzir("Mais opções deste bloco")}
+                  aria-expanded={menuAberto}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMenuAberto((v) => !v);
+                  }}
+                >
+                  <IconMaisOpcoes width={14} height={14} />
+                </button>
+                {menuAberto ? (
+                  <div className="msg-menu" role="menu">
+                    {aoTestar ? (
+                      <button type="button" role="menuitem" onClick={() => { setMenuAberto(false); aoTestar(); }}>
+                        <IconPlay width={12} height={12} aria-hidden="true" />
+                        {traduzir("Testar a automação")}
+                      </button>
+                    ) : null}
+                    {aoRenomear ? (
+                      <button type="button" role="menuitem" onClick={() => { setMenuAberto(false); setRenomeando(true); }}>
+                        <IconEdit width={12} height={12} aria-hidden="true" />
+                        {traduzir("Renomear")}
+                      </button>
+                    ) : null}
+                    {aoDuplicar ? (
+                      <button type="button" role="menuitem" onClick={() => { setMenuAberto(false); aoDuplicar(); }}>
+                        <IconDuplicar width={12} height={12} aria-hidden="true" />
+                        {traduzir("Duplicar")}
+                      </button>
+                    ) : null}
+                    {aoRemover ? (
+                      <button type="button" role="menuitem" className="perigo" onClick={() => { setMenuAberto(false); aoRemover(); }}>
+                        <IconLixeira width={12} height={12} aria-hidden="true" />
+                        {traduzir("Excluir")}
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+      </div>
+
+      {/*
+        O CANAL E O "CANAIS" EM LINHA PRÓPRIA, embaixo do nome.
+        
+        Estavam na mesma linha do número, do ícone, do nome, do "!" e do "⋯": seis coisas em 280px.
+        Nenhuma cabia — "Enviar t…", "Wh…", "Ca…" — e as duas últimas eram empurradas PRA FORA do
+        cartão, flutuando sobre o canvas. Era isso que aparecia como "itens fora da caixa".
+        
+        Numa linha só deles, os dois cabem escritos por extenso, e o cabeçalho volta a ser o que
+        ele é: quem é este bloco e o que dá pra fazer com ele.
+        
+        `data-menu-de-linha` aqui também: é ele que diz ao fechamento automático que um clique no
+        "Canais" é um clique DENTRO do menu, e não fora dele.
+      */}
+      <div className="msg-cab-meta" data-menu-de-linha="">
             {/*
               O CANAL NO CABEÇALHO, como na referência ("Canais: Todos").
               
@@ -528,82 +620,6 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
                   </div>
                 );
               })()
-            ) : null}
-            {flowNode.desativado ? <span className="flow-node-pausado-badge">{traduzir("Pausado")}</span> : null}
-            {/* O "!" é CLICÁVEL: ele abre o painel já na lista de pendências deste bloco. Era só
-                um ícone com `title`, e a frase inteira num balão do sistema operacional — que não
-                quebra linha, some ao mexer o mouse e não leva a lugar nenhum. */}
-            {temErro || temAviso ? (
-              aoAbrirProblemas ? (
-                <button
-                  type="button"
-                  className="flow-node-warn nodrag"
-                  title={problemas.map((p) => p.mensagem).join(" · ")}
-                  aria-label={traduzir("Ver os problemas deste bloco")}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    aoAbrirProblemas();
-                  }}
-                >
-                  <IconAlerta width={13} height={13} />
-                </button>
-              ) : (
-                <span className="flow-node-warn" title={problemas.map((p) => p.mensagem).join(" · ")}>
-                  <IconAlerta width={13} height={13} />
-                </span>
-              )
-            ) : null}
-            {/*
-              O "⋯" DO BLOCO.
-              
-              Renomear, duplicar, testar e excluir estavam espalhados: o nome só no painel da
-              direita, duplicar e apagar em botões que só apareciam no Social Seller com o bloco
-              selecionado, e excluir também na tecla Delete — que ninguém descobre olhando. Aqui
-              ficam os quatro, no mesmo lugar em que a referência os põe.
-            */}
-            {aoRenomear || aoDuplicar || aoRemover || aoTestar ? (
-              <div className="msg-mais-caixa">
-                <button
-                  type="button"
-                  className="msg-mais nodrag"
-                  aria-label={traduzir("Mais opções deste bloco")}
-                  aria-expanded={menuAberto}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setMenuAberto((v) => !v);
-                  }}
-                >
-                  <IconMaisOpcoes width={14} height={14} />
-                </button>
-                {menuAberto ? (
-                  <div className="msg-menu" role="menu">
-                    {aoTestar ? (
-                      <button type="button" role="menuitem" onClick={() => { setMenuAberto(false); aoTestar(); }}>
-                        <IconPlay width={12} height={12} aria-hidden="true" />
-                        {traduzir("Testar a automação")}
-                      </button>
-                    ) : null}
-                    {aoRenomear ? (
-                      <button type="button" role="menuitem" onClick={() => { setMenuAberto(false); setRenomeando(true); }}>
-                        <IconEdit width={12} height={12} aria-hidden="true" />
-                        {traduzir("Renomear")}
-                      </button>
-                    ) : null}
-                    {aoDuplicar ? (
-                      <button type="button" role="menuitem" onClick={() => { setMenuAberto(false); aoDuplicar(); }}>
-                        <IconDuplicar width={12} height={12} aria-hidden="true" />
-                        {traduzir("Duplicar")}
-                      </button>
-                    ) : null}
-                    {aoRemover ? (
-                      <button type="button" role="menuitem" className="perigo" onClick={() => { setMenuAberto(false); aoRemover(); }}>
-                        <IconLixeira width={12} height={12} aria-hidden="true" />
-                        {traduzir("Excluir")}
-                      </button>
-                    ) : null}
-                  </div>
-                ) : null}
-              </div>
             ) : null}
       </div>
 

@@ -139,8 +139,9 @@ model Contato {
   conversas          Conversa[]
   execucoesAutomacao ExecucaoAutomacao[]
 
-  origemDoLead    OrigemDoLead?
-  toquesDeAnuncio ToqueDeAnuncio[]
+  origemDoLead       OrigemDoLead?
+  toquesDeAnuncio    ToqueDeAnuncio[]
+  eventosDeConversao EventoDeConversao[]
 
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
@@ -326,6 +327,74 @@ model OrigemDoLead {
 ///
 /// Aqui cada toque vira uma linha. Nada é sobrescrito e nada é somado: a tela é que escolhe como
 /// ler — quem trouxe, quem fechou, quem participou.
+/// UMA CONVERSÃO A CAMINHO DA PLATAFORMA DE ANÚNCIO — e tudo que aconteceu com ela.
+///
+/// POR QUE ISTO EXISTE. A devolução de venda pro Google já funcionava, mas o registro dela eram
+/// duas colunas em `OrigemDoLead`: "enviada em" e "último erro". Com isso não dá pra responder
+/// nenhuma das perguntas que aparecem quando alguém pergunta por que o relatório do Google não
+/// bate — quantas tentativas houve, o que a plataforma respondeu, por que ESTE lead não foi
+/// mandado, e, principalmente, como mandar de novo sem mandar duas vezes.
+///
+/// MANDAR DUAS VEZES É PIOR QUE NÃO MANDAR. Cada upload vira uma conversão nova no relatório da
+/// plataforma: o mesmo negócio enviado em duas rodadas vira duas vendas, e o algoritmo passa a
+/// achar que aquela campanha rende o dobro do que rende. É a `chaveIdempotencia` que impede isso,
+/// e é por ela ser ÚNICA no banco que a trava vale mesmo com duas rodadas ao mesmo tempo.
+///
+/// O QUE NÃO MORA AQUI: e-mail, telefone, token, nem o código do clique. O resumo do pedido é o
+/// suficiente pra conferir o que foi mandado, e dado pessoal num registro de log é dado pessoal
+/// copiado num lugar a mais, com outra retenção e outro controle de acesso.
+model EventoDeConversao {
+  id String @id
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  /// O lead de quem é esta conversão. Apagou o contato, apaga o histórico dele junto: é dado
+  /// derivado, e guardá-lo órfão seria guardar sobre alguém que pediu pra sair.
+  contatoId String
+  contato   Contato @relation(fields: [contatoId], references: [id], onDelete: Cascade)
+
+  /// "meta" | "google" | "tiktok" | "ga4".
+  plataforma String
+  /// A conta/fonte de destino dentro da plataforma (dataset da Meta, ação de conversão do Google).
+  contaId String?
+
+  /// O nome genérico do evento no CRM: `lead_created`, `purchase`… Ver `eventos-de-conversao.ts`.
+  evento String
+  /// Quando o fato aconteceu (a mudança de etapa), não quando a fila rodou. É este o momento que
+  /// a plataforma usa pra casar com o clique, e a diferença entre os dois pode ser de horas.
+  eventoEm DateTime
+
+  valor Decimal? @db.Decimal(12, 2)
+  moeda String?
+
+  /// workspace + lead + plataforma + evento + resultado. Única no banco: é a trava de verdade.
+  chaveIdempotencia String @unique
+
+  /// "pendente" | "enviado" | "falhou" | "pulado" | "estornado".
+  status     String @default("pendente")
+  tentativas Int    @default(0)
+  /// Quando a fila deve tentar de novo. Nulo = pode tentar agora.
+  proximaEm DateTime?
+
+  /// O que foi mandado e o que voltou, em resumo e sem dado pessoal.
+  resumoPedido   String? @db.Text
+  resumoResposta String? @db.Text
+  /// O motivo legível: por que falhou, ou por que foi pulado. É o que a tela mostra.
+  motivo     String? @db.Text
+  codigoErro String?
+
+  enviadoEm DateTime?
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  /// A varredura da fila procura por isto: pendente, deste workspace, com a hora já vencida.
+  @@index([workspaceId, status, proximaEm])
+  @@index([workspaceId, contatoId])
+  @@index([workspaceId, criadoEm])
+}
+
 model ToqueDeAnuncio {
   id String @id
 
@@ -587,6 +656,7 @@ model Workspace {
   contatos              Contato[]
   origensDeLead         OrigemDoLead[]
   toquesDeAnuncio       ToqueDeAnuncio[]
+  eventosDeConversao    EventoDeConversao[]
   cliquesRastreados     CliqueRastreado[]
   compromissos          Compromisso[]
   tarefaEtapas          TarefaEtapa[]

@@ -50,7 +50,15 @@ export type TipoAcaoGatilho =
   | "etapa"
   | "etiquetas"
   | "webhook"
-  | "mensagem";
+  | "mensagem"
+  /**
+   * Devolver pra plataforma de anúncio que este lead chegou aqui.
+   *
+   * A etapa do funil é o lugar natural disto: "venda ganha" e "reunião agendada" são mudanças de
+   * etapa, e era pra elas que faltava um caminho. A ação não MANDA nada na hora — ela põe na
+   * fila, e quem conversa com o Google e com a Meta é a rodada (ver `fila-de-conversoes.ts`).
+   */
+  | "conversao";
 
 export const ACAO_ROTULO: Record<TipoAcaoGatilho, string> = {
   robo: "Executar robô",
@@ -59,6 +67,7 @@ export const ACAO_ROTULO: Record<TipoAcaoGatilho, string> = {
   etiquetas: "Editar etiquetas",
   webhook: "Enviar um webhook",
   mensagem: "Enviar mensagem",
+  conversao: "Enviar conversão",
 };
 
 /** Os parâmetros de cada ação direta. Só o campo da ação escolhida é lido. */
@@ -74,6 +83,14 @@ export type AcaoDados = {
   webhookUrl?: string;
   /** mensagem */
   mensagemTexto?: string;
+  /** conversao: pra qual plataforma e qual evento genérico. */
+  conversaoPlataforma?: string;
+  conversaoEvento?: string;
+  /**
+   * De onde sai o valor. Vazio = o valor do negócio do lead, que é o que quase toda venda usa.
+   * O evento de compra é bloqueado sem valor: ver `motivoParaPular`.
+   */
+  conversaoMoeda?: string;
 };
 
 export type GatilhoEtapaVisao = {

@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { avaliarGrupoCondicoes } from "@/lib/automation-flow/avaliacao";
 import { iniciarFluxoComEstado } from "@/lib/automacoes/iniciar";
 import { rastreioParaCondicoes } from "@/lib/rastreio/para-condicoes";
+import { enfileirarConversao } from "@/lib/rastreio/fila-de-conversoes";
+import type { PlataformaDeConversao } from "@/lib/rastreio/eventos-de-conversao";
 import type { GrupoCondicoes } from "@/lib/automation-flow/types";
 import {
   ACAO_ROTULO,
@@ -97,6 +99,64 @@ async function executarAcaoDireta(params: {
     case "mensagem": {
       if (!dados.mensagemTexto?.trim()) return { ok: false, detalhe: "Gatilho sem texto de mensagem." };
       return acoes.enviarTexto({ contatoNome, texto: dados.mensagemTexto });
+    }
+
+    /*
+     * DEVOLVER A CONVERSÃO PRA PLATAFORMA DE ANÚNCIO.
+     *
+     * Põe na fila e acabou: nenhuma chamada de rede acontece aqui. Mover um card é uma ação da
+     * pessoa, no meio do trabalho dela — pendurar nela uma conversa com a API do Google faria o
+     * arrasto travar e faria a venda deixar de ser devolvida toda vez que o Google estivesse fora
+     * do ar. A rodada tenta de novo sozinha, e ninguém espera por ela.
+     *
+     * O valor sai do negócio ganho deste lead. Compra sem valor é recusada na entrada da fila,
+     * com o motivo escrito: uma venda enviada com valor zero ensina o algoritmo que aquela
+     * campanha produz vendas que não valem nada.
+     */
+    case "conversao": {
+      const plataforma = (dados.conversaoPlataforma ?? "").trim();
+      const evento = (dados.conversaoEvento ?? "").trim();
+      if (!plataforma || !evento) return { ok: false, detalhe: "Gatilho sem plataforma ou evento de conversão." };
+
+      const contato = await prisma.contato.findUnique({
+        where: { workspaceId_nome: { workspaceId: params.workspaceId, nome: contatoNome } },
+        select: { id: true, email: true, whatsapp: true, origemDoLead: true },
+      });
+      if (!contato) return { ok: false, detalhe: "O contato não existe mais." };
+
+      const negocio = await prisma.negocioCard.findFirst({
+        where: { workspaceId: params.workspaceId, nome: contatoNome, statusFechamento: "ganho" },
+        orderBy: { dataFechamento: "desc" },
+        select: { id: true, valor: true, dataFechamento: true },
+      });
+      const valor = negocio ? Number(String(negocio.valor).replace(/[^\d,.-]/g, "").replace(/\./g, "").replace(",", ".")) : null;
+      const origem = contato.origemDoLead;
+
+      const resultado = await enfileirarConversao(prisma, {
+        workspaceId: params.workspaceId,
+        contatoId: contato.id,
+        plataforma: plataforma as PlataformaDeConversao,
+        evento,
+        eventoEm: negocio?.dataFechamento ?? new Date(),
+        valor: Number.isFinite(valor) ? valor : null,
+        moeda: dados.conversaoMoeda?.trim() || "BRL",
+        resultadoId: negocio?.id ?? null,
+        identificadores: {
+          gclid: origem?.tipoDoClique?.startsWith("g") || origem?.tipoDoClique === "wbraid" ? origem?.cliqueId : null,
+          fbclid: origem?.tipoDoClique === "fbclid" ? origem?.cliqueId : null,
+          ctwaClid: origem?.tipoDoClique === "ctwa_clid" ? origem?.cliqueId : null,
+          ttclid: origem?.ttclid ?? null,
+          igSid: origem?.igSid ?? null,
+          gclientid: origem?.gclientid ?? null,
+          email: contato.email,
+          telefone: contato.whatsapp,
+        },
+      });
+
+      if (resultado.enfileirado) return { ok: true, detalhe: "Conversão na fila." };
+      if (resultado.motivo === "ja-existe") return { ok: true, detalhe: "Essa conversão já tinha sido registrada." };
+      if (resultado.motivo === "pulado") return { ok: true, detalhe: `Não enviada: ${resultado.detalhe}` };
+      return { ok: false, detalhe: "Não foi possível pôr a conversão na fila." };
     }
 
     default:

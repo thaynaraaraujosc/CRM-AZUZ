@@ -12,6 +12,7 @@ import { PAISES } from "@/lib/configuracoes/mock";
 import { IconClose, IconSearch, IconWhatsApp } from "@/components/icons";
 import { ChipFilters, Topbar } from "@/components/ui";
 import { OrigemDoLead } from "@/components/contatos/OrigemDoLead";
+import { ConversoesDoLead } from "@/components/contatos/ConversoesDoLead";
 import { RenomearOrigem } from "@/components/contatos/RenomearOrigem";
 import { Timeline } from "@/components/timeline";
 import { gerarLinhaDoTempo } from "@/lib/timeline";
@@ -559,6 +560,9 @@ function ContatosPageInner() {
             </div>
 
             {contato.id ? <OrigemDoLead contatoId={contato.id} /> : null}
+            {/* Logo embaixo da origem de propósito: "de onde veio" e "o que já foi devolvido pra
+                lá" são a mesma conversa, e separá-las obrigaria a procurar a segunda. */}
+            {contato.id ? <ConversoesDoLead contatoId={contato.id} /> : null}
 
             {confirmandoExclusao ? (
               <div className="field" style={{ background: "var(--danger-soft)", borderRadius: "var(--radius-md)", padding: 12, margin: "0 17px 14px" }}>

@@ -15,6 +15,7 @@ import { removerGruposViradosContatoDeTodosOsWorkspaces } from "@/lib/integracoe
 import { conciliarAssinaturasPendentes } from "@/lib/assinatura/conciliar-pendentes";
 import { prisma } from "@/lib/prisma";
 import { devolverConversoesDeTodosOsWorkspaces } from "@/lib/rastreio/devolver-conversao";
+import { despacharEmTodosOsWorkspaces } from "@/lib/rastreio/despachar-conversoes";
 import { renovarTokensDoInstagram } from "@/lib/integracoes/renovar-tokens";
 import { processarConfirmacoesDeReuniao } from "@/lib/integracoes/azuz-flow-confirmacao-envio";
 import { processarMensagemRecebida } from "@/app/api/webhooks/evolution/route";
@@ -165,6 +166,22 @@ export async function GET(request: Request) {
         })
       : { workspaces: 0, enviadas: 0, falhas: 0 };
 
+  /*
+   * A FILA DE CONVERSÕES: manda o que está esperando e anota o que voltou.
+   *
+   * Minuto 2 e 32, longe das outras varreduras — duas caindo na mesma batida somariam os dois
+   * tempos dentro do limite de 60 segundos da função. Duas vezes por hora é mais que suficiente:
+   * a plataforma não entrega melhor por receber mais cedo, e a fila já tem a própria espera
+   * crescente pra quem falhou.
+   */
+  const filaDeConversoes =
+    [2, 32].includes(new Date().getUTCMinutes())
+      ? await despacharEmTodosOsWorkspaces(prisma).catch((erro) => {
+          console.error("[cron] falha ao despachar a fila de conversões:", erro);
+          return { workspaces: 0, enviadas: 0, falhas: 0 };
+        })
+      : { workspaces: 0, enviadas: 0, falhas: 0 };
+
   // Grupo do WhatsApp que virou contato e card de negócio por um erro antigo. A regra é do
   // produto, não do cliente: grupo aparece em Conversas e nunca vira lead. Era um botão em
   // Configurações, e botão de manutenção dentro do produto é conta que o cliente paga.
@@ -258,5 +275,5 @@ export async function GET(request: Request) {
         })
       : { workspaces: 0, chats: 0 };
 
-  return NextResponse.json({ ok: true, ...resultado, automacoes, porTempo, diarios, confirmacoes, orfas, historico, nomes, reconciliacao, canalQrCode, donos, grupos, espelhamentosIniciados, assinaturas, conversoes, tokensInstagram });
+  return NextResponse.json({ ok: true, ...resultado, automacoes, porTempo, diarios, confirmacoes, orfas, historico, nomes, reconciliacao, canalQrCode, donos, grupos, espelhamentosIniciados, assinaturas, conversoes, filaDeConversoes, tokensInstagram });
 }

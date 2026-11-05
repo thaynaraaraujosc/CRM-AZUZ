@@ -21983,10 +21983,25 @@ table.tbl .name-cell .r {
 }
 
 /* O canal no cabeçalho do cartão, com sublinhado tracejado: informação que se clica. */
+/*
+ * O CANAL E O "CANAIS" ENCOLHEM ANTES DE EMPURRAR ALGUÉM PRA FORA DO CARTÃO.
+ *
+ * Eram `flex: none` com 44% de largura máxima cada um. Dois deles na mesma linha dão 88% do
+ * cartão, e como nenhum encolhe, o que sobra — o "!" de problema e o "⋯" do bloco — era empurrado
+ * PRA FORA da borda: 43px além do cartão, flutuando sobre o canvas. Era isso que aparecia como
+ * "itens fora da caixa", e ficava pior quanto mais longo o nome do canal ("WhatsApp (oficial)").
+ *
+ * Com `0 1 auto` e `min-width: 0` eles cedem espaço, e o `flex-shrink: 3` faz com que cedam ANTES
+ * do nome do bloco: o nome é a identidade do cartão, o canal é detalhe, e truncar o detalhe custa
+ * menos. O "!" e o "⋯" são `flex: none` e nunca encolhem — se eles saem da linha, ninguém mais
+ * consegue abrir o menu nem ver o problema.
+ */
 .msg-canal,
 .msg-canal-fixo {
-  flex: none;
-  max-width: 44%;
+  flex: 0 1 auto;
+  flex-shrink: 3;
+  min-width: 0;
+  max-width: 38%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -28404,6 +28419,48 @@ td.trafego-col-crm:first-of-type {
   cursor: pointer;
 }
 
+/*
+ * A LINHA DO CANAL, embaixo do cabeçalho.
+ *
+ * Ela existe porque seis coisas não cabem em 280px: número, ícone, nome, canal, "Canais", "!" e
+ * "⋯". Na mesma linha, nenhuma cabia inteira e as duas últimas saíam pra fora do cartão. Aqui os
+ * dois seletores cabem escritos por extenso, e o cabeçalho volta a dizer quem é o bloco.
+ *
+ * Sem borda e sem fundo: ela é continuação do cabeçalho, não uma seção nova. O que a separa é o
+ * espaço e o tamanho menor do texto.
+ */
+.msg-cab-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  padding: 0 12px 8px;
+  /* Alinhada com o nome do bloco, não com a borda: o número e o ícone ficam à esquerda dela, e a
+     linha lê como se pendurada no nome. */
+  margin-left: 26px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Vazia (bloco que não tem canal nenhum) ela não pode deixar um buraco no cartão. */
+.msg-cab-meta:empty {
+  display: none;
+}
+
+/* Na linha própria eles têm espaço: o teto de 38% era pra disputa com o nome, que não existe
+   mais aqui. */
+.msg-cab-meta .msg-canal,
+.msg-cab-meta .msg-canal-fixo {
+  max-width: 100%;
+}
+
+/* O "⋯" e o "!" são os últimos a ceder — na verdade, não cedem: sem eles não há como abrir o menu
+   do bloco nem ler o problema, e um cartão sem saída é pior que um cartão com o canal truncado. */
+.msg-cab > .flow-node-warn,
+.msg-cab > .msg-mais-caixa {
+  flex: none;
+}
+
 .msg-canais-alvo b {
   font-weight: var(--fw-semibold);
 }
@@ -29115,4 +29172,90 @@ td.trafego-col-crm:first-of-type {
    inteira continua clicável pra marcar — o balão só aparece sobre o próprio "?". */
 .msg-canais-chave label .ajuda {
   margin-left: 2px;
+}
+
+/* ---------------- As conversões de um lead, na ficha dele ----------------
+ *
+ * Uma linha por evento, com o estado em pastilha e o motivo escrito embaixo. O motivo é a parte
+ * que importa: "falhou" sozinho não diz a ninguém o que fazer, e é justamente a pergunta que
+ * aparece quando o relatório da plataforma não bate com o do CRM.
+ */
+.conv-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.conv-linha {
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-2);
+}
+
+.conv-linha-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.conv-evento {
+  font-size: 12.5px;
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
+}
+
+.conv-selo {
+  flex: none;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: var(--fw-semibold);
+  background: var(--surface-elevated);
+  color: var(--text-muted);
+  border: 1px solid var(--line);
+}
+
+.conv-selo-enviado {
+  background: color-mix(in srgb, var(--success) 14%, transparent);
+  border-color: color-mix(in srgb, var(--success) 40%, transparent);
+  color: var(--success);
+}
+
+.conv-selo-falhou {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  border-color: color-mix(in srgb, var(--danger) 38%, transparent);
+  color: var(--danger);
+}
+
+/* "Não enviado" não é falha: é uma decisão do CRM, com motivo. Cor de aviso, não de erro. */
+.conv-selo-pulado {
+  background: color-mix(in srgb, var(--acao) 12%, transparent);
+  border-color: color-mix(in srgb, var(--acao) 38%, transparent);
+  color: var(--acao);
+}
+
+.conv-meta {
+  margin: 2px 0 0;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.conv-motivo {
+  margin: 4px 0 0;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.conv-reprocessar {
+  margin-top: 6px;
+  padding: 3px 10px;
+  font-size: 11.5px;
+}
+
+.conv-erro {
+  margin: 6px 0 0;
+  color: var(--danger);
 }
