@@ -508,6 +508,7 @@ export function KpiCard({
   sub,
   delta,
   formula,
+  ajuda,
   href,
   tom,
 }: {
@@ -517,6 +518,14 @@ export function KpiCard({
   delta?: string;
   /** Fórmula exibida no tooltip nativo (title) ao passar o mouse. */
   formula?: string;
+  /**
+   * O "?" ao lado do rótulo, pra explicar o que o número quer dizer.
+   *
+   * Diferente de `formula`, que é um `title` do navegador: aquele some ao mexer o mouse, não
+   * quebra linha e não aparece no celular. Este é o mesmo "?" do resto do CRM — e existe pra a
+   * explicação não precisar virar um parágrafo embaixo do cartão.
+   */
+  ajuda?: string;
   href?: string;
   /**
    * A cor do quadro, e ela precisa SIGNIFICAR alguma coisa.
@@ -531,7 +540,10 @@ export function KpiCard({
 }) {
   const conteudo = (
     <>
-      <p className="l">{label}</p>
+      <p className="l">
+        {label}
+        {ajuda ? <Ajuda texto={ajuda} /> : null}
+      </p>
       <p className="n">{value}</p>
       {sub ? <p className="hint">{sub}</p> : null}
       {delta ? <p className="delta">{delta}</p> : null}

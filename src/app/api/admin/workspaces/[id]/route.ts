@@ -4,6 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { esquecerStatus } from "@/lib/assinatura/status-cache";
 import { exigirSuperAdmin } from "@/lib/admin/guard";
 import { PLANOS } from "@/lib/assinatura/planos";
+import { diasDeCortesia, fimDaCortesia, statusEfetivo } from "@/lib/assinatura/cortesia";
+import { apagarWorkspace } from "@/lib/admin/apagar-workspace";
+import { auditar } from "@/lib/seguranca/auditoria";
 
 /** GET traz o workspace inteiro: membros (com papel/permissões), integrações conectadas e a
  * assinatura: a "visão 360°" de uma empresa cliente pro super-admin. */
@@ -42,11 +45,31 @@ export async function GET(_request: Request, ctx: RouteContext<"/api/admin/works
   });
   if (!workspace) return NextResponse.json({ erro: "Workspace não encontrado" }, { status: 404 });
 
-  return NextResponse.json(workspace);
+  /*
+   * OS DIAS QUE FALTAM SÃO CONTADOS AQUI, no servidor.
+   *
+   * A tela não pode fazer essa conta: ler o relógio durante o render é proibido pelo compilador
+   * do React (o resultado muda a cada renderização sem o estado ter mudado). E o servidor é o
+   * único lugar em que o relógio é o mesmo pra todo mundo.
+   */
+  return NextResponse.json({
+    ...workspace,
+    assinatura: workspace.assinatura
+      ? {
+          ...workspace.assinatura,
+          status: statusEfetivo(workspace.assinatura),
+          diasDeCortesia: diasDeCortesia(workspace.assinatura),
+        }
+      : null,
+  });
 }
 
 type CorpoAtualizarWorkspace = {
-  assinatura?: { status?: string };
+  assinatura?: {
+    status?: string;
+    /** Meses a partir de hoje. 0 encerra a cortesia; ausente não mexe nela. */
+    cortesiaMeses?: number;
+  };
 };
 
 /**
@@ -63,10 +86,32 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/admin/work
   const corpo = (await request.json()) as CorpoAtualizarWorkspace;
 
   const status = corpo.assinatura?.status;
-  if (!status) return NextResponse.json({ erro: "Nada para atualizar." }, { status: 400 });
-  if (!["pendente", "ativa", "atrasada", "cancelada"].includes(status)) {
+  const cortesiaMeses = corpo.assinatura?.cortesiaMeses;
+  const mexeNaCortesia = cortesiaMeses !== undefined;
+
+  if (!status && !mexeNaCortesia) return NextResponse.json({ erro: "Nada para atualizar." }, { status: 400 });
+  if (status && !["pendente", "ativa", "atrasada", "cancelada"].includes(status)) {
     return NextResponse.json({ erro: "Status inválido." }, { status: 400 });
   }
+  if (mexeNaCortesia && (!Number.isFinite(cortesiaMeses) || cortesiaMeses < 0 || cortesiaMeses > 36)) {
+    return NextResponse.json({ erro: "Prazo de cortesia inválido." }, { status: 400 });
+  }
+
+  /*
+   * MEXER NA CORTESIA É MEXER EM DUAS COISAS, e elas andam juntas.
+   *
+   * Dar prazo: a data vai pra `cortesiaAte`, o status vira "ativa" (a conta precisa entrar hoje) e
+   * o primeiro vencimento passa a ser o fim da cortesia — é dessa data que a cobrança parte.
+   * Encerrar (0 meses): a data sai e o status vira "pendente", que é o que manda a pessoa pra
+   * tela de pagamento. Sem limpar a data, o prazo continuaria valendo por cima do status.
+   */
+  const dadosDaCortesia = mexeNaCortesia
+    ? cortesiaMeses > 0
+      ? { cortesiaAte: fimDaCortesia(cortesiaMeses), proximoVencimento: fimDaCortesia(cortesiaMeses), status: "ativa" }
+      : { cortesiaAte: null, status: status ?? "pendente" }
+    : {};
+
+  const dados = { ...(status ? { status } : {}), ...dadosDaCortesia };
 
   const assinatura = await prisma.assinatura.upsert({
     where: { workspaceId },
@@ -75,13 +120,66 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/admin/work
       workspaceId,
       plano: "completo",
       valor: PLANOS.completo.valor,
-      status,
+      status: dados.status ?? "pendente",
       asaasCustomerId: "",
+      cortesiaAte: dadosDaCortesia.cortesiaAte ?? null,
     },
-    update: { status },
+    update: dados,
   });
   // O status mudou: o cache do paywall não pode continuar servindo o valor antigo.
   esquecerStatus(workspaceId);
 
   return NextResponse.json({ assinatura });
+}
+
+/**
+ * DELETE apaga a empresa inteira: todos os dados dela, todas as pessoas dela, e a própria conta.
+ *
+ * NÃO TEM VOLTA, e por isso ele exige o nome digitado. Não é cerimônia: o super-admin vê a lista
+ * de todas as empresas da plataforma numa tela só, e a diferença entre apagar uma conta de teste
+ * e apagar um cliente que paga é uma linha de distância do ponteiro. Digitar o nome é o que
+ * obriga a olhar DE QUAL conta se está falando.
+ *
+ * Existe porque a base nasceu cheia de conta de teste, e conta de teste não é só sujeira visual:
+ * ela faz o painel dizer "4 assinaturas" quando nada foi vendido.
+ */
+export async function DELETE(request: Request, ctx: RouteContext<"/api/admin/workspaces/[id]">) {
+  const guarda = await exigirSuperAdmin();
+  if (!guarda.ok) return guarda.resposta;
+  const { sessao } = guarda;
+
+  const { id: workspaceId } = await ctx.params;
+  const corpo = (await request.json().catch(() => ({}))) as { confirmacao?: string };
+
+  const workspace = await prisma.workspace.findUnique({ where: { id: workspaceId }, select: { nome: true } });
+  if (!workspace) return NextResponse.json({ erro: "Workspace não encontrado" }, { status: 404 });
+
+  const digitado = (corpo.confirmacao ?? "").trim().toLowerCase();
+  if (digitado !== workspace.nome.trim().toLowerCase()) {
+    return NextResponse.json(
+      { erro: `Pra apagar, digite o nome da empresa exatamente como ele está: "${workspace.nome}".` },
+      { status: 400 },
+    );
+  }
+
+  /*
+   * A AUDITORIA VEM ANTES DA EXCLUSÃO.
+   *
+   * O registro de auditoria daquele workspace é apagado junto com ele — e deve ser mesmo, é dado
+   * da empresa. Mas o registro de que ALGUÉM apagou a empresa não é dela: é da plataforma, e
+   * precisa sobreviver. Por isso ele é gravado antes, no workspace de quem apagou.
+   */
+  await auditar({
+    acao: "workspace.alterado",
+    workspaceId: sessao.user.workspaceId ?? workspaceId,
+    membroId: sessao.user.id,
+    email: sessao.user.email,
+    recurso: workspaceId,
+    detalhe: `empresa "${workspace.nome}" apagada por completo`,
+  });
+
+  const resultado = await apagarWorkspace(prisma, workspaceId);
+  esquecerStatus(workspaceId);
+
+  return NextResponse.json({ ok: true, ...resultado });
 }

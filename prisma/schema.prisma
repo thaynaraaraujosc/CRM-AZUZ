@@ -357,10 +357,10 @@ model EventoDeConversao {
   /// "meta" | "google" | "tiktok" | "ga4".
   plataforma String
   /// A conta/fonte de destino dentro da plataforma (dataset da Meta, ação de conversão do Google).
-  contaId String?
+  contaId    String?
 
   /// O nome genérico do evento no CRM: `lead_created`, `purchase`… Ver `eventos-de-conversao.ts`.
-  evento String
+  evento   String
   /// Quando o fato aconteceu (a mudança de etapa), não quando a fila rodou. É este o momento que
   /// a plataforma usa pra casar com o clique, e a diferença entre os dois pode ser de horas.
   eventoEm DateTime
@@ -372,17 +372,17 @@ model EventoDeConversao {
   chaveIdempotencia String @unique
 
   /// "pendente" | "enviado" | "falhou" | "pulado" | "estornado".
-  status     String @default("pendente")
-  tentativas Int    @default(0)
+  status     String    @default("pendente")
+  tentativas Int       @default(0)
   /// Quando a fila deve tentar de novo. Nulo = pode tentar agora.
-  proximaEm DateTime?
+  proximaEm  DateTime?
 
   /// O que foi mandado e o que voltou, em resumo e sem dado pessoal.
   resumoPedido   String? @db.Text
   resumoResposta String? @db.Text
   /// O motivo legível: por que falhou, ou por que foi pulado. É o que a tela mostra.
-  motivo     String? @db.Text
-  codigoErro String?
+  motivo         String? @db.Text
+  codigoErro     String?
 
   enviadoEm DateTime?
 
@@ -1204,6 +1204,18 @@ model Assinatura {
 
   proximoVencimento DateTime?
   canceladaEm       DateTime?
+
+  /// ATÉ QUANDO ESTA CONTA É DE CORTESIA.
+  ///
+  /// Nulo é o normal: a conta paga. Com data, a empresa usa o CRM inteiro sem nenhuma cobrança
+  /// por trás — nenhuma fatura, boleto ou cartão — até o dia marcado; a partir dele ela cai na
+  /// tela de pagamento como qualquer outra, e é dessa data que a primeira cobrança parte.
+  ///
+  /// POR QUE UMA DATA E NÃO UM BOOLEANO. "É cortesia" não responde a pergunta que importa, que é
+  /// "até quando". Sem prazo, uma conta liberada pra alguém ver o produto por três meses fica
+  /// liberada pra sempre, porque ninguém lembra de voltar aqui — e o jeito de descobrir vira o
+  /// cliente perguntando por que nunca foi cobrado.
+  cortesiaAte DateTime?
 
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt

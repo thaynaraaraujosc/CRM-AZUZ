@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { statusEfetivo } from "@/lib/assinatura/cortesia";
 
 /**
  * O status da assinatura, com memória curta.
@@ -43,9 +44,16 @@ export async function statusDaAssinatura(workspaceId: string): Promise<string | 
   limpar(agora);
   const assinatura = await prisma.assinatura.findUnique({
     where: { workspaceId },
-    select: { status: true },
+    select: { status: true, cortesiaAte: true, asaasSubscriptionId: true },
   });
-  const status = assinatura?.status ?? null;
+  /*
+   * A CORTESIA É CALCULADA NA LEITURA, e não guardada como mudança de coluna.
+   *
+   * Guardada, ela dependeria de uma rodada passar na hora certa pra virar: enquanto a rodada não
+   * passasse, a conta continuaria entrando depois do prazo. Calculada aqui, o acesso termina no
+   * segundo marcado — e o cache de um minuto é o único atraso possível.
+   */
+  const status = assinatura ? statusEfetivo(assinatura) : null;
   cache.set(workspaceId, { status, expiraEm: agora + VALIDADE_MS });
   return status;
 }

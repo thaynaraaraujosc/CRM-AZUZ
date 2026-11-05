@@ -29259,3 +29259,142 @@ td.trafego-col-crm:first-of-type {
   margin: 6px 0 0;
   color: var(--danger);
 }
+
+/* ---------------- O painel de admin ----------------
+ *
+ * Ele era a tela com mais texto solto do produto: cada bloco explicava por extenso o que fazia,
+ * em parágrafos que quem usa o painel toda semana já leu dez vezes. A explicação virou "?", como
+ * no resto do CRM, e o que sobrou na tela é o que muda de um dia pro outro: número, estado e
+ * botão.
+ */
+.admin-tabela td,
+.admin-tabela th {
+  vertical-align: middle;
+}
+
+.admin-situacao {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* A cortesia fica AO LADO do status, não no lugar dele: "consegue entrar?" e "está pagando?" são
+   duas perguntas, e as duas podem ser verdadeiras ao mesmo tempo. */
+.admin-cortesia,
+.admin-nota {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.admin-btn-apagar {
+  padding: 3px 10px;
+  font-size: 12px;
+}
+
+.admin-acoes-linha {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.admin-acoes-linha .btn {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.admin-select {
+  padding: 4px 8px;
+  font-size: 12.5px;
+}
+
+.admin-grupo {
+  overflow: hidden;
+}
+
+.admin-grupo-cab {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: var(--space-4) var(--space-5);
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-grupo-cab:hover {
+  background: var(--surface-hover);
+}
+
+.admin-grupo-cab .admin-titulo-linha {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-grupo-corpo {
+  border-top: 1px solid var(--line);
+}
+
+.admin-seta {
+  flex: none;
+  color: var(--text-faint);
+  font-size: 13px;
+  transition: transform var(--transition-base);
+}
+
+.admin-seta.aberta {
+  transform: rotate(180deg);
+}
+
+/*
+ * PAGANDO, CORTESIA E DEVENDO em três cores diferentes.
+ *
+ * As três não podem parecer a mesma coisa: cortesia é alguém usando de graça DE PROPÓSITO, e
+ * devendo é alguém usando sem poder. Enquanto as duas apareciam como "ativo", o painel somava as
+ * duas em receita — foi assim que ele passou a mostrar assinatura que ninguém comprou.
+ */
+.pag-selo {
+  flex: none;
+  padding: 2px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-2);
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  color: var(--text-muted);
+}
+
+.pag-pagando {
+  background: color-mix(in srgb, var(--success) 14%, transparent);
+  border-color: color-mix(in srgb, var(--success) 40%, transparent);
+  color: var(--success);
+}
+
+.pag-cortesia {
+  background: color-mix(in srgb, var(--acao) 14%, transparent);
+  border-color: color-mix(in srgb, var(--acao) 40%, transparent);
+  color: var(--acao);
+}
+
+.pag-devendo {
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+  border-color: color-mix(in srgb, var(--danger) 34%, transparent);
+  color: var(--danger);
+}
+
+.admin-toggle {
+  cursor: pointer;
+}
+
+/* Encerrar a cortesia é o único botão destrutivo da fileira: ele tira o acesso de alguém hoje. */
+.seg-chip.perigo {
+  color: var(--danger);
+}
+
+.seg-chip.perigo:hover {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+}

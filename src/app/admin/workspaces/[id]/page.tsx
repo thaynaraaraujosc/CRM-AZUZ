@@ -2,7 +2,8 @@
 
 import { use, useEffect, useState } from "react";
 
-import { Topbar } from "@/components/ui";
+import { Ajuda, Topbar } from "@/components/ui";
+import { PRAZOS_DE_CORTESIA } from "@/lib/assinatura/cortesia";
 import { PLANOS } from "@/lib/assinatura/planos";
 import { useAcoesMembro } from "@/lib/admin/use-acoes-membro";
 
@@ -26,6 +27,10 @@ type Assinatura = {
   status: string;
   valor: string;
   proximoVencimento: string | null;
+  cortesiaAte: string | null;
+  asaasSubscriptionId: string | null;
+  /** Contado no servidor: ler o relógio durante o render é proibido pelo compilador do React. */
+  diasDeCortesia: number | null;
 } | null;
 
 type WorkspaceDetalhe = {
@@ -71,6 +76,29 @@ export default function AdminWorkspaceDetalhePage({ params }: { params: Promise<
     setSalvandoAssinatura(false);
   }
 
+  /** Dar, estender ou encerrar a cortesia. 0 meses encerra e manda a conta pra tela de pagamento. */
+  async function alterarCortesia(meses: number) {
+    setSalvandoAssinatura(true);
+    await fetch(`/api/admin/workspaces/${id}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ assinatura: { cortesiaMeses: meses } }),
+    });
+    carregar();
+    setSalvandoAssinatura(false);
+  }
+
+  async function apagarMembro(membroId: string, nome: string) {
+    if (!window.confirm(`Apagar a conta de ${nome}? Isso não tem volta.`)) return;
+    const resposta = await fetch(`/api/admin/membros/${membroId}`, { method: "DELETE" });
+    if (!resposta.ok) {
+      const corpo = (await resposta.json().catch(() => ({}))) as { erro?: string };
+      window.alert(corpo.erro ?? "Não foi possível apagar.");
+      return;
+    }
+    carregar();
+  }
+
   async function alterarMembro(membroId: string, dados: Partial<Pick<Membro, "ativo" | "papelTipo">>) {
     await fetch(`/api/admin/membros/${membroId}`, {
       method: "PATCH",
@@ -89,21 +117,32 @@ export default function AdminWorkspaceDetalhePage({ params }: { params: Promise<
     );
   }
 
+  const cortesiaAte = workspace.assinatura?.cortesiaAte ? new Date(workspace.assinatura.cortesiaAte) : null;
+  const diasRestantes = workspace.assinatura?.diasDeCortesia ?? null;
+  const temCobranca = Boolean(workspace.assinatura?.asaasSubscriptionId?.trim());
+
   return (
     <div className="view">
       <Topbar title={workspace.nome} sub={`/${workspace.slug}`} />
 
       <div className="config-bloco">
-        <p className="config-bloco-titulo">Assinatura</p>
+        <p className="config-bloco-titulo">
+          Assinatura
+          <Ajuda texto="Mexer aqui muda o acesso direto no banco. Não cria nem cancela cobrança na Asaas: serve pra liberar, bloquear ou dar cortesia à mão." />
+        </p>
         <div className="config-grid-2">
           <div className="field">
             <label>Plano</label>
             <p className="r">
-              {PLANOS.completo.nome}: {PLANOS.completo.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}/mês
+              {PLANOS.completo.nome} ·{" "}
+              {PLANOS.completo.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}/mês
             </p>
           </div>
           <div className="field">
-            <label>Status</label>
+            <label>
+              Acesso
+              <Ajuda texto="Ativo entra no CRM; pendente, atrasado e cancelado caem na tela de pagamento." />
+            </label>
             <select
               className="input"
               style={{ width: "100%" }}
@@ -118,9 +157,54 @@ export default function AdminWorkspaceDetalhePage({ params }: { params: Promise<
             </select>
           </div>
         </div>
-        <p className="hint admin-secao">
-          Alterar aqui muda o status direto no banco. Não cria nem cancela cobrança na Asaas. Use só pra correção manual/cortesia.
-        </p>
+
+        {/*
+          A CORTESIA É O CONTROLE QUE FALTAVA.
+          
+          Antes, liberar uma conta de graça era pôr o status em "ativa" — e ela ficava assim pra
+          sempre, porque ninguém volta nesta tela pra encerrar. Com prazo, a conta vira cobrável
+          sozinha no dia marcado, e é dessa data que a primeira cobrança parte.
+        */}
+        <div className="field admin-secao">
+          <label>
+            Cortesia
+            <Ajuda texto="Por quanto tempo esta empresa usa o CRM de graça, a partir de hoje. Depois da data ela cai na tela de pagamento sozinha, e a cobrança começa a contar dali." />
+          </label>
+          <div className="seg-picker" role="group" aria-label="Tempo de cortesia">
+            {PRAZOS_DE_CORTESIA.map((p) => (
+              <button
+                key={p.meses}
+                type="button"
+                className="seg-chip"
+                disabled={salvandoAssinatura}
+                onClick={() => alterarCortesia(p.meses)}
+              >
+                + {p.label}
+              </button>
+            ))}
+            {cortesiaAte ? (
+              <button
+                type="button"
+                className="seg-chip perigo"
+                disabled={salvandoAssinatura}
+                onClick={() => alterarCortesia(0)}
+              >
+                Encerrar agora
+              </button>
+            ) : null}
+          </div>
+          <p className="hint" style={{ marginTop: 6 }}>
+            {cortesiaAte
+              ? `De graça até ${cortesiaAte.toLocaleDateString("pt-BR")}${
+                  diasRestantes !== null && diasRestantes >= 0
+                    ? ` — faltam ${diasRestantes} dias.`
+                    : " — o prazo já venceu, e a conta está na tela de pagamento."
+                }`
+              : temCobranca
+                ? "Esta conta tem cobrança de verdade na Asaas."
+                : "Sem prazo de cortesia. Escolha um acima pra marcar quando a cobrança deve começar."}
+          </p>
+        </div>
       </div>
 
       <div className="config-bloco">
@@ -152,12 +236,15 @@ export default function AdminWorkspaceDetalhePage({ params }: { params: Promise<
       </div>
 
       <div className="config-bloco">
-        <p className="config-bloco-titulo">Membros ({workspace.membros.length})</p>
+        <p className="config-bloco-titulo">Pessoas ({workspace.membros.length})</p>
 
         {senhaGerada ? (
           <div className="config-grid-2 admin-secao">
             <div className="field" style={{ padding: 0, gridColumn: "1 / -1" }}>
-              <label>Senha nova gerada: copie agora, ela não aparece de novo</label>
+              <label>
+                Senha nova
+                <Ajuda texto="Copie agora: por segurança ela é guardada embaralhada e não aparece de novo." />
+              </label>
               <div style={{ display: "flex", gap: 8 }}>
                 <input className="input" style={{ width: "100%", fontFamily: "monospace" }} readOnly value={senhaGerada.senha} />
                 <button type="button" className="btn ghost" onClick={() => navigator.clipboard.writeText(senhaGerada.senha)}>
@@ -205,13 +292,18 @@ export default function AdminWorkspaceDetalhePage({ params }: { params: Promise<
                       {m.ativo ? "Ativo" : "Bloqueado"}
                     </button>
                   </td>
-                  <td style={{ display: "flex", gap: 6 }}>
-                    <button type="button" className="btn ghost" disabled={carregandoId === m.id} onClick={() => resetarSenha(m.id)}>
-                      Gerar nova senha
-                    </button>
-                    <button type="button" className="btn ghost" disabled={carregandoId === m.id} onClick={() => entrarComo(m.id)}>
-                      Entrar como
-                    </button>
+                  <td>
+                    <div className="admin-acoes-linha">
+                      <button type="button" className="btn ghost" disabled={carregandoId === m.id} onClick={() => resetarSenha(m.id)}>
+                        Nova senha
+                      </button>
+                      <button type="button" className="btn ghost" disabled={carregandoId === m.id} onClick={() => entrarComo(m.id)}>
+                        Entrar como
+                      </button>
+                      <button type="button" className="btn ghost danger" onClick={() => void apagarMembro(m.id, m.nome)}>
+                        Apagar
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

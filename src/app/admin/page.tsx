@@ -10,6 +10,9 @@ type Overview = {
   membrosAtivos: number;
   totalAssinaturas: number;
   mrr: number;
+  pagantes: number;
+  emCortesia: number;
+  liberadasSemCobranca: number;
   porStatus: Record<string, number>;
   crescimento: { mes: string; total: number }[];
 };
@@ -29,7 +32,7 @@ function GraficoCrescimento({ crescimento }: { crescimento: Overview["cresciment
           parágrafo sozinho antes do título. O HTML que o servidor manda e o que o navegador monta
           deixam de bater, o React acusa erro de hidratação e o painel quebra na abertura. */}
       <div className="panel-h" style={{ padding: 0, marginBottom: 14 }}>
-        <h4>Novos workspaces (6 meses)</h4>
+        <h4>Empresas novas por mês</h4>
       </div>
       <div style={{ display: "flex", alignItems: "flex-end", gap: 10, height: 120 }}>
         {crescimento.map((c) => {
@@ -73,20 +76,37 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="view">
-      <Topbar title="Painel de admin" sub="Visão geral de todos os workspaces da plataforma." />
+      <Topbar title="Painel" sub="Todas as empresas da plataforma." />
 
       {erro ? <p className="admin-secao" style={{ color: "var(--danger)" }}>{erro}</p> : null}
 
       {dados ? (
         <>
           <div className="grid kpi4">
-            <KpiCard label="Workspaces" value={String(dados.totalWorkspaces)} />
-            <KpiCard label="Usuários" value={String(dados.totalMembros)} sub={`${dados.membrosAtivos} ativos`} />
-            <KpiCard label="MRR" value={formatarMoeda(dados.mrr)} sub={`${dados.porStatus.ativa ?? 0} assinaturas ativas`} />
+            <KpiCard label="Empresas" value={String(dados.totalWorkspaces)} />
+            <KpiCard label="Pessoas" value={String(dados.totalMembros)} sub={`${dados.membrosAtivos} com acesso`} />
+            {/*
+              O MRR CONTA SÓ QUEM PAGA DE VERDADE.
+              
+              Ele dizia "4 assinaturas ativas" e uma receita que nunca entrou: conta de cortesia e
+              conta de teste nascem com status "ativa" de propósito, porque é isso que libera o
+              produto pra elas. Agora o número é o de quem tem cobrança na Asaas, e as liberadas
+              aparecem no cartão ao lado — porque "quantas contas usam de graça" também é
+              informação, só não é dinheiro.
+            */}
             <KpiCard
-              label="Pagamento atrasado"
-              value={String(dados.porStatus.atrasada ?? 0)}
-              sub={`${dados.porStatus.cancelada ?? 0} canceladas`}
+              label="Receita por mês"
+              value={formatarMoeda(dados.mrr)}
+              sub={`${dados.pagantes} ${dados.pagantes === 1 ? "conta pagando" : "contas pagando"}`}
+            />
+            <KpiCard
+              label="Usando de graça"
+              value={String(dados.liberadasSemCobranca)}
+              sub={
+                dados.emCortesia > 0
+                  ? `${dados.emCortesia} com prazo de cortesia`
+                  : "nenhuma com prazo marcado"
+              }
             />
           </div>
 

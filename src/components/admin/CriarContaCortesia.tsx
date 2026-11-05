@@ -1,19 +1,32 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+
+import { Ajuda } from "@/components/ui";
+import { PRAZOS_DE_CORTESIA, fimDaCortesia } from "@/lib/assinatura/cortesia";
 import { useIdioma } from "@/lib/idioma-context";
 
-type Criada = { workspaceId: string; linkConvite: string; emailEnviado: boolean; motivoEmail?: string };
+type Criada = {
+  workspaceId: string;
+  linkConvite: string | null;
+  comSenha: boolean;
+  cortesiaAte: string | null;
+  emailEnviado: boolean;
+  motivoEmail?: string;
+};
 
 /**
- * Cria uma conta de cortesia: empresa nova, a pessoa como administradora dela, assinatura já ativa.
+ * Cria uma conta de cortesia: empresa nova, a pessoa como administradora, o CRM liberado sem
+ * cobrança — e, agora, com PRAZO.
  *
- * Existe porque o caminho normal tem um degrau que não faz sentido numa conta de teste, de sócio ou
- * de demonstração: quem se cadastra sozinho nasce com assinatura pendente e cai na tela de
- * bloqueio, esperando alguém liberar depois. Aqui ela nasce liberada.
+ * O prazo é o que faltava. Sem ele, liberar o CRM pra alguém ver por três meses virava liberar
+ * pra sempre: ninguém lembra de voltar no painel pra encerrar, e o jeito de descobrir era o
+ * cliente perguntar por que nunca foi cobrado. Com a data, a conta vira cobrável sozinha no dia
+ * marcado, e é dela que a primeira cobrança parte.
  *
- * A senha não é escolhida aqui, de propósito. Sai um link de convite e quem cria a senha é a
- * própria pessoa: nem o super-admin precisa ver ou inventar a senha de outro.
+ * A SENHA é opcional, e o convite continua sendo o caminho normal: quem cria a senha deveria ser
+ * a própria pessoa. Mas há o caso de entregar a conta na mão — numa reunião, numa demonstração —
+ * e aí o convite por e-mail é um degrau a mais que faz a entrega falhar na frente do cliente.
  */
 export function CriarContaCortesia({ aoCriar }: { aoCriar: () => void }) {
   const { t: traduzir } = useIdioma();
@@ -21,6 +34,8 @@ export function CriarContaCortesia({ aoCriar }: { aoCriar: () => void }) {
   const [empresa, setEmpresa] = useState("");
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+  const [meses, setMeses] = useState(3);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [criada, setCriada] = useState<Criada | null>(null);
@@ -33,7 +48,7 @@ export function CriarContaCortesia({ aoCriar }: { aoCriar: () => void }) {
       const resposta = await fetch("/api/admin/workspaces", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ empresa, nome, email }),
+        body: JSON.stringify({ empresa, nome, email, senha: senha || undefined, meses }),
       });
       const dados = await resposta.json().catch(() => null);
       if (!resposta.ok) {
@@ -44,6 +59,7 @@ export function CriarContaCortesia({ aoCriar }: { aoCriar: () => void }) {
       setEmpresa("");
       setNome("");
       setEmail("");
+      setSenha("");
       aoCriar();
     } catch {
       setErro("Não foi possível criar a conta agora. Tente de novo em instantes.");
@@ -53,28 +69,44 @@ export function CriarContaCortesia({ aoCriar }: { aoCriar: () => void }) {
   }
 
   if (criada) {
+    const ate = criada.cortesiaAte ? new Date(criada.cortesiaAte).toLocaleDateString("pt-BR") : null;
     return (
       <div className="admin-bloco config-bloco">
-        <p className="config-bloco-titulo">{traduzir("Conta criada e já liberada")}</p>
+        <p className="config-bloco-titulo">{traduzir("Conta criada e liberada")}</p>
         <p className="hint">
-          {traduzir("A empresa")} <strong>{criada.workspaceId}</strong> foi criada com a assinatura ativa, sem
-          cobrança nenhuma por trás. Mande o link abaixo pra pessoa criar a senha dela. Ele vale 7
-          dias e só funciona uma vez.
+          <strong>{criada.workspaceId}</strong>
+          {ate ? ` · de graça até ${ate}, e cobrável a partir dessa data.` : " · de graça, sem prazo."}
         </p>
-        <div className="filters-row" style={{ marginTop: 10 }}>
-          <input className="input" style={{ flex: 1, fontFamily: "monospace" }} readOnly value={criada.linkConvite} />
-          <button type="button" className="btn ghost" onClick={() => navigator.clipboard.writeText(criada.linkConvite)}>
-            {traduzir("Copiar link")}
-          </button>
-        </div>
-        {!criada.emailEnviado ? (
+
+        {criada.comSenha ? (
           <p className="hint">
-            O e-mail não saiu ({criada.motivoEmail ?? "motivo não informado"}). Use o link acima, que
-            funciona do mesmo jeito.
+            {traduzir("A pessoa já pode entrar com o e-mail e a senha que você definiu.")}
           </p>
         ) : (
-          <p className="hint">{traduzir("O e-mail com o convite também foi enviado.")}</p>
+          <>
+            <div className="filters-row" style={{ marginTop: 10 }}>
+              <input
+                className="input"
+                style={{ flex: 1, fontFamily: "monospace" }}
+                readOnly
+                value={criada.linkConvite ?? ""}
+              />
+              <button
+                type="button"
+                className="btn ghost"
+                onClick={() => navigator.clipboard.writeText(criada.linkConvite ?? "")}
+              >
+                {traduzir("Copiar link")}
+              </button>
+            </div>
+            <p className="hint">
+              {criada.emailEnviado
+                ? "O convite também foi por e-mail. O link vale 7 dias e só funciona uma vez."
+                : `O e-mail não saiu (${criada.motivoEmail ?? "motivo não informado"}). O link acima funciona do mesmo jeito.`}
+            </p>
+          </>
         )}
+
         <div className="config-acoes">
           <button type="button" className="btn ghost" onClick={() => setCriada(null)}>
             {traduzir("Criar outra")}
@@ -88,56 +120,120 @@ export function CriarContaCortesia({ aoCriar }: { aoCriar: () => void }) {
     return (
       <div className="admin-acoes-topo">
         <button type="button" className="btn primary" onClick={() => setAberto(true)}>
-          {traduzir("Criar conta de cortesia")}
+          {traduzir("Criar conta")}
         </button>
       </div>
     );
   }
 
+  const terminaEm = meses > 0 ? fimDaCortesia(meses).toLocaleDateString("pt-BR") : null;
+
   return (
     <form className="admin-bloco config-bloco" onSubmit={enviar}>
-      <p className="config-bloco-titulo">{traduzir("Nova conta de cortesia")}</p>
-      <p className="hint">
-        Cria uma empresa nova com essa pessoa como administradora e a assinatura já ativa. Não gera
-        cobrança: nenhuma fatura, boleto ou cartão é criado. Pra encerrar depois, é só mudar o
-        status da assinatura pra cancelada no detalhe da empresa.
+      <p className="config-bloco-titulo">
+        {traduzir("Nova conta")}
+        <Ajuda
+          texto={traduzir(
+            "Cria a empresa, a pessoa como administradora dela e o CRM já liberado. Nenhuma cobrança é criada: não existe fatura, boleto nem cartão por trás desta conta.",
+          )}
+        />
       </p>
 
-      <div className="field">
-        <label htmlFor="cortesia-empresa">{traduzir("Nome da empresa")}</label>
-        <input
-          id="cortesia-empresa"
-          className="input"
-          value={empresa}
-          onChange={(e) => setEmpresa(e.target.value)}
-          placeholder="Clínica do Lucas"
-          required
-        />
+      <div className="config-grid-2">
+        <div className="field">
+          <label htmlFor="cortesia-empresa">{traduzir("Nome da empresa")}</label>
+          <input
+            id="cortesia-empresa"
+            className="input"
+            value={empresa}
+            onChange={(e) => setEmpresa(e.target.value)}
+            placeholder="Clínica do Lucas"
+            required
+          />
+        </div>
+
+        <div className="field">
+          <label htmlFor="cortesia-nome">{traduzir("Nome da pessoa")}</label>
+          <input
+            id="cortesia-nome"
+            className="input"
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+            placeholder="Lucas Arantes"
+            required
+          />
+        </div>
+
+        <div className="field">
+          <label htmlFor="cortesia-email">{traduzir("E-mail")}</label>
+          <input
+            id="cortesia-email"
+            className="input"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="nome@empresa.com.br"
+            required
+          />
+        </div>
+
+        <div className="field">
+          <label htmlFor="cortesia-senha">
+            {traduzir("Senha")}
+            <Ajuda
+              texto={traduzir(
+                "Opcional. Com senha, a conta já entra e você entrega e-mail e senha na mão. Em branco, sai um link de convite por e-mail e quem cria a senha é a própria pessoa — que é o normal.",
+              )}
+            />
+          </label>
+          <input
+            id="cortesia-senha"
+            className="input"
+            type="text"
+            autoComplete="new-password"
+            value={senha}
+            onChange={(e) => setSenha(e.target.value)}
+            placeholder={traduzir("em branco = mandar convite")}
+            minLength={8}
+          />
+        </div>
       </div>
 
       <div className="field">
-        <label htmlFor="cortesia-nome">{traduzir("Nome da pessoa")}</label>
-        <input
-          id="cortesia-nome"
-          className="input"
-          value={nome}
-          onChange={(e) => setNome(e.target.value)}
-          placeholder="Lucas Arantes"
-          required
-        />
-      </div>
-
-      <div className="field">
-        <label htmlFor="cortesia-email">{traduzir("E-mail")}</label>
-        <input
-          id="cortesia-email"
-          className="input"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="nome@empresa.com.br"
-          required
-        />
+        <label htmlFor="cortesia-prazo">
+          {traduzir("Tempo de cortesia")}
+          <Ajuda
+            texto={traduzir(
+              "Por quanto tempo esta conta usa o CRM de graça. No dia seguinte ao fim do prazo ela cai na tela de pagamento sozinha, e a primeira cobrança parte dessa data. Pode mudar depois, no detalhe da empresa.",
+            )}
+          />
+        </label>
+        <div className="seg-picker" role="group" aria-label={traduzir("Tempo de cortesia")}>
+          {PRAZOS_DE_CORTESIA.map((p) => (
+            <button
+              key={p.meses}
+              type="button"
+              className={`seg-chip${meses === p.meses ? " on" : ""}`}
+              aria-pressed={meses === p.meses}
+              onClick={() => setMeses(p.meses)}
+            >
+              {traduzir(p.label)}
+            </button>
+          ))}
+          <button
+            type="button"
+            className={`seg-chip${meses === 0 ? " on" : ""}`}
+            aria-pressed={meses === 0}
+            onClick={() => setMeses(0)}
+          >
+            {traduzir("Sem prazo")}
+          </button>
+        </div>
+        <p className="hint" style={{ marginTop: 6 }}>
+          {terminaEm
+            ? `Grátis até ${terminaEm}. A partir daí, R$ 197,00/mês.`
+            : "De graça por tempo indeterminado, até alguém encerrar à mão."}
+        </p>
       </div>
 
       {erro && <p className="auth-erro">{erro}</p>}

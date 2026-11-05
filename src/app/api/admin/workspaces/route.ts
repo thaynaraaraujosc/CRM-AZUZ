@@ -3,7 +3,10 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { esquecerStatus } from "@/lib/assinatura/status-cache";
 import { exigirSuperAdmin } from "@/lib/admin/guard";
+import bcrypt from "bcryptjs";
+
 import { slugId } from "@/lib/ids";
+import { diasDeCortesia, fimDaCortesia, statusEfetivo } from "@/lib/assinatura/cortesia";
 import { PLANOS } from "@/lib/assinatura/planos";
 import { VALIDADE_CONVITE_MS, gerarTokenConvite, hashDoToken } from "@/lib/equipe/convite";
 import { auditar } from "@/lib/seguranca/auditoria";
@@ -19,11 +22,41 @@ export async function GET() {
     orderBy: { criadoEm: "desc" },
     include: {
       _count: { select: { membros: true } },
-      assinatura: { select: { plano: true, status: true, valor: true, proximoVencimento: true } },
+      assinatura: {
+        select: {
+          plano: true,
+          status: true,
+          valor: true,
+          proximoVencimento: true,
+          cortesiaAte: true,
+          asaasSubscriptionId: true,
+        },
+      },
     },
   });
 
-  return NextResponse.json(workspaces);
+  /*
+   * O STATUS QUE A TELA MOSTRA é o EFETIVO, não a coluna crua.
+   *
+   * Uma cortesia vencida continua com "ativa" gravado — foi ela que deixou assim —, e a lista
+   * dizendo "Ativo" pra uma conta que já caiu na tela de pagamento é a diferença entre o painel
+   * explicar a realidade e inventar outra.
+   */
+  return NextResponse.json(
+    workspaces.map((w) => ({
+      ...w,
+      assinatura: w.assinatura
+        ? {
+            ...w.assinatura,
+            status: statusEfetivo(w.assinatura),
+            statusGravado: w.assinatura.status,
+            // Cortesia é o que não entra no MRR: a conta usa o produto e não paga nada.
+            ehCortesia: Boolean(w.assinatura.cortesiaAte) || !w.assinatura.asaasSubscriptionId?.trim(),
+            diasDeCortesia: diasDeCortesia(w.assinatura),
+          }
+        : null,
+    })),
+  );
 }
 
 /**
@@ -49,13 +82,28 @@ export async function POST(request: Request) {
   if (!guarda.ok) return guarda.resposta;
   const { sessao } = guarda;
 
-  const corpo = (await request.json()) as { empresa?: string; nome?: string; email?: string };
+  const corpo = (await request.json()) as {
+    empresa?: string;
+    nome?: string;
+    email?: string;
+    senha?: string;
+    /** Quantos meses de cortesia. 0 = sem prazo (a conta já nasce cobrável). */
+    meses?: number;
+  };
   const empresa = corpo.empresa?.trim();
   const nome = corpo.nome?.trim();
   const email = corpo.email?.trim().toLowerCase();
+  const senha = corpo.senha?.trim();
+  const meses = Number(corpo.meses ?? 0);
 
   if (!empresa || !nome || !email) {
     return NextResponse.json({ erro: "Campos obrigatórios: empresa, nome e e-mail." }, { status: 400 });
+  }
+  if (senha && senha.length < 8) {
+    return NextResponse.json({ erro: "A senha precisa ter pelo menos 8 caracteres." }, { status: 400 });
+  }
+  if (!Number.isFinite(meses) || meses < 0 || meses > 36) {
+    return NextResponse.json({ erro: "Prazo de cortesia inválido." }, { status: 400 });
   }
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
     return NextResponse.json({ erro: "E-mail inválido." }, { status: 400 });
@@ -93,6 +141,17 @@ export async function POST(request: Request) {
 
   // O token existe em texto puro só aqui e no link. O banco guarda o hash.
   const token = gerarTokenConvite();
+  /*
+   * A SENHA É OPCIONAL, e o convite continua sendo o caminho normal.
+   *
+   * Quem cria a senha deveria ser a própria pessoa: ninguém, nem o super-admin, precisa escolher
+   * ou ver a senha de outro. Mas há o caso em que a conta é entregue na mão — numa reunião, numa
+   * demonstração, pra alguém que não vai procurar e-mail nenhum — e aí o convite é um degrau que
+   * faz a entrega falhar. Com senha, a conta nasce pronta pra entrar; sem senha, sai o link.
+   */
+  const comSenha = Boolean(senha);
+  const senhaHash = senha ? await bcrypt.hash(senha, 10) : null;
+  const cortesiaAte = meses > 0 ? fimDaCortesia(meses) : null;
 
   await prisma.$transaction(async (tx) => {
     await tx.workspace.create({ data: { id: slug, nome: empresa, slug } });
@@ -104,21 +163,28 @@ export async function POST(request: Request) {
         initials,
         nome,
         email,
-        senha: null,
+        senha: senhaHash,
         papel: "Administrador",
         papelTipo: "admin",
         leads: "-",
         enxerga: "Tudo",
         permissoes: [],
-        ativo: false,
-        convitePendente: true,
-        conviteTokenHash: hashDoToken(token),
-        conviteExpiraEm: new Date(Date.now() + VALIDADE_CONVITE_MS),
+        // Com senha a conta já entra; sem senha ela espera o convite ser aceito.
+        ativo: comSenha,
+        convitePendente: !comSenha,
+        conviteTokenHash: comSenha ? null : hashDoToken(token),
+        conviteExpiraEm: comSenha ? null : new Date(Date.now() + VALIDADE_CONVITE_MS),
       },
     });
 
-    // "ativa" desde o primeiro segundo: é o que diferencia esta rota do cadastro público e o
-    // motivo dela existir. `asaasCustomerId` vazio deixa registrado que não há cobrança por trás.
+    /*
+     * "ativa" desde o primeiro segundo: é o que diferencia esta rota do cadastro público e o
+     * motivo dela existir. `asaasCustomerId` vazio deixa registrado que não há cobrança por trás.
+     *
+     * `cortesiaAte` é o prazo. Com ele, a conta usa o CRM inteiro sem cobrança até o dia marcado
+     * e cai na tela de pagamento a partir dele — sem ninguém precisar lembrar de voltar aqui. Sem
+     * prazo escolhido, a cortesia é por tempo indeterminado, como era antes.
+     */
     await tx.assinatura.create({
       data: {
         id: `assinatura-${slug}`,
@@ -127,6 +193,9 @@ export async function POST(request: Request) {
         valor: PLANOS.completo.valor,
         status: "ativa",
         asaasCustomerId: "",
+        cortesiaAte,
+        // A primeira cobrança parte do fim da cortesia: é o que a tela de pagamento mostra.
+        proximoVencimento: cortesiaAte,
       },
     });
   });
@@ -139,21 +208,27 @@ export async function POST(request: Request) {
     membroId: sessao.user.id,
     email: sessao.user.email,
     recurso: slug,
-    detalhe: `conta de cortesia criada para ${email}`,
+    detalhe: `conta de cortesia criada para ${email}${cortesiaAte ? ` até ${cortesiaAte.toISOString().slice(0, 10)}` : " sem prazo"}`,
   });
 
-  const link = `${process.env.APP_URL ?? "https://azuzcrm.com.br"}/convite/${membroId}?t=${token}`;
-  const envio = await enviarEmailContandoFalha({
-    to: email,
-    subject: "Seu acesso ao CRM AZUZ",
-    html: templateConvite(nome, empresa, link),
-  });
+  // Com senha definida não há convite pra mandar: a conta já entra, e um e-mail pedindo pra criar
+  // senha confundiria quem acabou de receber a senha na mão.
+  const link = comSenha ? null : `${process.env.APP_URL ?? "https://azuzcrm.com.br"}/convite/${membroId}?t=${token}`;
+  const envio = link
+    ? await enviarEmailContandoFalha({
+        to: email,
+        subject: "Seu acesso ao CRM AZUZ",
+        html: templateConvite(nome, empresa, link),
+      })
+    : { ok: true as const, motivo: undefined };
 
   return NextResponse.json(
     {
       workspaceId: slug,
       membroId,
       linkConvite: link,
+      comSenha,
+      cortesiaAte: cortesiaAte?.toISOString() ?? null,
       emailEnviado: envio.ok,
       motivoEmail: envio.ok ? undefined : envio.motivo,
     },
