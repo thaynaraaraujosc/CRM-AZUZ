@@ -1,5 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
+import { listaDaEvolution } from "@/lib/integracoes/lista-da-evolution";
+
 /**
  * Cliente da Evolution API (servidor próprio, fora da Vercel, que fala com o WhatsApp via Baileys
  * por trás de uma API REST). Substitui o whatsapp-service customizado deste repo como forma de
@@ -594,17 +596,10 @@ export async function buscarChats(workspaceId: string): Promise<ChatResumo[]> {
    * não veio nada", e nada no sistema contradizia isso.
    */
   const dados = await chamarEvolution(`/chat/findChats/${instancia}`, "POST", {});
-  // O formato varia entre versões da Evolution: ora a lista crua, ora embrulhada. Ler só o array
-  // cru fazia uma resposta perfeitamente válida virar "nenhuma conversa".
-  const lista: unknown[] = Array.isArray(dados)
-    ? dados
-    : Array.isArray(dados?.chats)
-      ? dados.chats
-      : Array.isArray(dados?.data)
-        ? dados.data
-        : Array.isArray(dados?.records)
-          ? dados.records
-          : [];
+  // O formato varia entre versões da Evolution: ora a lista crua, ora embrulhada, ora PAGINADA
+  // (a lista um nível abaixo). Ler só o array cru fazia uma resposta perfeitamente válida virar
+  // "nenhuma conversa". Ver `lista-da-evolution.ts`.
+  const lista: unknown[] = listaDaEvolution(dados);
   return lista
     .map((item) => {
       const c = item as {
@@ -651,10 +646,16 @@ export async function buscarMensagensDoChat(
     console.error(`[evolution] Falha ao buscar histórico de mensagens de ${remoteJid}:`, erro);
     return null;
   });
-  if (Array.isArray(dados)) return dados;
-  if (Array.isArray(dados?.messages)) return dados.messages;
-  if (Array.isArray(dados?.records)) return dados.records;
-  return [];
+  /*
+   * ESTE LEITOR ERA O DEFEITO, e ele era silencioso.
+   *
+   * Na v2 a resposta é paginada: `{ messages: { total, pages, currentPage, records: [...] } }`.
+   * O código testava `Array.isArray(dados.messages)` — e ali `messages` é objeto — e
+   * `Array.isArray(dados.records)` — e ali `records` está um nível abaixo. Os dois davam falso,
+   * a função devolvia `[]`, e CADA conversa era importada com zero mensagem. A importação
+   * terminava "concluída, 30 conversas" e a tela de Conversas ficava vazia, sem erro nenhum.
+   */
+  return listaDaEvolution(dados);
 }
 
 /**

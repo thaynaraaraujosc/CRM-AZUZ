@@ -34,6 +34,18 @@ export type HistoricoSync = {
    */
   tentativasSemChats?: number;
   /**
+   * Quantas mensagens vieram do celular nesta importação.
+   *
+   * Existe porque um defeito já passou despercebido exatamente aqui: a lista de conversas vinha,
+   * a fila andava, a importação se declarava "concluída, 30 conversas" — e nenhuma mensagem
+   * entrava, porque o leitor da resposta não reconhecia o formato paginado da Evolution. A tela
+   * dizia sucesso e a caixa de entrada estava vazia.
+   *
+   * Com o contador, "trinta conversas e zero mensagem" é um estado que a tela sabe nomear, em vez
+   * de um sucesso aparente que só a cliente percebe — e percebe como "o CRM não funciona".
+   */
+  mensagensVistas?: number;
+  /**
    * Quando esta importação foi (re)começada. Serve de carência pro recomeço automático.
    *
    * Uma importação que termina sem conversa nenhuma pode ser recomeçada (ver `precisaTentarDeNovo`),

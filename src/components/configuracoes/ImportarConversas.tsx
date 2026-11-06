@@ -137,11 +137,21 @@ function Painel({
             * conclusão razoável passa a ser que o produto está quebrado em algum lugar que ninguém
             * mostra. Zero conversa é um resultado a declarar, não a esconder.
             */}
+          {/*
+            * TRINTA CONVERSAS E ZERO MENSAGEM NÃO É SUCESSO.
+            *
+            * Já aconteceu, e por meses: a lista de conversas vinha, a fila andava, a tela dizia
+            * "as conversas já foram trazidas" — e a caixa de entrada continuava vazia, porque o
+            * leitor da resposta da Evolution não reconhecia o formato paginado. Um estado que a
+            * tela não sabe nomear é um estado que só a cliente descobre.
+            */}
           {!historico.totalChats
             ? "Não veio nenhuma conversa do celular nesta tentativa. Costuma ser a sessão do WhatsApp que ainda não terminou de montar a lista; buscar de novo resolve."
-            : guardadas
-              ? `As conversas recentes já estão aqui. Ainda há ${guardadas} conversa${guardadas > 1 ? "s" : ""} mais antiga${guardadas > 1 ? "s" : ""} no celular.`
-              : traduzir("As conversas do celular já foram trazidas. Se faltar algum grupo ou conversa antiga, busque de novo.")}
+            : historico.mensagensVistas === 0
+              ? `As ${historico.totalChats} conversas foram lidas, mas nenhuma mensagem veio junto. Busque de novo; se repetir, é a conexão com o WhatsApp que não está devolvendo o conteúdo.`
+              : guardadas
+                ? `As conversas recentes já estão aqui. Ainda há ${guardadas} conversa${guardadas > 1 ? "s" : ""} mais antiga${guardadas > 1 ? "s" : ""} no celular.`
+                : traduzir("As conversas do celular já foram trazidas. Se faltar algum grupo ou conversa antiga, busque de novo.")}
         </p>
         {guardadas ? (
           <button type="button" className="btn ghost" style={{ flex: "0 0 auto" }} onClick={onTrazerMaisAntigas}>

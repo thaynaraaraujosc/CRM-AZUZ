@@ -134,6 +134,9 @@ export async function avancarHistorico(
         ...historico,
         filaRestante: fila,
         chatsProcessados: historico.chatsProcessados + 1,
+        // Conta o que VEIO da Evolution, não o que foi gravado: é este número que distingue
+        // "o celular não tinha mensagem" de "a resposta veio e ninguém conseguiu ler".
+        mensagensVistas: (historico.mensagensVistas ?? 0) + mensagens.length,
       };
       chatsFeitos += 1;
       // Grava a CADA conversa, não no fim: a função pode ser cortada pela plataforma a qualquer
