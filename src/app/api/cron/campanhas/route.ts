@@ -8,7 +8,7 @@ import { adotarOrfasDeTodosOsWorkspaces } from "@/lib/conversas/adotar-orfas";
 import { rodarHistoricosPendentes } from "@/lib/integracoes/historico-passo";
 import { padronizarNomesDeTodosOsWorkspaces } from "@/lib/funis/consolidar";
 import { reconciliarTodosOsWorkspaces } from "@/lib/conversas/reconciliar";
-import { conferirCanalQrCodeDeTodosOsWorkspaces } from "@/lib/integracoes/saude-qrcode";
+import { conferirCanalQrCodeDeTodosOsWorkspaces, reconectarQuemEmudeceu } from "@/lib/integracoes/saude-qrcode";
 import { corrigirDonosDeTodosOsWorkspaces } from "@/lib/conversas/dono-divergente";
 import { iniciarHistoricosQueFaltam } from "@/lib/integracoes/historico-whatsapp";
 import { removerGruposViradosContatoDeTodosOsWorkspaces } from "@/lib/integracoes/limpar-dados-whatsapp";
@@ -242,6 +242,22 @@ export async function GET(request: Request) {
       : { conferidos: 0, reparados: [] as string[] };
 
   /*
+   * E A CADA MINUTO, QUEM EMUDECEU.
+   *
+   * A varredura acima garante que nada fica quebrado pra sempre, mas uma hora é muito tempo pra
+   * quem está no meio de uma conversa: a pessoa responde pelo celular, não vê a mensagem no CRM,
+   * responde de novo, e a essa altura já concluiu que o produto não funciona.
+   *
+   * Esta olha só uma coluna — quando foi o último evento que a Evolution mandou — e só mexe em
+   * quem está calado há mais de quinze minutos. Com todo mundo recebendo normalmente, custa uma
+   * consulta e mais nada.
+   */
+  const qrCodeMudo = await reconectarQuemEmudeceu().catch((erro) => {
+    console.error("[cron] falha ao reconectar conexões em silêncio:", erro);
+    return { silenciosos: 0, reparados: [] as string[] };
+  });
+
+  /*
    * A importação do histórico do WhatsApp por QR Code, com a aba fechada.
    *
    * Ela existia só no navegador: andava enquanto a tela Configurações → WhatsApp estivesse aberta e
@@ -275,5 +291,5 @@ export async function GET(request: Request) {
         })
       : { workspaces: 0, chats: 0 };
 
-  return NextResponse.json({ ok: true, ...resultado, automacoes, porTempo, diarios, confirmacoes, orfas, historico, nomes, reconciliacao, canalQrCode, donos, grupos, espelhamentosIniciados, assinaturas, conversoes, filaDeConversoes, tokensInstagram });
+  return NextResponse.json({ ok: true, ...resultado, automacoes, porTempo, diarios, confirmacoes, orfas, historico, nomes, reconciliacao, canalQrCode, qrCodeMudo, donos, grupos, espelhamentosIniciados, assinaturas, conversoes, filaDeConversoes, tokensInstagram });
 }

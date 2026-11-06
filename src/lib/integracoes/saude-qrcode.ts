@@ -245,7 +245,7 @@ export function semToken(url: string | null): string | null {
 /**
  * Passada do relógio: conserta o elo de todo workspace com QR Code conectado, sem ninguém pedir.
  * É o que faz a promessa valer sem botão: se o registro do lado da Evolution se perder, ele volta
- * sozinho na próxima hora, não na próxima vez que alguém reclamar.
+ * sozinho, não na próxima vez que alguém reclamar.
  */
 export async function conferirCanalQrCodeDeTodosOsWorkspaces(): Promise<{
   conferidos: number;
@@ -261,4 +261,63 @@ export async function conferirCanalQrCodeDeTodosOsWorkspaces(): Promise<{
     if (saude?.reparado) reparados.push(workspaceId);
   }
   return { conferidos: conectadas.length, reparados };
+}
+
+/**
+ * QUANTO SILÊNCIO JÁ É SUSPEITO.
+ *
+ * Uma conexão viva fala com o CRM o tempo todo: mensagem, tiquinho de entregue, atualização de
+ * presença. Quinze minutos sem um único evento, com a conexão marcada como conectada, não é
+ * "dia parado" — é o aviso tendo se perdido do outro lado.
+ */
+export const SILENCIO_SUSPEITO_MS = 15 * 60 * 1000;
+
+/**
+ * Esta conexão parou de falar com o CRM?
+ *
+ * Separada e exportada porque é a DECISÃO: ela define quem a passada do minuto vai conferir
+ * contra a Evolution. Errar pra um lado deixa a cliente sem mensagem; errar pro outro transforma
+ * o conserto em sessenta chamadas por hora contra a Evolution, por workspace. Decisão assim tem
+ * teste, e o teste não precisa de banco nem de rede.
+ *
+ * Na dúvida — nunca houve evento, ou a data gravada não dá pra ler — responde SIM: o custo de
+ * conferir é uma chamada; o custo de não conferir é alguém respondendo pelo celular e não vendo
+ * nada aparecer aqui.
+ */
+export function estaEmSilencio(registro: RegistroDeWebhook | undefined, agora: number): boolean {
+  if (!registro?.ultimoEventoEm) return true;
+  const quando = Date.parse(registro.ultimoEventoEm);
+  return !Number.isFinite(quando) || agora - quando > SILENCIO_SUSPEITO_MS;
+}
+
+/**
+ * CONSERTA QUEM EMUDECEU, sem esperar a varredura da hora cheia.
+ *
+ * A varredura de hora em hora já existia, e é ela que garante que nada fica quebrado pra sempre.
+ * Mas uma hora é muito tempo pra quem está conversando: a pessoa responde pelo celular, não vê a
+ * mensagem no CRM, responde de novo, e a essa altura já concluiu que o produto não funciona.
+ *
+ * Esta passada olha só uma coluna — quando foi o último evento que a Evolution mandou — e só
+ * mexe em quem está em silêncio. Com todo mundo recebendo normalmente, ela custa uma consulta e
+ * mais nada, e pode rodar a cada minuto.
+ */
+export async function reconectarQuemEmudeceu(agora = Date.now()): Promise<{
+  silenciosos: number;
+  reparados: string[];
+}> {
+  const conectadas = await prisma.integracao.findMany({
+    where: { provedor: "whatsapp_nao_oficial", status: "conectado" },
+    select: { workspaceId: true, metadados: true },
+  });
+
+  const silenciosos = conectadas.filter(({ metadados }) =>
+    estaEmSilencio((metadados as Record<string, unknown> | null)?.webhook as RegistroDeWebhook | undefined, agora),
+  );
+
+  const reparados: string[] = [];
+  for (const { workspaceId } of silenciosos) {
+    const saude = await conferirCanalQrCode(workspaceId, { reparar: true }).catch(() => null);
+    if (saude?.reparado) reparados.push(workspaceId);
+  }
+  return { silenciosos: silenciosos.length, reparados };
 }
