@@ -2721,4 +2721,10 @@ export const TRADUCOES_EN: Record<string, string> = {
   "1 campo ainda em branco": "1 field still blank",
   "Preencher": "Fill in",
   "Melhor horário": "Best time",
+  "Buscar conversas do celular": "Fetch phone conversations",
+  "As conversas que já estão no celular ainda não foram trazidas. Isso costuma começar sozinho logo depois de conectar; se não começou, peça aqui.":
+    "The conversations already on the phone haven't been imported yet. This usually starts on its own right after connecting; if it didn't, ask for it here.",
+  "Tentar de novo": "Try again",
+  "Neste canal as mensagens começam a aparecer a partir de agora: a Meta não entrega as conversas que já estavam no celular. Pra trazer o histórico, a conexão precisa ser a do QR Code.":
+    "On this channel messages start showing from now on: Meta does not deliver conversations that were already on the phone. To bring the history over, connect via QR Code instead.",
 };

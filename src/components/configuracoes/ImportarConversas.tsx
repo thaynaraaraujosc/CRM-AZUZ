@@ -21,12 +21,17 @@ const ROTA = "/api/integracoes/whatsapp-nao-oficial/sincronizar-historico";
 
 export function ImportarConversas({
   historico,
+  conectada,
   aoMudar,
 }: {
   historico: HistoricoSync | null | undefined;
+  /** O número está conectado agora? Sem conexão não há celular pra perguntar. */
+  conectada?: boolean;
   /** O pai guarda o estado da integração; esta é a forma de devolver o progresso novo pra ele. */
   aoMudar: (historico: HistoricoSync) => void;
 }) {
+  const { t: traduzir } = useIdioma();
+
   async function chamar(caminho: string, method: "POST" | "PUT" | "PATCH", corpo?: unknown) {
     const resposta = await fetch(caminho, {
       method,
@@ -36,7 +41,38 @@ export function ImportarConversas({
     if (dados?.historico) aoMudar(dados.historico);
   }
 
-  if (!historico) return null;
+  /*
+   * SEM IMPORTAÇÃO NENHUMA REGISTRADA, O BOTÃO PRECISA EXISTIR ASSIM MESMO.
+   *
+   * Isto aqui era `return null`: número conectado, nenhuma conversa na tela, e nada em lugar
+   * nenhum do produto pra pedir as conversas do celular — nem um aviso, nem um botão, nem um
+   * erro. A importação começa sozinha (ao conectar e pelo relógio do servidor), mas quando ela
+   * NÃO começou — conexão que abriu antes disso existir, metadados gravados por um caminho
+   * antigo, uma falha silenciosa no meio — a tela ficava muda e a única saída era desconectar e
+   * ler o QR Code de novo. Pedir pra cliente consertar o produto.
+   *
+   * Agora o caminho de volta está sempre visível enquanto o número estiver conectado.
+   */
+  if (!historico) {
+    if (!conectada) return null;
+    return (
+      <div className="wa-historico-linha">
+        <p className="hint" style={{ margin: 0 }}>
+          {traduzir(
+            "As conversas que já estão no celular ainda não foram trazidas. Isso costuma começar sozinho logo depois de conectar; se não começou, peça aqui.",
+          )}
+        </p>
+        <button
+          type="button"
+          className="btn ghost"
+          style={{ flex: "0 0 auto" }}
+          onClick={() => chamar(`${ROTA}/reimportar`, "POST")}
+        >
+          {traduzir("Buscar conversas do celular")}
+        </button>
+      </div>
+    );
+  }
 
   return (
     <Painel
@@ -118,12 +154,24 @@ function Painel({
       </div>
     );
   }
+  /*
+   * O ERRO TAMBÉM PRECISA DE UM BOTÃO.
+   *
+   * Era só a frase vermelha. Quem lia "não consegui terminar" não tinha o que fazer com a
+   * informação: o único caminho de volta estava no ramo `concluido`, logo acima, que uma
+   * importação em erro nunca alcança. Tentar de novo é exatamente o que se quer fazer ao ler isso.
+   */
   if (historico.status === "erro") {
     return (
-      <p className="hint" style={{ color: "var(--danger)", marginTop: 10 }}>
-        <IconAlerta width={12} height={12} aria-hidden="true" /> Não consegui terminar de trazer o histórico de conversas ({historico.erro ?? "erro desconhecido"}).
-        As mensagens novas continuam chegando normal.
-      </p>
+      <div className="wa-historico-linha">
+        <p className="hint" style={{ color: "var(--danger)", margin: 0 }}>
+          <IconAlerta width={12} height={12} aria-hidden="true" /> Não consegui terminar de trazer o histórico de conversas ({historico.erro ?? "erro desconhecido"}).
+          As mensagens novas continuam chegando normal.
+        </p>
+        <button type="button" className="btn ghost" style={{ flex: "0 0 auto" }} onClick={onReimportar}>
+          {traduzir("Tentar de novo")}
+        </button>
+      </div>
     );
   }
   const total = historico.totalChats;

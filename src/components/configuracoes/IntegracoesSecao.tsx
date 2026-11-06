@@ -184,6 +184,7 @@ export function IntegracoesSecao() {
                     Quem não estava recebendo as conversas do celular não tinha como pedir pra
                     buscar de novo, nem como ver em que pé estava. Aqui se chega clicando. */}
                 <ImportarConversas
+                  conectada={qrCodeLigada}
                   historico={naoOficialStatus?.metadados?.historico}
                   aoMudar={(historico) =>
                     setNaoOficialStatus((prev) =>

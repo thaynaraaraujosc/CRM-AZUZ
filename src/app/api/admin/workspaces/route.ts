@@ -9,6 +9,7 @@ import { encriptar } from "@/lib/integracoes/crypto";
 
 import { slugId } from "@/lib/ids";
 import { diasDeCortesia, ehCortesia, fimDaCortesia, statusEfetivo } from "@/lib/assinatura/cortesia";
+import { montarFunilPadrao } from "@/lib/funil/funil-padrao";
 import { PLANOS } from "@/lib/assinatura/planos";
 import { VALIDADE_CONVITE_MS, gerarTokenConvite, hashDoToken } from "@/lib/equipe/convite";
 import { auditar } from "@/lib/seguranca/auditoria";
@@ -189,6 +190,33 @@ export async function POST(request: Request) {
         convitePendente: !comSenha,
         conviteTokenHash: comSenha ? null : hashDoToken(token),
         conviteExpiraEm: comSenha ? null : new Date(Date.now() + VALIDADE_CONVITE_MS),
+      },
+    });
+
+    /*
+     * O FUNIL PADRÃO NASCE JUNTO COM A EMPRESA.
+     *
+     * Sem ele, a conta criada aqui abria o CRM num formulário em branco: Funil vazio, Automações
+     * dizendo "nenhum funil criado ainda". Na MESMA transação que a empresa, pelo mesmo motivo
+     * que a assinatura: workspace sem funil é o estado que isto existe pra não produzir.
+     * Ver `lib/funil/funil-padrao.ts`.
+     */
+    const funil = montarFunilPadrao(slug);
+    await tx.funil.create({
+      data: {
+        id: funil.id,
+        workspaceId: slug,
+        nome: funil.nome,
+        responsavel: null,
+        etapas: {
+          create: funil.etapas.map((e) => ({
+            id: e.id,
+            workspaceId: slug,
+            titulo: e.titulo,
+            cor: e.cor,
+            ordem: e.ordem,
+          })),
+        },
       },
     });
 

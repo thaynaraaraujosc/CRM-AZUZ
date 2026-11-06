@@ -34,23 +34,42 @@ export function ConexaoWhatsAppOficial() {
 
   if (conectada) {
     return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-        <p className="int-sub" style={{ margin: 0 }}>
-          {(integracao?.metadados?.numeroExibicao as string | undefined)
-            ? traduzir("Conectado: {numero}", {
-                numero: integracao?.metadados?.numeroExibicao as string,
-              })
-            : traduzir("Conectado")}
+      <>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+          <p className="int-sub" style={{ margin: 0 }}>
+            {(integracao?.metadados?.numeroExibicao as string | undefined)
+              ? traduzir("Conectado: {numero}", {
+                  numero: integracao?.metadados?.numeroExibicao as string,
+                })
+              : traduzir("Conectado")}
+          </p>
+          <button
+            type="button"
+            className="btn danger"
+            onClick={() => void desconectar()}
+            disabled={desconectando}
+          >
+            {desconectando ? traduzir("Desconectando…") : traduzir("Desconectar")}
+          </button>
+        </div>
+        {/*
+          O CANAL OFICIAL NÃO TEM CONVERSA ANTIGA, E ISSO PRECISA ESTAR ESCRITO AQUI.
+          
+          É a pergunta que o cliente faz no primeiro dia: "conectei e não apareceu nenhuma
+          conversa". No canal oficial a Meta entrega a mensagem no momento em que ela chega, por
+          webhook, e não existe como PEDIR o que já estava no celular — a lista de conversas do
+          aparelho não é exposta pela Cloud API. O espelhamento do histórico, que existe no CRM,
+          é do QR Code, onde a sessão é a do próprio celular.
+          
+          Dizer isso aqui é mais barato que descobrir depois: sem a frase, a conclusão razoável de
+          quem conecta e não vê nada é que o CRM está quebrado.
+        */}
+        <p className="hint" style={{ marginTop: 10 }}>
+          {traduzir(
+            "Neste canal as mensagens começam a aparecer a partir de agora: a Meta não entrega as conversas que já estavam no celular. Pra trazer o histórico, a conexão precisa ser a do QR Code.",
+          )}
         </p>
-        <button
-          type="button"
-          className="btn danger"
-          onClick={() => void desconectar()}
-          disabled={desconectando}
-        >
-          {desconectando ? traduzir("Desconectando…") : traduzir("Desconectar")}
-        </button>
-      </div>
+      </>
     );
   }
 

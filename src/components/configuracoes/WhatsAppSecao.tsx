@@ -141,9 +141,13 @@ export function WhatsAppSecao() {
               * confere são do Baileys. No canal oficial não existe o que ele mede.
               */}
             {!metaConectada ? <SaudeQrCode /> : null}
-            {!metaConectada && naoOficial.estado?.metadados?.historico ? (
+            {/* Sem a condição `&& historico`: o painel agora mostra o botão de buscar as
+                conversas MESMO quando nenhuma importação foi registrada — que era justamente o
+                estado em que não havia nada a clicar. Ver `ImportarConversas`. */}
+            {!metaConectada ? (
               <ImportarConversas
-                historico={naoOficial.estado.metadados.historico}
+                conectada={naoOficialConectada}
+                historico={naoOficial.estado?.metadados?.historico}
                 aoMudar={naoOficial.aplicarHistorico}
               />
             ) : null}

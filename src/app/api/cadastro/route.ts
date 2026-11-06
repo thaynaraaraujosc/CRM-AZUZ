@@ -8,6 +8,7 @@ import {
   ipDeQuemChamou,
   respostaDeLimiteExcedido,
 } from "@/lib/seguranca/limite-de-uso";
+import { montarFunilPadrao } from "@/lib/funil/funil-padrao";
 import { slugId } from "@/lib/ids";
 import { PLANOS } from "@/lib/assinatura/planos";
 
@@ -95,6 +96,34 @@ export async function POST(request: Request) {
         permissoes: [],
         ativo: true,
         convitePendente: false,
+      },
+    });
+
+
+    /*
+     * O FUNIL PADRÃO NASCE JUNTO COM A EMPRESA.
+     *
+     * Sem ele, a conta nova abria o CRM num formulário em branco: Funil vazio, Automações dizendo
+     * "nenhum funil criado ainda", e nenhuma pista de por onde começar. Vai na MESMA transação
+     * que a empresa: workspace sem funil é o estado que esta mudança existe pra não produzir.
+     * Ver `lib/funil/funil-padrao.ts`.
+     */
+    const funil = montarFunilPadrao(workspace.id);
+    await tx.funil.create({
+      data: {
+        id: funil.id,
+        workspaceId: workspace.id,
+        nome: funil.nome,
+        responsavel: null,
+        etapas: {
+          create: funil.etapas.map((e) => ({
+            id: e.id,
+            workspaceId: workspace.id,
+            titulo: e.titulo,
+            cor: e.cor,
+            ordem: e.ordem,
+          })),
+        },
       },
     });
 

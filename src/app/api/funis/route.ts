@@ -4,10 +4,47 @@ import type { Prisma } from "@/generated/prisma/client";
 import type { Funil } from "@/lib/data";
 import { auth } from "@/lib/auth";
 import { lerDicas } from "@/lib/funil/etapa-aparencia";
+import { montarFunilPadrao } from "@/lib/funil/funil-padrao";
 import { dispararGatilhosDaEtapa } from "@/lib/funil/gatilhos-etapa";
 import { emSegundoPlano } from "@/lib/automacoes/segundo-plano";
 import { prisma } from "@/lib/prisma";
 import { filtroConexaoDeNegocio, provedoresDeNegocio } from "@/lib/integracoes/conta-canal";
+
+/**
+ * Cria o funil padrão quando a empresa não tem nenhum. Não faz nada quando já existe um.
+ *
+ * Os ids são derivados do workspace, então duas leituras simultâneas numa conta vazia não criam
+ * dois funis: a segunda esbarra na chave duplicada. O erro é engolido de propósito — o resultado
+ * que importa (existe um funil) é o mesmo, e derrubar a tela de Funil por causa de uma corrida
+ * seria trocar uma tela branca por uma tela de erro.
+ */
+async function garantirFunilPadrao(workspaceId: string) {
+  const quantos = await prisma.funil.count({ where: { workspaceId } });
+  if (quantos > 0) return;
+
+  const funil = montarFunilPadrao(workspaceId);
+  try {
+    await prisma.funil.create({
+      data: {
+        id: funil.id,
+        workspaceId,
+        nome: funil.nome,
+        responsavel: null,
+        etapas: {
+          create: funil.etapas.map((e) => ({
+            id: e.id,
+            workspaceId,
+            titulo: e.titulo,
+            cor: e.cor,
+            ordem: e.ordem,
+          })),
+        },
+      },
+    });
+  } catch {
+    // Outra requisição criou primeiro. A leitura abaixo traz o que ela criou.
+  }
+}
 
 /** GET lista os funis do workspace de quem está logado, com etapas e negócios, na ordem salva. */
 export async function GET() {
@@ -18,6 +55,19 @@ export async function GET() {
   // funil sem sair do banco, e volta inteiro se aquela conexão voltar (ver `conta-canal.ts`). Card
   // criado à mão tem `contaCanal` nulo e aparece sempre.
   const provedores = await provedoresDeNegocio(sessao.user.workspaceId);
+  /*
+   * CONTA SEM NENHUM FUNIL GANHA O PADRÃO AQUI, na primeira leitura.
+   *
+   * Toda conta nova passa a nascer com ele (ver `cadastro` e `admin/workspaces`), mas as que já
+   * existiam nasceram sem — e pra elas não há outro momento em que isso possa acontecer: não há
+   * migração que saiba o que é "um funil bom", e pedir pra cada cliente montar o dele do zero é
+   * justamente o que esta mudança existe pra evitar. Então a correção mora na leitura.
+   *
+   * É seguro porque só roda quando a empresa tem ZERO funis: quem apagou todos de propósito
+   * ganha o padrão de volta, o que é melhor do que uma tela branca, e qualquer funil existente
+   * (mesmo vazio de etapas) impede que isto rode.
+   */
+  await garantirFunilPadrao(sessao.user.workspaceId);
   const linhas = await prisma.funil.findMany({
     where: { workspaceId: sessao.user.workspaceId },
     include: {
