@@ -2717,9 +2717,6 @@ export const TRADUCOES_EN: Record<string, string> = {
 
   /* Ficha do contato */
   "Contato há": "Contact for",
-  "campos ainda em branco": "fields still blank",
-  "1 campo ainda em branco": "1 field still blank",
-  "Preencher": "Fill in",
   "Melhor horário": "Best time",
   "Buscar conversas do celular": "Fetch phone conversations",
   "As conversas que já estão no celular ainda não foram trazidas. Isso costuma começar sozinho logo depois de conectar; se não começou, peça aqui.":

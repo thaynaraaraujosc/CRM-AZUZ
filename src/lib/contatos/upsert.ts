@@ -26,9 +26,23 @@ export async function upsertContato(params: {
   workspaceId: string;
   nome: string;
   dados?: Partial<Contato> & Record<string, unknown>;
+  /**
+   * Campos que só valem AO CRIAR, e nunca sobrescrevem um contato que já existe.
+   *
+   * Pra coisas que são um bom PALPITE INICIAL e uma escolha da pessoa depois — o canal preferido
+   * é o caso: quem chegou pelo WhatsApp provavelmente prefere WhatsApp, mas se alguém trocou pra
+   * Instagram na ficha, a próxima mensagem no WhatsApp não pode desfazer isso.
+   */
+  dadosSoAoCriar?: Partial<Contato> & Record<string, unknown>;
   origemPadrao?: string;
 }) {
-  const { workspaceId, nome, dados: recebidos = {}, origemPadrao = "Salvo manualmente" } = params;
+  const {
+    workspaceId,
+    nome,
+    dados: recebidos = {},
+    dadosSoAoCriar: recebidosAoCriar = {},
+    origemPadrao = "Salvo manualmente",
+  } = params;
   /*
    * Lista fechada de campos, antes de qualquer escrita.
    *
@@ -39,6 +53,7 @@ export async function upsertContato(params: {
    * cruzando workspaces, que é o que o isolamento existe pra impedir.
    */
   const dados = somenteCamposDeContato(recebidos as Record<string, unknown>);
+  const dadosAoCriar = somenteCamposDeContato(recebidosAoCriar as Record<string, unknown>);
 
   const existente = await prisma.contato.findUnique({ where: { workspaceId_nome: { workspaceId, nome } } });
   if (existente) {
@@ -63,6 +78,7 @@ export async function upsertContato(params: {
       responsavel: "-",
       ultima: "Agora",
       valor: "-",
+      ...dadosAoCriar,
       ...dados,
     },
   });
@@ -159,6 +175,9 @@ export async function criarContatoPeloWhatsAppSeNaoExistir(params: {
     workspaceId,
     nome,
     dados: { whatsapp, criadoVia: "whatsapp" },
+    // Quem chegou pelo WhatsApp é atendido pelo WhatsApp: a ficha já nasce dizendo isso, em vez
+    // de deixar o campo em branco pra alguém preencher o óbvio. Só ao criar — ver `dadosSoAoCriar`.
+    dadosSoAoCriar: { canalPreferido: "WhatsApp" },
     origemPadrao: "WhatsApp",
   });
 }

@@ -133,6 +133,23 @@ const CANAIS_CONVERSA = [
   { valor: "WhatsApp", label: "WhatsApp", emBreve: false },
 ] as const;
 
+/**
+ * OS CINCO DESFECHOS DE UMA NEGOCIAÇÃO, numa lista só.
+ *
+ * Declarados uma vez porque aparecem em dois lugares com peso diferente: à mostra no painel de
+ * Negociação, que é a aba cuja função É registrar o desfecho, e dentro de um menu nas ações
+ * rápidas, onde há espaço pra uma linha. Duas cópias da mesma lista divergiriam no primeiro
+ * desfecho novo — e o jeito de descobrir seria uma das telas não oferecer uma opção que a outra
+ * oferece.
+ */
+const OPCOES_DE_RESULTADO = [
+  { chave: "venda", rotulo: "Venda concluída", Icone: IconCheck },
+  { chave: "perda", rotulo: "Negociação perdida", Icone: IconErro },
+  { chave: "andamento", rotulo: "Continua em andamento", Icone: IconRefresh },
+  { chave: "adiada", rotulo: "Adiada", Icone: IconRelogio },
+  { chave: "cancelada", rotulo: "Cancelada", Icone: IconProibido },
+] as const;
+
 const FORMATOS_IMAGEM = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 const TAMANHO_MAX_IMAGEM = 16 * 1024 * 1024;
 const FORMATOS_VIDEO = ["video/mp4", "video/webm", "video/quicktime", "video/3gpp"];
@@ -7611,14 +7628,28 @@ function ConversasPageInner() {
                     {traduzir("Nenhum resultado registrado ainda: em andamento.")}
                   </p>
                 )}
-                <button
-                  type="button"
-                  className="btn primary block"
-                  onClick={(e) => abrirMenuResultado(e.currentTarget.getBoundingClientRect())}
-                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
-                >
-                  <IconAlvo width={13} height={13} /> {traduzir("Registrar resultado")}
-                </button>
+                {/*
+                  AS CINCO OPÇÕES À MOSTRA, e não atrás de um botão que abre um menu.
+                  
+                  Era "Registrar resultado" → menu flutuante → escolher. Dois cliques e uma camada
+                  pra uma decisão de cinco opções que cabem na tela: este painel existe justamente
+                  pra registrar o desfecho, então esconder o desfecho atrás de um botão é esconder
+                  a própria função da aba. O menu continua existindo nas ações rápidas, onde o
+                  espaço é de uma linha só.
+                */}
+                <div className="wa-resultado-opcoes">
+                  {OPCOES_DE_RESULTADO.map(({ chave, rotulo, Icone }) => (
+                    <button
+                      key={chave}
+                      type="button"
+                      className="wa-resultado-opcao"
+                      onClick={() => escolherResultado(chave)}
+                    >
+                      <Icone width={13} height={13} aria-hidden="true" />
+                      {traduzir(rotulo)}
+                    </button>
+                  ))}
+                </div>
               </div>
             </>
           ) : null}
@@ -7689,46 +7720,19 @@ function ConversasPageInner() {
           width={240}
           onClose={() => setResultadoMenuAberto(false)}
         >
-          <button
-            type="button"
-            className="dropdown-item"
-            style={{ width: "100%", textAlign: "left" }}
-            onClick={() => escolherResultado("venda")}
-          >
-            <span className="n"><IconCheck width={12} height={12} /> {traduzir("Venda concluída")}</span>
-          </button>
-          <button
-            type="button"
-            className="dropdown-item"
-            style={{ width: "100%", textAlign: "left" }}
-            onClick={() => escolherResultado("perda")}
-          >
-            <span className="n"><IconErro width={12} height={12} /> {traduzir("Negociação perdida")}</span>
-          </button>
-          <button
-            type="button"
-            className="dropdown-item"
-            style={{ width: "100%", textAlign: "left" }}
-            onClick={() => escolherResultado("andamento")}
-          >
-            <span className="n"><IconRefresh width={12} height={12} /> {traduzir("Continua em andamento")}</span>
-          </button>
-          <button
-            type="button"
-            className="dropdown-item"
-            style={{ width: "100%", textAlign: "left" }}
-            onClick={() => escolherResultado("adiada")}
-          >
-            <span className="n"><IconRelogio width={12} height={12} /> {traduzir("Adiada")}</span>
-          </button>
-          <button
-            type="button"
-            className="dropdown-item"
-            style={{ width: "100%", textAlign: "left" }}
-            onClick={() => escolherResultado("cancelada")}
-          >
-            <span className="n"><IconProibido width={12} height={12} /> {traduzir("Cancelada")}</span>
-          </button>
+          {OPCOES_DE_RESULTADO.map(({ chave, rotulo, Icone }) => (
+            <button
+              key={chave}
+              type="button"
+              className="dropdown-item"
+              style={{ width: "100%", textAlign: "left" }}
+              onClick={() => escolherResultado(chave)}
+            >
+              <span className="n">
+                <Icone width={12} height={12} /> {traduzir(rotulo)}
+              </span>
+            </button>
+          ))}
         </FloatingDropdown>
       ) : null}
 

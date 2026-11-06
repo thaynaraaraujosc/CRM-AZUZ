@@ -12,6 +12,7 @@ import {
   type ValoresDeCampos,
 } from "@/lib/contatos/campos-do-contato";
 import { tempoDeRelacionamento } from "@/lib/contatos/relacionamento";
+import { formatarTelefoneParaExibicao } from "@/lib/telefone";
 import { useContatos } from "@/lib/contatos-context";
 import { useConversas } from "@/lib/conversas-context";
 import { useIdioma } from "@/lib/idioma-context";
@@ -55,12 +56,46 @@ export function DadosDoContato({
     removerEtiqueta,
     recarregar: recarregarContatos,
   } = useContatos();
-  const { recarregar: recarregarConversas } = useConversas();
+  const { conversas, recarregar: recarregarConversas } = useConversas();
 
   const contato = contatos.find((c) => c.nome === nome) ?? null;
 
+  /*
+   * O NÚMERO DA PRÓPRIA CONVERSA PREENCHE O CAMPO WHATSAPP.
+   *
+   * Numa conversa de WhatsApp o número é a coisa que o CRM SEMPRE sabe — é por ele que a mensagem
+   * chegou. E mesmo assim a ficha mostrava "WhatsApp: —": o campo só era preenchido quando o
+   * contato tinha sido criado pelo caminho do webhook com o telefone em mãos, e qualquer contato
+   * que já existisse por outro caminho (cadastrado à mão, vindo de formulário, casado pelo nome)
+   * ficava sem. Perguntar o telefone de quem está falando com você pelo telefone é o tipo de coisa
+   * que faz o CRM parecer que não presta atenção.
+   *
+   * Vale só pra pessoa: `contato` de grupo é o id do grupo (`…@g.us`), que não é telefone de
+   * ninguém — e já virou "+120363422457482263" na tela uma vez.
+   */
+  const conversa = conversas.find((c) => c.nome === nome) ?? null;
+  const telefoneDaConversa =
+    conversa && !conversa.ehGrupo && conversa.contato && !conversa.contato.includes("@g.us")
+      ? formatarTelefoneParaExibicao(conversa.contato) ?? ""
+      : "";
+
   const [emailContato, setEmailContato] = useState(contato?.email ?? "");
-  const [whatsappContato, setWhatsappContato] = useState(contato?.whatsapp ?? "");
+  const [whatsappContato, setWhatsappContato] = useState(contato?.whatsapp ?? telefoneDaConversa);
+  /*
+   * A LISTA DE CONVERSAS CHEGA DEPOIS DO PRIMEIRO DESENHO.
+   *
+   * O valor inicial do `useState` acima é lido uma vez, e nesse instante a lista ainda pode estar
+   * vazia (ela é buscada por fetch). Sem este ajuste, o número só apareceria em quem abrisse a
+   * ficha pela segunda vez. É o padrão de "ajustar estado durante o render" do próprio React —
+   * comparar com o último valor visto e corrigir —, que não custa um ciclo de efeito a mais.
+   *
+   * Só preenche o que está VAZIO: número digitado à mão nunca é sobrescrito pelo da conversa.
+   */
+  const [telefoneVisto, setTelefoneVisto] = useState(telefoneDaConversa);
+  if (telefoneDaConversa !== telefoneVisto) {
+    setTelefoneVisto(telefoneDaConversa);
+    if (!whatsappContato.trim() && telefoneDaConversa) setWhatsappContato(telefoneDaConversa);
+  }
   const [nascimentoContato, setNascimentoContato] = useState(contato?.nascimento ?? "");
   const [enderecoContato, setEnderecoContato] = useState(contato?.endereco ?? "");
   const [sobrenomeContato, setSobrenomeContato] = useState(contato?.sobrenome ?? "");
@@ -425,8 +460,6 @@ export function DadosDoContato({
     },
   ];
 
-  const preenchidos = campos.filter((c) => c.valor.trim());
-  const vazios = campos.length - preenchidos.length;
 
   /* Há quanto tempo essa pessoa é contato nosso. O `new Date()` acontece dentro da função, e não
      aqui: ler o relógio no corpo do componente é impuro pro compilador do React. */
@@ -502,28 +535,31 @@ export function DadosDoContato({
       ) : null}
 
       {/*
-        LEITURA: uma linha por informação, e só as que existem.
+        LEITURA: UMA LINHA POR CAMPO, TODOS ELES — inclusive os vazios.
         
-        Campo vazio vira caixa branca com "Não informado" dentro — treze delas empilhadas era o
-        que fazia a ficha parecer um formulário em branco. O que falta é contado numa linha só,
-        que é também o atalho pra preencher.
+        Eu tinha escondido os vazios atrás de "9 campos ainda em branco", pra encurtar a ficha.
+        Estava errado, e a Thaynara apontou o porquê: a ficha de um contato é um formulário de
+        trabalho. Quem abre a conversa precisa VER que existe lugar pra aniversário e pra cidade —
+        é isso que lembra de perguntar. Escondido, o campo deixa de existir pra quem atende, e a
+        contagem "9 em branco" vira uma acusação sem utilidade nenhuma.
+        
+        O que resolve o tamanho é a linha ser baixa, não o campo sumir: rótulo e valor na mesma
+        linha, o vazio como um traço apagado que é também o botão de preencher.
       */}
       {!editandoContato ? (
         <div className="ficha-lista">
-          {preenchidos.map((c) => (
-            <div className="ficha-linha" key={c.rotulo}>
+          {campos.map((c) => (
+            <button
+              type="button"
+              className={`ficha-linha${c.valor.trim() ? "" : " vazia"}`}
+              key={c.rotulo}
+              onClick={() => setEditandoContato(true)}
+              title={traduzir("Editar")}
+            >
               <span className="ficha-rotulo">{c.rotuloCurto ?? c.rotulo}</span>
-              <span className="ficha-valor">{c.valor}</span>
-            </div>
-          ))}
-          {vazios > 0 ? (
-            <button type="button" className="ficha-faltando" onClick={() => setEditandoContato(true)}>
-              {vazios === 1
-                ? traduzir("1 campo ainda em branco")
-                : `${vazios} ${traduzir("campos ainda em branco")}`}
-              <span>{traduzir("Preencher")}</span>
+              <span className="ficha-valor">{c.valor.trim() || "—"}</span>
             </button>
-          ) : null}
+          ))}
         </div>
       ) : (
         campos.map((c) => (

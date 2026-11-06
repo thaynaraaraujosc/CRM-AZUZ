@@ -29672,14 +29672,34 @@ td.trafego-col-crm:first-of-type {
 }
 
 /* Rótulo e valor na MESMA linha: é o que encurta a ficha de verdade. Com o rótulo
-   em cima, cada campo custa duas linhas e o painel volta a rolar sem fim. */
+   em cima, cada campo custa duas linhas e o painel volta a rolar sem fim.
+   A linha é um BOTÃO: clicar em qualquer campo abre a edição, que é o que se quer
+   fazer ao ver um traço no lugar do aniversário. */
 .ficha-linha {
   display: grid;
   grid-template-columns: minmax(84px, 38%) minmax(0, 1fr);
   gap: 10px;
   align-items: baseline;
-  padding: 7px 0;
+  width: 100%;
+  padding: 7px 4px;
+  margin: 0 -4px;
+  border: 0;
   border-bottom: 1px solid var(--line-soft);
+  border-radius: 6px;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ficha-linha:hover {
+  background: var(--surface-hover);
+}
+
+/* O vazio aparece, e aparece apagado: o campo existe, só não foi preenchido ainda. É isso que
+   lembra quem atende de perguntar o aniversário — escondido, o campo não existe pra ninguém. */
+.ficha-linha.vazia .ficha-valor {
+  color: var(--text-faint);
 }
 
 .ficha-linha:last-child {
@@ -29698,34 +29718,6 @@ td.trafego-col-crm:first-of-type {
   overflow-wrap: anywhere;
 }
 
-/* O que falta não some: vira uma linha discreta que também é o botão de preencher. */
-.ficha-faltando {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  width: 100%;
-  margin-top: 8px;
-  padding: 8px 10px;
-  border: 1px dashed var(--line-strong);
-  border-radius: 9px;
-  background: transparent;
-  color: var(--text-muted);
-  font: inherit;
-  font-size: 12px;
-  cursor: pointer;
-  transition: border-color 0.15s ease, color 0.15s ease;
-}
-
-.ficha-faltando:hover {
-  border-color: var(--acao);
-  color: var(--text);
-}
-
-.ficha-faltando span {
-  font-weight: 650;
-  color: var(--acao);
-}
 
 /* O "Editar" do cabeçalho era um link azul solto; agora é botão, do tamanho de um. */
 .ficha-editar {
@@ -30327,4 +30319,64 @@ td.trafego-col-crm:first-of-type {
   .painel-kpis {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* ============================================================================
+   O DESFECHO DA NEGOCIAÇÃO, à mostra
+   ----------------------------------------------------------------------------
+   Cinco opções numa coluna, dentro do painel de Negociação. Antes era um botão
+   "Registrar resultado" que abria um menu flutuante: dois cliques e uma camada
+   pra uma decisão de cinco opções que cabem na tela — numa aba que existe
+   justamente pra registrar o desfecho. Ver `conversas/page.tsx`.
+   ========================================================================== */
+.wa-resultado-opcoes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wa-resultado-opcao {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  background: var(--surface-elevated);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 550;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.wa-resultado-opcao:hover {
+  border-color: var(--acao);
+  background: var(--surface-hover);
+}
+
+.wa-resultado-opcao svg {
+  flex: none;
+  color: var(--text-muted);
+}
+
+/* A venda é o desfecho que o funil existe pra produzir: é o único que ganha destaque. Pintar os
+   cinco seria o mesmo que não pintar nenhum. */
+.wa-resultado-opcao:first-child {
+  border-color: var(--acao);
+  background: var(--acao);
+  color: var(--acao-texto);
+  font-weight: 650;
+}
+
+.wa-resultado-opcao:first-child svg {
+  color: inherit;
+}
+
+.wa-resultado-opcao:first-child:hover {
+  background: var(--acao-hover);
+  border-color: var(--acao-hover);
 }
