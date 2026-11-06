@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { IconInstagram, IconWhatsApp, IconCalendar } from "@/components/icons";
 import { ConexaoQrCode } from "./ConexaoQrCode";
 import { ImportarConversas } from "@/components/configuracoes/ImportarConversas";
+import { SaudeQrCode } from "@/components/configuracoes/SaudeQrCode";
 import { ConexaoWhatsAppOficial } from "./ConexaoWhatsAppOficial";
 import { ConexaoInstagram, ConexaoMetaAds, ConexaoGoogleAds } from "./ConexoesOAuth";
 import { useStatusGoogleAds } from "@/components/trafego/useGoogleAds";
@@ -179,6 +180,12 @@ export function IntegracoesSecao() {
             painel={
               <>
                 <ConexaoQrCode />
+                {/* A TELA QUE RESPONDE "CHEGA NO CELULAR E NÃO CHEGA NO CRM" morava só na
+                    categoria WhatsApp, que não está no menu: só se chega nela por URL. Quem
+                    estava sem receber mensagem não tinha como ver se a Evolution tinha deixado de
+                    avisar ou se o CRM tinha descartado — as duas se parecem na tela. É a mesma
+                    correção que "Buscar conversas que faltam" já recebeu, pelo mesmo motivo. */}
+                {qrCodeLigada ? <SaudeQrCode /> : null}
                 {/* Pelo mesmo motivo da limpeza logo abaixo: o progresso da importação e o botão
                     "Buscar conversas que faltam" só existiam na categoria WhatsApp, fora do menu.
                     Quem não estava recebendo as conversas do celular não tinha como pedir pra

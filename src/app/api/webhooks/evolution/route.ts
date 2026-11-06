@@ -309,14 +309,34 @@ export async function processarMensagemRecebida(
     return;
   }
 
+  /*
+   * MENSAGEM ANTIGA DEIXA DE SER DESCARTADA: ela entra como HISTÓRICO.
+   *
+   * Aqui o código jogava fora toda mensagem com mais de dois minutos. A intenção estava certa —
+   * ao reconectar, o Baileys reenvia o que já passou, e sem o corte a caixa de entrada enchia de
+   * "não lida" e as automações disparavam de novo pra conversa de semanas atrás. Mas o remédio
+   * era apagar a mensagem, e dois minutos é uma janela apertadíssima: basta o webhook enfileirar,
+   * a Evolution tentar de novo depois de uma falha, ou o relógio do servidor dela estar alguns
+   * minutos fora do nosso, pra uma mensagem REAL, acabada de chegar, sumir sem deixar rastro além
+   * de uma linha de descarte que ninguém lê. "Respondi pelo celular e não apareceu no CRM."
+   *
+   * Agora ela é tratada como o que de fato é: histórico. Entra na conversa, no lugar certo, e
+   * não conta como não lida nem dispara automação — exatamente o que `permitirHistorico` já
+   * fazia. Nada se perde, e nenhuma das proteções cai: o id do WhatsApp continua impedindo
+   * duplicata, então o reenvio de um reconexão não vira mensagem repetida.
+   */
   const timestampMs = (data.messageTimestamp ?? Math.floor(Date.now() / 1000)) * 1000;
-  if (!opcoes.permitirHistorico && Date.now() - timestampMs > IDADE_MAXIMA_MENSAGEM_AO_VIVO_MS) {
+  const atraso = Date.now() - timestampMs;
+  const velhaDemaisPraSerAoVivo = Number.isFinite(atraso) && atraso > IDADE_MAXIMA_MENSAGEM_AO_VIVO_MS;
+  const comoHistorico = Boolean(opcoes.permitirHistorico) || velhaDemaisPraSerAoVivo;
+  if (velhaDemaisPraSerAoVivo && !opcoes.permitirHistorico) {
+    // Continua anotado: é a pista de que o aviso da Evolution está chegando atrasado, ou de que
+    // o relógio dela está fora do nosso. A diferença é que agora a mensagem foi gravada.
     await registrarDescarte(
       workspaceId,
-      "mensagem antiga",
-      `${Math.round((Date.now() - timestampMs) / 60_000)} minutos atrás (tratada como sincronização de histórico)`,
+      "mensagem fora da janela ao vivo",
+      `${Math.round(atraso / 60_000)} minutos atrás (gravada como histórico, sem contar como não lida)`,
     );
-    return;
   }
 
   const jaExiste = await prisma.mensagemExtra.findUnique({ where: { id: data.key.id } });
@@ -546,7 +566,7 @@ export async function processarMensagemRecebida(
     // mensagem antiga trazida do celular somava +1 no contador: a importação terminava com
     // centenas de "não lidas" que ninguém deixou de ler, e o único jeito de limpar era abrir
     // conversa por conversa. É o mesmo motivo que já está escrito no campo, em `upsert.ts`.
-    contarComoNaoLida: !fromMe && !opcoes.permitirHistorico,
+    contarComoNaoLida: !fromMe && !comoHistorico,
     ehGrupo,
     participantesGrupo,
     fotoUrl,
@@ -566,7 +586,7 @@ export async function processarMensagemRecebida(
    * importação. Além de lento, não media nada do que esta linha existe pra medir: a pergunta aqui
    * é "a Evolution está entregando mensagem nova?", e importação não responde isso.
    */
-  if (!opcoes.permitirHistorico) {
+  if (!comoHistorico) {
     await registrarMensagemGravada(workspaceId, chaveContato, ehGrupo).catch(() => {});
   }
 
@@ -607,7 +627,7 @@ export async function processarMensagemRecebida(
    * desmarcando consentimento por causa de conversa de semanas atrás, e em grupo "parar" não é
    * pedido de ninguém sobre o próprio número.
    */
-  if (!fromMe && !ehGrupo && !opcoes.permitirHistorico && ehPedidoDeParar(texto)) {
+  if (!fromMe && !ehGrupo && !comoHistorico && ehPedidoDeParar(texto)) {
     await registrarPedidoDeParar({
       workspaceId,
       telefone: waId,
@@ -633,7 +653,7 @@ export async function processarMensagemRecebida(
    * ignorada antes de chegar aqui. Passa a ser uma regra explícita porque agora a importação pode
    * ser rodada de novo, de propósito.
    */
-  if (!fromMe && !ehGrupo && !opcoes.permitirHistorico) {
+  if (!fromMe && !ehGrupo && !comoHistorico) {
     await dispararAutomacoesDeMensagemRecebida({
       workspaceId,
       contatoNome: chaveContato,
