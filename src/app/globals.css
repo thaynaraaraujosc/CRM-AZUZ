@@ -17150,12 +17150,19 @@ button.flow-node-warn:hover {
   line-height: 1.5;
 }
 
+/* O código agora pode ser uma FRASE (a mensagem do erro, quando não há `digest`), e não só um
+   punhado de caracteres: precisa caber, quebrar linha e poder ser selecionado pra copiar. */
 .pagina-erro-codigo {
+  display: block;
+  max-width: 44ch;
   font-size: 12px;
+  line-height: 1.5;
   color: var(--text-muted);
   background: var(--navy-raised-2);
-  padding: var(--space-1) var(--space-2);
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-sm);
+  overflow-wrap: anywhere;
+  user-select: all;
 }
 
 /* ==========================================================================
@@ -29629,11 +29636,18 @@ td.trafego-col-crm:first-of-type {
    treze delas empilhadas davam dois metros de ficha pra mostrar três dados.
    Ver `components/contato/DadosDoContato.tsx`.
    ========================================================================== */
+/*
+ * O MESMO RESPIRO LATERAL DO RESTO DO PAINEL.
+ *
+ * Tudo que mora neste painel se afasta sozinho da borda: `.panel-h` e `.field` trazem o próprio
+ * `padding`. A ficha não trazia, então o nome, os selos e as linhas ficavam COLADOS no filete da
+ * esquerda enquanto o título ao lado respirava — e a coluna inteira lia como desalinhada.
+ */
 .ficha-topo {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 2px 0 12px;
+  padding: 2px var(--space-4) 12px;
   border-bottom: 1px solid var(--line-soft);
 }
 
@@ -29668,7 +29682,7 @@ td.trafego-col-crm:first-of-type {
 .ficha-lista {
   display: flex;
   flex-direction: column;
-  padding: 2px 0 4px;
+  padding: 2px var(--space-4) 6px;
 }
 
 /* Rótulo e valor na MESMA linha: é o que encurta a ficha de verdade. Com o rótulo
@@ -29681,8 +29695,10 @@ td.trafego-col-crm:first-of-type {
   gap: 10px;
   align-items: baseline;
   width: 100%;
-  padding: 7px 4px;
-  margin: 0 -4px;
+  /* Sem margem negativa: ela puxava a linha pra fora do respiro do painel, que é justamente o
+     que fazia o texto encostar na borda. O realce do hover cabe dentro do padding. */
+  padding: 8px 6px;
+  margin: 0 -6px;
   border: 0;
   border-bottom: 1px solid var(--line-soft);
   border-radius: 6px;
