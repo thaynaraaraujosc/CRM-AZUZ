@@ -123,6 +123,18 @@ const EXATOS_PUBLICOS = [
   // Verificação diária das conexões oficiais, chamada pelo cron: mesma regra dos `/api/cron/`,
   // só que esta rota nasceu antes dessa pasta existir.
   "/api/integracoes/meta/whatsapp/saude",
+  /*
+   * "QUAL VERSÃO ESTÁ NO AR?" — e ela precisa responder SEM login.
+   *
+   * O dia em que ela nasceu (07/11/2026) foi um dia em que o código estava na `main`, conferido
+   * commit a commit, e a tela continuava a mesma. A pergunta que ninguém conseguia responder era
+   * se o site estava servindo aquele código ou um build velho — e uma rota que exige sessão não
+   * responde isso quando a dúvida é justamente se a aplicação subiu.
+   *
+   * Não há o que vazar: a resposta é o sha do commit, o nome da branch e o ambiente. Sha de commit
+   * de repositório privado não abre porta nenhuma.
+   */
+  "/api/versao",
 ];
 
 /**

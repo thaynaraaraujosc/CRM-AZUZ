@@ -193,3 +193,14 @@ describe("anexo assinado que os canais buscam de fora", () => {
     expect(ehRotaPublica("/api/biblioteca-documentos")).toBe(false);
   });
 });
+
+describe("a rota que diz qual versão está no ar", () => {
+  it("responde sem login, porque a dúvida é se a aplicação subiu", () => {
+    // Exigir sessão aqui seria pedir pra entrar num prédio pra perguntar se o prédio está de pé.
+    expect(ehRotaPublica("/api/versao")).toBe(true);
+  });
+
+  it("e só ela: nada abaixo dela entra junto", () => {
+    expect(ehRotaPublica("/api/versao/segredo")).toBe(false);
+  });
+});
