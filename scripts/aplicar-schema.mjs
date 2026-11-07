@@ -39,6 +39,8 @@
  */
 import { spawnSync } from "node:child_process";
 
+import { trechosDestrutivos } from "./sql-destrutivo.mjs";
+
 /*
  * DATABASE_URL AUSENTE: o caminho silencioso que custou um dia de produção em 14/10/2026.
  *
@@ -154,6 +156,86 @@ if (naoAlcancouOBanco) {
   console.warn("========================================================================");
   console.warn("");
   process.exit(0);
+}
+
+/*
+ * "PODE PERDER DADO" NÃO É A MESMA COISA QUE "VAI PERDER DADO".
+ *
+ * Em 07/11/2026 cinco publicações seguidas morreram em 13 segundos, nesta linha, com este texto:
+ *
+ *   ⚠️ There might be data loss when applying the changes:
+ *     • A unique constraint covering the columns [workspaceId,provedor,slot] on the table
+ *       Integracao will be added. If there are existing duplicate values, this will fail.
+ *
+ * Leia o que ele diz: SE houver duplicados, isto VAI FALHAR. Não apaga nada — ou aplica, ou o
+ * banco recusa em voz alta. (Ali nem falhar podia: a tabela já era única em
+ * `[workspaceId, provedor]`, e um índice mais largo que um índice único é único por consequência.)
+ *
+ * O `db push` junta num aviso só duas coisas de naturezas opostas: "isto apaga dado" e "isto pode
+ * não ser aceito". A primeira TEM que parar o build. A segunda parando o build custou três horas
+ * de trabalho publicado que nunca saiu do lugar — e o pior: sem nenhum sinal pra quem usa, porque
+ * o site continuava no ar, servindo o build velho.
+ *
+ * A política não muda: nada que apague dado passa por aqui sozinho. O que muda é que agora o
+ * script OLHA O SQL antes de decidir, em vez de tratar todo aviso como destruição.
+ */
+if (saida.includes("--accept-data-loss")) {
+  // O SQL que seria aplicado, perguntado ao próprio Prisma. É a única forma de saber O QUE a
+  // mudança faz; o aviso do `db push` só diz que existe uma.
+  const diff = spawnSync(
+    "npx",
+    [
+      "prisma",
+      "migrate",
+      "diff",
+      "--from-url",
+      process.env.DATABASE_URL,
+      "--to-schema-datamodel",
+      "prisma/schema.prisma",
+      "--script",
+    ],
+    { encoding: "utf-8", shell: false },
+  );
+  const sql = `${diff.stdout ?? ""}`;
+  const destrutivos = diff.status === 0 ? trechosDestrutivos(sql) : null;
+
+  if (destrutivos === null) {
+    console.error("");
+    console.error("[schema] O banco recusou a mudança e NÃO deu pra ler o que ela faria.");
+    console.error("  Sem saber se apaga dado, o build para: é o lado seguro do erro.");
+    console.error(`${diff.stderr ?? ""}`);
+    process.exit(1);
+  }
+
+  if (destrutivos.length === 0) {
+    console.warn("");
+    console.warn("========================================================================");
+    console.warn("[schema] O aviso do Prisma não é destruição: nada neste SQL apaga dado.");
+    console.warn("  Conferido comando a comando (ver scripts/sql-destrutivo.mjs). Aplicando.");
+    console.warn("========================================================================");
+    console.warn("");
+    const segunda = spawnSync("npx", ["prisma", "db", "push", "--accept-data-loss"], {
+      encoding: "utf-8",
+      shell: false,
+    });
+    const saidaSegunda = `${segunda.stdout ?? ""}${segunda.stderr ?? ""}`;
+    if (saidaSegunda) process.stdout.write(saidaSegunda);
+    if (segunda.status === 0) process.exit(0);
+    console.error("");
+    console.error("[schema] Mesmo sem nada destrutivo, o banco recusou. O build para aqui.");
+    console.error("");
+    process.exit(segunda.status ?? 1);
+  }
+
+  console.error("");
+  console.error("[schema] A mudança APAGA DADO. O build para aqui de propósito.");
+  console.error("  O que seria executado:");
+  for (const trecho of destrutivos) console.error(`    ${trecho};`);
+  console.error("");
+  console.error("  Nada disto é aplicado automaticamente. Se for mesmo pra acontecer, rode à mão,");
+  console.error("  com backup feito, e publique de novo.");
+  console.error("");
+  process.exit(1);
 }
 
 console.error("");
