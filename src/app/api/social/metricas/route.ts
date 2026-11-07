@@ -98,7 +98,8 @@ export type RoboSocial = {
 
 /** Tipos normalizados de `InstagramEvento` agrupados pelo que a pessoa quer contar. */
 const GRUPOS = {
-  comentarios: ["comentario_criado", "resposta_comentario"],
+  // Comentário de live conta como comentário: fora daqui ele sumiria do número sem explicação.
+  comentarios: ["comentario_criado", "resposta_comentario", "comentario_live"],
   directs: ["mensagem_recebida", "midia_recebida", "publicacao_compartilhada"],
   storiesRespondidos: ["story_respondido"],
   mencoes: ["mencao_em_story"],

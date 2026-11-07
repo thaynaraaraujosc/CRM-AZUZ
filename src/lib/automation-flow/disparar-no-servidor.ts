@@ -359,7 +359,12 @@ export function areaCombina(fluxo: FluxoAutomacao, areaDoEvento: AreaAutomacao):
 
 
 /** Gatilhos cujo texto recebido é um COMENTÁRIO, e não uma mensagem de conversa. */
-const GATILHOS_DE_COMENTARIO = new Set(["comentario_instagram", "comentario_tiktok", "instagram_resposta_comentario"]);
+const GATILHOS_DE_COMENTARIO = new Set([
+  "comentario_instagram",
+  "comentario_tiktok",
+  "instagram_resposta_comentario",
+  "instagram_comentario_live",
+]);
 
 export function ehGatilhoDeComentario(tipo: string): boolean {
   return GATILHOS_DE_COMENTARIO.has(tipo);

@@ -3,7 +3,6 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-import { Topbar } from "@/components/ui";
 import { useConfiguracoes } from "@/lib/configuracoes-context";
 import { categoriaPorId, type CategoriaId } from "@/lib/configuracoes/estrutura";
 import { CategoriasNav } from "@/components/configuracoes/CategoriasNav";
@@ -69,8 +68,13 @@ function ConfiguracoesConteudo() {
 
   return (
     <>
-      <Topbar title={traduzir("Configurações")} />
-
+      {/*
+        SEM A FAIXA DE TÍTULO.
+        
+        Ela escrevia "Configurações" numa linha inteira logo abaixo da busca do CRM — e a pessoa
+        já sabe onde está: ela clicou em Configurações no menu, e o item está aceso lá. Uma faixa
+        que só repete o nome da tela empurra o conteúdo pra baixo e não responde nada.
+      */}
       <div className="content">
         <div className="config-layout">
           <CategoriasNav ativa={categoriaAtiva} onSelecionar={selecionarCategoria} />

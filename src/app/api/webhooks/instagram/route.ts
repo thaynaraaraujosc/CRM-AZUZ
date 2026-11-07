@@ -349,7 +349,16 @@ export async function POST(request: Request) {
     // fazer com um comentário vive em `instagram-comentarios.ts`. Aqui só se resolve de quem é a
     // conta e entrega. Ver item "separar responsabilidades" da arquitetura de webhooks.
     for (const mudanca of entry.changes ?? []) {
-      if (mudanca.field !== "comments" || !mudanca.value || !entry.id) continue;
+      /*
+       * `live_comments` É UM CAMPO SEPARADO, com o mesmo formato de `comments`.
+       *
+       * A Meta separa porque o volume é outro: durante uma live chegam dezenas por minuto. Pra cá
+       * a diferença que importa é outra — quem está ao vivo espera resposta AGORA, e o robô da
+       * live costuma ser outro. Por isso o evento vira um gatilho próprio em vez de se misturar
+       * com o comentário de feed.
+       */
+      const deLive = mudanca.field === "live_comments";
+      if ((mudanca.field !== "comments" && !deLive) || !mudanca.value || !entry.id) continue;
       const integracao = await integracaoDaContaInstagram(entry.id);
       if (!integracao) continue;
       await processarComentarioInstagram({
@@ -357,6 +366,7 @@ export async function POST(request: Request) {
         contaInstagramId: entry.id,
         accessTokenCriptografado: integracao.accessTokenCriptografado,
         comentario: mudanca.value,
+        aoVivo: deLive,
       });
     }
 

@@ -628,6 +628,7 @@ export function resumoNo(node: FlowNode, funis?: Funil[]): string {
     }
     case "instagram_direct_recebido":
     case "comentario_instagram":
+    case "instagram_comentario_live":
     case "instagram_resposta_comentario": {
       const palavras = Array.isArray(d.palavras) ? (d.palavras as string[]).filter(Boolean) : [];
       if (!palavras.length) return "Qualquer conteúdo";

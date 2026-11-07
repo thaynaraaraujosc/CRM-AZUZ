@@ -25,7 +25,8 @@ export type TipoEventoInstagram =
   | "reacao_adicionada"
   | "reacao_removida"
   | "comentario_criado"
-  | "resposta_comentario";
+  | "resposta_comentario"
+  | "comentario_live";
 
 export type EventoInstagramNormalizado = {
   /** Chave natural na Meta (`mid` da mensagem, id do comentário). É o que garante a dedup. */

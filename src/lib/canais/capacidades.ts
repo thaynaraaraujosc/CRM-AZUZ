@@ -247,6 +247,8 @@ const RECURSO_EXIGIDO: Partial<Record<FlowNodeType, keyof CapacidadesCanal>> = {
   instagram_publicacao_compartilhada: "eventosProprios",
   instagram_story_respondido: "eventosProprios",
   instagram_mencao_story: "eventosProprios",
+  // Live é evento do Instagram e de mais ninguém: no robô comercial ele seria botão falso.
+  instagram_comentario_live: "eventosProprios",
   mensagem_modelo_whatsapp: "modeloAprovado",
   mensagem_email: "ehEmail",
 };

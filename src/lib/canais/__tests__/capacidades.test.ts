@@ -109,6 +109,7 @@ describe("cada gatilho só na área onde ele acontece", () => {
       "instagram_midia_recebida",
       "instagram_reacao_recebida",
       "instagram_resposta_comentario",
+      "instagram_comentario_live",
       "comentario_instagram",
     ] as const) {
       expect(blocoValeNaArea(tipo, "comercial")).toBe(false);

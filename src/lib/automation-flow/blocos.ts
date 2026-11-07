@@ -472,6 +472,34 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     }),
   },
 
+  // --- ao vivo ---
+  /*
+   * COMENTÁRIO EM LIVE é um evento próprio, e não "comentário numa publicação".
+   *
+   * A Meta manda os dois no mesmo formato, mas em campos diferentes (`comments` e `live_comments`),
+   * e a diferença não é burocrática: durante uma live chegam dezenas de comentários por minuto, de
+   * gente que está AO VIVO esperando resposta. Quem monta o robô quer tratar essa enxurrada com
+   * outra mensagem — e, mais ainda, quer poder ligar só ela sem ligar o comentário de feed.
+   *
+   * Não tem "em quais publicações": uma live não está na lista de publicações enquanto acontece.
+   */
+  {
+    tipo: "instagram_comentario_live",
+    categoria: "gatilho",
+    grupo: "instagram",
+    label: "Comentário em Live",
+    descricao:
+      "Dispara quando alguém comenta enquanto você está ao vivo. A resposta sai no Direct, que é onde a conversa continua depois que a live acaba.",
+    icone: "Instagram",
+    corClasse: corDaCategoria("gatilho"),
+    dataPadrao: () => ({
+      canal: "Instagram",
+      palavras: [] as string[],
+      modoPalavra: "qualquer",
+      ignorarAcentos: true,
+    }),
+  },
+
   // --- no perfil ---
   {
     tipo: "instagram_mencao_story",

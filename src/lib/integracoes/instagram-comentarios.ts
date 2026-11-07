@@ -1,4 +1,3 @@
-import { prisma } from "@/lib/prisma";
 import { decriptar } from "@/lib/integracoes/crypto";
 import {
   classificarErroMeta,
@@ -23,6 +22,9 @@ import { dispararAutomacoesDeEventoInstagram } from "@/lib/automation-flow/dispa
  *   necessário a Meta omite o autor, e sem ele não há a quem responder no Direct.
  * - `value.media`: a publicação comentada (id e tipo)
  * - `value.parent_id`: presente só quando é RESPOSTA a outro comentário
+ *
+ * O MESMO FORMATO chega no campo `live_comments` quando o comentário é feito durante uma live. O
+ * webhook diz qual campo era, e é só isso que `aoVivo` carrega até aqui.
  */
 
 export type ComentarioInstagram = {
@@ -38,8 +40,10 @@ export async function processarComentarioInstagram(params: {
   contaInstagramId: string;
   accessTokenCriptografado: string | null;
   comentario: ComentarioInstagram;
+  /** Veio do campo `live_comments`: a pessoa comentou com a live no ar. */
+  aoVivo?: boolean;
 }): Promise<void> {
-  const { workspaceId, contaInstagramId, comentario } = params;
+  const { workspaceId, contaInstagramId, comentario, aoVivo = false } = params;
 
   const comentarioId = comentario.id;
   if (!comentarioId) return;
@@ -58,7 +62,7 @@ export async function processarComentarioInstagram(params: {
 
   const primeiraVez = await registrarEvento(workspaceId, {
     id: `comentario:${comentarioId}`,
-    tipo: ehResposta ? "resposta_comentario" : "comentario_criado",
+    tipo: aoVivo ? "comentario_live" : ehResposta ? "resposta_comentario" : "comentario_criado",
     contaInstagramId,
     contatoNome: chaveContato,
     remetenteId: comentario.from?.id,
@@ -67,7 +71,7 @@ export async function processarComentarioInstagram(params: {
     comentarioPaiId: comentario.parent_id,
     midiaId: comentario.media?.id,
     texto,
-    dados: { tipoPublicacao: comentario.media?.media_product_type ?? null },
+    dados: { tipoPublicacao: comentario.media?.media_product_type ?? null, aoVivo },
   });
   // Webhook reenviado pela Meta: já foi tratado, sair sem fazer nada é o comportamento certo.
   if (!primeiraVez) return;
@@ -89,10 +93,12 @@ export async function processarComentarioInstagram(params: {
       workspaceId,
       contatoNome: chaveContato,
       canal: "Instagram",
-      tipo: ehResposta ? "respondeu_comentario" : "comentou",
-      descricao: ehResposta
-        ? `respondeu um comentário: "${texto.slice(0, 120)}"`
-        : `comentou: "${texto.slice(0, 120)}"`,
+      tipo: aoVivo ? "comentou_na_live" : ehResposta ? "respondeu_comentario" : "comentou",
+      descricao: aoVivo
+        ? `comentou na live: "${texto.slice(0, 120)}"`
+        : ehResposta
+          ? `respondeu um comentário: "${texto.slice(0, 120)}"`
+          : `comentou: "${texto.slice(0, 120)}"`,
       dados: { comentarioId, publicacaoId: comentario.media?.id ?? null },
     });
 
@@ -101,7 +107,11 @@ export async function processarComentarioInstagram(params: {
     await dispararAutomacoesDeEventoInstagram({
       workspaceId,
       contatoNome: chaveContato,
-      tipoGatilho: ehResposta ? "instagram_resposta_comentario" : "comentario_instagram",
+      tipoGatilho: aoVivo
+        ? "instagram_comentario_live"
+        : ehResposta
+          ? "instagram_resposta_comentario"
+          : "comentario_instagram",
       textoRecebido: texto,
       publicacaoId: comentario.media?.id,
       // A trava é por comentário: o mesmo fluxo nunca roda duas vezes pro mesmo comentário.

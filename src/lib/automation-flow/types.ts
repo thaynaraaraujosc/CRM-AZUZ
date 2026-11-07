@@ -29,6 +29,7 @@ export type FlowNodeType =
   | "instagram_mencao_story"
   | "instagram_reacao_recebida"
   | "instagram_resposta_comentario"
+  | "instagram_comentario_live"
   // gatilho
   | "lead_criado"
   | "lead_entrou_etapa"

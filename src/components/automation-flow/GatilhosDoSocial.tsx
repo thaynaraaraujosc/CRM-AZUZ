@@ -28,11 +28,12 @@ import { useIdioma } from "@/lib/idioma-context";
  * filtra nada, a gaveta fecha logo depois das palavras.
  */
 
-/** Os quatro que a referência mostra primeiro. O resto vai pra "Opções avançadas". */
+/** Os cinco que a referência mostra primeiro, nesta ordem. O resto vai pra "Opções avançadas". */
 const PRINCIPAIS: FlowNodeType[] = [
   "comentario_instagram",
   "instagram_story_respondido",
   "instagram_direct_recebido",
+  "instagram_comentario_live",
   "instagram_mencao_story",
 ];
 
@@ -45,6 +46,8 @@ const COMO_FUNCIONA: Partial<Record<FlowNodeType, string>> = {
   instagram_story_respondido: "Respondem a um story seu → a automação continua a conversa no Direct.",
   instagram_direct_recebido: "Te mandam mensagem no Direct → a automação responde na hora.",
   instagram_mencao_story: "Marcam você em um story → a automação responde no Direct.",
+  instagram_comentario_live:
+    "Comentam durante a sua live → a automação chama a pessoa no Direct, e a conversa continua depois que a live acaba.",
   instagram_midia_recebida: "Mandam foto, vídeo ou áudio no Direct → a automação responde na hora.",
   instagram_publicacao_compartilhada: "Encaminham uma publicação pra você no Direct → a automação responde.",
   instagram_reacao_recebida: "Reagem com emoji a uma mensagem sua → a automação segue dali.",
@@ -162,6 +165,14 @@ export function GatilhosDoSocial({
     });
   }
 
+  /*
+   * A LINHA É SÓ O NOME DO GATILHO.
+   *
+   * A descrição estava dentro de cada caixa, e com ela cada opção ocupava três linhas de texto:
+   * oito gatilhos viravam uma rolagem, e a lista — que é uma ESCOLHA, feita de relance — passava a
+   * exigir leitura. A explicação não sumiu: ela está inteira no "Como funciona cada gatilho?", que
+   * é onde se vai quando a dúvida aparece, e não antes dela.
+   */
   function Linha({ bloco }: { bloco: (typeof doInstagram)[number] }) {
     const escolhido = marcados.includes(bloco.tipo);
     return (
@@ -170,12 +181,12 @@ export function GatilhosDoSocial({
         role="checkbox"
         aria-checked={escolhido}
         className={`gat-item${escolhido ? " on" : ""}`}
+        title={bloco.descricao ? traduzir(bloco.descricao) : undefined}
         onClick={() => alternar(bloco.tipo)}
       >
         <span className="gat-marca gat-marca-caixa" aria-hidden="true" />
         <span className="gat-textos">
           <strong>{traduzir(bloco.label)}</strong>
-          {bloco.descricao ? <span>{traduzir(bloco.descricao)}</span> : null}
         </span>
       </button>
     );
