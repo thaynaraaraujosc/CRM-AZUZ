@@ -3712,17 +3712,21 @@ function ConversasPageInner() {
   }
 
   /**
-   * Duplo clique numa mensagem curte/descurte, igual ao Direct do Instagram.
+   * Duplo clique numa mensagem curte/descurte, igual ao WhatsApp e ao Direct.
    *
-   * Só vale no Instagram: é onde a Meta aceita reagir a uma mensagem já enviada e devolve a reação
-   * da outra pessoa pelo webhook. Nos outros canais o coração ficaria só na nossa tela, e a cliente
-   * nunca saberia: por isso o duplo clique simplesmente não faz nada lá.
+   * VALE NO INSTAGRAM E NO WHATSAPP POR QR CODE: os dois entregam a reação do outro lado e avisam
+   * quando a outra pessoa reage. Na API oficial da Meta o duplo clique não faz nada de propósito
+   * — lá a reação é uma mensagem nova, que consome a janela de 24 horas e conta como envio; um
+   * duplo clique sem querer viraria cobrança. Ver `api/conversas/reagir`.
    *
-   * A tela muda na hora (otimista) e volta atrás se a Meta recusar: esperar a ida e volta pra
-   * pintar o coração faz o duplo clique parecer quebrado.
+   * A tela muda na hora (otimista) e volta atrás se o outro lado recusar: esperar a ida e volta
+   * pra pintar o coração faz o duplo clique parecer quebrado.
    */
   async function curtirMensagem(chave: string) {
-    if (aberta.canal !== "Instagram") return;
+    const canalAceitaReacao =
+      aberta.canal === "Instagram" ||
+      (aberta.canal === "WhatsApp" && !aberta.contaCanal?.startsWith("meta_whatsapp:"));
+    if (!canalAceitaReacao) return;
     const mensagens = mensagensExtraPorContato[aberta.nome] ?? [];
     const alvo = mensagens.find((m, i) => (m.id ?? `extra-${i}`) === chave);
     if (!alvo?.id) return;

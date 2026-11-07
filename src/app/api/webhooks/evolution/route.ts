@@ -284,6 +284,33 @@ export async function processarMensagemRecebida(
    * não chegar de outros, sem padrão nenhum. Ver `texto-da-mensagem.ts`.
    */
   const conteudo = desembrulharMensagem(data.message as Record<string, unknown> | undefined);
+  /*
+   * A REAÇÃO DO CONTATO NÃO É UMA MENSAGEM NOVA: ela PINTA uma mensagem que já existe.
+   *
+   * Vem como `reactionMessage`, sem texto nenhum — e o corte logo abaixo ("sem texto
+   * reconhecível") a jogava fora. O efeito era um recurso pela metade: o coração que saía daqui
+   * chegava no celular dela, e o que ela mandava de lá nunca aparecia aqui. Pior que não ter,
+   * porque quem atende conclui que a pessoa não reagiu.
+   *
+   * Emoji vazio é como o WhatsApp DESFAZ a reação, então ele apaga o campo em vez de gravar "".
+   */
+  const reacao = (desembrulharMensagem(data.message as Record<string, unknown> | undefined) ?? {})
+    .reactionMessage as { key?: { id?: string }; text?: string } | undefined;
+  if (reacao?.key?.id) {
+    const alvo = await prisma.mensagemExtra.findUnique({ where: { id: reacao.key.id } });
+    if (alvo && alvo.workspaceId === workspaceId) {
+      const extrasAtuais = (alvo.extras as Record<string, unknown> | null) ?? {};
+      // `fromMe` aqui é de quem REAGIU, não de quem escreveu a mensagem reagida.
+      const campo = data.key?.fromMe ? "reacaoMinha" : "reacaoContato";
+      const emoji = typeof reacao.text === "string" && reacao.text.trim() ? reacao.text : undefined;
+      await prisma.mensagemExtra.update({
+        where: { id: alvo.id },
+        data: { extras: { ...extrasAtuais, [campo]: emoji } as object },
+      });
+    }
+    return;
+  }
+
   const texto = extrairTextoDaMensagem(data.message as Record<string, unknown> | undefined);
   // O documento é o único tipo cujos metadados (nome e formato) só existem no evento: a busca da
   // mídia devolve o conteúdo, não o nome do arquivo.

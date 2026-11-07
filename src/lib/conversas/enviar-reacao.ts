@@ -41,7 +41,8 @@ export async function reagirAUltimaMensagem(params: {
       conversa.contaCanal?.startsWith("whatsapp_nao_oficial:") || conversa.contaCanal?.startsWith("whatsapp_baileys:");
 
     if (porQrCode) {
-      await enviarReacaoWhatsAppNaoOficial(workspaceId, conversa.contato, recebida.id, emoji);
+      // `false`: a automação reage à mensagem que o CONTATO mandou.
+      await enviarReacaoWhatsAppNaoOficial(workspaceId, conversa.contato, recebida.id, emoji, false);
       return { enviado: true };
     }
 

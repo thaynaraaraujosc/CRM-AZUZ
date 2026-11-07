@@ -661,22 +661,26 @@ export async function buscarMensagensDoChat(
 /**
  * Reage a uma mensagem com um emoji, pelo número conectado.
  *
- * A `key` é o endereço da mensagem no WhatsApp: quem é a conversa, se a mensagem é nossa ou dela,
+ * A `key` é o endereço da mensagem no WhatsApp: quem é a conversa, se a mensagem é NOSSA ou dela,
  * e o id. Sem os três a Evolution não sabe em qual mensagem reagir, e a reação some sem erro.
  *
- * `fromMe: false` porque a automação reage à mensagem que o CONTATO mandou. Reagir à própria
- * mensagem existe no WhatsApp, mas não é o que alguém quer numa automação de atendimento.
+ * `fromMe` não tem padrão seguro, e por isso é obrigatório. A automação reage à mensagem que o
+ * contato mandou (`false`); o duplo clique na tela reage em qualquer uma das duas, e errar o lado
+ * aqui faz a Evolution procurar uma mensagem que não existe — nenhum erro, nenhuma reação.
+ *
+ * Emoji VAZIO remove a reação: é assim que o WhatsApp desfaz, não com uma chamada própria.
  */
 export function enviarReacaoWhatsAppNaoOficial(
   workspaceId: string,
   numero: string,
   mensagemId: string,
   emoji: string,
+  fromMe: boolean,
 ) {
   return chamarEvolution(`/message/sendReaction/${nomeInstancia(workspaceId)}`, "POST", {
     key: {
       remoteJid: numero.includes("@") ? numero : `${numero.replace(/\D/g, "")}@s.whatsapp.net`,
-      fromMe: false,
+      fromMe,
       id: mensagemId,
     },
     reaction: emoji,
