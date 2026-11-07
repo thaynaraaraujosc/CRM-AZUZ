@@ -79,14 +79,14 @@ export async function GET(request: Request) {
     // lógica de merge do callback principal, pelo mesmo motivo: reconectar não pode apagar
     // preferência salva.
     const existente = await prisma.integracao.findUnique({
-      where: { workspaceId_provedor: { workspaceId, provedor } },
+      where: { workspaceId_provedor_slot: { workspaceId, provedor, slot: 1 } },
       select: { metadados: true },
     });
     const metadadosPreservados = (existente?.metadados as Record<string, unknown> | null) ?? {};
     const metadadosFinal = comoJson({ ...metadadosPreservados, ...metadadosResolvidos });
 
     await prisma.integracao.upsert({
-      where: { workspaceId_provedor: { workspaceId, provedor } },
+      where: { workspaceId_provedor_slot: { workspaceId, provedor, slot: 1 } },
       create: {
         id: `integracao-${workspaceId}-${provedor}`,
         workspaceId,
@@ -130,7 +130,7 @@ export async function GET(request: Request) {
     const mensagem = explicarErroDoInstagram(cru);
     console.error("[instagram/callback] falha ao conectar:", erro);
     await prisma.integracao.upsert({
-      where: { workspaceId_provedor: { workspaceId, provedor } },
+      where: { workspaceId_provedor_slot: { workspaceId, provedor, slot: 1 } },
       create: {
         id: `integracao-${workspaceId}-${provedor}`,
         workspaceId,

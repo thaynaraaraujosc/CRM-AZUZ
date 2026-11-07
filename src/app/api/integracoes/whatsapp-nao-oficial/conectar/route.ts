@@ -42,7 +42,7 @@ export async function POST() {
     // histórico e o sinal de vida do webhook a cada clique em "Conectar": a importação recomeçava
     // do zero sem ninguém entender por quê.
     const atual = await prisma.integracao.findUnique({
-      where: { workspaceId_provedor: { workspaceId, provedor: "whatsapp_nao_oficial" } },
+      where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot: 1 } },
       select: { metadados: true },
     });
     const metadados = {
@@ -52,7 +52,7 @@ export async function POST() {
     };
 
     await prisma.integracao.upsert({
-      where: { workspaceId_provedor: { workspaceId, provedor: "whatsapp_nao_oficial" } },
+      where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot: 1 } },
       create: {
         id: `${workspaceId}-whatsapp_nao_oficial`,
         workspaceId,
@@ -75,7 +75,7 @@ export async function POST() {
   } catch (erro) {
     const mensagem = erro instanceof Error ? erro.message : "Falha ao conectar";
     await prisma.integracao.upsert({
-      where: { workspaceId_provedor: { workspaceId, provedor: "whatsapp_nao_oficial" } },
+      where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot: 1 } },
       create: {
         id: `${workspaceId}-whatsapp_nao_oficial`,
         workspaceId,

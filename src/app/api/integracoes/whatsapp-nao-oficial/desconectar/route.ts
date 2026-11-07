@@ -55,7 +55,7 @@ export async function POST(request: Request) {
    * caminho próprio ("Buscar conversas que faltam").
    */
   const atual = await prisma.integracao.findUnique({
-    where: { workspaceId_provedor: { workspaceId, provedor: "whatsapp_nao_oficial" } },
+    where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot: 1 } },
     select: { metadados: true },
   });
   const webhook = ((atual?.metadados as Record<string, unknown> | null) ?? {}).webhook;

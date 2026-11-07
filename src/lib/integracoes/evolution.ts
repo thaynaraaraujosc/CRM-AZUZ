@@ -22,15 +22,43 @@ function apiKey(): string {
   return valor;
 }
 
-export function nomeInstancia(workspaceId: string): string {
-  return `crm-${workspaceId}`;
+export function nomeInstancia(workspaceId: string, slot = 1): string {
+  /*
+   * O SLOT 1 CONTINUA SE CHAMANDO `crm-<empresa>`, exatamente como sempre.
+   *
+   * Não é economia de código: é o que faz esta mudança não pedir que ninguém leia o QR de novo.
+   * A instância que está de pé agora, com a sessão do WhatsApp da cliente dentro, continua sendo
+   * encontrada pelo mesmo nome. Só o número NOVO ganha sufixo.
+   *
+   * O separador é `_` porque `slugId` nunca produz um: ele troca tudo que não é letra ou número
+   * por hífen. Com hífen, `crm-empresa-2` seria ambíguo — empresa "empresa-2" no slot 1, ou
+   * empresa "empresa" no slot 2? Duas conexões diferentes disputando o mesmo nome é a conversa
+   * de uma caindo na caixa de entrada da outra.
+   */
+  return slot <= 1 ? `crm-${workspaceId}` : `crm-${workspaceId}_${slot}`;
 }
 
-/** Extrai o workspaceId de volta do nome da instância que a Evolution manda nos eventos de
- * webhook: `null` se não bater com o padrão que este CRM usa (evento de instância de outro uso
- * do mesmo servidor, por exemplo). */
+/** De qual empresa e de qual conexão é este evento da Evolution. `null` quando o nome não bate
+ * com o padrão deste CRM (instância de outro uso do mesmo servidor Evolution, por exemplo). */
+export function conexaoDaInstancia(instancia: string): { workspaceId: string; slot: number } | null {
+  if (!instancia.startsWith("crm-")) return null;
+  const resto = instancia.slice(4);
+  if (!resto) return null;
+  const corte = resto.lastIndexOf("_");
+  if (corte > 0) {
+    const sufixo = resto.slice(corte + 1);
+    // Só conta como slot se for número: `_` não aparece em id de empresa (ver `nomeInstancia`),
+    // mas ler um sufixo estranho como slot mandaria o evento pra uma empresa que não existe.
+    if (/^\d+$/.test(sufixo)) {
+      return { workspaceId: resto.slice(0, corte), slot: Number(sufixo) };
+    }
+  }
+  return { workspaceId: resto, slot: 1 };
+}
+
+/** Só a empresa, pra quem ainda não precisa saber de qual conexão. */
 export function workspaceIdDaInstancia(instancia: string): string | null {
-  return instancia.startsWith("crm-") ? instancia.slice(4) : null;
+  return conexaoDaInstancia(instancia)?.workspaceId ?? null;
 }
 
 async function chamarEvolution(caminho: string, method: "GET" | "POST" | "DELETE", corpo?: Record<string, unknown>) {

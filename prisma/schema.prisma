@@ -1182,6 +1182,19 @@ model Integracao {
   provedor String // "meta_whatsapp"
   status   String // "desconectado" | "conectado" | "erro"
 
+  /// QUAL DAS CONEXÕES DESTE CANAL. 1 é a primeira, e é o padrão de tudo que já existe.
+  ///
+  /// Uma empresa tem mais de um número de WhatsApp: o do comercial, o do closer, o da recepção.
+  /// Até aqui cabia UM por canal, porque a chave única era `[workspaceId, provedor]` — e a única
+  /// saída pra quem tinha dois era manter dois CRMs.
+  ///
+  /// O slot entra na chave única, e TUDO que já existe fica no slot 1 sem ninguém reconectar
+  /// nada: a instância da Evolution do slot 1 continua se chamando `crm-<empresa>`, exatamente
+  /// como hoje, e só os números NOVOS ganham sufixo. É o que torna esta mudança invisível pra
+  /// quem já estava usando — que é a única forma aceitável de mexer numa conexão de WhatsApp em
+  /// produção.
+  slot Int @default(1)
+
   accessTokenCriptografado  String?   @db.Text
   refreshTokenCriptografado String?   @db.Text
   expiraEm                  DateTime?
@@ -1194,7 +1207,7 @@ model Integracao {
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 
-  @@unique([workspaceId, provedor])
+  @@unique([workspaceId, provedor, slot])
 }
 
 // Assinatura do próprio CRM (cobrança da mensalidade do workspace via Asaas). Não confundir com

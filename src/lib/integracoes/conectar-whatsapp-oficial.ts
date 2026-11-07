@@ -146,7 +146,7 @@ export async function finalizarConexaoWhatsapp({
     });
 
     await prisma.integracao.upsert({
-      where: { workspaceId_provedor: { workspaceId, provedor: "meta_whatsapp" } },
+      where: { workspaceId_provedor_slot: { workspaceId, provedor: "meta_whatsapp", slot: 1 } },
       create: {
         id: `integracao-${workspaceId}-meta_whatsapp`,
         workspaceId,
@@ -201,7 +201,7 @@ export async function salvarFalhaConexao({
   const metadados = comoJson({ ...metadadosAnteriores, wabaId, phoneNumberId, businessId, passoConexao: passo });
   const token = accessToken ? { accessTokenCriptografado: encriptar(accessToken) } : {};
   await prisma.integracao.upsert({
-    where: { workspaceId_provedor: { workspaceId, provedor: "meta_whatsapp" } },
+    where: { workspaceId_provedor_slot: { workspaceId, provedor: "meta_whatsapp", slot: 1 } },
     create: {
       id: `integracao-${workspaceId}-meta_whatsapp`,
       workspaceId,

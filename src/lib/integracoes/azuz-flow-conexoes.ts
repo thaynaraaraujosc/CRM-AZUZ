@@ -15,7 +15,7 @@ export async function conexoesDeWhatsappDoWorkspace(workspaceId: string): Promis
   const [oficial, qr] = await Promise.all([
     contaConectada(workspaceId),
     prisma.integracao.findUnique({
-      where: { workspaceId_provedor: { workspaceId, provedor: CANAL_NAO_OFICIAL } },
+      where: { workspaceId_provedor_slot: { workspaceId, provedor: CANAL_NAO_OFICIAL, slot: 1 } },
       select: { status: true, metadados: true },
     }),
   ]);

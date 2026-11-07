@@ -10,7 +10,7 @@ export async function GET() {
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
 
   const linha = await prisma.integracao.findUnique({
-    where: { workspaceId_provedor: { workspaceId: sessao.user.workspaceId, provedor: "whatsapp_nao_oficial" } },
+    where: { workspaceId_provedor_slot: { workspaceId: sessao.user.workspaceId, provedor: "whatsapp_nao_oficial", slot: 1 } },
     select: { status: true, metadados: true, erroMensagem: true, atualizadoEm: true },
   });
 

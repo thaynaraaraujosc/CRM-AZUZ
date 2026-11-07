@@ -61,7 +61,7 @@ export async function enviarTextoPeloCanal(params: {
   try {
     if (conversa.canal === "Instagram") {
       const integracao = await prisma.integracao.findUnique({
-        where: { workspaceId_provedor: { workspaceId, provedor: "meta_instagram" } },
+        where: { workspaceId_provedor_slot: { workspaceId, provedor: "meta_instagram", slot: 1 } },
       });
       if (!integracao?.accessTokenCriptografado || integracao.status !== "conectado") {
         return { enviado: false, motivo: "Instagram não conectado" };
@@ -169,7 +169,7 @@ export async function enviarTextoPeloCanal(params: {
 async function qrCodeConectado(workspaceId: string): Promise<boolean> {
   const integracao = await prisma.integracao
     .findUnique({
-      where: { workspaceId_provedor: { workspaceId, provedor: "whatsapp_nao_oficial" } },
+      where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot: 1 } },
       select: { status: true },
     })
     .catch(() => null);

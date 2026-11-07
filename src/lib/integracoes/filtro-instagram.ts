@@ -25,7 +25,7 @@ export type FiltroDireto =
 
 export async function filtroDoDirect(workspaceId: string): Promise<FiltroDireto> {
   const integracao = await prisma.integracao.findUnique({
-    where: { workspaceId_provedor: { workspaceId, provedor: "meta_instagram" } },
+    where: { workspaceId_provedor_slot: { workspaceId, provedor: "meta_instagram", slot: 1 } },
     select: { status: true, metadados: true },
   });
 

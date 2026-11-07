@@ -120,7 +120,7 @@ async function enviarUm(
     }
 
     const integracao = await prisma.integracao.findUnique({
-      where: { workspaceId_provedor: { workspaceId, provedor: "meta_instagram" } },
+      where: { workspaceId_provedor_slot: { workspaceId, provedor: "meta_instagram", slot: 1 } },
     });
     if (!integracao?.accessTokenCriptografado || integracao.status !== "conectado") {
       throw new Error("Instagram não está conectado.");
@@ -243,7 +243,7 @@ async function processarCampanha(campanhaId: string, prazoFinal: number): Promis
     }
   } else if (canal === "instagram") {
     const integracao = await prisma.integracao.findUnique({
-      where: { workspaceId_provedor: { workspaceId: campanha.workspaceId, provedor: "meta_instagram" } },
+      where: { workspaceId_provedor_slot: { workspaceId: campanha.workspaceId, provedor: "meta_instagram", slot: 1 } },
       select: { metadados: true },
     });
     // A conta conectada, pra a mensagem enviada aparecer na conversa certa quando o workspace
@@ -251,7 +251,7 @@ async function processarCampanha(campanhaId: string, prazoFinal: number): Promis
     identificadorConexao = (integracao?.metadados as { instagramContaId?: string } | null)?.instagramContaId ?? null;
   } else if (canal === "whatsapp_nao_oficial") {
     const integracao = await prisma.integracao.findUnique({
-      where: { workspaceId_provedor: { workspaceId: campanha.workspaceId, provedor: "whatsapp_nao_oficial" } },
+      where: { workspaceId_provedor_slot: { workspaceId: campanha.workspaceId, provedor: "whatsapp_nao_oficial", slot: 1 } },
       select: { metadados: true },
     });
     identificadorConexao = (integracao?.metadados as { numero?: string } | null)?.numero ?? null;

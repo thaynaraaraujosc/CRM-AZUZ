@@ -35,14 +35,14 @@ async function atualizarStatus(
   extra: { qrDataUrl?: string | null; numero?: string | null } = {},
 ) {
   const atual = await prisma.integracao.findUnique({
-    where: { workspaceId_provedor: { workspaceId, provedor: "whatsapp_nao_oficial" } },
+    where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot: 1 } },
     select: { metadados: true },
   });
   const metadadosAtuais = (atual?.metadados as Record<string, unknown>) ?? {};
   const metadados = { ...metadadosAtuais, qrDataUrl: extra.qrDataUrl ?? null, numero: extra.numero ?? null };
 
   await prisma.integracao.upsert({
-    where: { workspaceId_provedor: { workspaceId, provedor: "whatsapp_nao_oficial" } },
+    where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot: 1 } },
     create: {
       id: `${workspaceId}-whatsapp_nao_oficial`,
       workspaceId,
@@ -459,7 +459,7 @@ export async function processarMensagemRecebida(
   // Conexão dona desta mensagem: é o número conectado por QR Code neste workspace. Sem isso, a
   // mensagem fica sem dono e não some da tela quando esse número é desconectado.
   const integracaoNaoOficial = await prisma.integracao.findUnique({
-    where: { workspaceId_provedor: { workspaceId, provedor: "whatsapp_nao_oficial" } },
+    where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot: 1 } },
     select: { metadados: true },
   });
   const contaCanal = contaCanalDaConexao(

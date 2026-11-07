@@ -45,7 +45,7 @@ export async function contaDoWorkspace(
   cliente: Pick<PrismaClient, "integracao"> = prisma,
 ): Promise<ContaGoogleAds | null> {
   const integracao = await cliente.integracao.findUnique({
-    where: { workspaceId_provedor: { workspaceId, provedor: "google_ads" } },
+    where: { workspaceId_provedor_slot: { workspaceId, provedor: "google_ads", slot: 1 } },
   });
   if (!integracao || integracao.status !== "conectado") return null;
 
@@ -80,7 +80,7 @@ export async function contaDoWorkspace(
   }
 
   await cliente.integracao.update({
-    where: { workspaceId_provedor: { workspaceId, provedor: "google_ads" } },
+    where: { workspaceId_provedor_slot: { workspaceId, provedor: "google_ads", slot: 1 } },
     data: {
       accessTokenCriptografado: encriptar(tokens.accessToken),
       expiraEm: tokens.expiraEm,

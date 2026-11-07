@@ -25,7 +25,7 @@ export async function GET() {
   }
 
   const linha = await prisma.integracao.findUnique({
-    where: { workspaceId_provedor: { workspaceId: sessao.user.workspaceId, provedor: "google_ads" } },
+    where: { workspaceId_provedor_slot: { workspaceId: sessao.user.workspaceId, provedor: "google_ads", slot: 1 } },
     select: { status: true, metadados: true, erroMensagem: true },
   });
 

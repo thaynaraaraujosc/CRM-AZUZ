@@ -157,7 +157,7 @@ export async function GET(request: Request) {
       where: { workspaceId, iniciadaEm: janela, fluxo: { area: "social" } },
     }),
     prisma.integracao.findUnique({
-      where: { workspaceId_provedor: { workspaceId, provedor: "meta_instagram" } },
+      where: { workspaceId_provedor_slot: { workspaceId, provedor: "meta_instagram", slot: 1 } },
       select: { status: true, accessTokenCriptografado: true, erroMensagem: true },
     }),
     prisma.fluxoAutomacao.findMany({

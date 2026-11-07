@@ -24,7 +24,7 @@ export type ContaWhatsappOficial = {
  * workspace da sessão, nunca por id vindo da requisição. */
 export async function contaConectada(workspaceId: string): Promise<ContaWhatsappOficial | null> {
   const integracao = await prisma.integracao.findUnique({
-    where: { workspaceId_provedor: { workspaceId, provedor: "meta_whatsapp" } },
+    where: { workspaceId_provedor_slot: { workspaceId, provedor: "meta_whatsapp", slot: 1 } },
   });
   if (!integracao || integracao.status !== "conectado" || !integracao.accessTokenCriptografado) return null;
 

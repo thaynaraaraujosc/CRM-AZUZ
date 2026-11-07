@@ -27,7 +27,7 @@ export async function importarConversasRecentesDoInstagram(
   limite = CONVERSAS_IMPORTADAS,
 ): Promise<{ conversas: number; mensagens: number }> {
   const integracao = await prisma.integracao.findUnique({
-    where: { workspaceId_provedor: { workspaceId, provedor: "meta_instagram" } },
+    where: { workspaceId_provedor_slot: { workspaceId, provedor: "meta_instagram", slot: 1 } },
     select: { status: true, accessTokenCriptografado: true, metadados: true },
   });
   if (integracao?.status !== "conectado" || !integracao.accessTokenCriptografado) {

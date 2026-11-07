@@ -147,7 +147,7 @@ async function devolverParaMeta(
   if (aEnviar.length === 0) return { enviadas: 0, falhas: 0 };
 
   const integracao = await prisma.integracao.findUnique({
-    where: { workspaceId_provedor: { workspaceId, provedor: "meta_ads" } },
+    where: { workspaceId_provedor_slot: { workspaceId, provedor: "meta_ads", slot: 1 } },
     select: { accessTokenCriptografado: true, metadados: true },
   });
   const adAccountId = (integracao?.metadados as { adAccountId?: string } | null)?.adAccountId;

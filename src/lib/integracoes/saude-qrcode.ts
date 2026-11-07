@@ -91,7 +91,7 @@ export async function conferirCanalQrCode(
   opcoes: { reparar?: boolean } = {},
 ): Promise<SaudeQrCode> {
   const integracao = await prisma.integracao.findUnique({
-    where: { workspaceId_provedor: { workspaceId, provedor: "whatsapp_nao_oficial" } },
+    where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot: 1 } },
     select: { status: true, metadados: true },
   });
   const metadados = (integracao?.metadados as Record<string, unknown> | null) ?? {};
@@ -173,7 +173,7 @@ export async function conferirCanalQrCode(
     if (integracao.status !== deveriaSer) {
       await prisma.integracao
         .update({
-          where: { workspaceId_provedor: { workspaceId, provedor: "whatsapp_nao_oficial" } },
+          where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot: 1 } },
           data: { status: deveriaSer },
         })
         .catch(() => {});
@@ -199,7 +199,7 @@ export async function conferirCanalQrCode(
     if (numero) {
       await prisma.integracao
         .update({
-          where: { workspaceId_provedor: { workspaceId, provedor: "whatsapp_nao_oficial" } },
+          where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot: 1 } },
           data: { metadados: { ...metadados, numero } },
         })
         .catch(() => {});

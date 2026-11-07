@@ -30,7 +30,7 @@ export async function GET() {
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
 
   const integracao = await prisma.integracao.findUnique({
-    where: { workspaceId_provedor: { workspaceId: sessao.user.workspaceId, provedor: "meta_instagram" } },
+    where: { workspaceId_provedor_slot: { workspaceId: sessao.user.workspaceId, provedor: "meta_instagram", slot: 1 } },
     select: { status: true, metadados: true, erroMensagem: true },
   });
   const metadados = (integracao?.metadados as { username?: string } | null) ?? {};

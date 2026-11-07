@@ -152,7 +152,7 @@ export async function POST(request: Request) {
   }
 
   const integracao = await prisma.integracao.findUnique({
-    where: { workspaceId_provedor: { workspaceId, provedor: "meta_instagram" } },
+    where: { workspaceId_provedor_slot: { workspaceId, provedor: "meta_instagram", slot: 1 } },
   });
   if (!integracao || integracao.status !== "conectado" || !integracao.accessTokenCriptografado) {
     return NextResponse.json({ erro: "Instagram não está conectado." }, { status: 400 });

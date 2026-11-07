@@ -14,7 +14,7 @@ export async function GET(request: Request) {
   const provedor = new URL(request.url).searchParams.get("provedor") ?? "meta_whatsapp";
 
   const linha = await prisma.integracao.findUnique({
-    where: { workspaceId_provedor: { workspaceId: sessao.user.workspaceId, provedor } },
+    where: { workspaceId_provedor_slot: { workspaceId: sessao.user.workspaceId, provedor, slot: 1 } },
     select: { status: true, metadados: true, erroMensagem: true, atualizadoEm: true },
   });
 
@@ -43,14 +43,14 @@ export async function PATCH(request: Request) {
   }
 
   const existente = await prisma.integracao.findUnique({
-    where: { workspaceId_provedor: { workspaceId: sessao.user.workspaceId, provedor } },
+    where: { workspaceId_provedor_slot: { workspaceId: sessao.user.workspaceId, provedor, slot: 1 } },
     select: { metadados: true },
   });
   if (!existente) return NextResponse.json({ erro: "Integração não conectada" }, { status: 404 });
 
   const metadadosAtuais = (existente.metadados as Record<string, unknown> | null) ?? {};
   const atualizada = await prisma.integracao.update({
-    where: { workspaceId_provedor: { workspaceId: sessao.user.workspaceId, provedor } },
+    where: { workspaceId_provedor_slot: { workspaceId: sessao.user.workspaceId, provedor, slot: 1 } },
     data: { metadados: { ...metadadosAtuais, ...metadados } as Prisma.InputJsonValue },
     select: { status: true, metadados: true, erroMensagem: true, atualizadoEm: true },
   });

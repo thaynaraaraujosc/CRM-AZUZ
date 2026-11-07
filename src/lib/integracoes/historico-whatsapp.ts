@@ -16,7 +16,7 @@ export { CHATS_NA_PRIMEIRA_LEVA } from "./historico-tipos";
 
 export async function lerMetadados(workspaceId: string): Promise<Record<string, unknown>> {
   const linha = await prisma.integracao.findUnique({
-    where: { workspaceId_provedor: { workspaceId, provedor: "whatsapp_nao_oficial" } },
+    where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot: 1 } },
     select: { metadados: true },
   });
   return (linha?.metadados as Record<string, unknown>) ?? {};
@@ -28,7 +28,7 @@ export async function salvarHistorico(
   historico: HistoricoSync,
 ): Promise<void> {
   await prisma.integracao.update({
-    where: { workspaceId_provedor: { workspaceId, provedor: "whatsapp_nao_oficial" } },
+    where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot: 1 } },
     data: { metadados: { ...metadadosAtuais, historico } },
   });
 }

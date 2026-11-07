@@ -55,7 +55,7 @@ export async function POST(request: Request) {
   }
 
   const existente = await prisma.integracao.findUnique({
-    where: { workspaceId_provedor: { workspaceId, provedor: "meta_whatsapp" } },
+    where: { workspaceId_provedor_slot: { workspaceId, provedor: "meta_whatsapp", slot: 1 } },
   });
   const metadadosAnteriores = (existente?.metadados as Record<string, unknown> | null) ?? {};
 

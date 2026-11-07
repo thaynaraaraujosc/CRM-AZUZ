@@ -450,7 +450,7 @@ export async function POST(request: Request) {
       // caminhos opostos.
       await prisma.integracao
         .update({
-          where: { workspaceId_provedor: { workspaceId: integracaoDaConta.workspaceId, provedor: "meta_instagram" } },
+          where: { workspaceId_provedor_slot: { workspaceId: integracaoDaConta.workspaceId, provedor: "meta_instagram", slot: 1 } },
           data: {
             metadados: {
               ...((integracaoDaConta.metadados as Record<string, unknown> | null) ?? {}),

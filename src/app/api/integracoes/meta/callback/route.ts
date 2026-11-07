@@ -160,14 +160,14 @@ export async function GET(request: Request) {
     // "Receber mensagens do Instagram no CRM", ver PATCH em /api/integracoes/meta): sem isso, toda
     // reconexão apagaria essa escolha e voltaria ao padrão sozinha.
     const existente = await prisma.integracao.findUnique({
-      where: { workspaceId_provedor: { workspaceId, provedor } },
+      where: { workspaceId_provedor_slot: { workspaceId, provedor, slot: 1 } },
       select: { metadados: true },
     });
     const metadadosPreservados = (existente?.metadados as Record<string, unknown> | null) ?? {};
     const metadadosFinal = comoJson({ ...metadadosPreservados, ...resolvido.metadados });
 
     await prisma.integracao.upsert({
-      where: { workspaceId_provedor: { workspaceId, provedor } },
+      where: { workspaceId_provedor_slot: { workspaceId, provedor, slot: 1 } },
       create: {
         id: `integracao-${workspaceId}-${provedor}`,
         workspaceId,
@@ -190,7 +190,7 @@ export async function GET(request: Request) {
   } catch (erro) {
     const mensagem = erro instanceof Error ? erro.message : "Falha desconhecida ao conectar a integração.";
     await prisma.integracao.upsert({
-      where: { workspaceId_provedor: { workspaceId, provedor } },
+      where: { workspaceId_provedor_slot: { workspaceId, provedor, slot: 1 } },
       create: {
         id: `integracao-${workspaceId}-${provedor}`,
         workspaceId,

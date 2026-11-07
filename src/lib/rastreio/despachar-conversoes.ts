@@ -94,7 +94,7 @@ async function enviarUma(prisma: PrismaClient, linha: LinhaDaFila): Promise<Resu
 
   if (linha.plataforma === "meta") {
     const integracao = await prisma.integracao.findUnique({
-      where: { workspaceId_provedor: { workspaceId: linha.workspaceId, provedor: "meta_ads" } },
+      where: { workspaceId_provedor_slot: { workspaceId: linha.workspaceId, provedor: "meta_ads", slot: 1 } },
       select: { accessTokenCriptografado: true, metadados: true },
     });
     const adAccountId = (integracao?.metadados as { adAccountId?: string } | null)?.adAccountId;

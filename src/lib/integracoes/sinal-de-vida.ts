@@ -25,7 +25,7 @@ const INTERVALO_SINAL_MS = 60 * 1000;
 
 async function lerRegistro(workspaceId: string, provedor: string) {
   const linha = await prisma.integracao.findUnique({
-    where: { workspaceId_provedor: { workspaceId, provedor } },
+    where: { workspaceId_provedor_slot: { workspaceId, provedor, slot: 1 } },
     select: { metadados: true },
   });
   if (!linha) return null;
@@ -36,7 +36,7 @@ async function lerRegistro(workspaceId: string, provedor: string) {
 async function gravar(workspaceId: string, provedor: string, webhook: RegistroDeWebhook, metadados: Record<string, unknown>) {
   await prisma.integracao
     .update({
-      where: { workspaceId_provedor: { workspaceId, provedor } },
+      where: { workspaceId_provedor_slot: { workspaceId, provedor, slot: 1 } },
       data: { metadados: { ...metadados, webhook } },
     })
     // Integração ainda não existe (evento antes da conexão ser gravada): não é erro, não há o que

@@ -32,7 +32,7 @@ export async function GET() {
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
 
   const integracao = await prisma.integracao.findUnique({
-    where: { workspaceId_provedor: { workspaceId: sessao.user.workspaceId, provedor: "meta_ads" } },
+    where: { workspaceId_provedor_slot: { workspaceId: sessao.user.workspaceId, provedor: "meta_ads", slot: 1 } },
   });
   if (!integracao || integracao.status !== "conectado" || !integracao.accessTokenCriptografado) {
     return NextResponse.json({ erro: "Meta Ads não conectado" }, { status: 404 });

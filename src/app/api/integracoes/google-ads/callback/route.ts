@@ -88,7 +88,7 @@ export async function GET(request: Request) {
     const metadados = { contaId: contas[0], contasDisponiveis: contas };
 
     await prisma.integracao.upsert({
-      where: { workspaceId_provedor: { workspaceId: estado.workspaceId, provedor } },
+      where: { workspaceId_provedor_slot: { workspaceId: estado.workspaceId, provedor, slot: 1 } },
       create: {
         id: `integracao-${estado.workspaceId}-${provedor}`,
         workspaceId: estado.workspaceId,
