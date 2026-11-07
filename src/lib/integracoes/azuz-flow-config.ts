@@ -15,6 +15,19 @@ import { JANELA_PADRAO, minutosDoRelogio, type JanelaDeEnvio } from "@/lib/integ
 const CHAVE = "azuz-flow";
 
 export type ConfigDoFlow = {
+  /**
+   * ESTA EMPRESA USA O AZUZ FLOW?
+   *
+   * O Flow é produto de quem tem agência. Quem compra o CRM pra vender o próprio serviço abre
+   * Integrações e encontra endereço, chave e canal dos leads de uma coisa que nunca ouviu falar —
+   * e não dá pra saber, olhando, se aquilo é obrigatório, se está quebrado ou se pode ignorar.
+   *
+   * `null` é "ninguém respondeu ainda", e é diferente de "não": sem resposta o cartão fica
+   * fechado, com a pergunta; com "não" ele sai da tela. Tratar os dois igual significaria ou
+   * esconder de quem nunca decidiu (e aí quem usa não acha) ou perguntar pra sempre a quem já
+   * disse que não.
+   */
+  usaFlow: "sim" | "nao" | null;
   /** Por qual conexão de WhatsApp o lead ganha conversa. */
   canal: CanalDoFlow;
   /** A confirmação de reunião: liga/desliga e o texto. */
@@ -94,6 +107,8 @@ export type ConfigDoFlow = {
 };
 
 export const CONFIG_PADRAO: ConfigDoFlow = {
+  // Ninguém respondeu: o cartão nasce fechado, com a pergunta. Ver o campo.
+  usaFlow: null,
   /*
    * `oficial`, que é EXATAMENTE o que o CRM fazia antes desta opção existir.
    *
@@ -140,6 +155,9 @@ export function lerConfigDoFlow(dados: unknown): ConfigDoFlow {
     : {}) as Record<string, unknown>;
   const texto = typeof confirmacao.texto === "string" ? confirmacao.texto.trim() : "";
   return {
+    // Só os dois valores conhecidos contam como resposta. Qualquer outra coisa é "não respondeu",
+    // que é o estado seguro: a pergunta reaparece em vez de o cartão sumir por um valor corrompido.
+    usaFlow: bruto.usaFlow === "sim" || bruto.usaFlow === "nao" ? bruto.usaFlow : null,
     canal: CANAIS_DO_FLOW.includes(canal as CanalDoFlow) ? (canal as CanalDoFlow) : CONFIG_PADRAO.canal,
     confirmacao: {
       // `=== true` e não "truthy": qualquer coisa que não seja o booleano verdadeiro mantém

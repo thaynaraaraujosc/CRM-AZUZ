@@ -99,9 +99,10 @@ export function WhatsAppSecao() {
           <div className="card" style={{ padding: 14 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
               <div>
-                <p className="int-title" style={{ margin: 0 }}>
-                  {metaConectada ? traduzir("WhatsApp Business (API oficial da Meta)") : traduzir("WhatsApp (API não oficial, QR Code)")}
-                </p>
+                {/* UM TÍTULO SÓ, porque a lista abaixo é uma só.
+                    Ela mostra o número da API oficial e os celulares do QR Code juntos — que é
+                    como a empresa pensa neles. Dizer "API não oficial" aqui descreveria metade. */}
+                <p className="int-title" style={{ margin: 0 }}>{traduzir("Números de WhatsApp")}</p>
                 {metaConectada ? <p className="int-sub" style={{ margin: "4px 0 0" }}>Conectado • {numeroConectado}</p> : null}
               </div>
               {metaConectada ? (
@@ -134,7 +135,7 @@ export function WhatsAppSecao() {
               * diagnóstico e a importação DELA. Por isso os dois painéis de baixo só continuam
               * aparecendo no canal oficial, onde há um número e um só.
               */}
-            {!metaConectada ? <NumerosDeWhatsApp /> : null}
+            <NumerosDeWhatsApp />
             {metaConectada && integracao?.metadados ? (
               <SaudeConexaoOficial metadados={integracao.metadados as Record<string, unknown>} />
             ) : null}

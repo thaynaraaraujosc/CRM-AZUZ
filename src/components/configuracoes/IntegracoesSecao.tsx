@@ -173,13 +173,13 @@ export function IntegracoesSecao() {
           />
           <LinhaReal
             icone={<IconWhatsApp width={20} height={20} />}
-            titulo={traduzir("WhatsApp via QR Code")}
+            titulo={traduzir("Números de WhatsApp")}
             sub={
               qrCodeLigada
                 ? numeroQrCode
                   ? traduzir("Número conectado: {numero}", { numero: numeroQrCode })
                   : traduzir("Número conectado")
-                : traduzir("Escaneia o QR Code, sem precisar de aprovação da Meta")
+                : traduzir("Conecte um ou vários números por QR Code, e diga pra onde vão os leads de cada um")
             }
             conectado={qrCodeLigada}
             painel={

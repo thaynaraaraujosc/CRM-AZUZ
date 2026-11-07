@@ -901,9 +901,11 @@ function ConversasPageInner() {
    */
   const [numerosConectados, setNumerosConectados] = useState<NumeroConectado[]>([]);
   useEffect(() => {
-    fetch("/api/integracoes/whatsapp-nao-oficial/numeros")
+    // OS DOIS CANAIS. A rota de QR Code só sabia dos celulares; quem tem a API oficial no número
+    // principal e um vendedor no QR tem dois números recebendo, e o filtro precisa dos dois.
+    fetch("/api/integracoes/numeros")
       .then((r) => r.json())
-      .then((dados: { conexoes?: NumeroConectado[] }) => setNumerosConectados(dados.conexoes ?? []))
+      .then((dados: { numeros?: NumeroConectado[] }) => setNumerosConectados(dados.numeros ?? []))
       .catch(() => setNumerosConectados([]));
   }, []);
   const [numeroTopAberto, setNumeroTopAberto] = useState(false);
@@ -4032,7 +4034,7 @@ function ConversasPageInner() {
                     numero:
                       numeroTopFiltro === "Todos"
                         ? traduzir("Todos")
-                        : (nomesDosNumeros.get(numeroTopFiltro.replace(/\D/g, "")) ?? numeroTopFiltro),
+                        : (nomesDosNumeros.get(numeroTopFiltro) ?? numeroTopFiltro),
                   })} ▾
                 </button>
                 <FloatingDropdown
@@ -4052,19 +4054,24 @@ function ConversasPageInner() {
                     <span className="n">{traduzir("Todos")}</span>
                   </button>
                   {numerosConectados
-                    .filter((n) => n.status === "conectado" && n.numero)
+                    .filter((n) => n.status === "conectado")
                     .map((n) => (
                       <button
                         type="button"
-                        key={n.slot}
+                        key={n.chave}
                         className="dropdown-item"
                         style={{ width: "100%", textAlign: "left" }}
                         onClick={() => {
-                          setNumeroTopFiltro(n.numero!);
+                          setNumeroTopFiltro(n.chave);
                           setNumeroTopAberto(false);
                         }}
                       >
                         <span className="n">{n.nome}</span>
+                        {/* O telefone embaixo do nome: dois números apelidados parecido se
+                            distinguem por ele, e quem não apelidou nada vê só o número. */}
+                        {n.numeroLegivel && n.numeroLegivel !== n.nome ? (
+                          <span className="hint" style={{ display: "block" }}>{n.numeroLegivel}</span>
+                        ) : null}
                       </button>
                     ))}
                 </FloatingDropdown>
@@ -4300,7 +4307,15 @@ function ConversasPageInner() {
                           <IconEquipe width={11} height={11} />
                         </span>
                       ) : null}
-                      {nomeExibido(c.nome, c.canal)}
+                      {/* O NOME NUM ELEMENTO PRÓPRIO.
+                          Solto aqui dentro, ele virava um item anônimo de flex — e `text-overflow`
+                          não vale pra item de flex. O nome era cortado no meio da palavra, sem
+                          reticências: numa lista estreita, "AGÊNCIA AZUZ - TRÁF" e "AGÊNCIA AZUZ -
+                          VENDAS" viram a mesma linha. Com elemento próprio, as reticências voltam
+                          a funcionar e o `title` dá o nome inteiro. */}
+                      <span className="cname-texto" title={nomeExibido(c.nome, c.canal)}>
+                        {nomeExibido(c.nome, c.canal)}
+                      </span>
                       {ehFavorita(c) ? (
                         <span className="wa-fav-star">
                           <IconStar width={11} height={11} fill="currentColor" />

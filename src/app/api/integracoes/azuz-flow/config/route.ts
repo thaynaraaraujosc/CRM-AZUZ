@@ -66,6 +66,8 @@ export async function PUT(request: Request) {
     const workspaceId = guarda.sessao.user.workspaceId;
 
     const corpo = (await request.json().catch(() => ({}))) as {
+      /** "Esta empresa usa o AZUZ Flow?" — `"sim"`, `"nao"` ou `null` pra voltar a perguntar. */
+      usaFlow?: unknown;
       canal?: unknown;
       confirmacao?: {
         ativa?: unknown;
@@ -101,6 +103,16 @@ export async function PUT(request: Request) {
      */
     const religou = corpo.religar === true;
     if (religou) await religarDisjuntor(workspaceId);
+
+    if (corpo.usaFlow !== undefined) {
+      // `null` é um valor válido: é como se desfaz a resposta e a pergunta volta. Qualquer outra
+      // coisa é recusada em vez de virar `null` em silêncio — esconder o cartão de quem respondeu
+      // "sim" por causa de um valor estranho seria a integração sumir sem explicação.
+      if (corpo.usaFlow !== "sim" && corpo.usaFlow !== "nao" && corpo.usaFlow !== null) {
+        return NextResponse.json({ erro: "Resposta inválida para o AZUZ Flow." }, { status: 400 });
+      }
+      mudancas.usaFlow = corpo.usaFlow;
+    }
 
     if (corpo.canal !== undefined) {
       // Valor fora da lista é recusado em vez de corrigido em silêncio: salvar "automatico" quando

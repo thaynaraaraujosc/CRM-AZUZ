@@ -12,6 +12,7 @@ import {
   buscarFotoPerfil,
 } from "@/lib/integracoes/evolution";
 import { idDaConexao } from "@/lib/integracoes/conexoes-whatsapp";
+import { destinoDoNumero } from "@/lib/integracoes/destino-do-numero";
 import { baixarFotoDePerfil, precisaBaixarFoto } from "@/lib/integracoes/foto-de-perfil";
 import { criarContatoPeloWhatsAppSeNaoExistir } from "@/lib/contatos/upsert";
 import { entrarNaPrimeiraEtapaComoNovoLead, subirCardParaOTopo } from "@/lib/funis/upsert";
@@ -530,10 +531,23 @@ export async function processarMensagemRecebida(
 
   // Grupo não é uma pessoa. Não cria/casa `Contato` nem vira lead novo no funil sozinho, só a
   // thread de conversa mesmo (ver `ehGrupo` no upsert abaixo).
+  /*
+   * PRA ONDE VAI O QUE CHEGOU POR ESTE NÚMERO: funil e responsável.
+   *
+   * Lido da conexão que recebeu. Com um número só, os dois são nulos e tudo segue como sempre; com
+   * vendedora e closer, é o que faz o lead de cada um nascer no quadro certo e com dono.
+   */
+  const destino = await destinoDoNumero(workspaceId, contaCanal);
+
   const contato = ehGrupo
     ? null
     : (contatoExistente ??
-      (await criarContatoPeloWhatsAppSeNaoExistir({ workspaceId, nome: chaveContato, whatsapp: waId })));
+      (await criarContatoPeloWhatsAppSeNaoExistir({
+        workspaceId,
+        nome: chaveContato,
+        whatsapp: waId,
+        responsavel: destino.responsavel,
+      })));
 
   // A foto também vai pro contato: é a mesma pessoa no funil, na lista de contatos e no painel do
   // funil. Guardada só na conversa, o funil mostrava iniciais enquanto a conversa mostrava o rosto.
@@ -677,6 +691,8 @@ export async function processarMensagemRecebida(
       ehGrupo,
       origem: "WhatsApp",
       contaCanal,
+      // O funil deste número. Nulo = o padrão da empresa, que é o comportamento de sempre.
+      funilId: destino.funilId,
     });
   } else if (!ehGrupo && !fromMe) {
     // Contato que já tinha card: a ETAPA não se mexe, mas o card sobe pro topo da coluna. Quem

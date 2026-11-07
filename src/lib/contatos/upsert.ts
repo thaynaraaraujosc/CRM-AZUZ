@@ -131,8 +131,15 @@ export async function criarContatoPeloWhatsAppSeNaoExistir(params: {
   workspaceId: string;
   nome: string;
   whatsapp: string;
+  /**
+   * Quem atende o número que recebeu esta mensagem.
+   *
+   * Só AO CRIAR, nunca por cima: a pessoa que já está na carteira pode ter sido passada pra outro
+   * vendedor na mão, e a próxima mensagem dela não pode desfazer isso. Ver `dadosSoAoCriar`.
+   */
+  responsavel?: string | null;
 }) {
-  const { workspaceId, nome, whatsapp } = params;
+  const { workspaceId, nome, whatsapp, responsavel } = params;
 
   // Um grupo NÃO é um lead. O identificador de grupo do WhatsApp (`<id>@g.us`, 15+ dígitos, ex.:
   // `120363422457482263`) não é telefone de ninguém. Quando virava contato, aparecia na carteira
@@ -177,7 +184,11 @@ export async function criarContatoPeloWhatsAppSeNaoExistir(params: {
     dados: { whatsapp, criadoVia: "whatsapp" },
     // Quem chegou pelo WhatsApp é atendido pelo WhatsApp: a ficha já nasce dizendo isso, em vez
     // de deixar o campo em branco pra alguém preencher o óbvio. Só ao criar — ver `dadosSoAoCriar`.
-    dadosSoAoCriar: { canalPreferido: "WhatsApp" },
+    dadosSoAoCriar: {
+      canalPreferido: "WhatsApp",
+      // O dono do número vira o responsável do lead. Sem número com dono, fica como sempre ficou.
+      ...(responsavel?.trim() ? { responsavel: responsavel.trim() } : {}),
+    },
     origemPadrao: "WhatsApp",
   });
 }

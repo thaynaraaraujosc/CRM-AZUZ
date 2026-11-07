@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 
-import { IconAlerta } from "@/components/icons";
+import { IconAlerta, IconExpandir } from "@/components/icons";
 import { ModalConfirmacao } from "@/components/ui";
 import { useIdioma } from "@/lib/idioma-context";
 import { lerJson } from "@/lib/ler-resposta";
@@ -40,6 +40,8 @@ const ENDERECO_DO_CRM = "https://azuzcrm.com.br";
  */
 /** O que a rota de opções devolve: a escolha guardada E o que ela significa agora. */
 type ConfigDoCanal = {
+  /** "Esta empresa usa o AZUZ Flow?" `null` = ninguém respondeu. Ver `azuz-flow-config.ts`. */
+  usaFlow: "sim" | "nao" | null;
   canal: "automatico" | "oficial" | "qrcode";
   conexoes: { oficial: boolean; qrcode: boolean };
   /** A conexão que o próximo lead vai usar de verdade. `null` = nenhuma serve. */
@@ -105,6 +107,14 @@ export function AzuzFlow() {
    */
   const [canal, setCanal] = useState<ConfigDoCanal | null>(null);
   const [salvandoCanal, setSalvandoCanal] = useState(false);
+  /**
+   * O cartão está aberto?
+   *
+   * Preferência de VISTA, não de conta: guardar isto no servidor faria uma pessoa fechar o cartão
+   * e ele amanhecer fechado pra todo mundo da equipe. Quem respondeu "sim" abre direto na primeira
+   * vez — acabou de pedir pra configurar — e a setinha manda daí em diante.
+   */
+  const [aberto, setAberto] = useState(true);
 
   const ehAdmin = sessao?.user?.papelTipo === "admin" || sessao?.user?.superAdmin;
 
@@ -235,9 +245,85 @@ export function AzuzFlow() {
   const data = (valor: string | null | undefined) =>
     valor ? new Date(valor).toLocaleString(localeNumero) : traduzir("nunca");
 
+  /*
+   * O AZUZ FLOW NÃO É PRA TODO MUNDO, e a tela precisa saber disso.
+   *
+   * O Flow é produto de quem tem agência. Quem compra o CRM pra vender o próprio serviço abria
+   * Integrações e encontrava endereço do CRM, chave e canal dos leads de uma coisa que nunca ouviu
+   * falar — três campos técnicos, sem nada dizendo se aquilo é obrigatório, se está quebrado ou se
+   * pode ser ignorado. Esse é o tipo de dúvida que vira mensagem pro suporte.
+   *
+   * Agora a tela pergunta antes de mostrar. Sem resposta, o cartão é uma linha com a pergunta;
+   * "sim" abre a configuração; "não" encolhe pra uma linha quieta.
+   */
+  const usaFlow = canal?.usaFlow ?? null;
+
+  /** A resposta vai pro servidor: é decisão da EMPRESA, não do navegador de quem respondeu. */
+  function responder(resposta: "sim" | "nao" | null) {
+    setAberto(true);
+    void salvarConfig({ usaFlow: resposta });
+  }
+
+  // Ninguém respondeu ainda: só a pergunta, pequena, com as duas saídas.
+  if (canal && usaFlow === null) {
+    return (
+      <div className="config-bloco flow-convite">
+        <div className="flow-convite-texto">
+          <p className="config-bloco-titulo" style={{ margin: 0 }}>{traduzir("AZUZ Flow")}</p>
+          <p className="hint" style={{ margin: 0 }}>
+            {traduzir("Você tem conta no AZUZ Flow e quer trazer os leads dele pra cá?")}
+          </p>
+        </div>
+        <div className="flow-convite-acoes">
+          <button type="button" className="btn primary" disabled={salvandoCanal} onClick={() => responder("sim")}>
+            {traduzir("Sim")}
+          </button>
+          <button type="button" className="btn ghost" disabled={salvandoCanal} onClick={() => responder("nao")}>
+            {traduzir("Não")}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  /*
+   * "NÃO" ENCOLHE, E NÃO APAGA.
+   *
+   * O pedido foi que a opção saísse da tela, e é o que acontece: de um bloco com três campos
+   * técnicos pra uma linha. Sumir de vez seria outra coisa — uma escolha sem volta, e quem
+   * contratar uma agência depois não teria como achar a integração de novo nem saber que ela
+   * existe. A linha é o caminho de volta, e ocupa quase nada.
+   */
+  if (canal && usaFlow === "nao") {
+    return (
+      <div className="config-bloco flow-convite flow-convite-recusado">
+        <p className="hint" style={{ margin: 0 }}>
+          {traduzir("AZUZ Flow: você marcou que não usa.")}
+        </p>
+        <button type="button" className="btn ghost pequeno" disabled={salvandoCanal} onClick={() => responder(null)}>
+          {traduzir("Tenho conta")}
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="config-bloco">
-      <p className="config-bloco-titulo">{traduzir("AZUZ Flow")}</p>
+      {/* A setinha abre e fecha. Mesmo depois de configurado, isto é um cartão técnico que se
+          consulta de vez em quando — deixá-lo aberto pra sempre é ocupar a tela com o que já foi
+          resolvido. */}
+      <button
+        type="button"
+        className="flow-cabecalho"
+        aria-expanded={aberto}
+        onClick={() => setAberto((v) => !v)}
+      >
+        <span className="config-bloco-titulo">{traduzir("AZUZ Flow")}</span>
+        <IconExpandir className={aberto ? "girado" : undefined} width={14} height={14} aria-hidden="true" />
+      </button>
+
+      {aberto ? (
+      <>
 
       {/*
         A CONEXÃO EM TRÊS LINHAS: endereço, chave, canal.
@@ -454,6 +540,8 @@ export function AzuzFlow() {
               catálogo têm tradução. Chave ausente degrada pro português, como em todo o resto. */}
           <IconAlerta width={12} height={12} aria-hidden="true" /> {traduzir(mensagemDeErro)}
         </p>
+      ) : null}
+      </>
       ) : null}
     </div>
   );

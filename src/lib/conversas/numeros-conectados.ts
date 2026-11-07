@@ -1,41 +1,53 @@
 /**
  * OS NÚMEROS DE WHATSAPP, do ponto de vista da caixa de entrada.
  *
- * Com um número, a caixa de entrada é "as conversas da empresa". Com a vendedora e o closer
- * conectados, ela passa a ser duas caixas no mesmo lugar — e quem atende precisa poder ver só a
- * sua, senão a lista vira um amontoado em que a conversa da outra pessoa aparece do mesmo jeito
- * que a dela.
+ * Com um número, a caixa de entrada é "as conversas da empresa". Com a API oficial no número
+ * principal e o celular de um vendedor no QR Code, ela passa a ser duas caixas no mesmo lugar — e
+ * quem atende precisa poder ver só a sua, senão a lista vira um amontoado em que a conversa da
+ * outra pessoa aparece do mesmo jeito que a dela.
+ *
+ * A COMPARAÇÃO É PELO `contaCanal` INTEIRO, não pelo telefone. No QR Code a identidade da conexão
+ * é o número; no canal oficial é o `phoneNumberId` da Meta, e o telefone é só um rótulo. Comparar
+ * dígitos funcionaria num canal e, em silêncio, em nenhum no outro — e "em silêncio" aqui quer
+ * dizer um filtro que não devolve nada sem dizer por quê.
  *
  * Aqui mora só a parte que decide; a tela usa. É função pura porque é regra, e regra tem teste.
  */
 
 export type NumeroConectado = {
+  /** `contaCanal` da conexão: `meta_whatsapp:<id>` ou `whatsapp_nao_oficial:<numero>`. */
+  chave: string;
+  provedor: string;
   slot: number;
   nome: string;
-  numero: string | null;
+  numeroLegivel: string;
   status: string;
 };
 
-/** De `contaCanal` ("whatsapp_nao_oficial:5562…") pro nome que a empresa deu ao número. */
+/** De `contaCanal` pro nome que aparece na tela. */
 export function mapaDeNumeros(numeros: NumeroConectado[]): Map<string, string> {
-  const mapa = new Map<string, string>();
-  for (const n of numeros) {
-    const digitos = (n.numero ?? "").replace(/\D/g, "");
-    if (digitos) mapa.set(digitos, n.nome);
-  }
-  return mapa;
+  return new Map(numeros.filter((n) => n.chave).map((n) => [n.chave, n.nome]));
 }
 
-/** O nome do número por onde esta conversa fala. `null` quando não dá pra saber. */
+/**
+ * O nome do número por onde esta conversa fala. `null` quando não dá pra saber.
+ *
+ * `whatsapp_baileys:` é o nome ANTIGO do canal de QR Code, e ainda está gravado em conversa de
+ * antes da renomeação. Sem esta tradução, essas conversas apareceriam sem etiqueta nenhuma numa
+ * lista em que todas as outras têm.
+ */
 export function nomeDoNumeroDaConversa(
   mapa: Map<string, string>,
   contaCanal: string | null | undefined,
 ): string | null {
   if (!contaCanal) return null;
-  const corte = contaCanal.indexOf(":");
-  if (corte < 0) return null;
-  const digitos = contaCanal.slice(corte + 1).replace(/\D/g, "");
-  return digitos ? (mapa.get(digitos) ?? null) : null;
+  return mapa.get(normalizarContaCanal(contaCanal)) ?? null;
+}
+
+function normalizarContaCanal(contaCanal: string): string {
+  return contaCanal.startsWith("whatsapp_baileys:")
+    ? `whatsapp_nao_oficial:${contaCanal.slice("whatsapp_baileys:".length)}`
+    : contaCanal;
 }
 
 /**
@@ -51,10 +63,9 @@ export function precisaEscolherNumero(numeros: NumeroConectado[]): boolean {
 /** Esta conversa é do número escolhido no filtro? `"Todos"` deixa passar tudo. */
 export function conversaDoNumero(
   contaCanal: string | null | undefined,
-  numeroEscolhido: string,
+  escolhido: string,
 ): boolean {
-  if (numeroEscolhido === "Todos") return true;
-  const digitos = (contaCanal ?? "").slice((contaCanal ?? "").indexOf(":") + 1).replace(/\D/g, "");
+  if (escolhido === "Todos") return true;
   /*
    * Conversa SEM marca não pertence a número nenhum, e some quando um é escolhido.
    *
@@ -62,5 +73,6 @@ export function conversaDoNumero(
    * um dos números, o que é falso em pelo menos um dos casos — e quem filtrou "Closer — João"
    * está perguntando o que é dele, não o que pode ser de qualquer um.
    */
-  return Boolean(digitos) && digitos === numeroEscolhido.replace(/\D/g, "");
+  if (!contaCanal) return false;
+  return normalizarContaCanal(contaCanal) === escolhido;
 }

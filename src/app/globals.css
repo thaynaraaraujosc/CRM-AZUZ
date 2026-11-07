@@ -3377,6 +3377,33 @@ table.tbl tbody tr:hover td {
   color: var(--danger);
 }
 
+/*
+ * PRA ONDE VAI O QUE CHEGA POR ESTE NÚMERO: funil e responsável, lado a lado.
+ *
+ * Duas colunas que viram uma quando aperta. Os campos ficam na linha do número, e não escondidos
+ * atrás de "Detalhes", porque a pergunta "e os leads dele caem onde?" se faz no momento de
+ * conectar — escondida, a resposta vira uma descoberta de semanas depois, com o funil já
+ * embaralhado.
+ */
+.wa-numero-destino {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: var(--space-2) var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px dashed var(--line-soft);
+}
+
+.wa-numero-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.wa-numero-campo .input {
+  width: 100%;
+}
+
 .wa-numero-qr {
   display: flex;
   flex-direction: column;
@@ -4439,6 +4466,21 @@ table.tbl tbody tr:hover td {
   letter-spacing: var(--track-snug);
   color: var(--ink-nome);
   line-height: var(--lh-tight);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/*
+ * AS RETICÊNCIAS DO NOME ESTAVAM NO ELEMENTO ERRADO.
+ *
+ * `text-overflow: ellipsis` morava em `.cname`, que é um CONTÊINER de flex — e ali a propriedade
+ * não faz nada: ela só vale pro texto de um bloco. O nome ficava cortado a seco no meio da palavra,
+ * e numa coluna estreita duas conversas de nome parecido viravam a mesma linha ("AGÊNCIA AZUZ -
+ * TRÁF" podia ser tráfego ou qualquer outra coisa). O `min-width: 0` é o que permite o item encolher
+ * abaixo do conteúdo; sem ele, flex se recusa a apertar e o corte volta.
+ */
+.wa-row .cname-texto {
+  min-width: 0;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -15677,6 +15719,75 @@ button.flow-node-warn:hover {
  * cartão, longe da chave que eles mexem. Numa lista de propriedades o olho desce por uma coluna só
  * e cada ação fica ao lado do que ela altera.
  */
+/*
+ * O CARTÃO DO FLOW ABRE E FECHA.
+ *
+ * O cabeçalho inteiro é o botão: alvo grande, e nada a descobrir — quem vê um título com setinha
+ * sabe o que fazer. A setinha gira em vez de trocar de ícone, que é o mesmo gesto do resto do CRM.
+ */
+.flow-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.flow-cabecalho .config-bloco-titulo {
+  margin: 0;
+}
+
+.flow-cabecalho svg {
+  flex: none;
+  color: var(--text-muted);
+  transition: transform var(--transition-fast);
+}
+
+.flow-cabecalho .girado {
+  transform: rotate(180deg);
+}
+
+/*
+ * A PERGUNTA, antes da configuração.
+ *
+ * Duas colunas: a pergunta à esquerda, as duas saídas à direita. Quebra pra baixo quando aperta,
+ * em vez de espremer o texto — numa coluna estreita a frase é o que precisa continuar legível.
+ */
+.flow-convite {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-3);
+}
+
+.flow-convite-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 260px;
+}
+
+.flow-convite-acoes {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Quem respondeu "não" fica com uma linha, e ela não compete com nada da tela. */
+.flow-convite-recusado {
+  padding-top: var(--space-3);
+  padding-bottom: var(--space-3);
+}
+
 .flow-topo {
   display: flex;
   flex-direction: column;

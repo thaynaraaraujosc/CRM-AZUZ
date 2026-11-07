@@ -9,6 +9,7 @@ import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
 import { motivoDaFalha, prazoDe, PRAZO_CONSULTA_MS, PRAZO_DOWNLOAD_MS } from "@/lib/integracoes/prazo";
 import { CANAL_OFICIAL, contaCanalDaConexao } from "@/lib/integracoes/conta-canal";
 import { criarContatoPeloWhatsAppSeNaoExistir } from "@/lib/contatos/upsert";
+import { destinoDoNumero } from "@/lib/integracoes/destino-do-numero";
 import { aplicarOrigemPelaMensagem, aplicarOrigemPelaReferenciaDaMeta } from "@/lib/rastreio/aplicar";
 import { entrarNaPrimeiraEtapaComoNovoLead, subirCardParaOTopo } from "@/lib/funis/upsert";
 import { dispararAutomacoesDeMensagemRecebida } from "@/lib/automation-flow/disparar-no-servidor";
@@ -455,12 +456,24 @@ export async function POST(request: Request) {
           nomeDoPerfil: nomePerfil,
         });
         const { nome: chaveContato, contatoExistente } = pessoa;
+        /*
+         * PRA ONDE VAI O QUE CHEGOU POR ESTE NÚMERO: funil e responsável.
+         *
+         * Lido da conexão que recebeu. Nos dois nulos — que é a conta que nunca configurou nada —
+         * tudo segue exatamente como seguia antes desta opção existir.
+         */
+        const destino = await destinoDoNumero(
+          integracao.workspaceId,
+          contaCanalDaConexao(CANAL_OFICIAL, phoneNumberId),
+        );
         const contato =
           contatoExistente ??
           (await criarContatoPeloWhatsAppSeNaoExistir({
             workspaceId: integracao.workspaceId,
             nome: chaveContato,
             whatsapp: waId,
+            // O dono do número oficial vira o responsável do lead. Nulo = como sempre foi.
+            responsavel: destino.responsavel,
           }));
 
         // Se esta pessoa recebeu um disparo em massa há pouco, esta mensagem é a resposta dele.
@@ -579,6 +592,8 @@ export async function POST(request: Request) {
             contatoNome: chaveContato,
             origem: "WhatsApp",
             contaCanal: contaCanalDaConexao(CANAL_OFICIAL, phoneNumberId),
+            // O funil deste número. Nulo = o padrão da empresa, que é o comportamento de sempre.
+            funilId: destino.funilId,
           });
         } else {
           // Contato que já tinha card: a ETAPA não se mexe, mas o card sobe pro topo da coluna.
