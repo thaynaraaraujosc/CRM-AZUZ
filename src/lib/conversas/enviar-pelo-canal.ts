@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { decriptar } from "@/lib/integracoes/crypto";
 import { enviarMensagemWhatsAppNaoOficial } from "@/lib/integracoes/evolution";
+import { slotDeEnvio, slotPadraoDeEnvio } from "@/lib/integracoes/conexoes-whatsapp";
 import { enviarDirectInstagram } from "@/lib/integracoes/instagram-login";
 import { explicarErroDoInstagram } from "@/lib/integracoes/erro-instagram";
 import { contaConectada, enviarPelaCloudApi, janelaDeAtendimentoAberta } from "@/lib/integracoes/whatsapp-oficial";
@@ -99,9 +100,19 @@ export async function enviarTextoPeloCanal(params: {
     // WhatsApp: a conversa pertence à conexão por onde ela veio (ver `contaCanal`). QR Code e API
     // oficial são serviços diferentes: mandar pelo errado dá erro ou vai pro número errado.
     if (conversa.contaCanal?.startsWith("whatsapp_nao_oficial:") || conversa.contaCanal?.startsWith("whatsapp_baileys:")) {
+      /*
+       * SAI PELO NÚMERO QUE RECEBEU. Com um número só isso era automático; com vários, é decisão.
+       *
+       * O cliente escreveu pra vendedora e a automação responde pelo número do closer: do lado de
+       * lá, uma conversa que começou com uma pessoa continua com outra, do nada. É o tipo de coisa
+       * que destrói a confiança numa negociação, então quando o CRM não sabe por onde sair ele não
+       * sai — e diz por quê.
+       */
+      const { slot, motivo } = await slotDeEnvio(workspaceId, conversa.contaCanal);
+      if (slot === null) return { enviado: false, motivo };
       // O id volta junto: é por ele que `messages.update` acha esta bolha depois pra dizer
       // "entregue" e "lido". O QR Code sempre devolveu esse id; o CRM é que o jogava fora.
-      const id = await enviarMensagemWhatsAppNaoOficial(workspaceId, conversa.contato, texto);
+      const id = await enviarMensagemWhatsAppNaoOficial(workspaceId, conversa.contato, texto, slot);
       return { enviado: true, wamid: id };
     }
 
@@ -120,7 +131,9 @@ export async function enviarTextoPeloCanal(params: {
      * Só quando o QR está LIGADO: com ele fora e o oficial de pé, a saída é o caminho de baixo.
      */
     if (!conversa.contaCanal && (await qrCodeConectado(workspaceId))) {
-      const id = await enviarMensagemWhatsAppNaoOficial(workspaceId, conversa.contato, texto);
+      const { slot, motivo } = await slotDeEnvio(workspaceId, null);
+      if (slot === null) return { enviado: false, motivo };
+      const id = await enviarMensagemWhatsAppNaoOficial(workspaceId, conversa.contato, texto, slot);
       return { enviado: true, wamid: id };
     }
 
@@ -167,13 +180,13 @@ export async function enviarTextoPeloCanal(params: {
  *  das conexões (`azuz-flow-conexoes.ts`) ainda descriptografa o token do oficial, que aqui não
  *  serve pra nada. */
 async function qrCodeConectado(workspaceId: string): Promise<boolean> {
-  const integracao = await prisma.integracao
-    .findUnique({
-      where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot: 1 } },
-      select: { status: true },
-    })
-    .catch(() => null);
-  return integracao?.status === "conectado";
+  // QUALQUER número conectado conta, não a posição 1. Com o primeiro caído e o segundo de pé, ler
+  // só a posição 1 responderia "não tem QR Code" — e a conversa sem dono cairia no caminho da API
+  // oficial, voltando "WhatsApp não conectado" com o WhatsApp funcionando.
+  const quantos = await prisma.integracao
+    .count({ where: { workspaceId, provedor: "whatsapp_nao_oficial", status: "conectado" } })
+    .catch(() => 0);
+  return quantos > 0;
 }
 
 
@@ -251,7 +264,10 @@ export async function iniciarConversaEEnviarTexto(params: {
 
   let wamid: string | null = null;
   try {
-    wamid = await enviarMensagemWhatsAppNaoOficial(workspaceId, numero, texto);
+    // Conversa que ainda não existe não tem "número que recebeu": sai pelo primeiro conectado.
+    // Ver `slotPadraoDeEnvio`.
+    const slot = (await slotPadraoDeEnvio(workspaceId)) ?? 1;
+    wamid = await enviarMensagemWhatsAppNaoOficial(workspaceId, numero, texto, slot);
   } catch (erro) {
     const cru = erro instanceof Error ? erro.message : "falha ao enviar";
     // Com a oficial conectada e a de QR Code não, a explicação certa é a da janela — e não o erro

@@ -42,10 +42,16 @@ export type ResultadoPasso = {
  */
 export async function avancarHistorico(
   workspaceId: string,
-  opcoes: { limiteMs: number; processarMensagem: (workspaceId: string, item: unknown) => Promise<void> },
+  opcoes: {
+    limiteMs: number;
+    processarMensagem: (workspaceId: string, item: unknown, slot: number) => Promise<void>;
+    /** Qual número conectado está sendo importado. Cada um tem a fila e o histórico dele. */
+    slot?: number;
+  },
 ): Promise<ResultadoPasso | null> {
   const comeco = Date.now();
-  const metadados = await lerMetadados(workspaceId);
+  const slot = opcoes.slot ?? 1;
+  const metadados = await lerMetadados(workspaceId, slot);
   let historico = metadados.historico as HistoricoSync | undefined;
   if (!historico) {
     historico = { status: "em_andamento", totalChats: null, chatsProcessados: 0, filaRestante: null };
@@ -57,7 +63,7 @@ export async function avancarHistorico(
     // Primeira passada: pega a lista de conversas do celular, uma vez só, e separa as recentes das
     // antigas. Nenhuma mensagem é processada ainda.
     if (historico.filaRestante === null) {
-      const chats = await buscarChats(workspaceId);
+      const chats = await buscarChats(workspaceId, slot);
 
       /*
        * Lista vazia NÃO é fim da importação. É "ainda não chegou".
@@ -109,7 +115,7 @@ export async function avancarHistorico(
     // de tempo fosse checada antes da primeira, esse caminho não processaria nada nunca.
     while (fila.length > 0 && (chatsFeitos === 0 || Date.now() - comeco < opcoes.limiteMs)) {
       const chat = fila[0];
-      const mensagens = await buscarMensagensDoChat(workspaceId, chat.remoteJid, MENSAGENS_POR_CHAT);
+      const mensagens = await buscarMensagensDoChat(workspaceId, chat.remoteJid, MENSAGENS_POR_CHAT, slot);
       for (const item of mensagens) {
         // Já sabemos de QUAL conversa a mensagem é: pedimos por este `remoteJid`. Não dá pra
         // confiar no que vem dentro de cada mensagem, porque algumas respostas trazem o JID de quem
@@ -124,7 +130,7 @@ export async function avancarHistorico(
                 },
               }
             : item;
-        await opcoes.processarMensagem(workspaceId, corrigido).catch((erro) =>
+        await opcoes.processarMensagem(workspaceId, corrigido, slot).catch((erro) =>
           console.error(`[historico] falha ao processar mensagem de ${chat.remoteJid}:`, erro),
         );
       }
@@ -141,18 +147,18 @@ export async function avancarHistorico(
       chatsFeitos += 1;
       // Grava a CADA conversa, não no fim: a função pode ser cortada pela plataforma a qualquer
       // momento, e progresso perdido significa reprocessar mensagem que já entrou.
-      await salvarHistorico(workspaceId, metadados, historico);
+      await salvarHistorico(workspaceId, metadados, historico, slot);
     }
 
     if (fila.length === 0) {
       historico = { ...historico, status: "concluido" };
-      await salvarHistorico(workspaceId, metadados, historico);
+      await salvarHistorico(workspaceId, metadados, historico, slot);
     }
     return { historico, chatsFeitos };
   } catch (erro) {
     const mensagem = erro instanceof Error ? erro.message : "Falha na importação do histórico";
     const comErro: HistoricoSync = { ...historico, status: "erro", erro: mensagem };
-    await salvarHistorico(workspaceId, metadados, comErro).catch(() => {});
+    await salvarHistorico(workspaceId, metadados, comErro, slot).catch(() => {});
     return { historico: comErro, chatsFeitos: 0 };
   }
 }
@@ -166,12 +172,14 @@ export async function avancarHistorico(
  */
 export async function rodarHistoricosPendentes(opcoes: {
   limiteMs: number;
-  processarMensagem: (workspaceId: string, item: unknown) => Promise<void>;
+  processarMensagem: (workspaceId: string, item: unknown, slot: number) => Promise<void>;
 }): Promise<{ workspaces: number; chats: number }> {
   const comeco = Date.now();
+  // Uma linha por NÚMERO conectado: com dois números na mesma empresa, cada um tem a importação
+  // dele, e tratar os dois como uma só faria a fila de um sobrescrever a do outro.
   const conexoes = await prisma.integracao.findMany({
     where: { provedor: "whatsapp_nao_oficial", status: "conectado" },
-    select: { workspaceId: true, metadados: true },
+    select: { workspaceId: true, slot: true, metadados: true },
   });
 
   const pendentes = conexoes.filter((c) => {
@@ -191,6 +199,7 @@ export async function rodarHistoricosPendentes(opcoes: {
     const r = await avancarHistorico(conexao.workspaceId, {
       limiteMs: Math.min(fatia, restante),
       processarMensagem: opcoes.processarMensagem,
+      slot: conexao.slot,
     }).catch((erro) => {
       console.error(`[historico] falha no workspace ${conexao.workspaceId}:`, erro);
       return null;

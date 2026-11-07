@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { RITMO } from "@/lib/campanhas/ritmo";
 import { enviarTextoPeloCanal } from "@/lib/conversas/enviar-pelo-canal";
 import { numeroTemWhatsapp } from "@/lib/integracoes/evolution";
+import { slotPadraoDeEnvio } from "@/lib/integracoes/conexoes-whatsapp";
 import { anotarNaConversa } from "@/lib/integracoes/azuz-flow-confirmacao-fila";
 import { registrarMensagemEnviada } from "@/lib/conversas/registrar-saida";
 import { configDoFlow } from "@/lib/integracoes/azuz-flow-config";
@@ -41,7 +42,11 @@ export type DependenciasDoEnvio = {
 };
 
 const ENVIO_REAL: DependenciasDoEnvio = {
-  conferirNumero: numeroTemWhatsapp,
+  // Pergunta por qualquer número conectado: "este telefone tem WhatsApp?" é a mesma resposta em
+  // todos. Pelo PRIMEIRO conectado, e não fixo no 1, pra a checagem não parar de funcionar numa
+  // conta onde só o segundo número está de pé.
+  conferirNumero: async (workspaceId, numero) =>
+    numeroTemWhatsapp(workspaceId, numero, (await slotPadraoDeEnvio(workspaceId)) ?? 1),
   enviar: enviarTextoPeloCanal,
 };
 

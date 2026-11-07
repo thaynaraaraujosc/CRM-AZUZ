@@ -18,9 +18,12 @@ export const dynamic = "force-dynamic";
  * `conferirCanalQrCodeDeTodosOsWorkspaces` e `corrigirDonosDivergentes` de hora em hora, em todo
  * workspace, sem ninguém precisar abrir nada. Era assim que já estava documentado.
  */
-export async function GET() {
+export async function GET(request: Request) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
-  const saude = await conferirCanalQrCode(sessao.user.workspaceId, { reparar: false });
+  // De qual número. Sem `?slot=`, o primeiro — o que toda chamada antiga manda.
+  const bruto = Number(new URL(request.url).searchParams.get("slot"));
+  const slot = Number.isInteger(bruto) && bruto >= 1 ? bruto : 1;
+  const saude = await conferirCanalQrCode(sessao.user.workspaceId, { reparar: false, slot });
   return NextResponse.json(saude, { headers: { "cache-control": "no-store" } });
 }

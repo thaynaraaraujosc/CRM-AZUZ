@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { decriptar } from "@/lib/integracoes/crypto";
 import { enviarReacaoWhatsAppNaoOficial } from "@/lib/integracoes/evolution";
+import { slotDeEnvio } from "@/lib/integracoes/conexoes-whatsapp";
 import { reagirNoDirectInstagram } from "@/lib/integracoes/instagram-login";
 
 /**
@@ -88,6 +89,10 @@ export async function POST(request: Request) {
           { status: 409 },
         );
       }
+      // Pelo número que recebeu esta conversa: a reação aparece do lado de lá como vinda de
+      // quem está falando com a pessoa, e não de outro número da empresa.
+      const { slot, motivo } = await slotDeEnvio(workspaceId, conversa.contaCanal);
+      if (slot === null) return NextResponse.json({ erro: motivo }, { status: 409 });
       // Emoji vazio é como o WhatsApp DESFAZ a reação: não existe chamada própria pra remover.
       await enviarReacaoWhatsAppNaoOficial(
         workspaceId,
@@ -95,6 +100,7 @@ export async function POST(request: Request) {
         idNoWhatsApp,
         curtir ? "❤️" : "",
         ehNossa,
+        slot,
       );
     }
   } catch (erro) {

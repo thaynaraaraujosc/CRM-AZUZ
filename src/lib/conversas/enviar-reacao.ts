@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { enviarReacaoWhatsAppNaoOficial } from "@/lib/integracoes/evolution";
+import { slotDeEnvio } from "@/lib/integracoes/conexoes-whatsapp";
 import { contaConectada, enviarPelaCloudApi } from "@/lib/integracoes/whatsapp-oficial";
 
 /**
@@ -41,8 +42,11 @@ export async function reagirAUltimaMensagem(params: {
       conversa.contaCanal?.startsWith("whatsapp_nao_oficial:") || conversa.contaCanal?.startsWith("whatsapp_baileys:");
 
     if (porQrCode) {
+      // Pelo número que recebeu: reagir é escrever na conversa, e vale a mesma regra do texto.
+      const { slot, motivo } = await slotDeEnvio(workspaceId, conversa.contaCanal);
+      if (slot === null) return { enviado: false, motivo };
       // `false`: a automação reage à mensagem que o CONTATO mandou.
-      await enviarReacaoWhatsAppNaoOficial(workspaceId, conversa.contato, recebida.id, emoji, false);
+      await enviarReacaoWhatsAppNaoOficial(workspaceId, conversa.contato, recebida.id, emoji, false, slot);
       return { enviado: true };
     }
 

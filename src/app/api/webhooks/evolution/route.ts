@@ -3,7 +3,15 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { ehPedidoDeParar, registrarPedidoDeParar } from "@/lib/integracoes/azuz-flow-optout";
-import { validarTokenWebhook, workspaceIdDaInstancia, buscarNumeroConectado, buscarInfoGrupo, buscarFotoPerfil } from "@/lib/integracoes/evolution";
+import {
+  validarTokenWebhook,
+  conexaoDaInstancia,
+  workspaceIdDaInstancia,
+  buscarNumeroConectado,
+  buscarInfoGrupo,
+  buscarFotoPerfil,
+} from "@/lib/integracoes/evolution";
+import { idDaConexao } from "@/lib/integracoes/conexoes-whatsapp";
 import { baixarFotoDePerfil, precisaBaixarFoto } from "@/lib/integracoes/foto-de-perfil";
 import { criarContatoPeloWhatsAppSeNaoExistir } from "@/lib/contatos/upsert";
 import { entrarNaPrimeiraEtapaComoNovoLead, subirCardParaOTopo } from "@/lib/funis/upsert";
@@ -31,22 +39,24 @@ type PayloadEvolution = {
  * `metadados` é uma coluna Json substituída inteira, não mesclada campo a campo pelo Prisma. */
 async function atualizarStatus(
   workspaceId: string,
+  slot: number,
   status: "aguardando_qr" | "conectado" | "desconectado",
   extra: { qrDataUrl?: string | null; numero?: string | null } = {},
 ) {
   const atual = await prisma.integracao.findUnique({
-    where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot: 1 } },
+    where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot } },
     select: { metadados: true },
   });
   const metadadosAtuais = (atual?.metadados as Record<string, unknown>) ?? {};
   const metadados = { ...metadadosAtuais, qrDataUrl: extra.qrDataUrl ?? null, numero: extra.numero ?? null };
 
   await prisma.integracao.upsert({
-    where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot: 1 } },
+    where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot } },
     create: {
-      id: `${workspaceId}-whatsapp_nao_oficial`,
+      id: idDaConexao(workspaceId, slot),
       workspaceId,
       provedor: "whatsapp_nao_oficial",
+      slot,
       status,
       metadados,
     },
@@ -118,36 +128,44 @@ export async function POST(request: Request) {
   }
 
   const payload = (await request.json()) as PayloadEvolution;
-  const workspaceId = workspaceIdDaInstancia(payload.instance ?? "");
-  if (!workspaceId) return NextResponse.json({ ok: true }); // instância de outro uso do mesmo servidor Evolution
+  /*
+   * O NOME DA INSTÂNCIA DIZ DE QUAL NÚMERO É O EVENTO, e não só de qual empresa.
+   *
+   * Com um número por conta isso era a mesma pergunta, e ler só a empresa bastava. Com vários, ler
+   * só a empresa é o defeito: tudo que chega pelo número do closer seria gravado como se tivesse
+   * chegado pelo da vendedora — e a resposta sairia pelo número errado, no meio da negociação.
+   */
+  const conexao = conexaoDaInstancia(payload.instance ?? "");
+  if (!conexao) return NextResponse.json({ ok: true }); // instância de outro uso do mesmo servidor Evolution
+  const { workspaceId, slot } = conexao;
 
   const evento = payload.event?.toLowerCase().replace(/_/g, ".");
 
   // "A Evolution ainda está falando comigo." Sem esse rastro, "a mensagem não chegou" não tem como
   // ser investigado: não dá pra saber se ninguém avisou ou se o aviso chegou e foi descartado.
-  await registrarSinalDeVida(workspaceId, evento ?? "desconhecido");
+  await registrarSinalDeVida(workspaceId, evento ?? "desconhecido", "whatsapp_nao_oficial", slot);
 
   if (evento === "qrcode.updated") {
     const qrDataUrl =
       (payload.data?.qrcode as { base64?: string } | undefined)?.base64 ??
       (payload.data?.base64 as string | undefined) ??
       null;
-    await atualizarStatus(workspaceId, "aguardando_qr", { qrDataUrl });
+    await atualizarStatus(workspaceId, slot, "aguardando_qr", { qrDataUrl });
     return NextResponse.json({ ok: true });
   }
 
   if (evento === "connection.update") {
     const estado = payload.data?.state as string | undefined;
     if (estado === "open") {
-      const numero = await buscarNumeroConectado(workspaceId).catch(() => null);
-      await atualizarStatus(workspaceId, "conectado", { numero });
+      const numero = await buscarNumeroConectado(workspaceId, slot).catch(() => null);
+      await atualizarStatus(workspaceId, slot, "conectado", { numero });
       // Só a PRIMEIRA vez que esse workspace conecta. Reconexão (celular caiu e voltou) não deve
       // reprocessar o histórico inteiro de novo, só as mensagens novas (via `messages.upsert` normal).
-      await iniciarHistoricoSeNecessario(workspaceId).catch((erro) =>
+      await iniciarHistoricoSeNecessario(workspaceId, slot).catch((erro) =>
         console.error("[webhook evolution] Falha ao iniciar sincronização de histórico:", erro),
       );
     } else if (estado === "close") {
-      await atualizarStatus(workspaceId, "desconectado");
+      await atualizarStatus(workspaceId, slot, "desconectado");
     }
     return NextResponse.json({ ok: true });
   }
@@ -193,7 +211,7 @@ export async function POST(request: Request) {
     const decisao = decidirSobreLote(payload.data as { messages?: unknown[]; type?: string });
     if (decisao.acao === "descartar") {
       console.log(`[webhook evolution] lote descartado: ${decisao.motivo} — ${decisao.detalhe}`);
-      await registrarDescarte(workspaceId, decisao.motivo, decisao.detalhe);
+      await registrarDescarte(workspaceId, decisao.motivo, decisao.detalhe, "whatsapp_nao_oficial", slot);
       return NextResponse.json({ ok: true });
     }
     /*
@@ -208,11 +226,13 @@ export async function POST(request: Request) {
      */
     for (const item of decisao.mensagens) {
       try {
-        await processarMensagemRecebida(workspaceId, item, { chegouEm });
+        await processarMensagemRecebida(workspaceId, item, { chegouEm, slot });
       } catch (erro) {
         const motivo = erro instanceof Error ? erro.message : String(erro);
         console.error("[webhook evolution] falha ao processar uma mensagem do lote:", erro);
-        await registrarDescarte(workspaceId, "erro ao processar", motivo.slice(0, 300)).catch(() => {});
+        await registrarDescarte(workspaceId, "erro ao processar", motivo.slice(0, 300), "whatsapp_nao_oficial", slot).catch(
+          () => {},
+        );
       }
     }
     return NextResponse.json({ ok: true });
@@ -244,8 +264,19 @@ export async function processarMensagemRecebida(
      * simplesmente não entra na conta.
      */
     chegouEm?: Date;
+    /**
+     * De qual CONEXÃO é esta mensagem (1 a 10). Veio no nome da instância.
+     *
+     * Entra pelas opções, e não como parâmetro posicional, porque a sincronização de histórico
+     * também chama esta função: lá a conexão é conhecida por outro caminho, e um parâmetro novo
+     * no meio da assinatura seria um lugar a mais pra passar o número errado em silêncio.
+     */
+    slot?: number;
   } = {},
 ) {
+  // Sem conexão declarada, é a primeira: é o que vale pra toda conta de um número só, que são
+  // todas as de hoje. Ver `conexoes-whatsapp.ts`.
+  const slot = opcoes.slot ?? 1;
   const data = item as {
     key?: {
       id?: string;
@@ -332,7 +363,13 @@ export async function processarMensagemRecebida(
     // formato de evento diferente do esperado). Sem isso não dá pra ver pelos logs da Vercel por
     // que uma mensagem específica não apareceu no CRM.
     console.log("[webhook evolution] messages.upsert sem texto/waId/id reconhecível:", JSON.stringify(data).slice(0, 500));
-    await registrarDescarte(workspaceId, "sem texto reconhecível", chavesDaMensagem(data.message as Record<string, unknown> | undefined));
+    await registrarDescarte(
+      workspaceId,
+      "sem texto reconhecível",
+      chavesDaMensagem(data.message as Record<string, unknown> | undefined),
+      "whatsapp_nao_oficial",
+      slot,
+    );
     return;
   }
 
@@ -403,13 +440,13 @@ export async function processarMensagemRecebida(
         ? conversaExistente.participantesGrupo.length > 0
         : false;
       if (!jaTemLista) {
-        const info = await buscarInfoGrupo(workspaceId, remoteJid!);
+        const info = await buscarInfoGrupo(workspaceId, remoteJid!, slot);
         participantesGrupo = info?.participantes;
         descricaoGrupo = info?.descricao;
         criacaoGrupo = info?.criacao;
       }
     } else {
-      const info = await buscarInfoGrupo(workspaceId, remoteJid!);
+      const info = await buscarInfoGrupo(workspaceId, remoteJid!, slot);
       chaveContato = info?.nome ?? waId;
       participantesGrupo = info?.participantes;
       descricaoGrupo = info?.descricao;
@@ -449,17 +486,23 @@ export async function processarMensagemRecebida(
    */
   let fotoUrl = fotoUrlExistente;
   if (precisaBaixarFoto(fotoUrl)) {
-    const endereco = await buscarFotoPerfil(workspaceId, ehGrupo ? remoteJid! : waId).catch(() => null);
+    const endereco = await buscarFotoPerfil(workspaceId, ehGrupo ? remoteJid! : waId, slot).catch(() => null);
     const baixada = endereco ? await baixarFotoDePerfil(endereco) : null;
     // Só substitui quando deu certo: falhando o download, o que já estava lá continua — um link
     // velho ainda é melhor que nada enquanto não expirou.
     fotoUrl = baixada ?? fotoUrl;
   }
 
-  // Conexão dona desta mensagem: é o número conectado por QR Code neste workspace. Sem isso, a
-  // mensagem fica sem dono e não some da tela quando esse número é desconectado.
+  /*
+   * QUAL NÚMERO RECEBEU ESTA MENSAGEM. É o que a resposta vai usar depois pra sair pelo mesmo.
+   *
+   * Lido da conexão de onde o evento veio (`slot`), e não da primeira conexão da empresa. Com dois
+   * números ligados, ler a primeira marcava toda mensagem do segundo como se fosse do primeiro: a
+   * caixa de entrada misturava os dois e a resposta saía pelo número errado — que é o defeito que
+   * o cliente vê, porque a conversa dele troca de remetente no meio.
+   */
   const integracaoNaoOficial = await prisma.integracao.findUnique({
-    where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot: 1 } },
+    where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot } },
     select: { metadados: true },
   });
   const contaCanal = contaCanalDaConexao(
@@ -614,7 +657,7 @@ export async function processarMensagemRecebida(
    * é "a Evolution está entregando mensagem nova?", e importação não responde isso.
    */
   if (!comoHistorico) {
-    await registrarMensagemGravada(workspaceId, chaveContato, ehGrupo).catch(() => {});
+    await registrarMensagemGravada(workspaceId, chaveContato, ehGrupo, "whatsapp_nao_oficial", slot).catch(() => {});
   }
 
   // O negócio no funil vem DEPOIS da conversa, e essa ordem importa.

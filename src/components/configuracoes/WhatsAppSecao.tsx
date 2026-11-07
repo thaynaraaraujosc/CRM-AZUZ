@@ -7,8 +7,7 @@ import { ConexaoManualWhatsApp } from "./ConexaoManualWhatsApp";
 import { LimparDadosWhatsApp } from "./LimparDadosWhatsApp";
 import { LimparDemonstracao } from "./LimparDemonstracao";
 import { EmbeddedSignupWhatsApp } from "./EmbeddedSignupWhatsApp";
-import { ImportarConversas } from "./ImportarConversas";
-import { SaudeQrCode } from "./SaudeQrCode";
+import { NumerosDeWhatsApp } from "./NumerosDeWhatsApp";
 import { TempoDeChegada } from "./TempoDeChegada";
 import { useSession } from "next-auth/react";
 
@@ -103,8 +102,9 @@ export function WhatsAppSecao() {
                 <p className="int-title" style={{ margin: 0 }}>
                   {metaConectada ? traduzir("WhatsApp Business (API oficial da Meta)") : traduzir("WhatsApp (API não oficial, QR Code)")}
                 </p>
-                <p className="int-sub" style={{ margin: "4px 0 0" }}>Conectado • {numeroConectado}</p>
+                {metaConectada ? <p className="int-sub" style={{ margin: "4px 0 0" }}>Conectado • {numeroConectado}</p> : null}
               </div>
+              {metaConectada ? (
               <button
                 type="button"
                 className="btn danger"
@@ -124,7 +124,17 @@ export function WhatsAppSecao() {
               >
                 {(metaConectada && desconectando) || (!metaConectada && naoOficial.desconectando) ? "Desconectando…" : "Desconectar"}
               </button>
+              ) : null}
             </div>
+
+            {/*
+              * A LISTA DE NÚMEROS substitui a linha única de "Conectado • 5562…".
+              *
+              * Ela é quem desconecta, quem nomeia e quem conecta o próximo — e cada linha abre o
+              * diagnóstico e a importação DELA. Por isso os dois painéis de baixo só continuam
+              * aparecendo no canal oficial, onde há um número e um só.
+              */}
+            {!metaConectada ? <NumerosDeWhatsApp /> : null}
             {metaConectada && integracao?.metadados ? (
               <SaudeConexaoOficial metadados={integracao.metadados as Record<string, unknown>} />
             ) : null}
@@ -140,17 +150,11 @@ export function WhatsAppSecao() {
               * Só a conexão por QR Code: a janela de 24 horas e o registro de webhook que ele
               * confere são do Baileys. No canal oficial não existe o que ele mede.
               */}
-            {!metaConectada ? <SaudeQrCode /> : null}
+            {/* No QR Code o diagnóstico vive dentro de cada número da lista acima. */}
             {/* Sem a condição `&& historico`: o painel agora mostra o botão de buscar as
                 conversas MESMO quando nenhuma importação foi registrada — que era justamente o
                 estado em que não havia nada a clicar. Ver `ImportarConversas`. */}
-            {!metaConectada ? (
-              <ImportarConversas
-                conectada={naoOficialConectada}
-                historico={naoOficial.estado?.metadados?.historico}
-                aoMudar={naoOficial.aplicarHistorico}
-              />
-            ) : null}
+            {/* A importação também: cada celular conectado tem a fila dele. */}
             {/* Quanto tempo a mensagem leva da mão de quem escreveu até esta tela, medido. */}
             <TempoDeChegada canal="WhatsApp" />
             {/* Só na conexão oficial: modelo aprovado é coisa da Cloud API. No QR Code não existe

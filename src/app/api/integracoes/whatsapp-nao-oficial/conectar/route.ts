@@ -5,11 +5,17 @@ import { prisma } from "@/lib/prisma";
 import { esquecerConexoes } from "@/lib/integracoes/conexoes-cache";
 import { auditar } from "@/lib/seguranca/auditoria";
 import { conectarWhatsAppNaoOficial } from "@/lib/integracoes/evolution";
+import {
+  LIMITE_DE_NUMEROS,
+  idDaConexao,
+  listarConexoesWhats,
+  proximoSlotLivre,
+} from "@/lib/integracoes/conexoes-whatsapp";
 
 /** POST cria (se ainda não existir) a instância da Evolution API pro workspace de quem está
  * logado e devolve o QR Code atual. Grava direto no banco pra tela já mostrar o QR sem esperar
  * o primeiro evento de webhook chegar. */
-export async function POST() {
+export async function POST(request: Request) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
   // Conectar e desconectar um canal é ação de dono da conta: desconectar o WhatsApp derruba o
@@ -25,8 +31,33 @@ export async function POST() {
 
   const workspaceId = sessao.user.workspaceId;
 
+  /*
+   * QUAL NÚMERO ESTÁ SENDO CONECTADO.
+   *
+   * Sem nada no corpo é o primeiro — que é o que toda chamada antiga manda, e é o que mantém a
+   * tela de sempre funcionando sem saber que slots existem. `novo: true` pede a próxima posição
+   * livre: é o "Conectar outro número" da tela de vários.
+   */
+  const corpo = await request
+    .json()
+    .then((c: { slot?: number; novo?: boolean }) => c)
+    .catch(() => ({}) as { slot?: number; novo?: boolean });
+
+  let slot = Number.isInteger(corpo.slot) && (corpo.slot as number) >= 1 ? (corpo.slot as number) : 1;
+  if (corpo.novo) {
+    const existentes = await listarConexoesWhats(workspaceId);
+    const livre = proximoSlotLivre(existentes.map((c) => c.slot));
+    if (livre === null) {
+      return NextResponse.json(
+        { erro: `Esta conta já tem ${LIMITE_DE_NUMEROS} números. Desconecte um antes de conectar outro.` },
+        { status: 409 },
+      );
+    }
+    slot = livre;
+  }
+
   try {
-    const { qrDataUrl, estado, avisoWebhook } = await conectarWhatsAppNaoOficial(workspaceId);
+    const { qrDataUrl, estado, avisoWebhook } = await conectarWhatsAppNaoOficial(workspaceId, slot);
     /*
      * O status vem do ESTADO da sessão, não da ausência de QR Code.
      *
@@ -42,7 +73,7 @@ export async function POST() {
     // histórico e o sinal de vida do webhook a cada clique em "Conectar": a importação recomeçava
     // do zero sem ninguém entender por quê.
     const atual = await prisma.integracao.findUnique({
-      where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot: 1 } },
+      where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot } },
       select: { metadados: true },
     });
     const metadados = {
@@ -52,11 +83,12 @@ export async function POST() {
     };
 
     await prisma.integracao.upsert({
-      where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot: 1 } },
+      where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot } },
       create: {
-        id: `${workspaceId}-whatsapp_nao_oficial`,
+        id: idDaConexao(workspaceId, slot),
         workspaceId,
         provedor: "whatsapp_nao_oficial",
+        slot,
         status,
         metadados,
         erroMensagem: avisoWebhook ?? null,
@@ -71,15 +103,16 @@ export async function POST() {
     });
     esquecerConexoes(workspaceId);
 
-    return NextResponse.json({ ok: true, status, qrDataUrl, avisoWebhook: avisoWebhook ?? null });
+    return NextResponse.json({ ok: true, slot, status, qrDataUrl, avisoWebhook: avisoWebhook ?? null });
   } catch (erro) {
     const mensagem = erro instanceof Error ? erro.message : "Falha ao conectar";
     await prisma.integracao.upsert({
-      where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot: 1 } },
+      where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot } },
       create: {
-        id: `${workspaceId}-whatsapp_nao_oficial`,
+        id: idDaConexao(workspaceId, slot),
         workspaceId,
         provedor: "whatsapp_nao_oficial",
+        slot,
         status: "erro",
         erroMensagem: mensagem,
       },

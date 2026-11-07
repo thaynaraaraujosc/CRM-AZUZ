@@ -14,9 +14,9 @@ import { ESPERA_ENTRE_REINICIOS_MS, type HistoricoSync } from "./historico-tipos
 export type { ChatNaFila, HistoricoSync } from "./historico-tipos";
 export { CHATS_NA_PRIMEIRA_LEVA } from "./historico-tipos";
 
-export async function lerMetadados(workspaceId: string): Promise<Record<string, unknown>> {
+export async function lerMetadados(workspaceId: string, slot = 1): Promise<Record<string, unknown>> {
   const linha = await prisma.integracao.findUnique({
-    where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot: 1 } },
+    where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot } },
     select: { metadados: true },
   });
   return (linha?.metadados as Record<string, unknown>) ?? {};
@@ -26,9 +26,10 @@ export async function salvarHistorico(
   workspaceId: string,
   metadadosAtuais: Record<string, unknown>,
   historico: HistoricoSync,
+  slot = 1,
 ): Promise<void> {
   await prisma.integracao.update({
-    where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot: 1 } },
+    where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot } },
     data: { metadados: { ...metadadosAtuais, historico } },
   });
 }
@@ -39,8 +40,8 @@ export async function salvarHistorico(
  * É o "trazer conversas mais antigas": não busca nada de novo no celular, só devolve pra fila o que
  * a primeira leva deixou de lado, e o relógio processa como processou as primeiras.
  */
-export async function trazerMaisAntigas(workspaceId: string): Promise<HistoricoSync | null> {
-  const metadados = await lerMetadados(workspaceId);
+export async function trazerMaisAntigas(workspaceId: string, slot = 1): Promise<HistoricoSync | null> {
+  const metadados = await lerMetadados(workspaceId, slot);
   const historico = metadados.historico as HistoricoSync | undefined;
   if (!historico) return null;
   const guardadas = historico.filaGuardada ?? [];
@@ -53,7 +54,7 @@ export async function trazerMaisAntigas(workspaceId: string): Promise<HistoricoS
     filaGuardada: [],
     totalChats: (historico.totalChats ?? 0) + guardadas.length,
   };
-  await salvarHistorico(workspaceId, metadados, atualizado);
+  await salvarHistorico(workspaceId, metadados, atualizado, slot);
   return atualizado;
 }
 
@@ -73,16 +74,21 @@ export async function trazerMaisAntigas(workspaceId: string): Promise<HistoricoS
  * independentemente de quando foi a última tentativa. Uma importação que trouxe conversa de
  * verdade continua intocada, que é o que evita reprocessar tudo a cada queda de sinal.
  */
-export async function iniciarHistoricoSeNecessario(workspaceId: string): Promise<void> {
-  const metadados = await lerMetadados(workspaceId);
+export async function iniciarHistoricoSeNecessario(workspaceId: string, slot = 1): Promise<void> {
+  const metadados = await lerMetadados(workspaceId, slot);
   if (!precisaTentarDeNovo(metadados.historico as HistoricoSync | undefined)) return;
-  await salvarHistorico(workspaceId, metadados, {
-    status: "em_andamento",
-    totalChats: null,
-    chatsProcessados: 0,
-    filaRestante: null,
-    reiniciadoEm: new Date().toISOString(),
-  });
+  await salvarHistorico(
+    workspaceId,
+    metadados,
+    {
+      status: "em_andamento",
+      totalChats: null,
+      chatsProcessados: 0,
+      filaRestante: null,
+      reiniciadoEm: new Date().toISOString(),
+    },
+    slot,
+  );
 }
 
 /**
@@ -124,7 +130,7 @@ export function precisaTentarDeNovo(
 export async function iniciarHistoricosQueFaltam(): Promise<{ iniciados: number }> {
   const conexoes = await prisma.integracao.findMany({
     where: { provedor: "whatsapp_nao_oficial", status: "conectado" },
-    select: { workspaceId: true, metadados: true },
+    select: { workspaceId: true, slot: true, metadados: true },
   });
   let iniciados = 0;
   for (const conexao of conexoes) {
@@ -133,13 +139,18 @@ export async function iniciarHistoricosQueFaltam(): Promise<{ iniciados: number 
     // conversa nenhuma é recomeçada aqui também, senão a conexão ficaria presa pra sempre sem as
     // conversas do celular e sem ninguém pra apertar nada. Ver `precisaTentarDeNovo`.
     if (!precisaTentarDeNovo(metadados.historico as HistoricoSync | undefined, { respeitarEspera: true })) continue;
-    await salvarHistorico(conexao.workspaceId, metadados, {
-      status: "em_andamento",
-      totalChats: null,
-      chatsProcessados: 0,
-      filaRestante: null,
-      reiniciadoEm: new Date().toISOString(),
-    }).catch((erro) => console.error(`[historico] falha ao iniciar no workspace ${conexao.workspaceId}:`, erro));
+    await salvarHistorico(
+      conexao.workspaceId,
+      metadados,
+      {
+        status: "em_andamento",
+        totalChats: null,
+        chatsProcessados: 0,
+        filaRestante: null,
+        reiniciadoEm: new Date().toISOString(),
+      },
+      conexao.slot,
+    ).catch((erro) => console.error(`[historico] falha ao iniciar no workspace ${conexao.workspaceId}:`, erro));
     iniciados += 1;
   }
   return { iniciados };
@@ -163,8 +174,8 @@ export async function iniciarHistoricosQueFaltam(): Promise<{ iniciados: number 
  * lida nem dispara automação, então rodar de novo não enche a tela de badge falso nem manda
  * resposta automática pra conversa encerrada.
  */
-export async function reimportarHistorico(workspaceId: string): Promise<HistoricoSync> {
-  const metadados = await lerMetadados(workspaceId);
+export async function reimportarHistorico(workspaceId: string, slot = 1): Promise<HistoricoSync> {
+  const metadados = await lerMetadados(workspaceId, slot);
   const anterior = metadados.historico as HistoricoSync | undefined;
   const historico: HistoricoSync = {
     status: "em_andamento",
@@ -177,6 +188,6 @@ export async function reimportarHistorico(workspaceId: string): Promise<Historic
     tentativasSemChats: 0,
     reiniciadoEm: new Date().toISOString(),
   };
-  await salvarHistorico(workspaceId, metadados, historico);
+  await salvarHistorico(workspaceId, metadados, historico, slot);
   return historico;
 }

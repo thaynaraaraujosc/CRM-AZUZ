@@ -30,12 +30,15 @@ export async function POST(request: Request) {
   const workspaceId = sessao.user.workspaceId;
   // `limparDados` vem do clique de quem já confirmou na tela o que vai ser apagado. Nunca é o
   // padrão, porque é irreversível.
-  const { limparDados } = await request
+  const { limparDados, slot: slotPedido } = await request
     .json()
-    .then((corpo: { limparDados?: boolean }) => corpo)
-    .catch(() => ({ limparDados: false }));
+    .then((corpo: { limparDados?: boolean; slot?: number }) => corpo)
+    .catch(() => ({ limparDados: false, slot: undefined }) as { limparDados?: boolean; slot?: number });
 
-  await desconectarWhatsAppNaoOficial(workspaceId).catch((erro) => {
+  // Sem `slot`, é o primeiro número: é o que a tela de sempre manda, e com um número só é o certo.
+  const slot = Number.isInteger(slotPedido) && (slotPedido as number) >= 1 ? (slotPedido as number) : 1;
+
+  await desconectarWhatsAppNaoOficial(workspaceId, slot).catch((erro) => {
     console.error("Falha ao encerrar sessão na Evolution API (seguindo para desconectar localmente):", erro);
   });
 
@@ -55,23 +58,57 @@ export async function POST(request: Request) {
    * caminho próprio ("Buscar conversas que faltam").
    */
   const atual = await prisma.integracao.findUnique({
-    where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot: 1 } },
+    where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot } },
     select: { metadados: true },
   });
-  const webhook = ((atual?.metadados as Record<string, unknown> | null) ?? {}).webhook;
+  const metadados = (atual?.metadados as Record<string, unknown> | null) ?? {};
+  const webhook = metadados.webhook;
+  // O APELIDO SOBREVIVE. "Vendas — Marina" é o nome que a empresa deu à posição, não ao número:
+  // desconectar e reconectar o celular dela não pode apagá-lo e deixar a linha chamada "Número 2".
+  const apelido = metadados.apelido;
 
+  /*
+   * DESCONECTA UM NÚMERO, não todos.
+   *
+   * Era um `updateMany` sobre a empresa inteira — e com um número só isso dava no mesmo. Com
+   * vários, tirar o número do closer derrubaria o da vendedora junto, no mesmo clique, sem nada
+   * na tela dizendo que ia acontecer.
+   */
   await prisma.integracao.updateMany({
-    where: { workspaceId, provedor: "whatsapp_nao_oficial" },
+    where: { workspaceId, provedor: "whatsapp_nao_oficial", slot },
     data: {
       status: "desconectado",
-      metadados: { qrDataUrl: null, numero: null, ...(webhook ? { webhook } : {}) },
+      metadados: {
+        qrDataUrl: null,
+        numero: null,
+        ...(webhook ? { webhook } : {}),
+        ...(apelido ? { apelido } : {}),
+      },
     },
   });
   esquecerConexoes(workspaceId);
 
+  /*
+   * APAGAR OS DADOS SÓ QUANDO SOBRAR NINGUÉM.
+   *
+   * A limpeza é por CANAL, não por número: ela varre as mensagens de QR Code da empresa inteira.
+   * Com dois números ligados, tirar um e marcar "apagar os dados" levaria junto as conversas do
+   * outro, que continua de pé — e isso é irreversível. Então, com outro número ainda conectado, a
+   * limpeza não acontece e a resposta diz por quê, em vez de apagar e avisar depois.
+   */
+  const aindaConectados = await prisma.integracao.count({
+    where: { workspaceId, provedor: "whatsapp_nao_oficial", status: "conectado" },
+  });
+  const limpezaRecusada = limparDados && aindaConectados > 0;
   // Sem isso, o espelho do WhatsApp (contatos, cards no funil, pendências no Início, conversa
   // órfã) fica para trás depois de desconectar e se mistura com o do próximo canal conectado.
-  const limpeza = limparDados ? await limparDadosDoWhatsApp(workspaceId, "nao_oficial") : null;
+  const limpeza = limparDados && !limpezaRecusada ? await limparDadosDoWhatsApp(workspaceId, "nao_oficial") : null;
 
-  return NextResponse.json({ ok: true, limpeza });
+  return NextResponse.json({
+    ok: true,
+    limpeza,
+    limpezaRecusada: limpezaRecusada
+      ? "Os dados não foram apagados: ainda há outro número de WhatsApp conectado, e a limpeza levaria as conversas dele junto. Desconecte todos antes."
+      : null,
+  });
 }

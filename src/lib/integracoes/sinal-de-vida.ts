@@ -9,7 +9,9 @@ import { prisma } from "@/lib/prisma";
  * caminho) eram indistinguíveis, e a única saída era adivinhar.
  *
  * Fica em `Integracao.metadados.webhook`, junto do resto da conexão, pra não precisar de tabela
- * nova. Barato de propósito: uma escrita por minuto no caso do sinal de vida (mensagem chega em
+ * nova. É POR CONEXÃO, e não por empresa: com dois números, o que se quer saber é qual dos dois
+ * parou de falar. Um rastro só, compartilhado, responderia "um deles está vivo" — que é
+ * exatamente a informação inútil quando o outro está mudo. Barato de propósito: uma escrita por minuto no caso do sinal de vida (mensagem chega em
  * rajada, e gravar "chegou" a cada uma seria escrita à toa), e uma por descarte (que é raro, e
  * quando acontece é exatamente o que se quer ver).
  */
@@ -23,9 +25,9 @@ export type RegistroDeWebhook = {
 
 const INTERVALO_SINAL_MS = 60 * 1000;
 
-async function lerRegistro(workspaceId: string, provedor: string) {
+async function lerRegistro(workspaceId: string, provedor: string, slot: number) {
   const linha = await prisma.integracao.findUnique({
-    where: { workspaceId_provedor_slot: { workspaceId, provedor, slot: 1 } },
+    where: { workspaceId_provedor_slot: { workspaceId, provedor, slot } },
     select: { metadados: true },
   });
   if (!linha) return null;
@@ -33,10 +35,16 @@ async function lerRegistro(workspaceId: string, provedor: string) {
   return { metadados, webhook: (metadados.webhook as RegistroDeWebhook | undefined) ?? {} };
 }
 
-async function gravar(workspaceId: string, provedor: string, webhook: RegistroDeWebhook, metadados: Record<string, unknown>) {
+async function gravar(
+  workspaceId: string,
+  provedor: string,
+  slot: number,
+  webhook: RegistroDeWebhook,
+  metadados: Record<string, unknown>,
+) {
   await prisma.integracao
     .update({
-      where: { workspaceId_provedor_slot: { workspaceId, provedor, slot: 1 } },
+      where: { workspaceId_provedor_slot: { workspaceId, provedor, slot } },
       data: { metadados: { ...metadados, webhook } },
     })
     // Integração ainda não existe (evento antes da conexão ser gravada): não é erro, não há o que
@@ -45,14 +53,20 @@ async function gravar(workspaceId: string, provedor: string, webhook: RegistroDe
 }
 
 /** "A Evolution falou com a gente agora." Escreve no máximo uma vez por minuto. */
-export async function registrarSinalDeVida(workspaceId: string, evento: string, provedor = "whatsapp_nao_oficial") {
-  const atual = await lerRegistro(workspaceId, provedor);
+export async function registrarSinalDeVida(
+  workspaceId: string,
+  evento: string,
+  provedor = "whatsapp_nao_oficial",
+  slot = 1,
+) {
+  const atual = await lerRegistro(workspaceId, provedor, slot);
   if (!atual) return;
   const ultimo = atual.webhook.ultimoEventoEm ? Date.parse(atual.webhook.ultimoEventoEm) : 0;
   if (Date.now() - ultimo < INTERVALO_SINAL_MS) return;
   await gravar(
     workspaceId,
     provedor,
+    slot,
     { ...atual.webhook, ultimoEventoEm: new Date().toISOString(), ultimoEvento: evento },
     atual.metadados,
   );
@@ -78,8 +92,9 @@ export async function registrarDescarte(
   motivo: string,
   detalhe?: string,
   provedor = "whatsapp_nao_oficial",
+  slot = 1,
 ) {
-  const atual = await lerRegistro(workspaceId, provedor);
+  const atual = await lerRegistro(workspaceId, provedor, slot);
   if (!atual) return;
   const anterior = atual.webhook.ultimoDescarte;
   if (
@@ -91,6 +106,7 @@ export async function registrarDescarte(
   await gravar(
     workspaceId,
     provedor,
+    slot,
     { ...atual.webhook, ultimoDescarte: { motivo, em: new Date().toISOString(), ...(detalhe ? { detalhe } : {}) } },
     atual.metadados,
   );
@@ -112,12 +128,14 @@ export async function registrarMensagemGravada(
   conversa: string,
   grupo: boolean,
   provedor = "whatsapp_nao_oficial",
+  slot = 1,
 ) {
-  const atual = await lerRegistro(workspaceId, provedor);
+  const atual = await lerRegistro(workspaceId, provedor, slot);
   if (!atual) return;
   await gravar(
     workspaceId,
     provedor,
+    slot,
     { ...atual.webhook, ultimaMensagem: { conversa, em: new Date().toISOString(), grupo } },
     atual.metadados,
   );

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { slotDeEnvio } from "@/lib/integracoes/conexoes-whatsapp";
 import { buscarMidiaBase64 } from "@/lib/integracoes/evolution";
 
 /**
@@ -25,7 +27,24 @@ export async function GET(request: Request) {
     return NextResponse.json({ erro: "remoteJid e id são obrigatórios" }, { status: 400 });
   }
 
-  const midia = await buscarMidiaBase64(sessao.user.workspaceId, { remoteJid, id, fromMe, tipo });
+  /*
+   * A MÍDIA SÓ EXISTE NA CONEXÃO QUE A RECEBEU.
+   *
+   * Cada instância da Evolution guarda as mensagens do número dela. Pedir o áudio de uma conversa
+   * do closer à instância da vendedora devolve "não achei" — e na tela isso aparece como um áudio
+   * que não toca, sem dizer por quê. A conexão é a mesma lógica do envio: a da conversa.
+   */
+  const conversa = await prisma.conversa.findFirst({
+    where: { workspaceId: sessao.user.workspaceId, contato: remoteJid.split("@")[0] },
+    select: { contaCanal: true },
+  });
+  const { slot } = await slotDeEnvio(sessao.user.workspaceId, conversa?.contaCanal ?? null);
+
+  const midia = await buscarMidiaBase64(
+    sessao.user.workspaceId,
+    { remoteJid, id, fromMe, tipo },
+    slot ?? 1,
+  );
   if (!midia) return NextResponse.json({ dataUrl: null });
 
   return NextResponse.json({ dataUrl: `data:${midia.mimetype};base64,${midia.base64}` });

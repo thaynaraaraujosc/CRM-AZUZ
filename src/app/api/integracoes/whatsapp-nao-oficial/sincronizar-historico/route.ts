@@ -18,6 +18,15 @@ import {
  * Antes só existia este lado, e quem conectava e saía da tela ficava com as primeiras conversas e
  * mais nada, sem aviso nenhum.
  */
+/**
+ * De qual número é a importação. `?slot=2` é o segundo número conectado; sem nada, o primeiro —
+ * que é o que toda chamada antiga manda, e é o que mantém a tela de uma conexão só funcionando.
+ */
+function slotDaUrl(request: Request): number {
+  const bruto = Number(new URL(request.url).searchParams.get("slot"));
+  return Number.isInteger(bruto) && bruto >= 1 ? bruto : 1;
+}
+
 /** PATCH pausa/retoma a sincronização sem perder o progresso. Dá controle pra usuária, caso
  * desconfie que a sincronização está sobrecarregando a conexão do WhatsApp. */
 export async function PATCH(request: Request) {
@@ -30,18 +39,19 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ erro: "status inválido" }, { status: 400 });
   }
 
-  const metadados = await lerMetadados(workspaceId);
+  const slot = slotDaUrl(request);
+  const metadados = await lerMetadados(workspaceId, slot);
   const historico = metadados.historico as HistoricoSync | undefined;
   if (!historico || historico.status === "concluido" || historico.status === "erro") {
     return NextResponse.json({ historico: historico ?? null });
   }
 
   const atualizado: HistoricoSync = { ...historico, status };
-  await salvarHistorico(workspaceId, metadados, atualizado);
+  await salvarHistorico(workspaceId, metadados, atualizado, slot);
   return NextResponse.json({ historico: atualizado });
 }
 
-export async function POST() {
+export async function POST(request: Request) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
 
@@ -52,8 +62,9 @@ export async function POST() {
     // Uma conversa por chamada, como antes: quem está com a tela aberta vê o número subir de pouco
     // em pouco, e a sessão do WhatsApp não leva uma rajada.
     limiteMs: 1,
-    processarMensagem: (workspaceId, item) =>
-      processarMensagemRecebida(workspaceId, item, { permitirHistorico: true }).then(() => undefined),
+    processarMensagem: (workspaceId, item, slot) =>
+      processarMensagemRecebida(workspaceId, item, { permitirHistorico: true, slot }).then(() => undefined),
+    slot: slotDaUrl(request),
   });
   if (!resultado) return NextResponse.json({ historico: null });
   const status = resultado.historico.status === "erro" ? 502 : 200;
@@ -61,9 +72,9 @@ export async function POST() {
 }
 
 /** "Trazer conversas mais antigas": devolve pra fila o que a primeira leva deixou de lado. */
-export async function PUT() {
+export async function PUT(request: Request) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
-  const historico = await trazerMaisAntigas(sessao.user.workspaceId);
+  const historico = await trazerMaisAntigas(sessao.user.workspaceId, slotDaUrl(request));
   return NextResponse.json({ historico });
 }

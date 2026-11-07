@@ -3,12 +3,10 @@
 import { useSession } from "next-auth/react";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { IconInstagram, IconWhatsApp, IconCalendar } from "@/components/icons";
-import { ConexaoQrCode } from "./ConexaoQrCode";
-import { ImportarConversas } from "@/components/configuracoes/ImportarConversas";
-import { SaudeQrCode } from "@/components/configuracoes/SaudeQrCode";
+import { NumerosDeWhatsApp } from "./NumerosDeWhatsApp";
 import { ConexaoWhatsAppOficial } from "./ConexaoWhatsAppOficial";
 import { ConexaoInstagram, ConexaoMetaAds, ConexaoGoogleAds } from "./ConexoesOAuth";
 import { useStatusGoogleAds } from "@/components/trafego/useGoogleAds";
@@ -113,12 +111,19 @@ export function IntegracoesSecao() {
   // Status do WhatsApp não oficial (Evolution API) direto aqui, sem polling: só pra mostrar o
   // estado atual ao abrir a tela. Falha em silêncio (serviço fora do ar não pode quebrar essa tela).
   const [naoOficialStatus, setNaoOficialStatus] = useState<StatusIntegracaoNaoOficial | null>(null);
+  // Recarregável: conectar ou desconectar um número pela lista muda o que esta linha diz, e sem
+  // isso o cartão continuava mostrando o estado de quando a tela abriu.
+  const carregarNaoOficial = useCallback(
+    () =>
+      fetch("/api/integracoes/whatsapp-nao-oficial")
+        .then((r) => r.json())
+        .then((dados) => setNaoOficialStatus("erro" in dados ? null : dados))
+        .catch(() => setNaoOficialStatus(null)),
+    [],
+  );
   useEffect(() => {
-    fetch("/api/integracoes/whatsapp-nao-oficial")
-      .then((r) => r.json())
-      .then((dados) => setNaoOficialStatus("erro" in dados ? null : dados))
-      .catch(() => setNaoOficialStatus(null));
-  }, []);
+    carregarNaoOficial();
+  }, [carregarNaoOficial]);
 
   /*
    * O número de CADA conexão, e o aviso quando são o mesmo.
@@ -178,28 +183,18 @@ export function IntegracoesSecao() {
             }
             conectado={qrCodeLigada}
             painel={
-              <>
-                <ConexaoQrCode />
-                {/* A TELA QUE RESPONDE "CHEGA NO CELULAR E NÃO CHEGA NO CRM" morava só na
-                    categoria WhatsApp, que não está no menu: só se chega nela por URL. Quem
-                    estava sem receber mensagem não tinha como ver se a Evolution tinha deixado de
-                    avisar ou se o CRM tinha descartado — as duas se parecem na tela. É a mesma
-                    correção que "Buscar conversas que faltam" já recebeu, pelo mesmo motivo. */}
-                {qrCodeLigada ? <SaudeQrCode /> : null}
-                {/* Pelo mesmo motivo da limpeza logo abaixo: o progresso da importação e o botão
-                    "Buscar conversas que faltam" só existiam na categoria WhatsApp, fora do menu.
-                    Quem não estava recebendo as conversas do celular não tinha como pedir pra
-                    buscar de novo, nem como ver em que pé estava. Aqui se chega clicando. */}
-                <ImportarConversas
-                  conectada={qrCodeLigada}
-                  historico={naoOficialStatus?.metadados?.historico}
-                  aoMudar={(historico) =>
-                    setNaoOficialStatus((prev) =>
-                      prev ? { ...prev, metadados: { ...prev.metadados, historico } } : prev,
-                    )
-                  }
-                />
-              </>
+              /*
+               * A LISTA DE NÚMEROS, e não mais um botão de conectar só.
+               *
+               * Aqui ficavam três painéis da EMPRESA: conectar, diagnóstico e importação. Com
+               * vários números, nenhum dos três responde pela empresa — cada um responde por um
+               * celular. A lista traz os três pra dentro de cada linha, e é o mesmo componente da
+               * categoria WhatsApp, pra as duas telas não divergirem.
+               *
+               * Sem nenhum número ainda, ela mesma mostra o "Conectar outro número", que nesse
+               * caso é o primeiro.
+               */
+              <NumerosDeWhatsApp aoMudar={carregarNaoOficial} />
             }
           />
           <LinhaReal

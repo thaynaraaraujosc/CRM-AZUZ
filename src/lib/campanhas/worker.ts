@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { enviarEmailOuFalhar } from "@/lib/email";
 import { enviarMensagemWhatsAppNaoOficial } from "@/lib/integracoes/evolution";
+import { slotDeEnvio, slotPadraoDeEnvio } from "@/lib/integracoes/conexoes-whatsapp";
 import { contaConectada, enviarPelaCloudApi, limiteDiarioDaConta, tratarErroEnvio } from "@/lib/integracoes/whatsapp-oficial";
 import { enviarDirectComRespostasRapidas } from "@/lib/integracoes/instagram-login";
 import { decriptar } from "@/lib/integracoes/crypto";
@@ -134,7 +135,22 @@ async function enviarUm(
   }
 
   if (canal === "whatsapp_nao_oficial") {
-    await enviarMensagemWhatsAppNaoOficial(workspaceId, destino.replace(/\D/g, ""), corpoDestaPessoa);
+    /*
+     * POR QUAL NÚMERO SAI UM DISPARO.
+     *
+     * Quem já conversa com a empresa continua recebendo pelo MESMO número de sempre: trocar o
+     * remetente no meio de um relacionamento é o que faz a mensagem parecer spam de desconhecido.
+     * Quem nunca escreveu não tem número de origem, e aí sai pelo primeiro conectado.
+     */
+    const conversa = await prisma.conversa.findUnique({
+      where: { workspaceId_nome: { workspaceId, nome: contatoNome } },
+      select: { contaCanal: true },
+    });
+    const slot = conversa?.contaCanal
+      ? (await slotDeEnvio(workspaceId, conversa.contaCanal)).slot
+      : await slotPadraoDeEnvio(workspaceId);
+    if (slot === null) throw new Error("nenhum número de WhatsApp conectado pra esta conversa");
+    await enviarMensagemWhatsAppNaoOficial(workspaceId, destino.replace(/\D/g, ""), corpoDestaPessoa, slot);
     return undefined;
   }
 
@@ -250,9 +266,12 @@ async function processarCampanha(campanhaId: string, prazoFinal: number): Promis
     // tiver mais de uma. Mesmo papel do `phoneNumberId` no oficial.
     identificadorConexao = (integracao?.metadados as { instagramContaId?: string } | null)?.instagramContaId ?? null;
   } else if (canal === "whatsapp_nao_oficial") {
-    const integracao = await prisma.integracao.findUnique({
-      where: { workspaceId_provedor_slot: { workspaceId: campanha.workspaceId, provedor: "whatsapp_nao_oficial", slot: 1 } },
+    // O número da PRIMEIRA conexão ligada, não o da posição 1: é ele que vai gravado como dono das
+    // mensagens da campanha, e marcá-las com um número desconectado as faria sumir da tela.
+    const integracao = await prisma.integracao.findFirst({
+      where: { workspaceId: campanha.workspaceId, provedor: "whatsapp_nao_oficial", status: "conectado" },
       select: { metadados: true },
+      orderBy: { slot: "asc" },
     });
     identificadorConexao = (integracao?.metadados as { numero?: string } | null)?.numero ?? null;
   }

@@ -24,13 +24,14 @@ type Saude = {
  * contar: no estado saudável ela não ocupa espaço nenhum, porque ninguém precisa ler todo dia que
  * está tudo bem.
  */
-export function SaudeQrCode() {
+export function SaudeQrCode({ slot = 1 }: { slot?: number }) {
   const [saude, setSaude] = useState<Saude | null>(null);
   const [descarteRecente, setDescarteRecente] = useState<Saude["ultimoDescarte"]>(null);
   const [mensagemRecente, setMensagemRecente] = useState<Saude["ultimaMensagem"]>(null);
 
   useEffect(() => {
-    fetch("/api/integracoes/whatsapp-nao-oficial/saude")
+    // Por número: com dois conectados, o que interessa saber é qual dos dois emudeceu.
+    fetch(`/api/integracoes/whatsapp-nao-oficial/saude?slot=${slot}`)
       .then((r) => r.json())
       .then((dados: Saude & { erro?: string }) => {
         if ("erro" in dados && dados.erro) {

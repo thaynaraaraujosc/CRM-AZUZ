@@ -68,6 +68,10 @@ vi.mock("../azuz-flow-config", async (original) => ({
 let temWhatsapp: boolean | null = true;
 vi.mock("@/lib/integracoes/evolution", () => ({ numeroTemWhatsapp: async () => temWhatsapp }));
 
+// Por qual número conectado a checagem pergunta. O caso aqui é sempre "o primeiro": qual é não
+// muda nada neste arquivo, e sem o dublê a função iria no banco atrás das conexões.
+vi.mock("@/lib/integracoes/conexoes-whatsapp", () => ({ slotPadraoDeEnvio: async () => 1 }));
+
 let envio: { enviado: boolean; motivo?: string } = { enviado: true };
 const enviados: { conversaNome: string; texto: string }[] = [];
 vi.mock("@/lib/conversas/enviar-pelo-canal", () => ({

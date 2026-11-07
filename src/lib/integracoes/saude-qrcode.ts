@@ -88,10 +88,13 @@ export function explicarSaude(dados: {
  */
 export async function conferirCanalQrCode(
   workspaceId: string,
-  opcoes: { reparar?: boolean } = {},
+  opcoes: { reparar?: boolean; slot?: number } = {},
 ): Promise<SaudeQrCode> {
+  // Cada número tem a saúde dele: uma instância pode estar mudinha enquanto a outra recebe
+  // normalmente, e é justamente essa diferença que se quer ver.
+  const slot = opcoes.slot ?? 1;
   const integracao = await prisma.integracao.findUnique({
-    where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot: 1 } },
+    where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot } },
     select: { status: true, metadados: true },
   });
   const metadados = (integracao?.metadados as Record<string, unknown> | null) ?? {};
@@ -99,8 +102,8 @@ export async function conferirCanalQrCode(
   const esperado = urlDeWebhookEsperada();
 
   const [estado, webhook] = await Promise.all([
-    estadoDaInstancia(workspaceId).catch(() => null),
-    buscarWebhookRegistrado(workspaceId).catch(() => null),
+    estadoDaInstancia(workspaceId, slot).catch(() => null),
+    buscarWebhookRegistrado(workspaceId, slot).catch(() => null),
   ]);
 
   /*
@@ -118,8 +121,8 @@ export async function conferirCanalQrCode(
 
   let reparado = false;
   if (!certo && opcoes.reparar && integracao?.status === "conectado") {
-    await reconfigurarWebhook(workspaceId).catch(() => {});
-    const conferido = await buscarWebhookRegistrado(workspaceId).catch(() => null);
+    await reconfigurarWebhook(workspaceId, slot).catch(() => {});
+    const conferido = await buscarWebhookRegistrado(workspaceId, slot).catch(() => null);
     const eventosDepois = (conferido?.eventos ?? []).map((e) => e.toUpperCase());
     reparado =
       conferido?.ativo === true &&
@@ -140,7 +143,7 @@ export async function conferirCanalQrCode(
    * torna o conserto automático.
    */
   if (opcoes.reparar && integracao?.status === "conectado") {
-    await aplicarAjustesDaInstancia(workspaceId).catch(() => {});
+    await aplicarAjustesDaInstancia(workspaceId, slot).catch(() => {});
   }
 
   /*
@@ -173,7 +176,7 @@ export async function conferirCanalQrCode(
     if (integracao.status !== deveriaSer) {
       await prisma.integracao
         .update({
-          where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot: 1 } },
+          where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot } },
           data: { status: deveriaSer },
         })
         .catch(() => {});
@@ -195,11 +198,11 @@ export async function conferirCanalQrCode(
    * Aqui é o segundo momento. Uma chamada, só quando o número falta e a conexão está de pé.
    */
   if (integracao?.status === "conectado" && !metadados.numero) {
-    const numero = await buscarNumeroConectado(workspaceId).catch(() => null);
+    const numero = await buscarNumeroConectado(workspaceId, slot).catch(() => null);
     if (numero) {
       await prisma.integracao
         .update({
-          where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot: 1 } },
+          where: { workspaceId_provedor_slot: { workspaceId, provedor: "whatsapp_nao_oficial", slot } },
           data: { metadados: { ...metadados, numero } },
         })
         .catch(() => {});
@@ -253,11 +256,11 @@ export async function conferirCanalQrCodeDeTodosOsWorkspaces(): Promise<{
 }> {
   const conectadas = await prisma.integracao.findMany({
     where: { provedor: "whatsapp_nao_oficial", status: "conectado" },
-    select: { workspaceId: true },
+    select: { workspaceId: true, slot: true },
   });
   const reparados: string[] = [];
-  for (const { workspaceId } of conectadas) {
-    const saude = await conferirCanalQrCode(workspaceId, { reparar: true }).catch(() => null);
+  for (const { workspaceId, slot } of conectadas) {
+    const saude = await conferirCanalQrCode(workspaceId, { reparar: true, slot }).catch(() => null);
     if (saude?.reparado) reparados.push(workspaceId);
   }
   return { conferidos: conectadas.length, reparados };
@@ -307,7 +310,7 @@ export async function reconectarQuemEmudeceu(agora = Date.now()): Promise<{
 }> {
   const conectadas = await prisma.integracao.findMany({
     where: { provedor: "whatsapp_nao_oficial", status: "conectado" },
-    select: { workspaceId: true, metadados: true },
+    select: { workspaceId: true, slot: true, metadados: true },
   });
 
   const silenciosos = conectadas.filter(({ metadados }) =>
@@ -315,8 +318,8 @@ export async function reconectarQuemEmudeceu(agora = Date.now()): Promise<{
   );
 
   const reparados: string[] = [];
-  for (const { workspaceId } of silenciosos) {
-    const saude = await conferirCanalQrCode(workspaceId, { reparar: true }).catch(() => null);
+  for (const { workspaceId, slot } of silenciosos) {
+    const saude = await conferirCanalQrCode(workspaceId, { reparar: true, slot }).catch(() => null);
     if (saude?.reparado) reparados.push(workspaceId);
   }
   return { silenciosos: silenciosos.length, reparados };

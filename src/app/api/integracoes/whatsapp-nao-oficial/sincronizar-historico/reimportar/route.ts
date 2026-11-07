@@ -13,9 +13,12 @@ import { reimportarHistorico } from "@/lib/integracoes/historico-whatsapp";
  * Só remarca o progresso; quem importa é o relógio (e a tela, enquanto estiver aberta). Repetir não
  * duplica nada: ver `reimportarHistorico`.
  */
-export async function POST() {
+export async function POST(request: Request) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
-  const historico = await reimportarHistorico(sessao.user.workspaceId);
+  // De qual número. Sem `?slot=`, o primeiro: é o que a tela de uma conexão só manda.
+  const bruto = Number(new URL(request.url).searchParams.get("slot"));
+  const slot = Number.isInteger(bruto) && bruto >= 1 ? bruto : 1;
+  const historico = await reimportarHistorico(sessao.user.workspaceId, slot);
   return NextResponse.json({ historico });
 }

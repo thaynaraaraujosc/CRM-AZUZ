@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { decriptar } from "@/lib/integracoes/crypto";
 import { enviarMensagemWhatsAppNaoOficial } from "@/lib/integracoes/evolution";
+import { slotDeEnvio } from "@/lib/integracoes/conexoes-whatsapp";
 import { enviarDirectComRespostasRapidas } from "@/lib/integracoes/instagram-login";
 import { contaConectada, enviarPelaCloudApi, janelaDeAtendimentoAberta } from "@/lib/integracoes/whatsapp-oficial";
 import { enviarTextoPeloCanal } from "./enviar-pelo-canal";
@@ -121,7 +122,9 @@ export async function enviarPerguntaPeloCanal(params: {
     const porQrCode =
       conversa.contaCanal?.startsWith("whatsapp_nao_oficial:") || conversa.contaCanal?.startsWith("whatsapp_baileys:");
     if (porQrCode) {
-      await enviarMensagemWhatsAppNaoOficial(workspaceId, conversa.contato, textoNumerado(texto, opcoes));
+      const { slot, motivo } = await slotDeEnvio(workspaceId, conversa.contaCanal);
+      if (slot === null) return { enviado: false, formato: "numerado", motivo };
+      await enviarMensagemWhatsAppNaoOficial(workspaceId, conversa.contato, textoNumerado(texto, opcoes), slot);
       return {
         enviado: true,
         formato: "numerado",

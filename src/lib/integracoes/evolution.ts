@@ -181,8 +181,8 @@ async function configurarWebhook(instancia: string): Promise<void> {
  * Chamada numa etapa própria, separada da criação, pelo mesmo motivo do webhook acima: o campo
  * inline em `/instance/create` não é confiável em toda versão/instalação.
  */
-export async function aplicarAjustesDaInstancia(workspaceId: string): Promise<void> {
-  return ajustesDaInstancia(nomeInstancia(workspaceId));
+export async function aplicarAjustesDaInstancia(workspaceId: string, slot = 1): Promise<void> {
+  return ajustesDaInstancia(nomeInstancia(workspaceId, slot));
 }
 
 async function ajustesDaInstancia(instancia: string): Promise<void> {
@@ -201,8 +201,8 @@ async function ajustesDaInstancia(instancia: string): Promise<void> {
 /** Garante que a instância do workspace existe na Evolution (cria na primeira vez) e devolve o QR
  * Code atual pra escanear. Instância que já existe e já está conectada não tem QR novo. O status
  * `conectado` é o que importa nesse caso, não o QR. */
-export async function conectarWhatsAppNaoOficial(workspaceId: string): Promise<RespostaQrCode> {
-  const instancia = nomeInstancia(workspaceId);
+export async function conectarWhatsAppNaoOficial(workspaceId: string, slot = 1): Promise<RespostaQrCode> {
+  const instancia = nomeInstancia(workspaceId, slot);
 
   const estadoAtual = await chamarEvolution(`/instance/connectionState/${instancia}`, "GET").catch(() => null);
 
@@ -259,8 +259,8 @@ async function prepararInstancia(instancia: string): Promise<string | undefined>
 
 /** Pede pra Evolution encerrar a sessão desse workspace (equivalente a "sair" no WhatsApp Web).
  * A instância continua existindo, só desconectada; conectar de novo gera um QR novo. */
-export function desconectarWhatsAppNaoOficial(workspaceId: string) {
-  return chamarEvolution(`/instance/logout/${nomeInstancia(workspaceId)}`, "DELETE");
+export function desconectarWhatsAppNaoOficial(workspaceId: string, slot = 1) {
+  return chamarEvolution(`/instance/logout/${nomeInstancia(workspaceId, slot)}`, "DELETE");
 }
 
 /** Manda uma mensagem de texto pelo número conectado desse workspace. Usado quando o atendente
@@ -280,12 +280,12 @@ export function desconectarWhatsAppNaoOficial(workspaceId: string) {
  * A resposta é lida com tolerância de formato de propósito: este endpoint mudou de forma entre
  * versões da Evolution, e um campo com outro nome não pode virar "este número não existe".
  */
-export async function numeroTemWhatsapp(workspaceId: string, numero: string): Promise<boolean | null> {
+export async function numeroTemWhatsapp(workspaceId: string, numero: string, slot = 1): Promise<boolean | null> {
   const digitos = numero.replace(/\D/g, "");
   if (!digitos) return null;
 
   try {
-    const dados = await chamarEvolution(`/chat/whatsappNumbers/${nomeInstancia(workspaceId)}`, "POST", {
+    const dados = await chamarEvolution(`/chat/whatsappNumbers/${nomeInstancia(workspaceId, slot)}`, "POST", {
       numbers: [digitos],
     });
     const lista = Array.isArray(dados) ? dados : Array.isArray(dados?.data) ? dados.data : null;
@@ -323,8 +323,9 @@ export async function enviarMensagemWhatsAppNaoOficial(
   workspaceId: string,
   numero: string,
   texto: string,
+  slot = 1,
 ): Promise<string | null> {
-  const caminho = `/message/sendText/${nomeInstancia(workspaceId)}`;
+  const caminho = `/message/sendText/${nomeInstancia(workspaceId, slot)}`;
   const corpo = { number: numero, text: texto };
 
   let resposta: unknown;
@@ -362,8 +363,9 @@ export function enviarMidiaWhatsAppNaoOficial(
   workspaceId: string,
   numero: string,
   midia: { url: string; tipo: "image" | "video" | "document"; mimetype?: string; nomeArquivo?: string; legenda?: string },
+  slot = 1,
 ) {
-  return chamarEvolution(`/message/sendMedia/${nomeInstancia(workspaceId)}`, "POST", {
+  return chamarEvolution(`/message/sendMedia/${nomeInstancia(workspaceId, slot)}`, "POST", {
     number: numero,
     mediatype: midia.tipo,
     ...(midia.mimetype ? { mimetype: midia.mimetype } : {}),
@@ -377,8 +379,8 @@ export function enviarMidiaWhatsAppNaoOficial(
  * conteúdo (sem o prefixo `data:audio/...;base64,` do blob gravado no navegador, tirado antes de
  * chegar aqui). Endpoint ainda não validado contra a instância de produção (mesmo aviso de
  * `buscarFotoPerfil`): o `.catch` de quem chama loga o erro real se o nome/formato estiver errado. */
-export function enviarAudioWhatsAppNaoOficial(workspaceId: string, numero: string, audioBase64: string) {
-  return chamarEvolution(`/message/sendWhatsAppAudio/${nomeInstancia(workspaceId)}`, "POST", {
+export function enviarAudioWhatsAppNaoOficial(workspaceId: string, numero: string, audioBase64: string, slot = 1) {
+  return chamarEvolution(`/message/sendWhatsAppAudio/${nomeInstancia(workspaceId, slot)}`, "POST", {
     number: numero,
     audio: audioBase64,
   });
@@ -401,8 +403,8 @@ export type InfoGrupo = {
  * direta com esse número antes. É limitação da própria API do WhatsApp/Baileys, não do CRM; nesse
  * caso o telefone aparece no lugar do nome (igual mostraria "número desconhecido" no WhatsApp Web
  * pra alguém fora da sua agenda). */
-export async function buscarInfoGrupo(workspaceId: string, groupJid: string): Promise<InfoGrupo | null> {
-  const instancia = nomeInstancia(workspaceId);
+export async function buscarInfoGrupo(workspaceId: string, groupJid: string, slot = 1): Promise<InfoGrupo | null> {
+  const instancia = nomeInstancia(workspaceId, slot);
   const dados = await chamarEvolution(
     `/group/findGroupInfos/${instancia}?groupJid=${encodeURIComponent(groupJid)}`,
     "GET",
@@ -428,7 +430,7 @@ export async function buscarInfoGrupo(workspaceId: string, groupJid: string): Pr
    */
   const participantesFinais = participantes.length
     ? participantes
-    : await buscarParticipantesDoGrupo(workspaceId, groupJid);
+    : await buscarParticipantesDoGrupo(workspaceId, groupJid, slot);
 
   if (!nome && !participantesFinais.length) return null;
   return { nome: nome ?? groupJid.split("@")[0], descricao, criacao, participantes: participantesFinais };
@@ -438,8 +440,9 @@ export async function buscarInfoGrupo(workspaceId: string, groupJid: string): Pr
 async function buscarParticipantesDoGrupo(
   workspaceId: string,
   groupJid: string,
+  slot = 1,
 ): Promise<{ nome: string; telefone: string }[]> {
-  const instancia = nomeInstancia(workspaceId);
+  const instancia = nomeInstancia(workspaceId, slot);
   const dados = await chamarEvolution(
     `/group/participants/${instancia}?groupJid=${encodeURIComponent(groupJid)}`,
     "GET",
@@ -505,8 +508,8 @@ export function normalizarParticipantes(brutos: unknown[]): { nome: string; tele
 /** Busca a URL da foto de perfil (grupo OU pessoa) de um JID/número. Chamado uma vez, quando a
  * conversa é vista pela primeira vez (webhook grava em `Conversa.fotoUrl`). Falha em silêncio
  * (`null`): sem foto (perfil sem uma definida) é o caso normal, não um erro real. */
-export async function buscarFotoPerfil(workspaceId: string, jidOuNumero: string): Promise<string | null> {
-  const instancia = nomeInstancia(workspaceId);
+export async function buscarFotoPerfil(workspaceId: string, jidOuNumero: string, slot = 1): Promise<string | null> {
+  const instancia = nomeInstancia(workspaceId, slot);
   const dados = await chamarEvolution(`/chat/fetchProfilePictureUrl/${instancia}`, "POST", {
     number: jidOuNumero,
   }).catch((erro) => {
@@ -528,8 +531,9 @@ export async function buscarFotoPerfil(workspaceId: string, jidOuNumero: string)
 export async function buscarMidiaBase64(
   workspaceId: string,
   chave: { remoteJid: string; id: string; fromMe: boolean; tipo: "audio" | "imagem" | "documento" | "figurinha" },
+  slot = 1,
 ): Promise<{ base64: string; mimetype: string } | null> {
-  const instancia = nomeInstancia(workspaceId);
+  const instancia = nomeInstancia(workspaceId, slot);
   const dados = await chamarEvolution(`/chat/getBase64FromMediaMessage/${instancia}`, "POST", {
     message: { key: chave },
   }).catch((erro) => {
@@ -554,8 +558,8 @@ export async function buscarMidiaBase64(
 /** Busca o número (JID) do WhatsApp conectado numa instância. A Evolution não manda isso direto
  * no evento `connection.update`, só no cadastro da instância em si. Chamado pelo webhook assim que
  * o estado vira `open`, pra guardar o número junto do status `conectado`. */
-export async function buscarNumeroConectado(workspaceId: string): Promise<string | null> {
-  const instancia = nomeInstancia(workspaceId);
+export async function buscarNumeroConectado(workspaceId: string, slot = 1): Promise<string | null> {
+  const instancia = nomeInstancia(workspaceId, slot);
   const dados = await chamarEvolution(`/instance/fetchInstances?instanceName=${instancia}`, "GET").catch(() => null);
   const item = Array.isArray(dados) ? dados[0] : dados;
   const owner: string | undefined = item?.instance?.owner ?? item?.ownerJid ?? item?.owner;
@@ -613,8 +617,8 @@ function instanteDoChat(c: {
   return 0;
 }
 
-export async function buscarChats(workspaceId: string): Promise<ChatResumo[]> {
-  const instancia = nomeInstancia(workspaceId);
+export async function buscarChats(workspaceId: string, slot = 1): Promise<ChatResumo[]> {
+  const instancia = nomeInstancia(workspaceId, slot);
   /*
    * LANÇA quando a Evolution não responde, em vez de devolver lista vazia.
    *
@@ -665,8 +669,9 @@ export async function buscarMensagensDoChat(
   workspaceId: string,
   remoteJid: string,
   limite = 200,
+  slot = 1,
 ): Promise<unknown[]> {
-  const instancia = nomeInstancia(workspaceId);
+  const instancia = nomeInstancia(workspaceId, slot);
   const dados = await chamarEvolution(`/chat/findMessages/${instancia}`, "POST", {
     where: { key: { remoteJid } },
     limit: limite,
@@ -704,8 +709,9 @@ export function enviarReacaoWhatsAppNaoOficial(
   mensagemId: string,
   emoji: string,
   fromMe: boolean,
+  slot = 1,
 ) {
-  return chamarEvolution(`/message/sendReaction/${nomeInstancia(workspaceId)}`, "POST", {
+  return chamarEvolution(`/message/sendReaction/${nomeInstancia(workspaceId, slot)}`, "POST", {
     key: {
       remoteJid: numero.includes("@") ? numero : `${numero.replace(/\D/g, "")}@s.whatsapp.net`,
       fromMe,
@@ -731,8 +737,9 @@ export function urlDeWebhookEsperada(): string {
  * `null` quando a instância não existe, não tem webhook, ou a Evolution não respondeu. */
 export async function buscarWebhookRegistrado(
   workspaceId: string,
+  slot = 1,
 ): Promise<{ url: string | null; ativo: boolean; eventos: string[] } | null> {
-  const dados = await chamarEvolution(`/webhook/find/${nomeInstancia(workspaceId)}`, "GET").catch(() => null);
+  const dados = await chamarEvolution(`/webhook/find/${nomeInstancia(workspaceId, slot)}`, "GET").catch(() => null);
   if (!dados) return null;
   // A Evolution mudou o formato entre versões: ora devolve o objeto direto, ora embrulhado.
   const alvo = (dados.webhook ?? dados) as { url?: string; enabled?: boolean; events?: string[] };
@@ -747,15 +754,15 @@ export async function buscarWebhookRegistrado(
 /** Estado da conexão na Evolution ("open", "close", "connecting"). `null` se a instância não
  * existe nesse servidor ou ele não respondeu. É a verdade do outro lado, contra o `status` que o
  * CRM guarda no banco: quando os dois discordam, quem manda é este. */
-export async function estadoDaInstancia(workspaceId: string): Promise<string | null> {
-  const estado = await chamarEvolution(`/instance/connectionState/${nomeInstancia(workspaceId)}`, "GET").catch(
+export async function estadoDaInstancia(workspaceId: string, slot = 1): Promise<string | null> {
+  const estado = await chamarEvolution(`/instance/connectionState/${nomeInstancia(workspaceId, slot)}`, "GET").catch(
     () => null,
   );
   return (estado?.instance?.state as string | undefined) ?? null;
 }
 
 /** Registra o webhook de novo, sem precisar reconectar nem ler QR nenhum. Idempotente. */
-export async function reconfigurarWebhook(workspaceId: string): Promise<void> {
-  const instancia = nomeInstancia(workspaceId);
+export async function reconfigurarWebhook(workspaceId: string, slot = 1): Promise<void> {
+  const instancia = nomeInstancia(workspaceId, slot);
   await Promise.all([configurarWebhook(instancia), ajustesDaInstancia(instancia)]);
 }

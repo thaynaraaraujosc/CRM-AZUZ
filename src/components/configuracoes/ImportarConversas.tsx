@@ -23,17 +23,22 @@ export function ImportarConversas({
   historico,
   conectada,
   aoMudar,
+  slot = 1,
 }: {
   historico: HistoricoSync | null | undefined;
   /** O número está conectado agora? Sem conexão não há celular pra perguntar. */
   conectada?: boolean;
   /** O pai guarda o estado da integração; esta é a forma de devolver o progresso novo pra ele. */
   aoMudar: (historico: HistoricoSync) => void;
+  /** Qual número está sendo importado: cada celular conectado tem a fila dele. */
+  slot?: number;
 }) {
   const { t: traduzir } = useIdioma();
+  // `?slot=` em toda chamada: sem ele, mexer na importação do segundo número mexeria na do primeiro.
+  const comSlot = (caminho: string) => `${caminho}${caminho.includes("?") ? "&" : "?"}slot=${slot}`;
 
   async function chamar(caminho: string, method: "POST" | "PUT" | "PATCH", corpo?: unknown) {
-    const resposta = await fetch(caminho, {
+    const resposta = await fetch(comSlot(caminho), {
       method,
       ...(corpo ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify(corpo) } : {}),
     }).catch(() => null);

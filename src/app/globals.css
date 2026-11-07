@@ -3260,6 +3260,152 @@ table.tbl tbody tr:hover td {
   gap: var(--space-2) var(--space-3);
 }
 
+/* ---------------- A lista de números de WhatsApp ----------------
+ *
+ * Uma linha por número conectado, com nome, estado e o que dá pra fazer com ele. Ver
+ * `NumerosDeWhatsApp`. O desenho é de lista, e não de cartão empilhado: com até dez números, o que
+ * se precisa é correr o olho de cima a baixo e achar o certo — e é o nome, não o número, que
+ * responde isso.
+ */
+.wa-numeros {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.wa-numero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 10px 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+/* O número que está de pé ganha a borda marcada. Os outros não são erro — são posições livres ou
+   celulares que saíram —, então ficam quietos em vez de vermelhos. */
+.wa-numero.on {
+  border-color: color-mix(in srgb, var(--blue) 35%, var(--line-soft));
+}
+
+.wa-numero-linha {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+}
+
+/* O ponto de estado. Verde é WhatsApp conectado de verdade; âmbar é "lendo o QR agora"; cinza é
+   desconectado; vermelho é erro. Cor E rótulo ao lado: cor sozinha não serve pra quem não a
+   distingue. */
+.wa-numero-ponto {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--text-faint);
+}
+
+.wa-numero-ponto.conectado {
+  background: #25d366;
+}
+
+.wa-numero-ponto.aguardando_qr {
+  background: #f2b100;
+}
+
+.wa-numero-ponto.erro {
+  background: var(--danger);
+}
+
+.wa-numero-textos {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 180px;
+}
+
+/* O nome é um botão porque clicar nele renomeia. Sem borda e sem fundo: ele tem que ler como
+   título, não como campo — mas sublinha no hover, senão ninguém descobre que dá pra editar. */
+.wa-numero-nome {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.wa-numero-nome:hover {
+  text-decoration: underline;
+}
+
+.wa-numero-sub {
+  font-size: var(--texto-xs, 12px);
+  color: var(--text-muted);
+}
+
+.wa-numero-acoes {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+/*
+ * Desconectar é vermelho só no TEXTO.
+ *
+ * Com um número, um botão vermelho na tela inteira é um alerta. Com dez linhas, dez botões
+ * vermelhos empilhados são um padrão — e padrão não alerta ninguém; ele só grita o tempo todo e
+ * some da atenção. O vermelho fica na palavra, e o fundo aparece quando o mouse chega, que é
+ * quando a ação está prestes a acontecer.
+ */
+.btn.ghost.wa-desconectar {
+  background: none;
+  border-color: color-mix(in srgb, var(--danger) 35%, transparent);
+  color: var(--danger);
+}
+
+.btn.ghost.wa-desconectar:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.wa-numero-qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+}
+
+.wa-numero-detalhes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--line-soft);
+}
+
+.wa-numeros-rodape {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  margin-top: var(--space-1);
+}
+
+.wa-numeros-rodape .hint {
+  margin: 0;
+  margin-left: auto;
+}
+
 /* Por qual conexão a conversa fala. Etiqueta de origem técnica, não de estado do atendimento:
    fica em cinza, sem cor de status, pra não competir com "Não respondido" e a etapa do funil. */
 .wa-conexao-tag {

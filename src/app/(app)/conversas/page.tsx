@@ -28,6 +28,13 @@ import {
   precisaDistinguirConexao,
   ROTULO_CONEXAO,
 } from "@/lib/conversas/conexao-da-conversa";
+import {
+  conversaDoNumero,
+  mapaDeNumeros,
+  nomeDoNumeroDaConversa,
+  precisaEscolherNumero,
+  type NumeroConectado,
+} from "@/lib/conversas/numeros-conectados";
 import { iniciaisExibidas, nomeExibido } from "@/lib/conversas/exibicao";
 import { BotoesConectarWhatsApp } from "@/components/configuracoes/BotoesConectarWhatsApp";
 import { BolhaMensagem } from "@/components/conversas/BolhaMensagem";
@@ -883,6 +890,26 @@ function ConversasPageInner() {
   const [canalTopRect, setCanalTopRect] = useState<DOMRect | null>(null);
   const [canalTopFiltro, setCanalTopFiltro] = useState("Todos");
 
+  /*
+   * OS NÚMEROS DE WHATSAPP CONECTADOS.
+   *
+   * Com um só, nada disto aparece. Com vendedora e closer no mesmo CRM, a caixa de entrada vira
+   * duas caixas no mesmo lugar, e quem atende precisa poder ver só a sua.
+   *
+   * Buscado uma vez ao abrir: conectar ou desconectar um número é coisa de algumas vezes na vida
+   * da conta, e ficar perguntando de poucos em poucos segundos seria consulta sem ninguém olhando.
+   */
+  const [numerosConectados, setNumerosConectados] = useState<NumeroConectado[]>([]);
+  useEffect(() => {
+    fetch("/api/integracoes/whatsapp-nao-oficial/numeros")
+      .then((r) => r.json())
+      .then((dados: { conexoes?: NumeroConectado[] }) => setNumerosConectados(dados.conexoes ?? []))
+      .catch(() => setNumerosConectados([]));
+  }, []);
+  const [numeroTopAberto, setNumeroTopAberto] = useState(false);
+  const [numeroTopRect, setNumeroTopRect] = useState<DOMRect | null>(null);
+  const [numeroTopFiltro, setNumeroTopFiltro] = useState("Todos");
+
   // Movido pra antes de `conversasFiltradas` (que chama `conversaUsaWhatsappNaoOficial`, definida
   // mais abaixo mas que fecha sobre esta variável). Como é `const`, ficava numa "zona morta
   // temporal" até esta linha rodar; `conversasFiltradas` é calculado direto no corpo do
@@ -901,6 +928,10 @@ function ConversasPageInner() {
   /* As duas conexões de WhatsApp na mesma lista? Então cada conversa precisa dizer de qual é.
      Sai da própria lista carregada, sem pedir nada a mais ao servidor. */
   const distinguirConexao = precisaDistinguirConexao(conversas);
+  /* Com mais de um número de WhatsApp ligado, cada linha diz de QUAL número ela é, e a barra ganha
+     o filtro. Com um só, as duas coisas somem: repetiriam a mesma informação em toda linha. */
+  const variosNumeros = precisaEscolherNumero(numerosConectados);
+  const nomesDosNumeros = mapaDeNumeros(numerosConectados);
 
   const canaisDisponiveis = Array.from(new Set(conversas.map((c) => c.origem)));
 
@@ -976,6 +1007,8 @@ function ConversasPageInner() {
       if (atendenteTopFiltro !== "Todos" && c.atendenteSelecionado !== atendenteTopFiltro)
         return false;
       if (canalTopFiltro !== "Todos" && c.origem !== canalTopFiltro) return false;
+      // Por qual NÚMERO a conversa fala. Ver `numeros-conectados.ts`.
+      if (!conversaDoNumero(c.contaCanal, numeroTopFiltro)) return false;
       if (!buscaConversa.trim()) return true;
       const termo = buscaConversa.trim().toLowerCase();
       return c.nome.toLowerCase().includes(termo);
@@ -1868,7 +1901,8 @@ function ConversasPageInner() {
         fetch("/api/integracoes/whatsapp-nao-oficial/enviar", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ destinatario: destinatarioAudio, audioBase64 }),
+          // `conversa` é o que diz por QUAL número conectado a resposta sai. Ver a rota.
+          body: JSON.stringify({ destinatario: destinatarioAudio, audioBase64, conversa: aberta.nome }),
         })
           .then(async (r) => {
             if (!r.ok) throw new Error(((await r.json()) as { erro?: string }).erro);
@@ -2239,7 +2273,12 @@ function ConversasPageInner() {
       fetch("/api/integracoes/whatsapp-nao-oficial/enviar", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ destinatario: contatoDaConversa?.whatsapp ?? aberta.contato, texto }),
+        body: JSON.stringify({
+          destinatario: contatoDaConversa?.whatsapp ?? aberta.contato,
+          texto,
+          // Por qual número conectado esta resposta sai. Ver a rota de envio.
+          conversa: aberta.nome,
+        }),
       })
         .then(async (r) => {
           if (!r.ok) throw new Error(((await r.json()) as { erro?: string }).erro);
@@ -3055,7 +3094,7 @@ function ConversasPageInner() {
         fetch(rota, {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ destinatario, contato: contatoPayload }),
+          body: JSON.stringify({ destinatario, contato: contatoPayload, conversa: aberta.nome }),
         })
           .then(async (r) => {
             if (!r.ok) throw new Error(((await r.json()) as { erro?: string }).erro);
@@ -3977,6 +4016,60 @@ function ConversasPageInner() {
                 </button>
               ))}
             </FloatingDropdown>
+            {/* COM VÁRIOS NÚMEROS, cada atendente precisa ver a caixa dele. Só aparece quando há
+                mais de um conectado: com um só, seria escolher entre "todos" e "o único". */}
+            {variosNumeros ? (
+              <>
+                <button
+                  type="button"
+                  className="fsel"
+                  onClick={(e) => {
+                    setNumeroTopRect(e.currentTarget.getBoundingClientRect());
+                    setNumeroTopAberto((v) => !v);
+                  }}
+                >
+                  {traduzir("Número: {numero}", {
+                    numero:
+                      numeroTopFiltro === "Todos"
+                        ? traduzir("Todos")
+                        : (nomesDosNumeros.get(numeroTopFiltro.replace(/\D/g, "")) ?? numeroTopFiltro),
+                  })} ▾
+                </button>
+                <FloatingDropdown
+                  anchorRect={numeroTopAberto ? numeroTopRect : null}
+                  onClose={() => setNumeroTopAberto(false)}
+                  width={220}
+                >
+                  <button
+                    type="button"
+                    className="dropdown-item"
+                    style={{ width: "100%", textAlign: "left" }}
+                    onClick={() => {
+                      setNumeroTopFiltro("Todos");
+                      setNumeroTopAberto(false);
+                    }}
+                  >
+                    <span className="n">{traduzir("Todos")}</span>
+                  </button>
+                  {numerosConectados
+                    .filter((n) => n.status === "conectado" && n.numero)
+                    .map((n) => (
+                      <button
+                        type="button"
+                        key={n.slot}
+                        className="dropdown-item"
+                        style={{ width: "100%", textAlign: "left" }}
+                        onClick={() => {
+                          setNumeroTopFiltro(n.numero!);
+                          setNumeroTopAberto(false);
+                        }}
+                      >
+                        <span className="n">{n.nome}</span>
+                      </button>
+                    ))}
+                </FloatingDropdown>
+              </>
+            ) : null}
             {/* Conectar um número é a primeira coisa que se quer fazer numa tela de atendimento
                 vazia: antes era preciso sair daqui e ir até Configurações → WhatsApp. */}
             <BotoesConectarWhatsApp />
@@ -4253,7 +4346,16 @@ function ConversasPageInner() {
                     </span>
                     {/* Por qual conexão esta conversa fala. Só aparece quando as DUAS estão em uso
                         na lista: com uma só, a etiqueta repetiria a mesma coisa em toda linha. */}
-                    {distinguirConexao && conexaoDaConversa(c.contaCanal) ? (
+                    {variosNumeros && nomeDoNumeroDaConversa(nomesDosNumeros, c.contaCanal) ? (
+                      /* Com vários números, o que importa é QUAL deles — "WhatsApp QR Code" seria
+                         a mesma etiqueta nos dois. O nome ganha do tipo de conexão. */
+                      <span
+                        className="tag wa-conexao-tag"
+                        title={traduzir("A resposta sai por este mesmo número")}
+                      >
+                        {nomeDoNumeroDaConversa(nomesDosNumeros, c.contaCanal)}
+                      </span>
+                    ) : distinguirConexao && conexaoDaConversa(c.contaCanal) ? (
                       <span
                         className="tag wa-conexao-tag"
                         title={traduzir("A resposta sai por esta mesma conexão")}

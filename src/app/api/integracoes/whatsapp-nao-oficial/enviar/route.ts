@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { slotDeEnvio, slotPadraoDeEnvio } from "@/lib/integracoes/conexoes-whatsapp";
 import { enviarMensagemWhatsAppNaoOficial, enviarAudioWhatsAppNaoOficial } from "@/lib/integracoes/evolution";
 
 /** POST manda uma mensagem de texto (ou áudio) pelo WhatsApp não oficial (Evolution API).
@@ -9,10 +11,12 @@ export async function POST(request: Request) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
 
-  const { destinatario, texto, audioBase64 } = (await request.json()) as {
+  const { destinatario, texto, audioBase64, conversa } = (await request.json()) as {
     destinatario?: string;
     texto?: string;
     audioBase64?: string;
+    /** O nome da conversa aberta na tela. É por ele que se descobre QUAL número responde. */
+    conversa?: string;
   };
   if (!destinatario || (!texto?.trim() && !audioBase64)) {
     return NextResponse.json({ erro: "destinatario e (texto ou audioBase64) são obrigatórios" }, { status: 400 });
@@ -22,11 +26,45 @@ export async function POST(request: Request) {
   // telefone pra ela, não acha o grupo. Telefone de pessoa continua só-dígitos como sempre.
   const numeroOuJid = destinatario.endsWith("@g.us") ? destinatario : destinatario.replace(/\D/g, "");
 
+  const workspaceId = sessao.user.workspaceId;
+
+  /*
+   * A RESPOSTA SAI PELO NÚMERO QUE RECEBEU.
+   *
+   * Com um número só, "o WhatsApp da empresa" e "o número desta conversa" eram a mesma coisa e
+   * esta rota não precisava perguntar nada. Com vendedora e closer conectados ao mesmo CRM, são
+   * coisas diferentes: responder pelo número errado faz a conversa do cliente trocar de remetente
+   * no meio, e ele responde pro número de quem nunca falou com ele.
+   *
+   * A conexão é lida da CONVERSA, e não do que o navegador mandar: quem atende não escolhe por
+   * onde sai, a conversa é que já pertence a um número.
+   */
+  const linha = conversa
+    ? await prisma.conversa.findUnique({
+        where: { workspaceId_nome: { workspaceId, nome: conversa } },
+        select: { contaCanal: true },
+      })
+    : await prisma.conversa.findFirst({
+        where: { workspaceId, contato: numeroOuJid },
+        select: { contaCanal: true },
+      });
+
+  /*
+   * Conversa que o CRM não acha é conversa que ainda não existe: é o atendente escrevendo pra
+   * alguém pela primeira vez. Aí não há "número que recebeu", e vale a mesma regra de quando a
+   * automação inicia — sai pelo primeiro número conectado.
+   */
+  const { slot, motivo } = linha
+    ? await slotDeEnvio(workspaceId, linha.contaCanal)
+    : { slot: await slotPadraoDeEnvio(workspaceId), motivo: "nenhum número de WhatsApp conectado" };
+
+  if (slot === null) return NextResponse.json({ erro: motivo }, { status: 409 });
+
   try {
     if (audioBase64) {
-      await enviarAudioWhatsAppNaoOficial(sessao.user.workspaceId, numeroOuJid, audioBase64);
+      await enviarAudioWhatsAppNaoOficial(workspaceId, numeroOuJid, audioBase64, slot);
     } else {
-      await enviarMensagemWhatsAppNaoOficial(sessao.user.workspaceId, numeroOuJid, texto!);
+      await enviarMensagemWhatsAppNaoOficial(workspaceId, numeroOuJid, texto!, slot);
     }
   } catch (erro) {
     return NextResponse.json(

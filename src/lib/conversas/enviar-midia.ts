@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { decriptar } from "@/lib/integracoes/crypto";
 import { limparAnexosVencidos, publicarAnexoTemporario } from "@/lib/integracoes/anexo-publico";
 import { enviarAudioWhatsAppNaoOficial, enviarMidiaWhatsAppNaoOficial } from "@/lib/integracoes/evolution";
+import { slotDeEnvio } from "@/lib/integracoes/conexoes-whatsapp";
 import { enviarAnexoDirectInstagram, type TipoAnexoInstagram } from "@/lib/integracoes/instagram-login";
 import { contaConectada, enviarPelaCloudApi } from "@/lib/integracoes/whatsapp-oficial";
 
@@ -89,19 +90,31 @@ export async function enviarMidiaPeloCanal(params: {
     const porQrCode =
       conversa.contaCanal?.startsWith("whatsapp_nao_oficial:") || conversa.contaCanal?.startsWith("whatsapp_baileys:");
     if (porQrCode) {
+      const { slot, motivo } = await slotDeEnvio(workspaceId, conversa.contaCanal);
+      if (slot === null) return { enviado: false, motivo };
       if (tipo === "audio") {
         // A Evolution tem endpoint próprio pra nota de voz, e ele não aceita URL. Só base64. O
         // conteúdo do data URL já está aqui, então vai direto.
-        await enviarAudioWhatsAppNaoOficial(workspaceId, conversa.contato, arquivo.url.slice(arquivo.url.indexOf(",") + 1));
+        await enviarAudioWhatsAppNaoOficial(
+          workspaceId,
+          conversa.contato,
+          arquivo.url.slice(arquivo.url.indexOf(",") + 1),
+          slot,
+        );
         return { enviado: true };
       }
-      await enviarMidiaWhatsAppNaoOficial(workspaceId, conversa.contato, {
-        url: publicado.url,
-        tipo: tipo === "documento" ? "document" : (TIPO_WHATSAPP[tipo] as "image" | "video"),
-        mimetype: arquivo.url.slice(5, arquivo.url.indexOf(";")) || undefined,
-        nomeArquivo: arquivo.nome,
-        legenda,
-      });
+      await enviarMidiaWhatsAppNaoOficial(
+        workspaceId,
+        conversa.contato,
+        {
+          url: publicado.url,
+          tipo: tipo === "documento" ? "document" : (TIPO_WHATSAPP[tipo] as "image" | "video"),
+          mimetype: arquivo.url.slice(5, arquivo.url.indexOf(";")) || undefined,
+          nomeArquivo: arquivo.nome,
+          legenda,
+        },
+        slot,
+      );
       return { enviado: true };
     }
 

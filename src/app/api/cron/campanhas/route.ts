@@ -283,8 +283,8 @@ export async function GET(request: Request) {
     sobra > 1_000
       ? await rodarHistoricosPendentes({
           limiteMs: sobra,
-          processarMensagem: (workspaceId, item) =>
-            processarMensagemRecebida(workspaceId, item, { permitirHistorico: true }).then(() => undefined),
+          processarMensagem: (workspaceId, item, slot) =>
+            processarMensagemRecebida(workspaceId, item, { permitirHistorico: true, slot }).then(() => undefined),
         }).catch((erro) => {
           console.error("[cron] falha ao importar histórico do WhatsApp:", erro);
           return { workspaces: 0, chats: 0 };
