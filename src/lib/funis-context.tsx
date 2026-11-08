@@ -114,9 +114,29 @@ export function FunisProvider({ children }: { children: ReactNode }) {
   // granular por operação (mesmo espírito do antigo useEffect que gravava tudo no localStorage).
   // Debounça 500ms pra não disparar um PUT a cada pixel de um drag de card/coluna.
   const pendenteRef = useRef<Funil[] | null>(null);
+  /**
+   * UM PUT POR VEZ.
+   *
+   * O quadro manda o estado inteiro, e o banco do CRM atende por um pool de TRÊS conexões. Dois
+   * salvamentos no ar ao mesmo tempo — e eles acontecem: o `pagehide` descarrega o pendente
+   * enquanto o temporizador já disparou um, e um arrasto longo encosta duas janelas de 500 ms —
+   * disputam a mesma conexão e travam um ao outro no banco até o prazo da transação estourar. O
+   * resultado era o "o banco demorou demais pra responder", com a tela recarregando e perdendo o
+   * que a pessoa acabou de fazer.
+   *
+   * Enquanto um está no ar, o próximo fica guardado e sai sozinho quando o primeiro terminar —
+   * e só o ÚLTIMO estado fica guardado, porque é ele que vale.
+   */
+  const noArRef = useRef(false);
+  const esperandoRef = useRef<Funil[] | null>(null);
 
   function persistirFunis(dados: Funil[]) {
     pendenteRef.current = null;
+    if (noArRef.current) {
+      esperandoRef.current = dados;
+      return;
+    }
+    noArRef.current = true;
     fetch("/api/funis", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -138,7 +158,13 @@ export function FunisProvider({ children }: { children: ReactNode }) {
         // versão que não existe. Front e banco nunca ficam divergentes em silêncio.
         await recarregar();
       })
-      .catch((erro) => console.error("Falha ao sincronizar funis na API:", erro));
+      .catch((erro) => console.error("Falha ao sincronizar funis na API:", erro))
+      .finally(() => {
+        noArRef.current = false;
+        const esperando = esperandoRef.current;
+        esperandoRef.current = null;
+        if (esperando) persistirFunis(esperando);
+      });
   }
 
   /** Relê os funis do banco. Usado depois de uma gravação recusada e depois de cada operação

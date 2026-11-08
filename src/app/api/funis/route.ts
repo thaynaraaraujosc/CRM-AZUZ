@@ -152,7 +152,15 @@ export async function PUT(request: Request) {
       select: { id: true, funilId: true, titulo: true, ordem: true },
     }),
     prisma.negocioCard.findMany({
-      where: { workspaceId },
+      /*
+       * O MESMO RECORTE DO GET, e isto decide o que pode ser apagado.
+       *
+       * O GET esconde os negócios de um canal desconectado, então o front nunca os recebe — e
+       * "não veio no payload" não pode significar "apague". Lendo só o que o GET mostraria, a
+       * conta de quem sumiu é feita dentro do mesmo recorte, e o que está escondido fica de fora
+       * dos dois lados.
+       */
+      where: { workspaceId, ...filtroConexaoDeNegocio(provedores) },
       select: {
         id: true,
         etapaId: true,
@@ -184,22 +192,37 @@ export async function PUT(request: Request) {
 
   const operacoes: Prisma.PrismaPromise<unknown>[] = [];
 
-  // Os `deleteMany` continuam sempre: são 3 instruções, e é o que apaga o que sumiu do payload.
-  operacoes.push(
-    prisma.negocioCard.deleteMany({
-      where: {
-        workspaceId,
-        ...filtroConexaoDeNegocio(provedores),
-        id: { notIn: idsCards.length ? idsCards : ["__nenhum__"] },
-      },
-    }),
-    prisma.funilEtapa.deleteMany({
-      where: { workspaceId, id: { notIn: idsEtapas.length ? idsEtapas : ["__nenhum__"] } },
-    }),
-    prisma.funil.deleteMany({
-      where: { workspaceId, id: { notIn: idsFunis.length ? idsFunis : ["__nenhum__"] } },
-    }),
-  );
+  /*
+   * APAGAR PELO ID DO QUE SUMIU, e só quando sumiu alguma coisa.
+   *
+   * Eram três `deleteMany` com `id: { notIn: [...todos os ids do payload] }`, e eles rodavam em
+   * TODO salvamento — inclusive em "arrastei um card" e "renomeei uma etapa", em que nada é
+   * apagado. Cada um varre as linhas do workspace comparando contra uma lista que cresce junto
+   * com o funil, e faz isso DENTRO da transação, segurando trava no caminho. Com dois
+   * salvamentos próximos (e o quadro salva a cada 500 ms de arrasto), um espera o outro até o
+   * prazo estourar: era o "o banco demorou demais pra responder" que apagava o trabalho da tela.
+   *
+   * Agora a conta é feita em memória, com o que já foi lido acima: quem está no banco e não está
+   * no payload. O `in` cai na chave primária, e no caso comum — ninguém apagou nada — a instrução
+   * nem existe.
+   */
+  const idsCardsNoPayload = new Set(idsCards);
+  const idsEtapasNoPayload = new Set(idsEtapas);
+  const idsFunisNoPayload = new Set(idsFunis);
+
+  const cardsSumidos = cardsAtuais.filter((c) => !idsCardsNoPayload.has(c.id)).map((c) => c.id);
+  const etapasSumidas = etapasAtuais.filter((e) => !idsEtapasNoPayload.has(e.id)).map((e) => e.id);
+  const funisSumidos = funisAtuais.filter((f) => !idsFunisNoPayload.has(f.id)).map((f) => f.id);
+
+  if (cardsSumidos.length) {
+    operacoes.push(prisma.negocioCard.deleteMany({ where: { workspaceId, id: { in: cardsSumidos } } }));
+  }
+  if (etapasSumidas.length) {
+    operacoes.push(prisma.funilEtapa.deleteMany({ where: { workspaceId, id: { in: etapasSumidas } } }));
+  }
+  if (funisSumidos.length) {
+    operacoes.push(prisma.funil.deleteMany({ where: { workspaceId, id: { in: funisSumidos } } }));
+  }
 
   for (const f of funis) {
     const atual = funilPorId.get(f.id);
@@ -315,28 +338,47 @@ export async function PUT(request: Request) {
   // no navegador nem pra quem fosse investigar. O erro real fica no log do servidor, com quantos
   // funis/etapas/cards estavam no payload, que é o que separa "dado inválido num card" de
   // "transação grande demais e estourou o tempo".
+  /*
+   * NADA MUDOU: não abre transação nenhuma.
+   *
+   * O quadro manda o estado inteiro a cada mudança, e várias chegam sem diferença de verdade
+   * contra o banco (um arrasto que volta pro mesmo lugar, um salvamento disparado pela recarga).
+   * Abrir uma transação pra não escrever nada é ocupar uma das três conexões do pool à toa — e é
+   * justamente essa disputa que faz o salvamento seguinte esperar.
+   */
+  if (operacoes.length === 0) return NextResponse.json({ ok: true });
+
   try {
-    // Em LOTES, não numa transação só.
-    //
-    // Uma transação única com centenas de instruções estourava o prazo e devolvia "o funil é
-    // grande demais": e o pior: não salvava nada, nem a parte que já tinha passado. Um funil que
-    // cresce (é o que se espera de um CRM em uso) ficava com um teto invisível a partir do qual
-    // parava de salvar.
-    //
-    // Cada lote é uma transação: dentro dele continua tudo-ou-nada, que é o que importa pra não
-    // deixar um card sem etapa. Entre lotes não há atomicidade, e isso é aceitável aqui. O pior
-    // caso de uma falha no meio é parte da reordenação ficar pra trás, coisa que o próximo
-    // salvamento corrige. Perder o salvamento inteiro é bem pior.
-    const TAMANHO_DO_LOTE = 50;
-    for (let i = 0; i < operacoes.length; i += TAMANHO_DO_LOTE) {
-      await prisma.$transaction(operacoes.slice(i, i + TAMANHO_DO_LOTE), {
-        // O padrão do Prisma é 5s de execução e 2s de espera por conexão, e aqui isso é pouco:
-        // cada instrução é uma ida e volta até o banco no Railway. O `maxWait` sobe pelo mesmo
-        // motivo: o pool tem só 3 conexões, e sob salvamentos seguidos a espera por uma conexão
-        // livre estourava antes mesmo de a transação começar.
-        timeout: 20_000,
-        maxWait: 15_000,
-      });
+    /*
+     * UMA INSTRUÇÃO SÓ NÃO PRECISA DE TRANSAÇÃO. Renomear uma etapa, mover um card: são uma
+     * escrita, e envolvê-la em BEGIN/COMMIT triplica as idas e voltas até um banco que fica em
+     * outro continente. Atomicidade de uma instrução é o próprio banco que garante.
+     */
+    if (operacoes.length === 1) {
+      await operacoes[0];
+    } else {
+      // Em LOTES, não numa transação só.
+      //
+      // Uma transação única com centenas de instruções estourava o prazo e devolvia "o funil é
+      // grande demais": e o pior: não salvava nada, nem a parte que já tinha passado. Um funil
+      // que cresce (é o que se espera de um CRM em uso) ficava com um teto invisível a partir do
+      // qual parava de salvar.
+      //
+      // Cada lote é uma transação: dentro dele continua tudo-ou-nada, que é o que importa pra
+      // não deixar um card sem etapa. Entre lotes não há atomicidade, e isso é aceitável aqui. O
+      // pior caso de uma falha no meio é parte da reordenação ficar pra trás, coisa que o próximo
+      // salvamento corrige. Perder o salvamento inteiro é bem pior.
+      const TAMANHO_DO_LOTE = 50;
+      for (let i = 0; i < operacoes.length; i += TAMANHO_DO_LOTE) {
+        await prisma.$transaction(operacoes.slice(i, i + TAMANHO_DO_LOTE), {
+          // O padrão do Prisma é 5s de execução e 2s de espera por conexão, e aqui isso é pouco:
+          // cada instrução é uma ida e volta até o banco no Railway. O `maxWait` sobe pelo mesmo
+          // motivo: o pool tem só 3 conexões, e sob salvamentos seguidos a espera por uma conexão
+          // livre estourava antes mesmo de a transação começar.
+          timeout: 20_000,
+          maxWait: 15_000,
+        });
+      }
     }
   } catch (erro) {
     const mensagem = erro instanceof Error ? erro.message : String(erro);

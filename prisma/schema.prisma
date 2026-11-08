@@ -816,6 +816,8 @@ model Funil {
   nome        String
   responsavel String?
   etapas      FunilEtapa[]
+
+  @@index([workspaceId])
 }
 
 model FunilEtapa {
@@ -850,6 +852,9 @@ model FunilEtapa {
 
   cards    NegocioCard[]
   gatilhos GatilhoEtapa[]
+
+  @@index([workspaceId])
+  @@index([funilId, ordem])
 }
 
 model NegocioCard {
@@ -883,6 +888,16 @@ model NegocioCard {
   // Null = card criado à mão, ou anterior a esta coluna. Esses aparecem sempre: não pertencem a
   // conexão nenhuma, e sumir com eles seria esconder trabalho que a pessoa fez dentro do CRM.
   contaCanal       String?
+
+  /// A leitura do quadro: as etapas de um funil, cada uma com os cards na ordem gravada.
+  ///
+  /// Sem este índice, montar a tela do funil ordenava as linhas de cada etapa na memória do banco
+  /// a cada abertura — e o quadro é a tela mais aberta do CRM.
+  @@index([etapaId, ordem])
+  /// A reconciliação do `PUT /api/funis` lê e apaga sempre dentro de um workspace, e sempre
+  /// olhando a conexão de origem do negócio. Os dois juntos num índice é o que mantém o
+  /// salvamento do funil barato à medida que a tabela cresce com o uso.
+  @@index([workspaceId, contaCanal])
 }
 
 // Motivos de perda configuráveis por workspace. Usados no seletor ao marcar um NegocioCard como
