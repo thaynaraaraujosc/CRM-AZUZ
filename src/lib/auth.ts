@@ -155,7 +155,29 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
+      /*
+       * TROCOU O NOME OU A FOTO EM "MEU PERFIL": o token é relido do banco.
+       *
+       * O menu lateral mostra o nome e as iniciais a partir do TOKEN, que é tirado no login e não
+       * muda sozinho. Sem isto, salvar o nome gravava a coluna e o menu seguia com o nome antigo
+       * até a pessoa sair e entrar de novo — que é o mesmo defeito que o nome do espaço de
+       * trabalho já teve, e a mesma impressão de "não salvou".
+       *
+       * Só nome e iniciais: papel, permissões e workspace NÃO são relidos aqui de propósito.
+       * Relê-los daria a um `update()` disparado pela própria tela o poder de refrescar
+       * permissões no meio da sessão, que é o oposto do que uma sessão deve fazer.
+       */
+      if (trigger === "update" && typeof token.sub === "string") {
+        const membro = await prisma.membro.findUnique({
+          where: { id: token.sub },
+          select: { nome: true, initials: true },
+        });
+        if (membro) {
+          token.name = membro.nome;
+          token.initials = membro.initials;
+        }
+      }
       if (user) {
         token.workspaceId = user.workspaceId;
         token.workspaceNome = user.workspaceNome;
@@ -176,6 +198,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       session.user.workspaceId = token.workspaceId as string;
       session.user.workspaceNome = token.workspaceNome as string;
       session.user.initials = token.initials as string;
+      if (typeof token.name === "string") session.user.name = token.name;
       session.user.papelTipo = token.papelTipo as string;
       session.user.role = token.role as string;
       session.user.permissoes = Array.isArray(token.permissoes) ? (token.permissoes as string[]) : [];

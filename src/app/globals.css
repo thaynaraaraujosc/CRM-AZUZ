@@ -16311,111 +16311,289 @@ button.flow-node-warn:hover {
   min-width: 0;
 }
 
-/* ==========================================================================
-   MEU PERFIL
-   ========================================================================== */
+/* =============================================================================================
+   MEU PERFIL. No desenho do AZUZ FLOW, que a Thaynara apontou como o certo ("pode fazer idêntico"):
+   um cartão no alto com a foto grande, o nome, o e-mail e desde quando; abaixo, cartões em que o
+   TÍTULO FICA À ESQUERDA e os campos à direita. Cantos de 14px, campos altos, tudo branco sobre o
+   cinza da tela. As cores são as do CRM — o azul da marca e o dourado do botão principal.
 
-/*
- * A FOTO E OS BOTÕES NA MESMA LINHA.
- *
- * A foto é a única coisa desta tela que a pessoa reconhece de relance, então ela vem primeiro e
- * em tamanho de verdade — um quadradinho de 32px ao lado de dois botões não diz se a imagem
- * escolhida ficou boa, que é a única pergunta que se faz ao trocar uma foto de perfil.
- */
-.perfil-topo {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  flex-wrap: wrap;
-  margin-bottom: var(--space-4);
+   O mesmo desenho alcança os blocos da Empresa, que moram embaixo (`EmpresaSecao incorporada`),
+   pra a página ler como uma só em vez de duas coladas.
+   ============================================================================================= */
+.perfil-pagina {
+  max-width: 1120px;
+  gap: 24px;
 }
 
-.perfil-foto {
-  flex: 0 0 auto;
+.perfil-pagina .config-bloco {
+  padding: 32px 40px;
+  border-radius: 14px;
+}
+
+.perfil-topo {
+  position: relative;
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 84px;
-  height: 84px;
-  border-radius: 50%;
+  gap: 32px;
+  padding-block: 36px;
+}
+
+.perfil-avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 64px;
+  height: 64px;
   overflow: hidden;
+  border-radius: 50%;
   background: var(--blue-soft);
   color: var(--blue);
-  font-size: 26px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  font-size: 28px;
+  font-weight: var(--fw-medium, 500);
+  line-height: 1;
 }
 
-.perfil-foto img {
+.perfil-avatar.grande {
+  width: 104px;
+  height: 104px;
+  font-size: 52px;
+}
+
+.perfil-avatar img {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.perfil-foto-acoes {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
+.perfil-quem {
   min-width: 0;
 }
 
-.perfil-foto-acoes .hint {
-  flex-basis: 100%;
+.perfil-quem h3 {
   margin: 0;
+  font-size: 28px;
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--track-snug);
+  line-height: 1.2;
+  color: var(--ink);
+  overflow-wrap: anywhere;
 }
 
-/* As linhas do que ainda não existe: mesma forma das outras listas, sem cursor de clique. */
-.perfil-futuro {
+.perfil-email {
+  margin: 6px 0 0;
+  font-size: 16px;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.perfil-desde {
   display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-  padding: var(--space-3);
-  border-radius: var(--radius-md);
-  background: var(--surface-hover);
+  align-items: center;
+  gap: 6px;
+  margin: 12px 0 0;
+  font-size: 14px;
   color: var(--text-muted);
 }
 
-.perfil-futuro > svg {
-  flex: 0 0 auto;
-  margin-top: 2px;
+.perfil-sair {
+  position: absolute;
+  top: 20px;
+  right: 24px;
 }
 
-.perfil-futuro .n {
+/* Título à esquerda, campos à direita. O auto-posicionamento da grade põe cada par na sua linha. */
+.perfil-linhas,
+.perfil-grupo .config-bloco:has(> .config-bloco-titulo) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.7fr);
+  column-gap: 56px;
+  row-gap: 40px;
+  align-items: start;
+}
+
+.perfil-linhas .config-bloco-titulo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  font-size: 16px;
+}
+
+.perfil-linhas .config-bloco-titulo small {
+  font-size: 14px;
+  font-weight: var(--fw-regular);
+  color: var(--text-muted);
+}
+
+.perfil-grupo .config-bloco-titulo {
+  margin: 0;
+  font-size: 16px;
+}
+
+.perfil-campos {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+/* O rótulo e o "?" na mesma linha, com o balão ancorado nele. */
+.rotulo-com-dica {
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.rotulo-com-dica label {
   margin: 0;
+}
+
+.perfil-campos .field label {
   font-size: 14px;
-  font-weight: 600;
+  font-weight: var(--fw-medium, 500);
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--ink);
 }
 
-.perfil-futuro .r {
-  margin: 2px 0 0;
-  font-size: 12.5px;
-  line-height: 1.45;
-  color: var(--text-faint);
+.perfil-campos .input,
+.perfil-campos select.input {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 10px;
 }
 
-/* O erro de uma seção inteira: vermelho, mas sem virar caixa de alerta. */
-.config-aviso-erro {
-  margin: 0 0 var(--space-3);
-  font-size: 13.5px;
-  color: var(--danger);
+/* O seletor de tema tem que mostrar a setinha do sistema: `.input` tira a aparência nativa. */
+.perfil-select {
+  appearance: auto;
 }
 
-/* Uma seção embutida dentro de outra (a empresa dentro de "Meu perfil"): sem a margem de topo
-   de uma tela nova, porque ela não é uma. */
+.perfil-botao-largo {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 10px;
+}
+
+.perfil-foto {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.perfil-arquivo {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  min-height: 96px;
+  padding: 16px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 10px;
+  background: var(--surface-hover);
+  font: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.perfil-arquivo:hover {
+  border-color: var(--blue);
+  background: var(--blue-soft);
+}
+
+.perfil-arquivo:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.perfil-tirar {
+  align-self: flex-start;
+}
+
+.perfil-rodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.perfil-rodape p {
+  margin: 0;
+}
+
+.perfil-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.perfil-grupo > h3 {
+  margin: 8px 0 0;
+  font-size: 20px;
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--track-snug);
+  color: var(--ink);
+}
+
+/* Os campos da Empresa leem como os de cima: rótulo normal, campo alto, Salvar à direita. */
+.perfil-grupo .field label {
+  font-size: 14px;
+  font-weight: var(--fw-medium, 500);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink);
+}
+
+.perfil-grupo .input {
+  min-height: 48px;
+  border-radius: 10px;
+}
+
+/* Os campos da Empresa já estão na COLUNA DA DIREITA do cartão: duas colunas dentro dela daria
+   campos de meia largura, e no desenho desta página todo campo ocupa a coluna inteira. */
+.perfil-grupo .config-grid-2 {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* Uma seção embutida dentro de outra (a empresa dentro de "Meu perfil"): os cartões dela entram
+   na coluna de quem incorpora, sem a caixa de uma tela nova em volta. */
 .config-secao-interna {
   display: contents;
 }
 
-.config-titulo-solto {
-  margin-top: var(--space-4);
-  font-size: 15px;
+/* O erro de uma seção inteira: vermelho, mas sem virar caixa de alerta. */
+.config-aviso-erro {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--danger);
 }
+
+@media (max-width: 860px) {
+  .perfil-pagina .config-bloco {
+    padding: 24px 20px;
+  }
+
+  .perfil-topo {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .perfil-sair {
+    top: 16px;
+    right: 16px;
+  }
+
+  .perfil-linhas,
+  .perfil-grupo .config-bloco:has(> .config-bloco-titulo) {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 16px;
+  }
+}
+
 .config-tabela-scroll {
   overflow-x: auto;
 }
