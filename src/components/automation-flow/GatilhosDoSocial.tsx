@@ -73,6 +73,42 @@ const ALCANCE: Partial<Record<FlowNodeType, { titulo: string; pergunta: string }
 
 export type EscolhaDeGatilho = { tipo: FlowNodeType; data: Record<string, unknown> };
 
+type ModoDePalavra = "qualquer" | "exata" | "contem" | "comeco";
+
+/**
+ * COMO A PALAVRA TEM QUE APARECER NA MENSAGEM.
+ *
+ * A gaveta só deixava escrever as palavras, e a comparação ficava no padrão sem ninguém saber
+ * qual era. Com isso, "quero" disparava em "não quero" — e quem montou o robô só descobria pelo
+ * lead que recebeu a mensagem errada.
+ *
+ * A ordem é da mais solta pra mais apertada, e cada uma traz um exemplo em vez de uma definição:
+ * "a mensagem contém a palavra" é claro pra quem escreveu a frase e nebuloso pra quem vai
+ * escolher entre quatro opções parecidas.
+ */
+const MODOS_DE_PALAVRA: { valor: ModoDePalavra; label: string; exemplo: string }[] = [
+  {
+    valor: "contem",
+    label: "A mensagem contém a palavra",
+    exemplo: "“quero” dispara em “eu quero” e também em “não quero”.",
+  },
+  {
+    valor: "qualquer",
+    label: "Qualquer uma das palavras, inteira",
+    exemplo: "“quero” dispara em “eu quero!”, mas não em “querosene”.",
+  },
+  {
+    valor: "comeco",
+    label: "A palavra aparece no começo",
+    exemplo: "“quero” dispara em “quero sim, me manda”, mas não em “eu não quero”.",
+  },
+  {
+    valor: "exata",
+    label: "A mensagem é exatamente a palavra",
+    exemplo: "“quero” dispara só em “quero”, e em mais nada.",
+  },
+];
+
 export function GatilhosDoSocial({
   gatilhosAtuais,
   onEscolher,
@@ -153,13 +189,20 @@ export function GatilhosDoSocial({
    * precisa da sua cópia porque quem avalia o evento é o bloco, não o fluxo.
    */
   const palavrasAtuais = (dados[marcados[0]]?.palavras as string[] | undefined) ?? [];
+  const modoAtual = (dados[marcados[0]]?.modoPalavra as ModoDePalavra | undefined) ?? "contem";
+  const acentoConta = dados[marcados[0]]?.ignorarAcentos === false;
   const [palavraNova, setPalavraNova] = useState("");
 
   function mudarPalavras(lista: string[]) {
+    mudarEmTodos({ palavras: lista });
+  }
+
+  /** O que vale pras palavras vale pra todos os gatilhos marcados: eles dividem a mesma regra. */
+  function mudarEmTodos(campos: Record<string, unknown>) {
     setDados((atual) => {
       const copia = { ...atual };
       marcados.forEach((t) => {
-        copia[t] = { ...(copia[t] ?? {}), palavras: lista };
+        copia[t] = { ...(copia[t] ?? {}), ...campos };
       });
       return copia;
     });
@@ -310,6 +353,65 @@ export function GatilhosDoSocial({
                 <p className="gat-nota">
                   {traduzir("Sem nenhuma palavra, a automação vale para qualquer texto.")}
                 </p>
+
+                {/*
+                  * COMO A PALAVRA TEM QUE APARECER — só faz sentido tendo palavra.
+                  *
+                  * Sem nenhuma, a automação vale pra qualquer texto e não há o que comparar;
+                  * mostrar quatro opções de comparação ali seria oferecer uma escolha que não
+                  * muda nada.
+                  */}
+                {palavrasAtuais.length ? (
+                  <div className="gat-modos">
+                    <p className="gat-pergunta gat-pergunta-menor">
+                      {traduzir("Como a palavra tem que aparecer?")}
+                    </p>
+                    {MODOS_DE_PALAVRA.map((modo) => (
+                      <button
+                        key={modo.valor}
+                        type="button"
+                        role="radio"
+                        aria-checked={modoAtual === modo.valor}
+                        className={`gat-item gat-modo${modoAtual === modo.valor ? " on" : ""}`}
+                        onClick={() => mudarEmTodos({ modoPalavra: modo.valor })}
+                      >
+                        <span className="gat-marca" aria-hidden="true" />
+                        <span className="gat-textos">
+                          <strong>{traduzir(modo.label)}</strong>
+                          <span>{traduzir(modo.exemplo)}</span>
+                        </span>
+                      </button>
+                    ))}
+
+                    {/*
+                      * MAIÚSCULA NUNCA CONTA, e dizer isso evita a pergunta.
+                      *
+                      * "A pessoa escreve ASOS, outra escreve asos" — já funciona nos dois casos,
+                      * sempre funcionou, e não havia nada na tela dizendo. Informação não é
+                      * opção: não há botão porque não há escolha a fazer.
+                      */}
+                    <p className="gat-nota">
+                      {traduzir(
+                        "Maiúscula e minúscula não importam: “ASOS”, “Asos” e “asos” disparam igual.",
+                      )}
+                    </p>
+
+                    {/* Acento, esse sim, é escolha — e quase sempre a resposta é "tanto faz". */}
+                    <button
+                      type="button"
+                      role="checkbox"
+                      aria-checked={!acentoConta}
+                      className={`gat-item gat-modo${!acentoConta ? " on" : ""}`}
+                      onClick={() => mudarEmTodos({ ignorarAcentos: acentoConta })}
+                    >
+                      <span className="gat-marca gat-marca-caixa" aria-hidden="true" />
+                      <span className="gat-textos">
+                        <strong>{traduzir("Acento também não importa")}</strong>
+                        <span>{traduzir("“começo” e “comeco” valem como a mesma palavra.")}</span>
+                      </span>
+                    </button>
+                  </div>
+                ) : null}
               </>
             ) : etapaAtual.tipo === "comentario_instagram" ? (
               <ComentarioInstagramForm

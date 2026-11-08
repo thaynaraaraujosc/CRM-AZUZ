@@ -26954,27 +26954,114 @@ td.trafego-col-crm:first-of-type {
   line-height: 1.3;
 }
 
-/* Mesma altura da linha de gatilho: é uma linha da mesma lista, não um bloco à parte. O texto
-   fica centrado porque ele não é uma opção — é a porta pras que faltam. */
+/*
+ * AS OPÇÕES DE COMPARAÇÃO TRAZEM UM EXEMPLO, e por isso têm duas linhas.
+ *
+ * Aqui a descrição não é supérflua como era na lista de gatilhos: as quatro opções se parecem
+ * ("contém a palavra" e "palavra inteira" soam igual), e o que separa uma da outra é justamente o
+ * caso em que elas discordam. O exemplo é esse caso.
+ */
+.gat-modo {
+  align-items: flex-start;
+  min-height: 0;
+  padding: 10px 14px;
+}
+
+.gat-modo .gat-textos {
+  gap: 2px;
+}
+
+.gat-modo .gat-textos > span {
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--ss-tinta-fraca, #64748b);
+}
+
+.gat-modo .gat-marca {
+  margin-top: 1px;
+}
+
+.gat-modos {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line-soft);
+}
+
+/*
+ * A TROCA DE ETAPA É UM DESMAIO, não um corte seco.
+ *
+ * A gaveta troca o conteúdo inteiro de uma vez — escolheu o gatilho, some tudo e aparece outra
+ * coisa — e sem transição isso lê como a tela ter piscado, não como ter avançado. Um desmaio
+ * curto com dois pixels de subida é o suficiente pra dizer "isto é o próximo passo".
+ *
+ * Curto de propósito: 140ms é o limite do que ainda parece instantâneo. Transição que se nota é
+ * transição que atrasa, e esta tela é usada em sequência, uma etapa atrás da outra.
+ */
+@keyframes gat-entrada {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.gat-etapa {
+  animation: gat-entrada 140ms ease-out;
+}
+
+/* Quem pediu menos movimento continua com o desmaio, sem o deslocamento. */
+@media (prefers-reduced-motion: reduce) {
+  .gat-etapa {
+    animation: none;
+  }
+}
+
+/* A segunda pergunta da mesma etapa é menor que a primeira: ela não disputa com o título. */
+.gat-pergunta-menor {
+  font-size: 15px;
+  line-height: 1.4;
+  margin-bottom: 2px;
+}
+
+/*
+ * "OPÇÕES AVANÇADAS" NÃO É UM GATILHO, e precisava parar de parecer um.
+ *
+ * Ele tinha a mesma cara dos itens da lista e ficava colado no primeiro item avançado: aberto,
+ * virava mais uma linha no meio de outras, e não dava pra saber onde terminava a lista de cima e
+ * começava a de baixo. Agora é azul-claro — a cor diz "isto é outra coisa" antes de qualquer
+ * leitura — e ganha respiro em cima e embaixo pra separar as duas listas de verdade.
+ */
 .gat-avancado {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   width: 100%;
-  min-height: 46px;
-  padding: 11px 14px;
-  border: 1px solid var(--ss-linha, #e2e8f0);
+  min-height: 42px;
+  margin: 6px 0 10px;
+  padding: 10px 14px;
+  border: 1px solid transparent;
   border-radius: 10px;
-  background: var(--surface);
+  background: var(--ss-azul-suave, #e7e8ff);
+  color: #0020ad;
   font: inherit;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
 }
 
+:root[data-theme="dark"] .gat-avancado {
+  color: var(--ss-azul, #657bff);
+}
+
 .gat-avancado:hover {
-  background: var(--ss-suave, #f1f5f9);
+  border-color: var(--ss-azul, #0028fe);
 }
 
 .gat-avancado .girado {

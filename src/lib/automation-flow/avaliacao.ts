@@ -352,8 +352,27 @@ export type ConfiguracaoDePalavras = {
   /** Lista configurada. `palavraChave` (campo antigo, uma só) continua valendo. */
   palavras?: string[];
   palavraChave?: string;
-  /** "contem" (padrão), "exata" ou "qualquer": qualquer uma das palavras, como palavra inteira. */
-  modoPalavra?: "contem" | "exata" | "qualquer";
+  /**
+   * Como a palavra tem que aparecer na mensagem:
+   *
+   * - `qualquer`: qualquer uma das palavras, como PALAVRA INTEIRA.
+   * - `exata`: a mensagem é exatamente aquilo, e nada mais.
+   * - `contem` (padrão): a palavra aparece em qualquer lugar, mesmo colada em outra.
+   * - `comeco`: a mensagem COMEÇA pela palavra.
+   *
+   * `comeco` nasceu do jeito como as pessoas respondem a um story ou a um post: "quero sim, me
+   * manda", "link por favor". A intenção está na primeira palavra, e o resto é conversa. Com
+   * `exata` isso não dispara, e com `contem` dispara também em "não quero" — que é o contrário.
+   */
+  modoPalavra?: "contem" | "exata" | "qualquer" | "comeco";
+  /**
+   * Acento conta? Padrão: não.
+   *
+   * MAIÚSCULA NUNCA CONTA, e não tem opção: a comparação sempre baixa os dois lados pra
+   * minúscula. "ASOS", "Asos" e "asos" são a mesma palavra pra quem escreveu e pra quem montou a
+   * automação; oferecer um botão pra diferenciá-las seria oferecer um jeito de a automação falhar
+   * sem a pessoa entender por quê.
+   */
   ignorarAcentos?: boolean;
 };
 
@@ -381,6 +400,17 @@ export function textoCasaComPalavras(texto: string, config: ConfiguracaoDePalavr
     const p = normalizar(palavra, ignorarAcentos);
     if (!p) return false;
     if (modo === "exata") return alvo === p;
+    /*
+     * COMEÇA PELA PALAVRA, e a fronteira é conferida igual ao `qualquer`.
+     *
+     * Sem conferir o que vem depois, "quero" dispararia em "querosene". Com `\b` seria mais
+     * curto, mas `\b` não enxerga acento em JavaScript, e metade das palavras daqui tem.
+     */
+    if (modo === "comeco") {
+      if (!alvo.startsWith(p)) return false;
+      const depois = alvo[p.length];
+      return !(depois && /[\p{L}\p{N}]/u.test(depois));
+    }
     if (modo === "qualquer") {
       // `\b` não funciona com acentos em JS; a fronteira é conferida na mão pelo que cerca a
       // ocorrência: só conta se não houver letra ou número colado dos dois lados.

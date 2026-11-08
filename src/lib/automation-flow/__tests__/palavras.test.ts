@@ -57,3 +57,51 @@ describe("textoCasaComPalavras", () => {
     expect(textoCasaComPalavras("quero informacao", { palavras: ["informação"] })).toBe(true);
   });
 });
+
+/**
+ * "A PALAVRA APARECE NO COMEÇO".
+ *
+ * Nasceu de como as pessoas respondem a um story ou a um post: "quero sim, me manda", "link por
+ * favor". A intenção está na primeira palavra e o resto é conversa — `exata` não pega, e `contem`
+ * pega também o "não quero", que é o contrário do que se quis dizer.
+ */
+describe("modo começo", () => {
+  const config = { palavras: ["quero"], modoPalavra: "comeco" as const };
+
+  it("dispara quando a mensagem começa pela palavra", () => {
+    expect(textoCasaComPalavras("quero sim, me manda", config)).toBe(true);
+    expect(textoCasaComPalavras("QUERO", config)).toBe(true);
+  });
+
+  it("não dispara quando a palavra vem no meio", () => {
+    // É o caso que separa este modo do "contém": aqui o "não quero" não entra.
+    expect(textoCasaComPalavras("eu não quero", config)).toBe(false);
+  });
+
+  it("não dispara dentro de outra palavra", () => {
+    // Sem conferir o que vem depois, "quero" pegaria "querosene".
+    expect(textoCasaComPalavras("querosene", config)).toBe(false);
+  });
+
+  it("aceita frase, não só palavra", () => {
+    const frase = { palavras: ["me manda"], modoPalavra: "comeco" as const };
+    expect(textoCasaComPalavras("me manda o link", frase)).toBe(true);
+    expect(textoCasaComPalavras("oi, me manda o link", frase)).toBe(false);
+  });
+
+  it("espaço e acento não atrapalham", () => {
+    const comAcento = { palavras: ["começo"], modoPalavra: "comeco" as const };
+    expect(textoCasaComPalavras("  COMECO agora", comAcento)).toBe(true);
+  });
+});
+
+describe("maiúscula nunca conta, em modo nenhum", () => {
+  // A pessoa escreve "ASOS", "Asos" ou "asos" e a automação precisa disparar nos três. Não há
+  // botão pra isso de propósito: um jeito de a automação falhar sem ninguém entender por quê.
+  for (const modo of ["contem", "exata", "qualquer", "comeco"] as const) {
+    it(`no modo ${modo}`, () => {
+      expect(textoCasaComPalavras("ASOS", { palavras: ["asos"], modoPalavra: modo })).toBe(true);
+      expect(textoCasaComPalavras("asos", { palavras: ["ASOS"], modoPalavra: modo })).toBe(true);
+    });
+  }
+});
