@@ -1019,6 +1019,17 @@ export function IconRaio(props: Props) {
   );
 }
 
+/** A chave: o que a palavra-chave é no cartão de gatilhos. */
+export function IconChave(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="8" cy="8" r="5" />
+      <path d="M11.6 11.6 21 21" />
+      <path d="M17 17l2-2" />
+    </svg>
+  );
+}
+
 /** Aproximar. A lupa com o "+" dentro, e não um "+" sozinho: sozinho ele é "adicionar". */
 export function IconZoomMais(props: Props) {
   return (

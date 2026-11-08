@@ -91,7 +91,7 @@ function formularioDe(dados: Dados): Formulario {
   };
 }
 
-export function EmpresaSecao() {
+export function EmpresaSecao({ semCabecalho }: { semCabecalho?: boolean } = {}) {
   const { t: traduzir } = useIdioma();
   const { data: sessao } = useSession();
   const souAdmin = sessao?.user?.papelTipo === "admin" || Boolean(sessao?.user?.superAdmin);
@@ -198,11 +198,17 @@ export function EmpresaSecao() {
   }
 
   return (
-    <div className="config-secao">
-      <CabecalhoCategoria
-        titulo={traduzir("Dados da empresa")}
-        descricao={traduzir("A identidade da sua agência dentro do CRM.")}
-      />
+    <div className={semCabecalho ? "config-secao-interna" : "config-secao"}>
+      {/* Dentro de "Meu perfil" a empresa é um BLOCO, não uma tela: um segundo cabeçalho de
+          categoria no meio da página leria como se outra tela tivesse começado ali. */}
+      {semCabecalho ? (
+        <p className="config-bloco-titulo config-titulo-solto">{traduzir("Empresa")}</p>
+      ) : (
+        <CabecalhoCategoria
+          titulo={traduzir("Dados da empresa")}
+          descricao={traduzir("A identidade da sua agência dentro do CRM.")}
+        />
+      )}
 
       <div className="config-bloco">
         <p className="config-bloco-titulo">{traduzir("Logotipo")}</p>

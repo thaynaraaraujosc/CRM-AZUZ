@@ -16311,6 +16311,111 @@ button.flow-node-warn:hover {
   min-width: 0;
 }
 
+/* ==========================================================================
+   MEU PERFIL
+   ========================================================================== */
+
+/*
+ * A FOTO E OS BOTÕES NA MESMA LINHA.
+ *
+ * A foto é a única coisa desta tela que a pessoa reconhece de relance, então ela vem primeiro e
+ * em tamanho de verdade — um quadradinho de 32px ao lado de dois botões não diz se a imagem
+ * escolhida ficou boa, que é a única pergunta que se faz ao trocar uma foto de perfil.
+ */
+.perfil-topo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+
+.perfil-foto {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--blue-soft);
+  color: var(--blue);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.perfil-foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.perfil-foto-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.perfil-foto-acoes .hint {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+/* As linhas do que ainda não existe: mesma forma das outras listas, sem cursor de clique. */
+.perfil-futuro {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--surface-hover);
+  color: var(--text-muted);
+}
+
+.perfil-futuro > svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.perfil-futuro .n {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.perfil-futuro .r {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--text-faint);
+}
+
+/* O erro de uma seção inteira: vermelho, mas sem virar caixa de alerta. */
+.config-aviso-erro {
+  margin: 0 0 var(--space-3);
+  font-size: 13.5px;
+  color: var(--danger);
+}
+
+/* Uma seção embutida dentro de outra (a empresa dentro de "Meu perfil"): sem a margem de topo
+   de uma tela nova, porque ela não é uma. */
+.config-secao-interna {
+  display: contents;
+}
+
+.config-titulo-solto {
+  margin-top: var(--space-4);
+  font-size: 15px;
+}
 .config-tabela-scroll {
   overflow-x: auto;
 }

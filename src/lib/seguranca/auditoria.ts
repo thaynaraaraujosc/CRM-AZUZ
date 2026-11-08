@@ -25,6 +25,10 @@ export type AcaoAuditada =
   | "membro.alterado"
   | "membro.excluido"
   | "membro.senha_resetada"
+  // A pessoa editando o PRÓPRIO cadastro (nome, telefone, foto). Separado de `membro.alterado`,
+  // que é a administração mexendo em outra pessoa: as duas perguntas que uma auditoria responde
+  // aqui são diferentes ("quem mudou o papel de fulano" × "fulano trocou o próprio contato").
+  | "perfil.editado"
   | "convite.aceito"
   | "integracao.conectada"
   | "integracao.desconectada"

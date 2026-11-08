@@ -4,14 +4,13 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { useConfiguracoes } from "@/lib/configuracoes-context";
-import { categoriaPorId, type CategoriaId } from "@/lib/configuracoes/estrutura";
+import { categoriaPorId, categoriaReal, type CategoriaId } from "@/lib/configuracoes/estrutura";
 import { CategoriasNav } from "@/components/configuracoes/CategoriasNav";
-import { AparenciaSecao } from "@/components/configuracoes/AparenciaSecao";
+import { MeuPerfilSecao } from "@/components/configuracoes/MeuPerfilSecao";
 import { ExpedienteSecao } from "@/components/configuracoes/ExpedienteSecao";
 import { NotificacoesSecao } from "@/components/configuracoes/NotificacoesSecao";
 import { SegurancaSecao } from "@/components/configuracoes/SegurancaSecao";
 import { EtiquetasSecao } from "@/components/configuracoes/EtiquetasSecao";
-import { EmpresaSecao } from "@/components/configuracoes/EmpresaSecao";
 import { WhatsAppSecao } from "@/components/configuracoes/WhatsAppSecao";
 import { InstagramSecao } from "@/components/configuracoes/InstagramSecao";
 import { AzuzIaSecao } from "@/components/configuracoes/AzuzIaSecao";
@@ -43,7 +42,7 @@ function ConfiguracoesConteudo() {
   // `?categoria=plano`: usado pelo redirect pós-cadastro (proxy manda direto pra tela de
   // pagamento, ver `src/app/cadastro/page.tsx`) pra não obrigar a pessoa a achar "Plano e
   // cobrança" sozinha na primeira vez que entra, já bloqueada até pagar.
-  const categoriaInicial = (searchParams.get("categoria") as CategoriaId | null) ?? "aparencia";
+  const categoriaInicial = categoriaReal((searchParams.get("categoria") as CategoriaId | null) ?? "perfil");
   const [categoriaAtiva, setCategoriaAtiva] = useState<CategoriaId>(categoriaInicial);
   const { categoriaSuja } = useConfiguracoes();
   const categoria = categoriaPorId(categoriaAtiva);
@@ -55,7 +54,7 @@ function ConfiguracoesConteudo() {
   const paramCategoria = searchParams.get("categoria");
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- sincroniza com navegação por URL (Link), não é reset de prop derivado
-    if (paramCategoria) setCategoriaAtiva(paramCategoria as CategoriaId);
+    if (paramCategoria) setCategoriaAtiva(categoriaReal(paramCategoria as CategoriaId));
   }, [paramCategoria]);
 
   function selecionarCategoria(id: CategoriaId) {
@@ -80,12 +79,11 @@ function ConfiguracoesConteudo() {
           <CategoriasNav ativa={categoriaAtiva} onSelecionar={selecionarCategoria} />
 
           <div className="config-detalhe">
-            {categoriaAtiva === "aparencia" ? <AparenciaSecao /> : null}
+            {categoriaAtiva === "perfil" ? <MeuPerfilSecao /> : null}
             {categoriaAtiva === "notificacoes" ? <NotificacoesSecao /> : null}
             {categoriaAtiva === "expediente" ? <ExpedienteSecao /> : null}
             {categoriaAtiva === "seguranca" ? <SegurancaSecao /> : null}
             {categoriaAtiva === "etiquetas" ? <EtiquetasSecao /> : null}
-            {categoriaAtiva === "empresa" ? <EmpresaSecao /> : null}
             {categoriaAtiva === "whatsapp" ? <WhatsAppSecao /> : null}
             {categoriaAtiva === "instagram" ? <InstagramSecao /> : null}
             {categoriaAtiva === "azuz-ia" ? <AzuzIaSecao /> : null}

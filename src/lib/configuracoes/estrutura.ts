@@ -16,6 +16,8 @@ import {
 } from "@/components/icons";
 
 export type CategoriaId =
+  | "perfil"
+  /** Ids antigos: continuam resolvendo pra "Meu perfil", pra links e favoritos não quebrarem. */
   | "aparencia"
   | "notificacoes"
   | "expediente"
@@ -57,7 +59,12 @@ export const GRUPOS_CONFIGURACOES: GrupoConfig[] = [
   {
     titulo: "Geral",
     categorias: [
-      { id: "aparencia", label: "Aparência", descricao: "Tema claro ou escuro.", Icon: IconImage },
+      {
+        id: "perfil",
+        label: "Meu perfil",
+        descricao: "Nome, telefone, e-mail, senha, foto, tema e os dados da sua empresa.",
+        Icon: IconContatos,
+      },
       { id: "notificacoes", label: "Notificações", descricao: "Quando e como você é avisado.", Icon: IconBell },
       { id: "expediente", label: "Horário de funcionamento", descricao: "Quando o CRM considera que vocês estão abertos.", Icon: IconRelogio },
       { id: "seguranca", label: "Segurança", descricao: "Autenticação, sessões e políticas de acesso.", Icon: IconEscudo },
@@ -72,17 +79,6 @@ export const GRUPOS_CONFIGURACOES: GrupoConfig[] = [
          tem usuário: não responde a única pergunta que uma auditoria existe pra responder.
          Detalhe que decide QUANDO fazer: auditoria não é retroativa. Ela precisa estar gravando
          antes do primeiro cliente com equipe, senão o histórico daquele período não existe. */
-    ],
-  },
-  {
-    titulo: "Empresa",
-    categorias: [
-      {
-        id: "empresa",
-        label: "Dados da empresa",
-        descricao: "Logo, nome do espaço de trabalho e dados da sua agência.",
-        Icon: IconContatos,
-      },
     ],
   },
   {
@@ -126,7 +122,36 @@ export const GRUPOS_CONFIGURACOES: GrupoConfig[] = [
 const CATEGORIAS_OCULTAS_DO_MENU: CategoriaConfig[] = [
   { id: "whatsapp", label: "WhatsApp", descricao: "Conecte o número do WhatsApp do CRM.", Icon: IconWhatsApp },
   { id: "instagram", label: "Instagram e Facebook", descricao: "Conecte suas contas da Meta.", Icon: IconInstagram },
+  /*
+   * "APARÊNCIA" E "DADOS DA EMPRESA" VIRARAM "MEU PERFIL", e os ids continuam existindo.
+   *
+   * "Você vai trocar a aparência e dados da empresa por apenas um botão, que vai chamar meu
+   * perfil." As duas eram uma linha de menu cada pra uma pergunta que ninguém faz separada: o
+   * tema morava sozinho numa categoria com um interruptor dentro, e a empresa num grupo só dela.
+   *
+   * Eles ficam aqui, fora do menu mas resolvíveis, porque `?categoria=aparencia` pode estar num
+   * favorito de alguém — e `categoriaPorId` devolvendo `undefined` escreve "Categoria não
+   * encontrada" numa tela que existe. Quem resolve pra onde eles vão é `categoriaReal`.
+   */
+  { id: "aparencia", label: "Aparência", descricao: "Tema claro ou escuro.", Icon: IconImage },
+  {
+    id: "empresa",
+    label: "Dados da empresa",
+    descricao: "Logo, nome do espaço de trabalho e dados da sua agência.",
+    Icon: IconContatos,
+  },
 ];
+
+/** Os ids aposentados e pra onde eles levam hoje. */
+const APOSENTADAS: Partial<Record<CategoriaId, CategoriaId>> = {
+  aparencia: "perfil",
+  empresa: "perfil",
+};
+
+/** A categoria que deve de fato abrir, dado um id que pode ser antigo. */
+export function categoriaReal(id: CategoriaId): CategoriaId {
+  return APOSENTADAS[id] ?? id;
+}
 
 export const TODAS_CATEGORIAS: CategoriaConfig[] = [
   ...GRUPOS_CONFIGURACOES.flatMap((g) => g.categorias),

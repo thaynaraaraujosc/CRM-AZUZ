@@ -711,6 +711,14 @@ model Membro {
   email    String  @unique
   senha    String?
 
+  /// O telefone DA PESSOA, não o da empresa.
+  ///
+  /// A empresa já tem o dela (`Workspace.empresaTelefone`), e é outro número: um é o contato
+  /// comercial que vai em proposta e assinatura de e-mail, o outro é por onde se fala com a
+  /// pessoa que usa o CRM. Opcional de propósito — ninguém é obrigado a dar o celular pra usar a
+  /// ferramenta, e a coluna nasce vazia pras contas que já existem.
+  telefone String?
+
   /// A SENHA QUE O SUPER-ADMIN ENTREGOU, guardada de forma recuperável — e só essa.
   ///
   /// POR QUE EXISTE. Conta de cortesia é entregue pronta: a Azuz cria, define a senha e passa pra
