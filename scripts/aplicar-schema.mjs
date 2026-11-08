@@ -39,7 +39,7 @@
  */
 import { spawnSync } from "node:child_process";
 
-import { trechosDestrutivos } from "./sql-destrutivo.mjs";
+import { avisosSaoSeguros } from "./avisos-de-schema.mjs";
 
 /*
  * DATABASE_URL AUSENTE: o caminho silencioso que custou um dia de produção em 14/10/2026.
@@ -180,38 +180,18 @@ if (naoAlcancouOBanco) {
  * script OLHA O SQL antes de decidir, em vez de tratar todo aviso como destruição.
  */
 if (saida.includes("--accept-data-loss")) {
-  // O SQL que seria aplicado, perguntado ao próprio Prisma. É a única forma de saber O QUE a
-  // mudança faz; o aviso do `db push` só diz que existe uma.
-  const diff = spawnSync(
-    "npx",
-    [
-      "prisma",
-      "migrate",
-      "diff",
-      "--from-url",
-      process.env.DATABASE_URL,
-      "--to-schema-datamodel",
-      "prisma/schema.prisma",
-      "--script",
-    ],
-    { encoding: "utf-8", shell: false },
-  );
-  const sql = `${diff.stdout ?? ""}`;
-  const destrutivos = diff.status === 0 ? trechosDestrutivos(sql) : null;
+  // Os avisos que o `db push` ACABOU DE IMPRIMIR, lidos um a um. Sem processo nenhum a mais: a
+  // primeira tentativa de consertar isto perguntava o SQL ao Prisma num segundo comando, e foi
+  // esse comando que falhou na Vercel, deixando o build travado do mesmo jeito.
+  const { seguro, avisos, perigosos } = avisosSaoSeguros(saida);
 
-  if (destrutivos === null) {
-    console.error("");
-    console.error("[schema] O banco recusou a mudança e NÃO deu pra ler o que ela faria.");
-    console.error("  Sem saber se apaga dado, o build para: é o lado seguro do erro.");
-    console.error(`${diff.stderr ?? ""}`);
-    process.exit(1);
-  }
-
-  if (destrutivos.length === 0) {
+  if (seguro) {
     console.warn("");
     console.warn("========================================================================");
-    console.warn("[schema] O aviso do Prisma não é destruição: nada neste SQL apaga dado.");
-    console.warn("  Conferido comando a comando (ver scripts/sql-destrutivo.mjs). Aplicando.");
+    console.warn("[schema] O aviso do Prisma não é destruição. Nada aqui apaga dado:");
+    for (const aviso of avisos) console.warn(`    • ${aviso}`);
+    console.warn("");
+    console.warn("  Criar índice ou vale, ou é recusado pelo banco em voz alta. Aplicando.");
     console.warn("========================================================================");
     console.warn("");
     const segunda = spawnSync("npx", ["prisma", "db", "push", "--accept-data-loss"], {
@@ -228,9 +208,13 @@ if (saida.includes("--accept-data-loss")) {
   }
 
   console.error("");
-  console.error("[schema] A mudança APAGA DADO. O build para aqui de propósito.");
-  console.error("  O que seria executado:");
-  for (const trecho of destrutivos) console.error(`    ${trecho};`);
+  console.error("[schema] O build para aqui de propósito: há aviso que pode APAGAR DADO.");
+  if (perigosos?.length) {
+    console.error("  O que o Prisma avisou e não está na lista do que se sabe inofensivo:");
+    for (const aviso of perigosos) console.error(`    • ${aviso}`);
+  } else {
+    console.error("  O Prisma pediu --accept-data-loss e não deu pra ler o motivo.");
+  }
   console.error("");
   console.error("  Nada disto é aplicado automaticamente. Se for mesmo pra acontecer, rode à mão,");
   console.error("  com backup feito, e publique de novo.");
