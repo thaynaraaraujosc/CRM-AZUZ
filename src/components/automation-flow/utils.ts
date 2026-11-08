@@ -10,6 +10,7 @@ import type {
   FlowEdge,
   FlowNode,
   FlowNodeCategory,
+  FlowNodeType,
   ProblemaValidacao,
 } from "@/lib/automation-flow/types";
 
@@ -89,6 +90,19 @@ export type FlowRFNodeData = {
   aoMudarCampo?: (campo: string, valor: unknown) => void;
   /** O "!" do bloco: seleciona o bloco e abre o painel já na aba Problemas. */
   aoAbrirProblemas?: () => void;
+  /*
+   * O CARTÃO ÚNICO DE GATILHOS (ver `GrupoGatilhosNode`).
+   *
+   * Os três campos abaixo só vêm preenchidos no PRIMEIRO bloco de gatilho de um fluxo social: é
+   * ele que desenha a lista inteira, e os outros ficam escondidos. Eles descrevem o FLUXO, não o
+   * bloco, e por isso são montados no editor — o nó não tem como conhecer os irmãos.
+   */
+  gatilhosDoGrupo?: { tipo: FlowNodeType; label: string }[];
+  palavrasDoGrupo?: string[];
+  /** Abre a gaveta na lista de gatilhos. */
+  aoAbrirGatilhos?: () => void;
+  /** Abre a gaveta direto na etapa das palavras-chave. */
+  aoAbrirPalavras?: () => void;
   /** O tempo do cronômetro, em minutos, editado no próprio cartão do bloco de espera. */
   aoMudarCronometro?: (minutos: number) => void;
 };
@@ -99,7 +113,7 @@ export type FlowRFNodeData = {
  * É a pastilha verde de começo, desenhada no canvas e nunca salva no fluxo: ver `InicioNode`. Ela
  * precisa existir aqui só porque o React Flow tipa o nó pelo nome do componente que o desenha.
  */
-export type FlowRFNode = Node<FlowRFNodeData, FlowNodeCategory | "inicio">;
+export type FlowRFNode = Node<FlowRFNodeData, FlowNodeCategory | "inicio" | "grupo-gatilhos">;
 /**
  * A aresta carrega `aoApagar` no `data` — a lixeira que aparece ao passar o mouse por cima dela
  * (ver `ArestaSocial`). Era `Record<string, never>`, que é "nada aqui dentro": o componente de

@@ -176,6 +176,8 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const [menuContexto, setMenuContexto] = useState<{ x: number; y: number; nodeId: string } | null>(null);
   const [toasts, setToasts] = useState<{ id: number; texto: string }[]>([]);
   const [escolherGatilhoAberto, setEscolherGatilhoAberto] = useState(false);
+  /** Em qual etapa a gaveta de gatilhos abre: a lista, ou direto nas palavras-chave. */
+  const [etapaDaGaveta, setEtapaDaGaveta] = useState<"lista" | "palavras">("lista");
   /*
    * ONDE A PASTILHA DE INÍCIO ESTÁ ENQUANTO SE ARRASTA.
    *
@@ -232,6 +234,8 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   function fecharEscolha() {
     setDispensouAbertura(true);
     setEscolherGatilhoAberto(false);
+    // Volta pro começo: a próxima abertura decide de novo onde começa, pelo que foi clicado.
+    setEtapaDaGaveta("lista");
     setAcaoRapida(null);
   }
   const [modoPassos, setModoPassos] = useState(false);
@@ -729,8 +733,12 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
 
   /** Tira a ligação que sai desta saída. Uma saída tem no máximo um caminho. */
   function desligarSaida(nodeId: string, handleId: string | undefined) {
+    // O cartão de gatilhos fala por todos: desligar a saída dele desliga a dos gatilhos
+    // escondidos junto, senão eles seguiriam disparando pro passo que a tela diz ter sido solto.
+    const todos = idsDeGatilho(rfNodes, ehSocial);
+    const fontes = nodeId === todos[0] ? new Set(todos) : new Set([nodeId]);
     const novoEdges = rfEdges.filter(
-      (e) => !(e.source === nodeId && (e.sourceHandle ?? undefined) === handleId),
+      (e) => !(fontes.has(e.source) && (e.sourceHandle ?? undefined) === handleId),
     );
     setRfEdges(novoEdges);
     persist(rfNodes, novoEdges);
@@ -797,9 +805,28 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
       type: "smoothstep",
       markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16 },
     };
+    /*
+     * SAINDO DO CARTÃO DE GATILHOS, TODOS OS GATILHOS SE LIGAM AO PASSO NOVO.
+     *
+     * O cartão desenha os gatilhos do fluxo inteiro, mas o "+" dele é o do PRIMEIRO bloco. Sem
+     * isto, um robô com três gatilhos sairia com um ligado ao primeiro passo e dois sem saída
+     * nenhuma: comentário dispararia e resposta de story não faria nada — e nada na tela diria
+     * por quê, porque os dois não são desenhados.
+     */
+    const irmaos =
+      nodeOrigemId === idsDeGatilho(rfNodes, ehSocial)[0]
+        ? idsDeGatilho(rfNodes, ehSocial).filter((id) => id !== nodeOrigemId)
+        : [];
+    const edgesDosIrmaos: FlowRFEdge[] = irmaos.map((id) => ({
+      id: novoIdAresta(),
+      source: id,
+      target: novoDomain.id,
+      type: "smoothstep",
+      markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16 },
+    }));
     // O prazo entra junto: ver `garantirPrazoDeEspera`.
     const novoNodes = garantirPrazoDeEspera([...rfNodes, novoRF], nodeOrigemId, handleId);
-    const novoEdges = [...rfEdges, novaEdge];
+    const novoEdges = [...rfEdges, novaEdge, ...edgesDosIrmaos];
     setRfNodes(novoNodes);
     setRfEdges(novoEdges);
     setSelectedNodeIds([novoDomain.id]);
@@ -1037,14 +1064,21 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     const porTipo = new Map(antigos.map((n) => [n.data.flowNode.type, n]));
     const usados = new Set<string>();
 
-    const novosGatilhos: FlowRFNode[] = escolhas.map((escolha, i) => {
+    /* O lugar do grupo: onde o primeiro gatilho já estava, ou o canto de sempre num fluxo novo. */
+    const ancora = antigos[0]?.position ?? { x: 80, y: 80 };
+    const novosGatilhos: FlowRFNode[] = escolhas.map((escolha) => {
       const bloco = BLOCOS_DISPONIVEIS.find((b) => b.tipo === escolha.tipo);
       const reaproveitado = porTipo.get(escolha.tipo);
       if (reaproveitado) usados.add(reaproveitado.id);
       const id = reaproveitado?.id ?? novoIdNo();
-      // Empilhados numa coluna à esquerda: todos são começos, e começo que fica no meio do
-      // desenho faz a pessoa procurar por onde o fluxo entra.
-      const position = reaproveitado?.position ?? { x: 80, y: 80 + i * 190 };
+      /*
+       * TODOS NO MESMO LUGAR: só o primeiro é desenhado.
+       *
+       * Eram empilhados numa coluna, um cartão por gatilho — que é justamente o que o cartão
+       * único veio desfazer. Quem está escondido não precisa de lugar próprio, e dar um a ele
+       * reabriria a pilha no dia em que alguém desenhasse os gatilhos de novo.
+       */
+      const position = reaproveitado?.position ?? ancora;
       const domain: DomainFlowNode = {
         id,
         type: escolha.tipo,
@@ -1314,10 +1348,32 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     const [alvo] = selectedNodeIds;
     return new Set(rfEdges.filter((e) => e.source === alvo || e.target === alvo).map((e) => e.id));
   }, [selectedNodeIds, rfEdges]);
-  const nodesParaRenderizar = useMemo(
-    () =>
-      rfNodes.map((n, indice) => ({
+  const nodesParaRenderizar = useMemo(() => {
+    const idsGatilho = idsDeGatilho(rfNodes, ehSocial);
+    /** O bloco que DESENHA o cartão de gatilhos: o primeiro do fluxo. */
+    const host = idsGatilho.length ? idsGatilho[0] : null;
+    /** Os que existem, estão ligados e não são desenhados. */
+    const escondidos = new Set(idsGatilho.slice(1));
+    const doGrupo = idsGatilho.map((id) => {
+      const no = rfNodes.find((x) => x.id === id);
+      const tipo = no?.data.flowNode.type as FlowNodeType;
+      const bloco = BLOCOS_DISPONIVEIS.find((b) => b.tipo === tipo);
+      return { tipo, label: bloco?.label ?? String(tipo) };
+    });
+    const dadosDoPrimeiro = (rfNodes.find((x) => x.id === host)?.data.flowNode.data ?? {}) as {
+      palavras?: unknown;
+    };
+    const palavrasDoGrupo = Array.isArray(dadosDoPrimeiro.palavras)
+      ? dadosDoPrimeiro.palavras.filter((pa): pa is string => typeof pa === "string" && pa.trim().length > 0)
+      : [];
+
+    return rfNodes
+      .map((n, indice) => ({
         ...n,
+        /* O primeiro gatilho de um fluxo social não se desenha como bloco: ele desenha o cartão
+           com todos. O tipo trocado aqui é só de DESENHO — `rfNodes` segue com `gatilho`, que é
+           o que vai pro fluxo salvo. */
+        type: n.id === host ? ("grupo-gatilhos" as const) : n.type,
         className: [
           nodesRelacionados && !nodesRelacionados.has(n.id) ? "flow-node-apagado" : "",
           n.id === nodePiscando ? "flow-node-piscando" : "",
@@ -1326,7 +1382,12 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           .join(" ") || undefined,
         data: {
           ...n.data,
-          problemas: problemasPorNode.get(n.id) ?? [],
+          /* O cartão de gatilhos responde pelos escondidos: a pendência de um gatilho que não é
+             desenhado não teria onde aparecer, e some da tela um aviso que o robô tem. */
+          problemas:
+            n.id === host
+              ? idsGatilho.flatMap((id) => problemasPorNode.get(id) ?? [])
+              : (problemasPorNode.get(n.id) ?? []),
           saidasConectadas: saidasConectadasPorNode.get(n.id),
           caminhosConvergindo: entradasPorNode.get(n.id) ?? 0,
           ordemNarrativa: ordemNarrativaPorNode?.get(n.id),
@@ -1380,8 +1441,34 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
             (n.data.flowNode.type === "mensagem_texto" || n.data.flowNode.type === "mensagem_botoes")
               ? (opcoes: { id: string; rotulo: string; url?: string }[]) => mudarOpcoesDoBloco(n.id, opcoes)
               : undefined,
+          ...(n.id === host
+            ? {
+                gatilhosDoGrupo: doGrupo,
+                palavrasDoGrupo,
+                aoAbrirGatilhos: modoConstrucao
+                  ? () => {
+                      setEtapaDaGaveta("lista");
+                      setEscolherGatilhoAberto(true);
+                    }
+                  : undefined,
+                aoAbrirPalavras: modoConstrucao
+                  ? () => {
+                      setEtapaDaGaveta("palavras");
+                      setEscolherGatilhoAberto(true);
+                    }
+                  : undefined,
+                /* Apagar o cartão apaga o GRUPO: ele representa todos, e deixar um gatilho
+                   invisível vivo depois de "tirar os gatilhos" é um robô que continua disparando
+                   sem nada na tela dizendo por quê. */
+                aoRemover: modoConstrucao
+                  ? () => removerNodes(idsDeGatilho(rfNodes, ehSocial))
+                  : undefined,
+              }
+            : {}),
         },
-      })),
+      }))
+      .filter((n) => !escondidos.has(n.id));
+  },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `duplicarUm` e `removerNodes` são
     // funções recriadas a cada render; incluí-las refaria o mapa de nós em todo render, que é o
     // oposto do que este memo existe pra evitar. Elas só leem estado no momento do clique.
@@ -1506,15 +1593,18 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     fluxo?.configuracoes?.posicaoInicio,
   ]);
 
-  const edgesParaRenderizar = useMemo(
-    () =>
-      rfEdges.map((e) => ({
+  const edgesParaRenderizar = useMemo(() => {
+    /* A ligação de um gatilho escondido levaria ao mesmo lugar que a do cartão: desenhada,
+       seriam três curvas sobrepostas saindo do nada. */
+    const escondidos = new Set(idsDeGatilho(rfNodes, ehSocial).slice(1));
+    return rfEdges
+      .filter((e) => !escondidos.has(e.source))
+      .map((e) => ({
         ...e,
         className: arestasRelacionadas && !arestasRelacionadas.has(e.id) ? "flow-edge-apagada" : undefined,
         zIndex: arestasRelacionadas?.has(e.id) ? 1 : 0,
-      })),
-    [rfEdges, arestasRelacionadas],
-  );
+      }));
+  }, [rfEdges, rfNodes, ehSocial, arestasRelacionadas]);
 
   const edgesComInicio = useMemo(
     () => (inicioDesenhado?.aresta ? [inicioDesenhado.aresta, ...edgesParaRenderizar] : edgesParaRenderizar),
@@ -1828,6 +1918,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
 
           {escolhendoGatilho && ehSocial ? (
             <GatilhosDoSocial
+              etapaInicial={etapaDaGaveta}
               gatilhosAtuais={domainNodesAtuais
                 .filter((n) => n.category === "gatilho")
                 .map((n) => ({ tipo: n.type, data: (n.data ?? {}) as Record<string, unknown> }))}
@@ -1835,6 +1926,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
               onEscolher={(escolhas) => {
                 aplicarGatilhos(escolhas);
                 setEscolherGatilhoAberto(false);
+                setEtapaDaGaveta("lista");
               }}
             />
           ) : null}
@@ -2073,6 +2165,25 @@ const ID_INICIO = "__inicio__";
  * (que já entrega o retângulo no clique), e sim pelo menu de contexto. Só é chamado dentro de um
  * clique: ler o DOM durante o render seria ler um layout que ainda vai mudar.
  */
+/*
+ * TODOS OS GATILHOS NUM CARTÃO SÓ (ver `GrupoGatilhosNode`).
+ *
+ * O motor guarda um bloco por gatilho — cada um tem configuração própria — e o canvas desenhava
+ * um cartão por bloco. Três gatilhos viravam três cartões empilhados, cada um com a sua linha
+ * saindo pro mesmo primeiro passo, como se o fluxo tivesse três começos. Tem um só.
+ *
+ * O PRIMEIRO bloco desenha a lista inteira; os outros continuam salvos e ligados, só não são
+ * desenhados. Nada muda no fluxo gravado: muda o desenho.
+ *
+ * Função de módulo, e não um `useMemo` compartilhado: um objeto criado no render e usado como
+ * dependência de outros memos é exatamente o que o compilador do React recusa ("esta dependência
+ * pode ser modificada depois"). Recalcular uma lista de ids dentro de cada memo é barato.
+ */
+function idsDeGatilho(nodes: FlowRFNode[], ehSocial: boolean): string[] {
+  if (!ehSocial) return [];
+  return nodes.filter((n) => n.data.flowNode.category === "gatilho").map((n) => n.id);
+}
+
 function retanguloDoNo(nodeId: string): DOMRect | undefined {
   if (typeof document === "undefined") return undefined;
   const elemento = document.querySelector(`.react-flow__node[data-id="${CSS.escape(nodeId)}"]`);

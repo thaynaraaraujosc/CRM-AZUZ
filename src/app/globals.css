@@ -11766,6 +11766,151 @@ button.flow-node-warn:hover {
   top: 50%;
 }
 
+/* =============================================================================================
+   O CARTÃO ÚNICO DE GATILHOS (ver `GrupoGatilhosNode`).
+
+   Era um cartão por gatilho: marcar três deixava três cartões empilhados, cada um com a sua linha
+   saindo pro mesmo primeiro passo, como se o fluxo tivesse três começos. Tem um só. O desenho é o
+   da referência: a pergunta no alto, uma linha por assunto (quais gatilhos, quais palavras), o
+   botão de acrescentar, e a saída no rodapé.
+   ============================================================================================= */
+.flow-node.grupo-gatilhos {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 320px;
+  max-width: 340px;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--surface-elevated, #fff);
+}
+
+.gg-cabeca {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.gg-canal {
+  font-size: 12px;
+  color: var(--ss-tinta-fraca, #64748b);
+}
+
+.gg-cabeca strong {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--ink);
+}
+
+.gg-linha {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 10px;
+  background: var(--surface-elevated, #fff);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+
+.gg-linha:hover:not(:disabled) {
+  border-color: var(--ss-azul, #2563eb);
+  background: var(--ss-azul-suave, #eef2ff);
+}
+
+.gg-linha:disabled {
+  cursor: default;
+}
+
+.gg-icone {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  color: var(--ss-tinta-fraca, #64748b);
+}
+
+.gg-textos {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.gg-textos strong {
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--ink);
+}
+
+/* DUAS LINHAS, e reticências na segunda. Uma linha só cortava o primeiro gatilho no meio ("Comentário
+   no Feed …") e o cartão deixava de dizer o que dispara o robô, que é a única coisa que ele existe
+   pra dizer. Duas linhas cabem dois nomes; o resto vai no "+N" ao lado. */
+.gg-textos > span {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--ss-tinta-fraca, #64748b);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.gg-textos > span.gg-vazio {
+  font-style: italic;
+}
+
+.gg-mais {
+  flex: 0 0 auto;
+  padding: 2px 8px;
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ss-tinta-fraca, #64748b);
+}
+
+/* A seta aponta pra DIREITA: ela leva a outro lugar, não abre uma gaveta aqui dentro. */
+.gg-seta {
+  flex: 0 0 auto;
+  color: var(--ss-cinza-400, #94a3b8);
+  transform: rotate(-90deg);
+}
+
+.gg-adicionar {
+  width: 100%;
+  padding: 11px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--ss-azul-suave, #eef2ff);
+  color: var(--ss-azul, #2563eb);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.gg-adicionar:hover {
+  background: var(--ss-azul, #2563eb);
+  color: #fff;
+}
+
+.flow-node.grupo-gatilhos .flow-node-saida-unica {
+  margin-top: 2px;
+}
+
 /* Ponto de chegada invisível do gatilho: existe só pra o fio verde do "Iniciar robô" ter onde
    terminar. Sem bolinha desenhada, porque não há ligação a fazer ali — e sem área de clique, pra
    não parecer que há. */

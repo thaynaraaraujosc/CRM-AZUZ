@@ -116,11 +116,20 @@ function modoNaTela(modo: ModoDePalavra): ModoDePalavra {
 
 export function GatilhosDoSocial({
   gatilhosAtuais,
+  etapaInicial = "lista",
   onEscolher,
   onFechar,
 }: {
   /** Os gatilhos que o fluxo já tem, com a configuração de cada um. */
   gatilhosAtuais?: EscolhaDeGatilho[];
+  /**
+   * Onde a gaveta abre.
+   *
+   * O cartão do canvas tem duas linhas — "Gatilhos ativos" e "Palavras-chave" — e cada uma leva
+   * ao seu assunto. Abrir sempre na lista obrigaria a passar pela escolha de gatilhos pra chegar
+   * numa palavra, que é o caminho que a linha existe pra encurtar.
+   */
+  etapaInicial?: "lista" | "palavras";
   onEscolher: (escolhas: EscolhaDeGatilho[]) => void;
   onFechar: () => void;
 }) {
@@ -135,8 +144,8 @@ export function GatilhosDoSocial({
     });
     return inicial;
   });
-  /** `-1` é a lista de gatilhos; 0 em diante são as etapas de configuração. */
-  const [etapa, setEtapa] = useState(-1);
+  /** `-1` é a lista de gatilhos; 0 em diante são as etapas de configuração (a 0 é a das palavras). */
+  const [etapa, setEtapa] = useState(etapaInicial === "palavras" && gatilhosAtuais?.length ? 0 : -1);
   const [avancadoAberto, setAvancadoAberto] = useState(false);
   const [explicacaoAberta, setExplicacaoAberta] = useState(false);
 
