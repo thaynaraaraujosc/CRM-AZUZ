@@ -301,7 +301,26 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
           position={area === "social" ? Position.Left : Position.Top}
           className="flow-handle"
         />
-      ) : null}
+      ) : (
+        /*
+          O GATILHO NÃO RECEBE LIGAÇÃO — MAS A PASTILHA "INICIAR ROBÔ" PRECISA ENCOSTAR NELE.
+          
+          O fio verde que sai do "Iniciar robô" termina no primeiro bloco, e o primeiro bloco de
+          uma automação do Instagram é sempre um gatilho. Sem nenhum ponto de chegada, o React
+          Flow não tem de onde calcular a ponta da curva e simplesmente NÃO DESENHA a aresta: a
+          pastilha ficava solta ao lado do gatilho, sem nada ligando as duas.
+          
+          O ponto é invisível e `isConnectable={false}`: ele serve de ancoragem pro desenho, não
+          abre uma entrada que o motor não sabe executar. Arrastar uma ligação PARA um gatilho
+          continua impossível.
+        */
+        <Handle
+          type="target"
+          position={area === "social" ? Position.Left : Position.Top}
+          className="flow-handle flow-handle-ancora"
+          isConnectable={false}
+        />
+      )}
 
       {/*
         AS ABAS DE CIMA, só no Social Seller.
@@ -349,8 +368,57 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
         </div>
       ) : null}
 
+      {/*
+        A PENDÊNCIA É ESCRITA NA ABA, e não só num triângulo no cabeçalho.
+        
+        O que havia era um "⚠" de 13px ao lado do nome, com a frase num `title` do sistema
+        operacional: quem não passou o mouse exatamente ali nunca soube que faltava alguma coisa,
+        e num canvas com oito blocos achar QUAL deles está incompleto era abrir um por um. A aba
+        diz quantas são de longe, na cor que já significa "repare nisto", e o balão do hover diz
+        quais são — sem precisar abrir o painel.
+        
+        Ela toma o lugar da aba de categoria de propósito: duas abas lado a lado na mesma quina
+        disputariam o mesmo relance, e "tem pendência" é a informação mais urgente das duas. A
+        borda do cartão continua neutra: contornar de laranja todo bloco recém-criado — que nasce
+        vazio, logo nasce com pendência — foi exatamente o alarme constante que a Thaynara mandou
+        tirar antes.
+      */}
       {area === "social" ? (
-        selected ? (
+        problemas.length ? (
+          <span
+            className={`flow-node-aba pendencia${aoAbrirProblemas ? " clicavel nodrag" : ""}`}
+            role={aoAbrirProblemas ? "button" : undefined}
+            tabIndex={aoAbrirProblemas ? 0 : undefined}
+            onClick={
+              aoAbrirProblemas
+                ? (e) => {
+                    e.stopPropagation();
+                    aoAbrirProblemas();
+                  }
+                : undefined
+            }
+            onKeyDown={
+              aoAbrirProblemas
+                ? (e) => {
+                    if (e.key !== "Enter" && e.key !== " ") return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    aoAbrirProblemas();
+                  }
+                : undefined
+            }
+          >
+            <IconAlerta width={12} height={12} aria-hidden="true" />
+            {problemas.length === 1
+              ? traduzir("1 pendência a resolver")
+              : traduzir("{n} pendências a resolver", { n: String(problemas.length) })}
+            <span className="flow-node-pendencias" role="tooltip">
+              {problemas.map((pr) => (
+                <span key={pr.id}>{traduzir(pr.mensagem)}</span>
+              ))}
+            </span>
+          </span>
+        ) : selected ? (
           <span className="flow-node-aba selecionado">{traduzir("Selecionado")}</span>
         ) : flowNode.category === "gatilho" ? (
           <span className="flow-node-aba">
@@ -413,8 +481,13 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
             {flowNode.desativado ? <span className="flow-node-pausado-badge">{traduzir("Pausado")}</span> : null}
             {/* O "!" é CLICÁVEL: ele abre o painel já na lista de pendências deste bloco. Era só
                 um ícone com `title`, e a frase inteira num balão do sistema operacional — que não
-                quebra linha, some ao mexer o mouse e não leva a lugar nenhum. */}
-            {temErro || temAviso ? (
+                quebra linha, some ao mexer o mouse e não leva a lugar nenhum.
+                
+                No Social Seller ele não aparece mais: quem diz que falta algo é a aba laranja em
+                cima do cartão, que escreve quantas são e lista quais no hover. Os dois juntos
+                seriam o mesmo aviso duas vezes na mesma quina. No funil, que não tem a aba, o
+                triângulo continua sendo o aviso. */}
+            {(temErro || temAviso) && area !== "social" ? (
               aoAbrirProblemas ? (
                 <button
                   type="button"
@@ -857,6 +930,7 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
                       type="button"
                       className="msg-opcao-add"
                       title={traduzir("O que acontece quando clicam aqui?")}
+                      data-mais={opcao.id}
                       onClick={(e) => {
                         e.stopPropagation();
                         onAdicionarApos(opcao.id, e.currentTarget.getBoundingClientRect());
@@ -908,6 +982,7 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
                     type="button"
                     className="msg-seguir nodrag"
                     title={traduzir("O que acontece depois de mandar?")}
+                    data-mais="__default__"
                     onClick={(e) => {
                       e.stopPropagation();
                       onAdicionarApos(undefined, e.currentTarget.getBoundingClientRect());
@@ -1094,6 +1169,7 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
                     type="button"
                     className="flow-node-add-inline"
                     title={traduzir("O que acontece agora?")}
+                    data-mais={s.handleId ?? "__default__"}
                     onClick={(e) => {
                       e.stopPropagation();
                       onAdicionarApos(s.handleId, e.currentTarget.getBoundingClientRect());
@@ -1140,6 +1216,7 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
               type="button"
               className="flow-node-add-btn"
               title={traduzir("O que acontece agora?")}
+              data-mais="__default__"
               onClick={(e) => {
                 e.stopPropagation();
                 onAdicionarApos(undefined, e.currentTarget.getBoundingClientRect());

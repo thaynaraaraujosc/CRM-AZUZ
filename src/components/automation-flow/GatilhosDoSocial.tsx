@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
 import { ComentarioInstagramForm } from "./forms/ComentarioInstagramForm";
 import { StoryRespondidoForm } from "./forms/StoryRespondidoForm";
-import { IconClose, IconExpandir } from "@/components/icons";
+import { IconCheck, IconClose, IconExpandir } from "@/components/icons";
 import type { FlowNodeType } from "@/lib/automation-flow/types";
+import { useFecharMenuDeLinha } from "@/lib/menu-de-linha";
 import { useIdioma } from "@/lib/idioma-context";
 
 /**
@@ -76,38 +77,42 @@ export type EscolhaDeGatilho = { tipo: FlowNodeType; data: Record<string, unknow
 type ModoDePalavra = "qualquer" | "exata" | "contem" | "comeco";
 
 /**
- * COMO A PALAVRA TEM QUE APARECER NA MENSAGEM.
+ * COMO A PALAVRA TEM QUE APARECER NA MENSAGEM — DUAS RESPOSTAS, NÃO QUATRO.
  *
  * A gaveta só deixava escrever as palavras, e a comparação ficava no padrão sem ninguém saber
  * qual era. Com isso, "quero" disparava em "não quero" — e quem montou o robô só descobria pelo
- * lead que recebeu a mensagem errada.
+ * lead que recebeu a mensagem errada. A primeira correção pôs as quatro comparações do motor na
+ * tela, uma embaixo da outra, cada uma com o seu exemplo: oito linhas de texto empilhadas num
+ * passo que tem uma pergunta só. "Essa parte está extremamente bagunçada."
  *
- * A ordem é da mais solta pra mais apertada, e cada uma traz um exemplo em vez de uma definição:
- * "a mensagem contém a palavra" é claro pra quem escreveu a frase e nebuloso pra quem vai
- * escolher entre quatro opções parecidas.
+ * Quatro opções é o motor falando. Quem monta o robô tem DUAS perguntas: a mensagem é só aquela
+ * palavra, ou a palavra está no meio de uma frase? É isso que ficou:
+ *
+ * - `exata`: a mensagem é a palavra, e nada mais.
+ * - `qualquer`: a palavra aparece na frase, como palavra inteira. É o padrão dos blocos e o que
+ *   quase todo robô quer — "quero" pega "eu quero sim!", e não pega "querosene".
+ *
+ * `contem` e `comeco` continuam no motor e continuam valendo nos fluxos que já os têm: o que saiu
+ * foi a escolha na tela, não a comparação. Um fluxo gravado com um deles aparece aqui como "dentro
+ * de uma frase" — que é verdade pros dois — e só muda se a pessoa escolher outra coisa.
  */
 const MODOS_DE_PALAVRA: { valor: ModoDePalavra; label: string; exemplo: string }[] = [
   {
-    valor: "contem",
-    label: "A mensagem contém a palavra",
-    exemplo: "“quero” dispara em “eu quero” e também em “não quero”.",
-  },
-  {
     valor: "qualquer",
-    label: "Qualquer uma das palavras, inteira",
-    exemplo: "“quero” dispara em “eu quero!”, mas não em “querosene”.",
-  },
-  {
-    valor: "comeco",
-    label: "A palavra aparece no começo",
-    exemplo: "“quero” dispara em “quero sim, me manda”, mas não em “eu não quero”.",
+    label: "A palavra pode estar dentro de uma frase",
+    exemplo: "“quero” dispara em “eu quero sim, me manda”.",
   },
   {
     valor: "exata",
-    label: "A mensagem é exatamente a palavra",
+    label: "A mensagem tem que ser exatamente a palavra",
     exemplo: "“quero” dispara só em “quero”, e em mais nada.",
   },
 ];
+
+/** Como um modo gravado aparece na caixa. Só `exata` é apertado; todo o resto é "dentro de uma frase". */
+function modoNaTela(modo: ModoDePalavra): ModoDePalavra {
+  return modo === "exata" ? "exata" : "qualquer";
+}
 
 export function GatilhosDoSocial({
   gatilhosAtuais,
@@ -189,9 +194,14 @@ export function GatilhosDoSocial({
    * precisa da sua cópia porque quem avalia o evento é o bloco, não o fluxo.
    */
   const palavrasAtuais = (dados[marcados[0]]?.palavras as string[] | undefined) ?? [];
-  const modoAtual = (dados[marcados[0]]?.modoPalavra as ModoDePalavra | undefined) ?? "contem";
+  const modoGravado = (dados[marcados[0]]?.modoPalavra as ModoDePalavra | undefined) ?? "qualquer";
+  const modoAtual = modoNaTela(modoGravado);
   const acentoConta = dados[marcados[0]]?.ignorarAcentos === false;
   const [palavraNova, setPalavraNova] = useState("");
+  /** A caixa de escolha do modo está aberta? Fecha clicando fora e no Esc, como todo menu do CRM. */
+  const [modoAberto, setModoAberto] = useState(false);
+  const fecharModo = useCallback(() => setModoAberto(false), []);
+  useFecharMenuDeLinha(modoAberto, fecharModo);
 
   function mudarPalavras(lista: string[]) {
     mudarEmTodos({ palavras: lista });
@@ -305,6 +315,64 @@ export function GatilhosDoSocial({
                 <p className="gat-nota">
                   {traduzir("As palavras-chave valem para todos os gatilhos desta automação.")}
                 </p>
+
+                {/*
+                  * COMO COMPARAR VEM ANTES DE O QUÊ COMPARAR.
+                  *
+                  * A escolha é a REGRA; as palavras são o conteúdo dela. Posta embaixo do campo,
+                  * ela era uma pilha de quatro cartões nascendo depois do que a pessoa acabou de
+                  * digitar — "extremamente bagunçada" foi a palavra. Em cima, numa caixa fechada
+                  * que mostra só a resposta atual, a etapa volta a ter uma pergunta e um campo.
+                  */}
+                <div className="gat-escolha" data-menu-de-linha="">
+                  <button
+                    type="button"
+                    className={`gat-escolha-botao${modoAberto ? " aberto" : ""}`}
+                    aria-haspopup="listbox"
+                    aria-expanded={modoAberto}
+                    onClick={() => setModoAberto((v) => !v)}
+                  >
+                    <span className="gat-escolha-valor">
+                      <span className="gat-escolha-rotulo">{traduzir("Selecionado")}</span>
+                      <strong>
+                        {traduzir(MODOS_DE_PALAVRA.find((m) => m.valor === modoAtual)?.label ?? "")}
+                      </strong>
+                    </span>
+                    <IconExpandir
+                      className={modoAberto ? "girado" : undefined}
+                      width={14}
+                      height={14}
+                      aria-hidden="true"
+                    />
+                  </button>
+
+                  {modoAberto ? (
+                    <div className="gat-escolha-lista" role="listbox" aria-label={traduzir("Como a palavra tem que aparecer")}>
+                      {MODOS_DE_PALAVRA.map((modo) => (
+                        <button
+                          key={modo.valor}
+                          type="button"
+                          role="option"
+                          aria-selected={modoAtual === modo.valor}
+                          className={`gat-escolha-opcao${modoAtual === modo.valor ? " on" : ""}`}
+                          onClick={() => {
+                            mudarEmTodos({ modoPalavra: modo.valor });
+                            setModoAberto(false);
+                          }}
+                        >
+                          <span className="gat-escolha-marca" aria-hidden="true">
+                            {modoAtual === modo.valor ? <IconCheck width={13} height={13} /> : null}
+                          </span>
+                          <span className="gat-escolha-texto">
+                            <strong>{traduzir(modo.label)}</strong>
+                            <span>{traduzir(modo.exemplo)}</span>
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+
                 <div className="gat-palavras">
                   {palavrasAtuais.length === 0 ? (
                     <span className="gat-palavra-vazia">{traduzir("Qualquer palavra-chave")}</span>
@@ -355,66 +423,29 @@ export function GatilhosDoSocial({
                 </p>
 
                 {/*
-                  * AS OPÇÕES FICAM SEMPRE À VISTA.
+                  * MAIÚSCULA NUNCA CONTA, e dizer isso evita a pergunta.
                   *
-                  * Elas só apareciam depois da primeira palavra, com o raciocínio de que sem
-                  * palavra não há o que comparar. Na prática isso escondeu o recurso de quem
-                  * abriu a etapa pra ver o que tinha: a Thaynara abriu, não viu nada de novo e
-                  * concluiu, com razão, que não tinha sido feito. E quem adiciona a primeira
-                  * palavra leva um susto com quatro opções nascendo embaixo do campo.
-                  *
-                  * Aparecer antes não atrapalha: a escolha é a regra do que vier, e ela já vale
-                  * pra palavra que está sendo digitada.
+                  * "A pessoa escreve ASOS, outra escreve asos" — já funciona nos dois casos,
+                  * sempre funcionou, e não havia nada na tela dizendo. Informação não é opção:
+                  * não há botão porque não há escolha a fazer. O acento, esse sim, é escolha, e
+                  * cabe numa linha — não num cartão do tamanho dos outros.
                   */}
-                <div className="gat-modos">
-                    <p className="gat-pergunta gat-pergunta-menor">
-                      {traduzir("Como a palavra tem que aparecer?")}
-                    </p>
-                    {MODOS_DE_PALAVRA.map((modo) => (
-                      <button
-                        key={modo.valor}
-                        type="button"
-                        role="radio"
-                        aria-checked={modoAtual === modo.valor}
-                        className={`gat-item gat-modo${modoAtual === modo.valor ? " on" : ""}`}
-                        onClick={() => mudarEmTodos({ modoPalavra: modo.valor })}
-                      >
-                        <span className="gat-marca" aria-hidden="true" />
-                        <span className="gat-textos">
-                          <strong>{traduzir(modo.label)}</strong>
-                          <span>{traduzir(modo.exemplo)}</span>
-                        </span>
-                      </button>
-                    ))}
-
-                    {/*
-                      * MAIÚSCULA NUNCA CONTA, e dizer isso evita a pergunta.
-                      *
-                      * "A pessoa escreve ASOS, outra escreve asos" — já funciona nos dois casos,
-                      * sempre funcionou, e não havia nada na tela dizendo. Informação não é
-                      * opção: não há botão porque não há escolha a fazer.
-                      */}
-                    <p className="gat-nota">
-                      {traduzir(
-                        "Maiúscula e minúscula não importam: “ASOS”, “Asos” e “asos” disparam igual.",
-                      )}
-                    </p>
-
-                    {/* Acento, esse sim, é escolha — e quase sempre a resposta é "tanto faz". */}
-                    <button
-                      type="button"
-                      role="checkbox"
-                      aria-checked={!acentoConta}
-                      className={`gat-item gat-modo${!acentoConta ? " on" : ""}`}
-                      onClick={() => mudarEmTodos({ ignorarAcentos: acentoConta })}
-                    >
-                      <span className="gat-marca gat-marca-caixa" aria-hidden="true" />
-                      <span className="gat-textos">
-                        <strong>{traduzir("Acento também não importa")}</strong>
-                        <span>{traduzir("“começo” e “comeco” valem como a mesma palavra.")}</span>
-                      </span>
-                    </button>
-                </div>
+                <label className="gat-acento">
+                  <input
+                    type="checkbox"
+                    checked={!acentoConta}
+                    onChange={() => mudarEmTodos({ ignorarAcentos: acentoConta })}
+                  />
+                  <span>
+                    {traduzir("Acento não importa")}
+                    <em>{traduzir("“começo” e “comeco” valem como a mesma palavra.")}</em>
+                  </span>
+                </label>
+                <p className="gat-nota">
+                  {traduzir(
+                    "Maiúscula e minúscula nunca importam: “ASOS”, “Asos” e “asos” disparam igual.",
+                  )}
+                </p>
               </>
             ) : etapaAtual.tipo === "comentario_instagram" ? (
               <ComentarioInstagramForm

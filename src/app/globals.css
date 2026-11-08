@@ -11766,6 +11766,14 @@ button.flow-node-warn:hover {
   top: 50%;
 }
 
+/* Ponto de chegada invisível do gatilho: existe só pra o fio verde do "Iniciar robô" ter onde
+   terminar. Sem bolinha desenhada, porque não há ligação a fazer ali — e sem área de clique, pra
+   não parecer que há. */
+.flow-handle-ancora {
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* Botão "+" logo abaixo de um node com saída única ainda sem próximo passo. "o que acontece
    agora?". Fica na mesma linha do ponto de conexão, meio flutuando embaixo do node (o node tem
    overflow:visible pra isso não cortar). */
@@ -21564,37 +21572,74 @@ table.tbl .name-cell .r {
   color: var(--ink);
 }
 
-/* Os três caminhos pra começar uma automação. */
+/*
+ * OS TRÊS CAMINHOS PRA COMEÇAR UMA AUTOMAÇÃO.
+ *
+ * Eram três retângulos baixos colados no topo da página, com um ícone de 26px cada: a tela toda
+ * ficava vazia embaixo e a escolha — que é a única coisa que se faz aqui — parecia um aviso de
+ * cabeçalho. "Os botões estão lá em cima, na verdade eles deveriam estar centralizados e
+ * maiores."
+ *
+ * `align-content: center` sobre uma altura mínima centraliza a fileira no miolo da página sem
+ * mexer na estrutura da `.content` (que rola, e é compartilhada com o CRM inteiro). O `min()`
+ * é o que impede que, numa tela baixa, a centralização vire rolagem.
+ */
+.content-novo-robo {
+  display: flex;
+  flex-direction: column;
+}
+
 .social-caminhos {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: var(--space-3);
-  max-width: 980px;
-  margin: var(--space-5) auto 0;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  align-content: center;
+  gap: var(--space-4);
+  width: 100%;
+  max-width: 1040px;
+  /* `flex: 1` dentro da `.content-novo-robo` faz a grade ocupar o que sobra da página, e é o
+     `align-content` que centraliza a fileira dentro disso. O mínimo é o que impede que uma tela
+     baixa espreme os cartões em vez de rolar. */
+  flex: 1;
+  min-height: 380px;
+  margin: 0 auto;
+  /* O azul da marca. Esta página fica FORA de `.social-layout`, onde os tokens moram. */
+  --ss-azul: #0028fe;
+  --ss-azul-suave: #e7e8ff;
+}
+
+:root[data-theme="dark"] .social-caminhos {
+  --ss-azul: #657bff;
+  --ss-azul-suave: rgba(101, 123, 255, 0.18);
 }
 
 .social-caminho {
   position: relative;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  text-align: left;
-  padding: var(--space-4);
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  padding: var(--space-5) var(--space-4);
   border: 1px solid var(--border);
-  border-radius: var(--radius-3, 12px);
+  border-radius: 16px;
   background: var(--surface);
   color: inherit;
   font: inherit;
   cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    transform 140ms ease,
+    box-shadow 140ms ease;
 }
 
 .social-caminho:hover {
-  border-color: var(--ink);
+  border-color: var(--ss-azul);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 26px rgb(15 23 42 / 8%);
 }
 
 .social-caminho.destaque {
-  border-color: var(--blue);
+  border-color: var(--ss-azul);
 }
 
 /* Caminho que ainda não existe: visível e apagado, sem cursor de clique. A tela explica a ausência
@@ -21606,27 +21651,31 @@ table.tbl .name-cell .r {
 
 .social-caminho.desativado:hover {
   border-color: var(--border);
+  transform: none;
+  box-shadow: none;
 }
 
 .social-caminho strong {
-  font-size: 15px;
+  font-size: 17px;
+  line-height: 1.3;
   color: var(--ink);
 }
 
 .social-caminho span:not(.social-caminho-selo) {
+  max-width: 280px;
   font-size: 13px;
   color: var(--text-muted);
-  line-height: 1.45;
+  line-height: 1.5;
 }
 
 .social-caminho-selo {
   position: absolute;
-  top: var(--space-2);
-  right: var(--space-2);
+  top: var(--space-3);
+  right: var(--space-3);
   padding: 2px 8px;
   border-radius: 999px;
-  background: var(--blue-soft);
-  color: var(--blue);
+  background: var(--ss-azul-suave);
+  color: var(--ss-azul);
   font-size: 11px;
   font-weight: 700;
 }
@@ -21634,6 +21683,71 @@ table.tbl .name-cell .r {
 .social-caminho-selo.em-breve {
   background: var(--surface-hover);
   color: var(--text-muted);
+}
+
+/*
+ * A PALETA DOS DESENHOS, por regra de CSS.
+ *
+ * Em SVG, `fill="var(--x)"` como ATRIBUTO não resolve: o desenho sairia preto. Como regra, sim —
+ * e assim o tema escuro troca a paleta inteira num lugar só, em vez de em vinte atributos.
+ */
+.social-caminho-arte {
+  width: 112px;
+  height: 88px;
+  margin-bottom: 2px;
+  --arte-papel: #ffffff;
+  --arte-suave: #dfe3ff;
+  --arte-linha: #0028fe;
+  --arte-ouro: var(--acao, #d2a366);
+  --arte-marca: #ffffff;
+}
+
+:root[data-theme="dark"] .social-caminho-arte {
+  --arte-papel: #1b2233;
+  --arte-suave: rgba(139, 151, 255, 0.28);
+  --arte-linha: #8b97ff;
+  --arte-ouro: #d9b185;
+  --arte-marca: #11162a;
+}
+
+.social-caminho-arte .arte-papel {
+  fill: var(--arte-papel);
+}
+
+.social-caminho-arte .arte-suave {
+  fill: var(--arte-suave);
+}
+
+.social-caminho-arte .arte-ouro {
+  fill: var(--arte-ouro);
+}
+
+.social-caminho-arte .arte-traco {
+  stroke: var(--arte-linha);
+  stroke-width: 2.2;
+}
+
+.social-caminho-arte .arte-tracejado {
+  stroke: var(--arte-linha);
+  opacity: 0.55;
+}
+
+.social-caminho-arte .arte-fio {
+  stroke: var(--arte-linha);
+}
+
+.social-caminho-arte .arte-marca {
+  stroke: var(--arte-marca);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .social-caminho {
+    transition: none;
+  }
+
+  .social-caminho:hover {
+    transform: none;
+  }
 }
 
 /* Painel de gatilho: abre pela esquerda, por cima do canvas. Enquanto se escolhe o gatilho, o que
@@ -25628,6 +25742,81 @@ td.trafego-col-crm:first-of-type {
   background: var(--ss-azul);
 }
 
+/*
+ * A ABA LARANJA DA PENDÊNCIA.
+ *
+ * Laranja, e não vermelho: um bloco recém-criado nasce vazio, logo nasce com pendência, e
+ * vermelho em tudo que acabou de nascer é o alarme que a Thaynara já mandou tirar uma vez.
+ * Laranja diz "falta terminar" sem dizer "quebrou".
+ *
+ * O balão do hover é feito aqui, e não com `title`: o balão do sistema operacional não quebra
+ * linha, some ao mexer o mouse e some de vez em telas de toque. Com três pendências, a diferença
+ * é entre uma frase única cheia de " · " e três linhas que se leem.
+ */
+.flow-node-aba.pendencia {
+  background: #e2600f;
+  color: #fff;
+  font-weight: 600;
+}
+
+:root[data-theme="dark"] .flow-node-aba.pendencia {
+  background: #d4660f;
+}
+
+.flow-node-aba.pendencia.clicavel {
+  cursor: pointer;
+}
+
+.flow-node-aba.pendencia.clicavel:hover,
+.flow-node-aba.pendencia.clicavel:focus-visible {
+  background: #c9550c;
+}
+
+.flow-node-pendencias {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 6px);
+  left: 0;
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+  width: max-content;
+  max-width: 290px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #1e293b;
+  color: #f8fafc;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.4;
+  white-space: normal;
+  text-align: left;
+  box-shadow: 0 10px 24px rgb(15 23 42 / 28%);
+  pointer-events: none;
+}
+
+.flow-node-aba.pendencia:hover .flow-node-pendencias,
+.flow-node-aba.pendencia:focus-visible .flow-node-pendencias {
+  display: flex;
+}
+
+/* Um ponto antes de cada pendência: com duas ou três, sem ele vira um parágrafo só. */
+.flow-node-pendencias > span {
+  position: relative;
+  padding-left: 12px;
+}
+
+.flow-node-pendencias > span::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #fb923c;
+}
+
 /* --- Botão pequeno, usado na barra e nos cantos de seção --- */
 .btn.pequeno {
   height: 28px;
@@ -26964,39 +27153,167 @@ td.trafego-col-crm:first-of-type {
 }
 
 /*
- * AS OPÇÕES DE COMPARAÇÃO TRAZEM UM EXEMPLO, e por isso têm duas linhas.
+ * COMO A PALAVRA TEM QUE APARECER: UMA CAIXA FECHADA, não uma pilha de cartões.
  *
- * Aqui a descrição não é supérflua como era na lista de gatilhos: as quatro opções se parecem
- * ("contém a palavra" e "palavra inteira" soam igual), e o que separa uma da outra é justamente o
- * caso em que elas discordam. O exemplo é esse caso.
+ * Eram quatro cartões de duas linhas cada, um embaixo do outro, logo abaixo do campo de digitar:
+ * oito linhas de texto num passo que faz uma pergunta só. A caixa mostra a resposta ATUAL e
+ * guarda as outras até alguém querer trocar — que é o desenho da referência, e o mesmo que
+ * qualquer seletor do sistema faz.
  */
-.gat-modo {
-  align-items: flex-start;
-  min-height: 0;
+.gat-escolha {
+  position: relative;
+  margin: var(--space-3) 0 var(--space-4);
+}
+
+.gat-escolha-botao {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
   padding: 10px 14px;
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 10px;
+  background: var(--surface-elevated, #fff);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 120ms ease, background-color 120ms ease;
 }
 
-.gat-modo .gat-textos {
+.gat-escolha-botao:hover,
+.gat-escolha-botao.aberto {
+  border-color: var(--ss-azul, #2563eb);
+}
+
+.gat-escolha-botao svg {
+  flex: 0 0 auto;
+  color: var(--ss-tinta-fraca, #64748b);
+  transition: transform 140ms ease;
+}
+
+.gat-escolha-botao svg.girado {
+  transform: rotate(180deg);
+}
+
+.gat-escolha-valor {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+/* "Selecionado" é rótulo, não valor: menor e apagado, pra o olho cair na resposta embaixo. */
+.gat-escolha-rotulo {
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--ss-tinta-fraca, #64748b);
+}
+
+.gat-escolha-valor strong {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.gat-escolha-lista {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 10px;
+  background: var(--surface-elevated, #fff);
+  box-shadow: 0 12px 28px rgb(15 23 42 / 12%);
+  animation: gat-entrada 120ms ease-out;
+}
+
+.gat-escolha-opcao {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.gat-escolha-opcao:hover {
+  background: var(--ss-azul-suave, #eef2ff);
+}
+
+.gat-escolha-opcao.on {
+  background: var(--ss-azul-suave, #eef2ff);
+}
+
+/* Coluna fixa do check: sem ela, o texto da opção escolhida fica deslocado das outras. */
+.gat-escolha-marca {
+  flex: 0 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+  color: var(--ss-azul, #2563eb);
+}
+
+.gat-escolha-texto {
+  display: flex;
+  flex-direction: column;
   gap: 2px;
+  min-width: 0;
 }
 
-.gat-modo .gat-textos > span {
+.gat-escolha-texto strong {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+/*
+ * O EXEMPLO FICA, porque as duas opções se parecem escritas e o que as separa é o caso em que
+ * elas discordam. É esse caso que está aqui.
+ */
+.gat-escolha-texto > span {
   font-size: 12px;
   line-height: 1.35;
   color: var(--ss-tinta-fraca, #64748b);
 }
 
-.gat-modo .gat-marca {
-  margin-top: 1px;
+/* O acento é uma escolha de uma linha: caixa de marcar, não cartão do tamanho dos outros. */
+.gat-acento {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: var(--space-3);
+  font-size: 13px;
+  cursor: pointer;
 }
 
-.gat-modos {
+.gat-acento input {
+  margin-top: 2px;
+  accent-color: var(--ss-azul, #2563eb);
+}
+
+.gat-acento span {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: var(--space-4);
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--line-soft);
+  gap: 1px;
+}
+
+.gat-acento em {
+  font-style: normal;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--ss-tinta-fraca, #64748b);
 }
 
 /*
@@ -27040,13 +27357,6 @@ td.trafego-col-crm:first-of-type {
   .gat-lista {
     animation: none;
   }
-}
-
-/* A segunda pergunta da mesma etapa é menor que a primeira: ela não disputa com o título. */
-.gat-pergunta-menor {
-  font-size: 15px;
-  line-height: 1.4;
-  margin-bottom: 2px;
 }
 
 /*

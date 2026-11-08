@@ -47,8 +47,8 @@ import { BarraFerramentasSocial } from "./BarraFerramentasSocial";
 import { ArestaSocial } from "./ArestaSocial";
 import { GatilhosDoSocial } from "./GatilhosDoSocial";
 import { ListaDePassos } from "./ListaDePassos";
-import { posicaoDaLista } from "@/lib/automation-flow/posicao-da-lista";
 import { ProximoPassoJuntoAoInicio } from "./ProximoPassoJuntoAoInicio";
+import { ProximoPassoJuntoAoBloco } from "./ProximoPassoJuntoAoBloco";
 import { PainelProximoPasso } from "./PainelProximoPasso";
 import { nodeTypes } from "./nodes";
 import { IconCheck, IconClose } from "@/components/icons";
@@ -224,27 +224,6 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const abrirPassoSozinho = quadroVazio && !dispensouAbertura && !ehSocial;
   const escolhendoGatilho = escolherGatilhoAberto || abrirGatilhoSozinho;
   const escolhendoProximoPasso = acaoRapida ?? (abrirPassoSozinho ? { nodeId: "", handleId: undefined } : null);
-
-  /*
-   * ONDE A LISTA ABRE: colada no "+" que a chamou.
-   *
-   * Ela abria sempre no canto de cima à direita do canvas. Num fluxo com dez blocos, isso é longe
-   * do que se está fazendo: a pessoa clica num "+" lá embaixo à esquerda e a resposta aparece do
-   * outro lado da tela. Agora ela nasce ao lado do botão, como na referência.
-   *
-   * `position: fixed` com a medida da janela, e não coordenada do canvas: o "+" mora dentro de um
-   * nó que o React Flow move e escala, então converter de volta pra coordenada do canvas seria
-   * refazer a conta de zoom e deslocamento que ele acabou de fazer. O retângulo que o clique
-   * entrega já está em pixels de tela.
-   *
-   * Os limites são aparados: perto da borda direita a caixa vira pra ESQUERDA do botão, e perto
-   * do rodapé ela sobe — senão metade dela fica fora da tela, que é pior que longe.
-   */
-  const posicaoDoMais = (() => {
-    const r = acaoRapida?.ancora;
-    if (!r || typeof window === "undefined") return undefined;
-    return posicaoDaLista(r, { largura: window.innerWidth, altura: window.innerHeight });
-  })();
 
   const fecharMenuContexto = useCallback(() => setMenuContexto(null), []);
   useFecharMenuDeLinha(menuContexto !== null, fecharMenuContexto);
@@ -1905,28 +1884,28 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
 
           {escolhendoProximoPasso ? (
             /*
-             * COM ÂNCORA SEMPRE QUE HOUVER UMA, e o fio junto.
+             * A CAIXA FICA GRUDADA NO QUE A ABRIU, e o fio junto.
              *
-             * Dois caminhos, e a diferença é só de onde sai o fio: de um retângulo que o clique
-             * entregou (o "+" de uma saída, ou o bloco do menu de contexto) ou da pastilha
-             * "Iniciar robô" — que não é clicada, então o retângulo dela é calculado a partir do
-             * canvas, e por isso mora num componente à parte. O "+" da barra de ferramentas cai
-             * no segundo caso de propósito: o bloco que ele cria nasce ao lado da pastilha, então
-             * é de lá que a linha tem que sair.
+             * Dois caminhos, e a diferença é só de onde sai o fio: do "+" de um bloco, ou da
+             * pastilha "Iniciar robô" — que não é clicada. Nos dois a âncora é MEDIDA A CADA
+             * QUADRO, e não guardada no clique: guardada, a caixa ficava onde estava quando o
+             * bloco era arrastado, e o fio virava um arco atravessando meia tela.
              *
-             * O lugar fixo no meio da tela virou último recurso — é o que sobra quando não há nem
-             * retângulo nem pastilha, e era justamente ele que deixava a caixa solta, sem linha
-             * nenhuma ligando a nada.
+             * O "+" da barra de ferramentas cai no caso da pastilha de propósito: o bloco que ele
+             * cria nasce ao lado dela, então é de lá que a linha tem que sair. O lugar fixo no
+             * meio da tela é o último recurso, pro quadro vazio sem pastilha nenhuma.
              */
-            inicioDesenhado && !posicaoDoMais ? (
+            acaoRapida?.nodeId ? (
+              <ProximoPassoJuntoAoBloco
+                {...propsDoProximoPasso}
+                nodeId={acaoRapida.nodeId}
+                handleId={acaoRapida.handleId}
+                ancoraInicial={acaoRapida.ancora}
+              />
+            ) : inicioDesenhado ? (
               <ProximoPassoJuntoAoInicio no={inicioDesenhado.no} {...propsDoProximoPasso} />
             ) : (
-              <PainelProximoPasso
-                {...propsDoProximoPasso}
-                posicao={posicaoDoMais}
-                ancora={acaoRapida?.ancora}
-                juntoAoInicio={!posicaoDoMais}
-              />
+              <PainelProximoPasso {...propsDoProximoPasso} juntoAoInicio />
             )
           ) : null}
 
