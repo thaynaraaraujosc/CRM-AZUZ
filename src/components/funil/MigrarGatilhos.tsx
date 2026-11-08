@@ -32,7 +32,20 @@ function lerDispensa(): boolean {
   }
 }
 
-export function MigrarGatilhos({ aoMigrar }: { aoMigrar: () => void }) {
+export function MigrarGatilhos({
+  aoMigrar,
+  versao = 0,
+}: {
+  aoMigrar: () => void;
+  /**
+   * Sobe quando a grade muda, e é o que faz a prévia ser perguntada de novo.
+   *
+   * A leitura acontecia uma vez, ao montar. Depois de apagar um gatilho, o aviso continuava com o
+   * número lido lá atrás — dizia "2 automações têm o gatilho dentro do fluxo" e oferecia trazer
+   * de volta o que a pessoa acabara de apagar. A tela contradizendo o que mandaram fazer.
+   */
+  versao?: number;
+}) {
   const { t: traduzir } = useIdioma();
   const [previa, setPrevia] = useState<ResultadoDaMigracao | null>(null);
   const [aberto, setAberto] = useState(false);
@@ -54,6 +67,9 @@ export function MigrarGatilhos({ aoMigrar }: { aoMigrar: () => void }) {
 
   useEffect(() => {
     let vivo = true;
+    // A grade mudou: o "pronto, X passaram pra etapa" é de antes e não vale mais. Deixá-lo na
+    // tela depois de apagar um gatilho seria mais uma frase contando outra história.
+    if (versao > 0) setFeito(null);
     fetch("/api/funis/gatilhos/migrar")
       .then((r) => (r.ok ? r.json() : null))
       .then((dados: ResultadoDaMigracao | null) => {
@@ -64,7 +80,7 @@ export function MigrarGatilhos({ aoMigrar }: { aoMigrar: () => void }) {
     return () => {
       vivo = false;
     };
-  }, []);
+  }, [versao]);
 
   async function migrar() {
     setMigrando(true);

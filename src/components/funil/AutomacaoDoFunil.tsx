@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { IconAutomacoes, IconClose, IconRestaurar } from "@/components/icons";
-import { Ajuda } from "@/components/ui";
+import { Ajuda, ModalConfirmacao } from "@/components/ui";
 import { useFecharMenuDeLinha } from "@/lib/menu-de-linha";
 import { SeletorDeHora } from "./SeletorDeHora";
 import { CondicaoForm } from "@/components/automation-flow/forms/CondicaoForm";
@@ -278,6 +278,8 @@ export function AutomacaoDoFunil({
   const router = useRouter();
   const { recarregarFluxos } = useAutomationFlows();
   const [gatilhos, setGatilhos] = useState<GatilhoEtapaVisao[]>([]);
+  /** Sobe a cada gatilho apagado. É o que manda o aviso de migração perguntar de novo. */
+  const [versaoDosGatilhos, setVersaoDosGatilhos] = useState(0);
   const [robos, setRobos] = useState<RoboResumo[]>([]);
   const [canais, setCanais] = useState<CanalConectado[]>([]);
   const [escolhendoAcao, setEscolhendoAcao] = useState<string | null>(null);
@@ -554,12 +556,30 @@ export function AutomacaoDoFunil({
     }
   }
 
+  /**
+   * APAGAR É UMA DECISÃO, e por isso ela é perguntada antes.
+   *
+   * Pedido da Thaynara em 08/11/2026, com a frase que resume o certo: "apagou, apagou, perdeu".
+   * Um gatilho de etapa é o que faz um robô rodar pra todo lead que entra ali — some sem avisar
+   * e ninguém descobre pela tela, só pelo cliente que parou de receber resposta.
+   */
+  const [aApagar, setAApagar] = useState<string | null>(null);
+
   async function remover(id: string) {
+    setAApagar(null);
     // Some da tela na hora; se o servidor recusar, a recarga traz de volta. Esperar a ida e volta
     // pra sumir um item de lista faz a tela parecer travada.
     setGatilhos((atual) => atual.filter((g) => g.id !== id));
     await fetch(`/api/funis/gatilhos/${id}`, { method: "DELETE" }).catch(() => {});
     await recarregar();
+    /*
+     * O AVISO DE MIGRAÇÃO PRECISA SER PERGUNTADO DE NOVO.
+     *
+     * Ele lia a prévia uma vez, ao abrir a tela, e ficava com o número de lá. Depois de apagar,
+     * continuava dizendo "2 automações têm o gatilho dentro do fluxo" e oferecendo trazer de
+     * volta o que acabara de sair — a tela contradizendo o que a pessoa acabou de fazer.
+     */
+    setVersaoDosGatilhos((v) => v + 1);
   }
 
   /**
@@ -673,7 +693,21 @@ export function AutomacaoDoFunil({
         </div>
       ) : null}
 
-      <MigrarGatilhos aoMigrar={() => void recarregar()} />
+      {/* `versao` muda a cada gatilho apagado: é o que faz o aviso perguntar de novo em vez de
+          ficar com o número lido quando a tela abriu. */}
+      <MigrarGatilhos versao={versaoDosGatilhos} aoMigrar={() => void recarregar()} />
+
+      <ModalConfirmacao
+        aberto={aApagar !== null}
+        titulo={traduzir("Apagar este gatilho?")}
+        mensagem={traduzir(
+          "O robô para de rodar nesta etapa na hora. Isso não volta sozinho: pra ele rodar de novo, você adiciona o gatilho outra vez.",
+        )}
+        rotuloConfirmar={traduzir("Apagar")}
+        perigoso
+        onConfirmar={() => void remover(aApagar!)}
+        onCancelar={() => setAApagar(null)}
+      />
 
       <div className="fauto-corpo">
         {!semMoldura ? (
@@ -839,7 +873,7 @@ export function AutomacaoDoFunil({
                           <button
                             type="button"
                             className="fauto-mini"
-                            onClick={() => remover(gatilho.id)}
+                            onClick={() => setAApagar(gatilho.id)}
                             title={traduzir("Remover este gatilho")}
                           >
                             <IconClose width={10} height={10} />

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { dispensarFluxos } from "@/lib/funil/gatilhos-dispensados";
 import type { AcaoDados, GatilhoEtapaVisao, TipoAcaoGatilho } from "@/lib/funil/gatilhos-etapa-tipos";
 
 /** PATCH altera um gatilho de etapa. DELETE remove. Os dois só enxergam o próprio workspace. */
@@ -77,12 +78,26 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
   });
   if (!alvo) return NextResponse.json({ erro: "Gatilho não encontrado" }, { status: 404 });
 
-  const apagados = await prisma.gatilhoEtapa.deleteMany({
-    where: alvo.grupoId
-      ? { workspaceId: sessao.user.workspaceId, grupoId: alvo.grupoId }
-      : { id, workspaceId: sessao.user.workspaceId },
-  });
+  const filtro = alvo.grupoId
+    ? { workspaceId: sessao.user.workspaceId, grupoId: alvo.grupoId }
+    : { id, workspaceId: sessao.user.workspaceId };
+
+  /*
+   * DE QUAIS ROBÔS ERAM ESTES GATILHOS — lido ANTES de apagar, porque depois não há onde olhar.
+   *
+   * É o que faz "apagou, apagou" valer. O bloco de gatilho continua dentro do fluxo (é o que
+   * permite voltar atrás), e sem esta anotação a oferta "trazer pra grade" encontrava o mesmo
+   * fluxo no instante seguinte e propunha recriar o que acabara de ser apagado.
+   */
+  const doGrupo = await prisma.gatilhoEtapa.findMany({ where: filtro, select: { fluxoId: true } });
+
+  const apagados = await prisma.gatilhoEtapa.deleteMany({ where: filtro });
   if (!apagados.count) return NextResponse.json({ erro: "Gatilho não encontrado" }, { status: 404 });
+
+  await dispensarFluxos(
+    sessao.user.workspaceId,
+    doGrupo.map((g) => g.fluxoId).filter((f): f is string => Boolean(f)),
+  );
 
   return NextResponse.json({ ok: true });
 }

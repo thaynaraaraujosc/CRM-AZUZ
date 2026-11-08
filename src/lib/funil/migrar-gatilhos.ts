@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { fluxosDispensados } from "@/lib/funil/gatilhos-dispensados";
 import type { FlowNode, GatilhoEtapaData } from "@/lib/automation-flow/types";
 
 /**
@@ -51,8 +52,18 @@ export async function migrarGatilhosParaEtapa(params: {
 }): Promise<ResultadoDaMigracao> {
   const { workspaceId, apenasSimular } = params;
 
+  /*
+   * O QUE FOI APAGADO DA GRADE NÃO VOLTA A SER OFERECIDO.
+   *
+   * Sem isto, apagar o card da grade devolvia o fluxo pra esta lista no instante seguinte (o
+   * bloco de gatilho continua no canvas, de propósito), e o aviso reaparecia propondo recriar o
+   * que a pessoa acabara de apagar. Um laço em que o produto parece ignorar o que mandaram fazer.
+   * Ver `gatilhos-dispensados.ts`.
+   */
+  const dispensados = await fluxosDispensados(workspaceId);
+
   const fluxos = await prisma.fluxoAutomacao.findMany({
-    where: { workspaceId, arquivada: false },
+    where: { workspaceId, arquivada: false, ...(dispensados.length ? { id: { notIn: dispensados } } : {}) },
     select: { id: true, nome: true, nodes: true, etapaId: true, ativa: true },
   });
 
