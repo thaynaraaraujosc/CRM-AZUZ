@@ -3249,6 +3249,64 @@ table.tbl tbody tr:hover td {
   border-top-color: var(--line);
 }
 
+/*
+ * AS ABAS DE NÚMERO, no topo da lista de conversas.
+ *
+ * Com a vendedora num número e o closer em outro, "ver o chat deste número" é a primeira coisa
+ * que se faz ao abrir a tela — não um filtro de vez em quando. Por isso ficam à vista, logo
+ * abaixo da busca, e não dentro do menu de filtros.
+ *
+ * Rolam na horizontal porque o nome é da empresa: "Vendas — Marina" e "Closer — João" não cabem
+ * lado a lado numa coluna estreita, e quebrar em duas linhas empurraria a lista pra baixo toda vez.
+ */
+.wa-numeros-abas {
+  display: flex;
+  gap: 6px;
+  padding: 0 var(--space-3) var(--space-2);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.wa-numeros-abas::-webkit-scrollbar {
+  display: none;
+}
+
+.wa-numero-aba {
+  flex: 0 0 auto;
+  max-width: 160px;
+  padding: 5px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  font: inherit;
+  font-size: 12px;
+  font-weight: var(--fw-semibold);
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.wa-numero-aba:hover {
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+/* A aba escolhida é a única pintada: numa fileira de três, o que se procura é qual está ligada. */
+.wa-numero-aba.on {
+  border-color: transparent;
+  background: var(--ss-azul-suave, #e7e8ff);
+  color: #0020ad;
+}
+
+:root[data-theme="dark"] .wa-numero-aba.on {
+  background: rgba(101, 123, 255, 0.2);
+  color: #9fb0ff;
+}
+
 /* A linha de progresso da importação do histórico do WhatsApp: a frase à esquerda e o botão à
    direita, quebrando pra baixo quando a coluna aperta em vez de espremer o texto. */
 .wa-historico-linha {
@@ -3385,10 +3443,18 @@ table.tbl tbody tr:hover td {
  * conectar — escondida, a resposta vira uma descoberta de semanas depois, com o funil já
  * embaralhado.
  */
+/*
+ * Os dois campos ficam do TAMANHO DELES, e não da largura da tela.
+ *
+ * Com `1fr` eles esticavam: num painel largo, dois seletores de 650px cada pra escolher um funil
+ * e um nome. Campo gigante não fica mais fácil de usar — fica mais difícil de ler, porque o olho
+ * tem que atravessar meia tela entre o rótulo e a resposta.
+ */
 .wa-numero-destino {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: var(--space-2) var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(190px, 280px));
+  justify-content: start;
+  gap: var(--space-2) var(--space-4);
   padding-top: var(--space-2);
   border-top: 1px dashed var(--line-soft);
 }
@@ -15437,13 +15503,22 @@ button.flow-node-warn:hover {
 .config-nav {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  /*
+   * SEM ESPAÇO ENTRE OS ITENS, e sem recuo lateral.
+   *
+   * O menu virou uma LISTA, não uma pilha de pastilhas: fundo branco liso, itens separados por um
+   * fio, e o azul só onde ele diz alguma coisa — no item aberto e debaixo do mouse. Com espaço
+   * entre eles o fio deixaria de ser separador e viraria mais uma borda; sem recuo, ele atravessa
+   * o cartão de ponta a ponta, que é o que faz a lista ler como lista.
+   */
+  gap: 0;
   position: sticky;
   top: var(--space-3);
-  padding: 8px;
+  padding: 4px 0;
   border-radius: 12px;
   background: var(--surface);
   border: 1px solid var(--line-soft);
+  overflow: hidden;
   /*
    * OS TOKENS DO AZUL PRECISAM VIVER AQUI.
    *
@@ -15461,15 +15536,16 @@ button.flow-node-warn:hover {
   --ss-azul-suave: rgba(101, 123, 255, 0.18);
 }
 
+/* O cartão perdeu o recuo lateral pros fios atravessarem; a busca precisa do dela de volta. */
 .config-nav-busca {
-  width: 100%;
-  margin-bottom: 4px;
+  width: calc(100% - 16px);
+  margin: 4px 8px 8px;
 }
 
 .config-nav-grupo {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0;
 }
 
 /* O rótulo do grupo fica, e fica discreto: com treze itens ele é o que diz onde procurar. No
@@ -15484,16 +15560,71 @@ button.flow-node-warn:hover {
   margin: 0;
 }
 
-/* O que um `<button>` precisa pra parecer o `<a>` do outro menu: sem borda, sem fundo próprio,
-   alinhado à esquerda e com a fonte da página. O resto vem da regra compartilhada. */
+/*
+ * O ITEM: BRANCO PARADO, AZUL DEBAIXO DO MOUSE.
+ *
+ * Ele era uma pastilha com fundo próprio — e com treze delas empilhadas o menu virava uma parede
+ * de retângulos em que o item aberto brigava com os outros doze pra ser notado. Na referência que
+ * a Thaynara trouxe não há retângulo nenhum: fundo liso, um fio entre as linhas, e a cor
+ * aparecendo só onde ela significa alguma coisa.
+ *
+ * Então o azul fica com dois trabalhos, e só dois: ONDE EU ESTOU (o texto do item aberto) e O QUE
+ * EU VOU ABRIR (o fundo debaixo do mouse). Fora disso, branco.
+ */
 .config-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   width: 100%;
+  min-height: 46px;
+  padding: 10px 16px;
   border: 0;
+  border-radius: 0;
   background: transparent;
   box-shadow: none;
   font: inherit;
+  font-size: 15px;
+  color: var(--ink);
   text-align: left;
+  text-decoration: none;
   cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+/* O fio separa DUAS linhas, então mora na segunda em diante: no primeiro item ele seria uma borda
+   solta embaixo do campo de busca. */
+.config-nav-item + .config-nav-item {
+  border-top: 1px solid var(--line-soft);
+}
+
+/* O cabeçalho de grupo quebra a sequência e levava o fio junto, deixando um buraco na lista bem
+   onde ela mais precisa de divisão: entre dois assuntos diferentes. O fio volta no cabeçalho. */
+.config-nav-grupo + .config-nav-grupo .config-nav-grupo-h {
+  border-top: 1px solid var(--line-soft);
+  margin-top: 2px;
+}
+
+/* "Azulzinho" debaixo do mouse: é o aviso de que aquela linha abre alguma coisa. */
+.config-nav-item:hover {
+  background: var(--ss-azul-suave);
+  color: var(--ink);
+}
+
+/*
+ * O ITEM ABERTO É AZUL NO TEXTO, e não um bloco azul.
+ *
+ * É o que a referência faz, e tem um motivo além do gosto: numa lista sem pastilhas, o peso e a
+ * cor da palavra bastam pra achar onde se está, e o fundo fica livre pra responder ao mouse. Com
+ * os dois pintados, passar o mouse em cima do item aberto não mudaria nada.
+ */
+.config-nav-item.active {
+  background: transparent;
+  color: var(--ss-azul);
+  font-weight: var(--fw-bold);
+}
+
+.config-nav-item.active:hover {
+  background: var(--ss-azul-suave);
 }
 
 .config-nav-item svg {
@@ -20616,8 +20747,20 @@ table.tbl .name-cell .r {
   border: 1px solid var(--line-soft);
 }
 
-.social-menu-item,
-.config-nav-item {
+/*
+ * O MENU DO SOCIAL SELLER SEGUIU SEU CAMINHO.
+ *
+ * Ele e o de Configurações dividiram estas regras por um tempo, e com razão: dois menus "iguais"
+ * com tons de azul diferentes de 2% é o tipo de divergência que ninguém vê e todo mundo sente. Em
+ * 08/11/2026 a Thaynara trouxe outra referência PARA O DE CONFIGURAÇÕES — lista branca com fio
+ * entre as linhas, azul só no item aberto e debaixo do mouse — e aí os dois deixaram de querer a
+ * mesma coisa. Dividir regra entre telas que divergiram de propósito é pior do que repetir:
+ * mexer numa passa a mexer na outra sem ninguém pedir.
+ *
+ * O de Configurações vive agora no bloco `.config-nav-item`, lá em cima. Este aqui é só do Social
+ * Seller: cinco itens, pastilha e barra à esquerda.
+ */
+.social-menu-item {
   display: flex;
   align-items: center;
   /* Itens de 48px com gap de 12px, como na referência. */
@@ -20630,32 +20773,27 @@ table.tbl .name-cell .r {
   text-decoration: none;
 }
 
-.social-menu-item:hover,
-.config-nav-item:hover {
+.social-menu-item:hover {
   background: var(--surface-hover);
 }
 
-.social-menu-item,
-.config-nav-item {
+.social-menu-item {
   position: relative;
 }
 
 /* O item ativo ganha uma barra à esquerda, e não só fundo: numa coluna de seis itens com fundos
    parecidos, a barra é o que se acha de relance com o olho correndo de cima a baixo. */
-.social-menu-item.on,
-.config-nav-item.active {
+.social-menu-item.on {
   background: var(--ss-azul-suave, #e7e8ff);
   color: #0020ad;
   font-weight: 600;
 }
 
-:root[data-theme="dark"] .social-menu-item.on,
-:root[data-theme="dark"] .config-nav-item.active {
+:root[data-theme="dark"] .social-menu-item.on {
   color: var(--ss-azul, #657bff);
 }
 
-.social-menu-item.on::before,
-.config-nav-item.active::before {
+.social-menu-item.on::before {
   content: "";
   position: absolute;
   left: 0;
@@ -20666,8 +20804,7 @@ table.tbl .name-cell .r {
   background: #1641ff;
 }
 
-:root[data-theme="dark"] .social-menu-item.on::before,
-:root[data-theme="dark"] .config-nav-item.active::before {
+:root[data-theme="dark"] .social-menu-item.on::before {
   background: var(--ss-azul, #657bff);
 }
 

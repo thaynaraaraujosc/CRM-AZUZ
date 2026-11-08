@@ -158,30 +158,28 @@ export function IntegracoesSecao() {
       <div className="int-group">
         <p className="int-group-h">{traduzir("Prontas pra usar")}</p>
         <div className="card">
-          <LinhaReal
-            icone={<IconWhatsApp width={20} height={20} />}
-            titulo={traduzir("WhatsApp Business (API oficial)")}
-            sub={
-              oficialLigada
-                ? numeroOficial
-                  ? traduzir("Número conectado: {numero}", { numero: numeroOficial })
-                  : traduzir("Meta Business conectado")
-                : traduzir("Conecte via Meta Business Manager")
-            }
-            conectado={oficialLigada}
-            painel={<ConexaoWhatsAppOficial />}
-          />
+          {/*
+            * UMA LINHA SÓ PRO WHATSAPP, e não duas.
+            *
+            * Eram duas: "WhatsApp Business (API oficial)" e "Números de WhatsApp". Depois que a
+            * lista passou a mostrar os DOIS canais, o número oficial aparecia duas vezes na mesma
+            * tela — uma como linha própria, outra dentro da lista — cada uma com seus botões. Quem
+            * olha não tem como saber se são a mesma coisa, e desconectar num lugar não casa com o
+            * que o outro diz.
+            *
+            * A empresa tem NÚMEROS de WhatsApp. Alguns entram pela API oficial, outros por QR
+            * Code, e isso é detalhe de como cada um conectou — não é uma divisão que mereça duas
+            * entradas no menu de integrações.
+            */}
           <LinhaReal
             icone={<IconWhatsApp width={20} height={20} />}
             titulo={traduzir("Números de WhatsApp")}
             sub={
-              qrCodeLigada
-                ? numeroQrCode
-                  ? traduzir("Número conectado: {numero}", { numero: numeroQrCode })
-                  : traduzir("Número conectado")
-                : traduzir("Conecte um ou vários números por QR Code, e diga pra onde vão os leads de cada um")
+              oficialLigada || qrCodeLigada
+                ? traduzir("Conectado. Clique pra ver os números e pra onde vão os leads de cada um")
+                : traduzir("Conecte um ou vários números — por QR Code ou pela API oficial da Meta")
             }
-            conectado={qrCodeLigada}
+            conectado={oficialLigada || qrCodeLigada}
             painel={
               /*
                * A LISTA DE NÚMEROS, e não mais um botão de conectar só.
@@ -194,7 +192,14 @@ export function IntegracoesSecao() {
                * Sem nenhum número ainda, ela mesma mostra o "Conectar outro número", que nesse
                * caso é o primeiro.
                */
-              <NumerosDeWhatsApp aoMudar={carregarNaoOficial} />
+              <>
+                <NumerosDeWhatsApp aoMudar={carregarNaoOficial} />
+                {/* Conectar pela API oficial é outro caminho (cadastro na Meta), e por isso tem
+                    lugar próprio — embaixo da lista, e só enquanto não há uma conectada. Com ela
+                    de pé, o número já está na lista acima e um segundo botão de conectar seria a
+                    duplicação que acabou de sair daqui. */}
+                {!oficialLigada ? <ConexaoWhatsAppOficial /> : null}
+              </>
             }
           />
           <LinhaReal

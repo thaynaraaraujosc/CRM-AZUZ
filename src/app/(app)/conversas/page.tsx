@@ -908,8 +908,7 @@ function ConversasPageInner() {
       .then((dados: { numeros?: NumeroConectado[] }) => setNumerosConectados(dados.numeros ?? []))
       .catch(() => setNumerosConectados([]));
   }, []);
-  const [numeroTopAberto, setNumeroTopAberto] = useState(false);
-  const [numeroTopRect, setNumeroTopRect] = useState<DOMRect | null>(null);
+  /** Qual número está sendo visto. `"Todos"` mistura os dois, que é como a tela sempre foi. */
   const [numeroTopFiltro, setNumeroTopFiltro] = useState("Todos");
 
   // Movido pra antes de `conversasFiltradas` (que chama `conversaUsaWhatsappNaoOficial`, definida
@@ -4018,65 +4017,9 @@ function ConversasPageInner() {
                 </button>
               ))}
             </FloatingDropdown>
-            {/* COM VÁRIOS NÚMEROS, cada atendente precisa ver a caixa dele. Só aparece quando há
-                mais de um conectado: com um só, seria escolher entre "todos" e "o único". */}
-            {variosNumeros ? (
-              <>
-                <button
-                  type="button"
-                  className="fsel"
-                  onClick={(e) => {
-                    setNumeroTopRect(e.currentTarget.getBoundingClientRect());
-                    setNumeroTopAberto((v) => !v);
-                  }}
-                >
-                  {traduzir("Número: {numero}", {
-                    numero:
-                      numeroTopFiltro === "Todos"
-                        ? traduzir("Todos")
-                        : (nomesDosNumeros.get(numeroTopFiltro) ?? numeroTopFiltro),
-                  })} ▾
-                </button>
-                <FloatingDropdown
-                  anchorRect={numeroTopAberto ? numeroTopRect : null}
-                  onClose={() => setNumeroTopAberto(false)}
-                  width={220}
-                >
-                  <button
-                    type="button"
-                    className="dropdown-item"
-                    style={{ width: "100%", textAlign: "left" }}
-                    onClick={() => {
-                      setNumeroTopFiltro("Todos");
-                      setNumeroTopAberto(false);
-                    }}
-                  >
-                    <span className="n">{traduzir("Todos")}</span>
-                  </button>
-                  {numerosConectados
-                    .filter((n) => n.status === "conectado")
-                    .map((n) => (
-                      <button
-                        type="button"
-                        key={n.chave}
-                        className="dropdown-item"
-                        style={{ width: "100%", textAlign: "left" }}
-                        onClick={() => {
-                          setNumeroTopFiltro(n.chave);
-                          setNumeroTopAberto(false);
-                        }}
-                      >
-                        <span className="n">{n.nome}</span>
-                        {/* O telefone embaixo do nome: dois números apelidados parecido se
-                            distinguem por ele, e quem não apelidou nada vê só o número. */}
-                        {n.numeroLegivel && n.numeroLegivel !== n.nome ? (
-                          <span className="hint" style={{ display: "block" }}>{n.numeroLegivel}</span>
-                        ) : null}
-                      </button>
-                    ))}
-                </FloatingDropdown>
-              </>
-            ) : null}
+            {/* O seletor de número SAIU daqui: ele mora no cabeçalho da lista, do lado da busca.
+                Trocar de número é a primeira coisa que se faz ao abrir a tela com dois conectados,
+                e escolha que se usa toda hora não fica num menu suspenso da barra de filtros. */}
             {/* Conectar um número é a primeira coisa que se quer fazer numa tela de atendimento
                 vazia: antes era preciso sair daqui e ir até Configurações → WhatsApp. */}
             <BotoesConectarWhatsApp />
@@ -4136,6 +4079,47 @@ function ConversasPageInner() {
               {filtroAtivo ? `Filtro · ${resumoDoFiltro}` : traduzir("Filtro")}
             </button>
           </div>
+
+          {/*
+            * TROCAR DE NÚMERO FICA AQUI EM CIMA, e não escondido atrás do botão de filtro.
+            *
+            * Com a vendedora num número e o closer em outro, "ver o chat deste número" não é um
+            * filtro que se usa de vez em quando — é a primeira coisa que se faz ao abrir a tela.
+            * Escolha que se usa toda hora mora à vista, no cabeçalho da lista, do lado da busca.
+            *
+            * Só aparece com mais de um número conectado. Com um só, seria uma fileira ocupando
+            * espaço permanente pra escolher entre "todos" e "o único".
+            */}
+          {variosNumeros ? (
+            <div className="wa-numeros-abas" role="tablist" aria-label={traduzir("Número de WhatsApp")}>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={numeroTopFiltro === "Todos"}
+                className={`wa-numero-aba${numeroTopFiltro === "Todos" ? " on" : ""}`}
+                onClick={() => setNumeroTopFiltro("Todos")}
+              >
+                {traduzir("Todos")}
+              </button>
+              {numerosConectados
+                .filter((n) => n.status === "conectado" && n.chave)
+                .map((n) => (
+                  <button
+                    type="button"
+                    role="tab"
+                    key={n.chave}
+                    aria-selected={numeroTopFiltro === n.chave}
+                    className={`wa-numero-aba${numeroTopFiltro === n.chave ? " on" : ""}`}
+                    // O telefone no `title`: o nome cabe na aba, o número nem sempre — e é o
+                    // número que tira a dúvida quando dois apelidos se parecem.
+                    title={n.numeroLegivel || n.nome}
+                    onClick={() => setNumeroTopFiltro(n.chave)}
+                  >
+                    {n.nome}
+                  </button>
+                ))}
+            </div>
+          ) : null}
           <FloatingDropdown
             anchorRect={filtroAberto ? filtroRect : null}
             onClose={() => setFiltroAberto(false)}
