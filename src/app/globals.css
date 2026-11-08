@@ -15511,12 +15511,23 @@ button.flow-node-warn:hover {
    * entre eles o fio deixaria de ser separador e viraria mais uma borda; sem recuo, ele atravessa
    * o cartão de ponta a ponta, que é o que faz a lista ler como lista.
    */
-  gap: 0;
+  gap: 2px;
   position: sticky;
   top: var(--space-3);
-  padding: 4px 0;
+  padding: 8px;
   border-radius: 12px;
-  background: var(--surface);
+  /*
+   * BRANCO DE VERDADE, e declarado aqui.
+   *
+   * `--surface` é `#f6f7f9` no tema claro, e o fundo da página é `#eef1f5`: um degrau de
+   * diferença. O menu ficava cinza sobre cinza, e a Thaynara resumiu o efeito — "não dá pra
+   * identificar o que é botão e o que é nada". Num menu, isso não é questão de gosto: é a
+   * diferença entre uma lista de coisas clicáveis e um bloco de texto.
+   *
+   * Declarar o branco na regra, em vez de mexer no token, é o que o menu lateral do app já faz
+   * (ver o comentário de `--navy-raised`): outras 79 regras contam com aquele token sendo cinza.
+   */
+  background: #ffffff;
   border: 1px solid var(--line-soft);
   overflow: hidden;
   /*
@@ -15534,12 +15545,13 @@ button.flow-node-warn:hover {
 :root[data-theme="dark"] .config-nav {
   --ss-azul: #657bff;
   --ss-azul-suave: rgba(101, 123, 255, 0.18);
+  /* No escuro o branco seria o erro oposto. Aqui a superfície do tema já contrasta com o fundo. */
+  background: var(--surface);
 }
 
-/* O cartão perdeu o recuo lateral pros fios atravessarem; a busca precisa do dela de volta. */
 .config-nav-busca {
-  width: calc(100% - 16px);
-  margin: 4px 8px 8px;
+  width: 100%;
+  margin: 0 0 var(--space-2);
 }
 
 .config-nav-grupo {
@@ -15576,10 +15588,12 @@ button.flow-node-warn:hover {
   align-items: center;
   gap: 12px;
   width: 100%;
-  min-height: 46px;
-  padding: 10px 16px;
+  min-height: 42px;
+  padding: 9px 12px;
   border: 0;
-  border-radius: 0;
+  /* Pastilha arredondada, como na referência: ela é o que diz "isto é um botão" num cartão
+     branco sem fio nenhum separando as linhas. */
+  border-radius: 10px;
   background: transparent;
   box-shadow: none;
   font: inherit;
@@ -15591,20 +15605,18 @@ button.flow-node-warn:hover {
   transition: background var(--transition-fast), color var(--transition-fast);
 }
 
-/* O fio separa DUAS linhas, então mora na segunda em diante: no primeiro item ele seria uma borda
-   solta embaixo do campo de busca. */
-.config-nav-item + .config-nav-item {
-  border-top: 1px solid var(--line-soft);
-}
-
-/* O cabeçalho de grupo quebra a sequência e levava o fio junto, deixando um buraco na lista bem
-   onde ela mais precisa de divisão: entre dois assuntos diferentes. O fio volta no cabeçalho. */
+/*
+ * OS FIOS SAÍRAM, e o que separa agora é o branco.
+ *
+ * Eles vieram de uma referência em que o cartão era cinza — ali a linha era o que dava forma à
+ * lista. Com o cartão branco de verdade, o fio vira traçado sobrando: a referência nova não tem
+ * nenhum, e o que marca a linha é o azul do item aberto e o azul debaixo do mouse.
+ */
 .config-nav-grupo + .config-nav-grupo .config-nav-grupo-h {
-  border-top: 1px solid var(--line-soft);
-  margin-top: 2px;
+  margin-top: var(--space-2);
 }
 
-/* "Azulzinho" debaixo do mouse: é o aviso de que aquela linha abre alguma coisa. */
+/* "Azulzinho" debaixo do mouse: num cartão branco sem fios, é ele que diz onde está o botão. */
 .config-nav-item:hover {
   background: var(--ss-azul-suave);
   color: var(--ink);
@@ -15617,14 +15629,11 @@ button.flow-node-warn:hover {
  * cor da palavra bastam pra achar onde se está, e o fundo fica livre pra responder ao mouse. Com
  * os dois pintados, passar o mouse em cima do item aberto não mudaria nada.
  */
-.config-nav-item.active {
-  background: transparent;
-  color: var(--ss-azul);
-  font-weight: var(--fw-bold);
-}
-
+.config-nav-item.active,
 .config-nav-item.active:hover {
   background: var(--ss-azul-suave);
+  color: var(--ss-azul);
+  font-weight: var(--fw-semibold);
 }
 
 .config-nav-item svg {
@@ -27011,13 +27020,24 @@ td.trafego-col-crm:first-of-type {
   }
 }
 
-.gat-etapa {
+/*
+ * A LISTA DE GATILHOS TAMBÉM ENTRA ASSIM.
+ *
+ * A animação só estava na etapa, e a troca que mais se vê é a primeira — escolher o gatilho e
+ * apertar "Continuar". Saindo da lista pra etapa, só um dos dois lados desmaiava, e o efeito
+ * era de meia transição: pior do que nenhuma.
+ */
+.gat-etapa,
+.gat-corpo > .gat-pergunta:first-child,
+.gat-lista {
   animation: gat-entrada 140ms ease-out;
 }
 
 /* Quem pediu menos movimento continua com o desmaio, sem o deslocamento. */
 @media (prefers-reduced-motion: reduce) {
-  .gat-etapa {
+  .gat-etapa,
+  .gat-corpo > .gat-pergunta:first-child,
+  .gat-lista {
     animation: none;
   }
 }

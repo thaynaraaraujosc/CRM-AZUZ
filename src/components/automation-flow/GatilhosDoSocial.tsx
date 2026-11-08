@@ -355,14 +355,18 @@ export function GatilhosDoSocial({
                 </p>
 
                 {/*
-                  * COMO A PALAVRA TEM QUE APARECER — só faz sentido tendo palavra.
+                  * AS OPÇÕES FICAM SEMPRE À VISTA.
                   *
-                  * Sem nenhuma, a automação vale pra qualquer texto e não há o que comparar;
-                  * mostrar quatro opções de comparação ali seria oferecer uma escolha que não
-                  * muda nada.
+                  * Elas só apareciam depois da primeira palavra, com o raciocínio de que sem
+                  * palavra não há o que comparar. Na prática isso escondeu o recurso de quem
+                  * abriu a etapa pra ver o que tinha: a Thaynara abriu, não viu nada de novo e
+                  * concluiu, com razão, que não tinha sido feito. E quem adiciona a primeira
+                  * palavra leva um susto com quatro opções nascendo embaixo do campo.
+                  *
+                  * Aparecer antes não atrapalha: a escolha é a regra do que vier, e ela já vale
+                  * pra palavra que está sendo digitada.
                   */}
-                {palavrasAtuais.length ? (
-                  <div className="gat-modos">
+                <div className="gat-modos">
                     <p className="gat-pergunta gat-pergunta-menor">
                       {traduzir("Como a palavra tem que aparecer?")}
                     </p>
@@ -410,8 +414,7 @@ export function GatilhosDoSocial({
                         <span>{traduzir("“começo” e “comeco” valem como a mesma palavra.")}</span>
                       </span>
                     </button>
-                  </div>
-                ) : null}
+                </div>
               </>
             ) : etapaAtual.tipo === "comentario_instagram" ? (
               <ComentarioInstagramForm
