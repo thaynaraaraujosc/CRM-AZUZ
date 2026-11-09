@@ -13,7 +13,7 @@ import { classificarErroMeta, listarPublicacoesInstagram } from "@/lib/integraco
  */
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
 
@@ -25,7 +25,16 @@ export async function GET() {
   }
 
   try {
-    const publicacoes = await listarPublicacoesInstagram(decriptar(integracao.accessTokenCriptografado));
+    /*
+     * QUANTAS PUBLICAÇÕES. O padrão continua 25, que é o que a grade da tela mostra.
+     *
+     * A gaveta de gatilhos pede 100 por causa do "Meu próximo post": ele guarda os ids que já
+     * existem pra saber depois o que é novo, e quanto mais completa essa foto, menor a chance de
+     * um comentário numa publicação antiga ser tratado como se fosse no post seguinte.
+     */
+    const pedido = Number(new URL(request.url).searchParams.get("limite"));
+    const limite = Number.isFinite(pedido) ? Math.min(Math.max(pedido, 1), 100) : 25;
+    const publicacoes = await listarPublicacoesInstagram(decriptar(integracao.accessTokenCriptografado), limite);
     return NextResponse.json({ publicacoes }, { headers: { "cache-control": "no-store" } });
   } catch (erro) {
     const bruto = erro instanceof Error ? erro.message : "Falha ao buscar publicações.";

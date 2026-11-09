@@ -1,10 +1,9 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
-import { ComentarioInstagramForm } from "./forms/ComentarioInstagramForm";
-import { StoryRespondidoForm } from "./forms/StoryRespondidoForm";
+import { EscolhaDeMidia, type DadosDeEscopo, type ItemDeMidia } from "./forms/EscolhaDeMidia";
 import { IconCheck, IconClose, IconExpandir } from "@/components/icons";
 import type { FlowNodeType } from "@/lib/automation-flow/types";
 import { useFecharMenuDeLinha } from "@/lib/menu-de-linha";
@@ -63,8 +62,11 @@ const COMO_FUNCIONA: Partial<Record<FlowNodeType, string>> = {
  */
 const ALCANCE: Partial<Record<FlowNodeType, { titulo: string; pergunta: string }>> = {
   comentario_instagram: {
-    titulo: "Comentário no Feed ou Reels",
-    pergunta: "Em quais publicações a automação deve funcionar?",
+    // As palavras são as da referência, e isso importa mais do que parece: a tela anterior chama
+    // o gatilho de "Comentário no Feed ou Reels" e a pergunta falava em "publicações". Duas
+    // palavras pra mesma coisa, em telas seguidas, fazem a pessoa procurar a diferença.
+    titulo: "Comentário em Posts ou Reels",
+    pergunta: "Em quais Posts ou Reels a automação deve funcionar?",
   },
   instagram_story_respondido: {
     titulo: "Resposta nos stories",
@@ -77,41 +79,41 @@ export type EscolhaDeGatilho = { tipo: FlowNodeType; data: Record<string, unknow
 type ModoDePalavra = "qualquer" | "exata" | "contem" | "comeco";
 
 /**
- * COMO A PALAVRA TEM QUE APARECER NA MENSAGEM — DUAS RESPOSTAS, NÃO QUATRO.
+ * COMO A PALAVRA TEM QUE APARECER NA MENSAGEM.
  *
  * A gaveta só deixava escrever as palavras, e a comparação ficava no padrão sem ninguém saber
  * qual era. Com isso, "quero" disparava em "não quero" — e quem montou o robô só descobria pelo
- * lead que recebeu a mensagem errada. A primeira correção pôs as quatro comparações do motor na
- * tela, uma embaixo da outra, cada uma com o seu exemplo: oito linhas de texto empilhadas num
- * passo que tem uma pergunta só. "Essa parte está extremamente bagunçada."
+ * lead que recebeu a mensagem errada.
  *
- * Quatro opções é o motor falando. Quem monta o robô tem DUAS perguntas: a mensagem é só aquela
- * palavra, ou a palavra está no meio de uma frase? É isso que ficou:
+ * SÃO AS QUATRO DA REFERÊNCIA, com as palavras dela. A primeira versão disto mostrou quatro
+ * cartões empilhados com um exemplo cada; a segunda reduziu pra duas opções. "Pronto, eu quero
+ * exatamente como está aí": uma caixa fechada, quatro linhas, o texto da referência.
  *
- * - `exata`: a mensagem é a palavra, e nada mais.
- * - `qualquer`: a palavra aparece na frase, como palavra inteira. É o padrão dos blocos e o que
- *   quase todo robô quer — "quero" pega "eu quero sim!", e não pega "querosene".
- *
- * `contem` e `comeco` continuam no motor e continuam valendo nos fluxos que já os têm: o que saiu
- * foi a escolha na tela, não a comparação. Um fluxo gravado com um deles aparece aqui como "dentro
- * de uma frase" — que é verdade pros dois — e só muda se a pessoa escolher outra coisa.
+ * A PRIMEIRA NÃO É UM MODO DE COMPARAÇÃO, é a ausência dela. "Qualquer palavra-chave" quer dizer
+ * que nenhuma palavra filtra nada — qualquer comentário, resposta ou mensagem dispara. No motor
+ * isso é a lista de palavras VAZIA, que é como ele sempre tratou o campo em branco; por isso
+ * escolher essa opção limpa as palavras e esconde o campo de digitar, em vez de guardar um modo
+ * que não existe.
  */
-const MODOS_DE_PALAVRA: { valor: ModoDePalavra; label: string; exemplo: string }[] = [
-  {
-    valor: "qualquer",
-    label: "A palavra pode estar dentro de uma frase",
-    exemplo: "“quero” dispara em “eu quero sim, me manda”.",
-  },
-  {
-    valor: "exata",
-    label: "A mensagem tem que ser exatamente a palavra",
-    exemplo: "“quero” dispara só em “quero”, e em mais nada.",
-  },
+const MODOS_DE_PALAVRA: { valor: ModoDePalavra; label: string }[] = [
+  { valor: "exata", label: "Palavra ou frase exata" },
+  { valor: "contem", label: "A mensagem contém a palavra" },
+  { valor: "comeco", label: "A palavra aparece no começo" },
 ];
 
-/** Como um modo gravado aparece na caixa. Só `exata` é apertado; todo o resto é "dentro de uma frase". */
+/** O rótulo da opção "sem filtro nenhum". Não é um `modoPalavra`: é a lista de palavras vazia. */
+const SEM_PALAVRA = "Qualquer palavra-chave";
+
+/**
+ * O modo gravado, como a caixa o escreve.
+ *
+ * `qualquer` (palavra inteira) é o padrão dos blocos e não está entre as quatro da referência: a
+ * diferença dele pro `contem` aparece só em caso como "quero" dentro de "querosene". Ele aparece
+ * como "A mensagem contém a palavra", que é a opção vizinha, e continua valendo como está gravado
+ * até alguém escolher outra coisa — escolher grava o modo exato da opção escolhida.
+ */
 function modoNaTela(modo: ModoDePalavra): ModoDePalavra {
-  return modo === "exata" ? "exata" : "qualquer";
+  return modo === "exata" || modo === "comeco" ? modo : "contem";
 }
 
 export function GatilhosDoSocial({
@@ -147,6 +149,19 @@ export function GatilhosDoSocial({
   /** `-1` é a lista de gatilhos; 0 em diante são as etapas de configuração (a 0 é a das palavras). */
   const [etapa, setEtapa] = useState(etapaInicial === "palavras" && gatilhosAtuais?.length ? 0 : -1);
   const [avancadoAberto, setAvancadoAberto] = useState(false);
+  /*
+   * AS MÍDIAS DA CONTA, buscadas UMA VEZ pela gaveta.
+   *
+   * Antes cada formulário de gatilho buscava a sua: marcar comentário e resposta de story fazia
+   * duas chamadas à Meta ao abrir a gaveta, e trocar de etapa ida e volta refazia as duas. Aqui,
+   * uma vez, e as etapas leem da mesma lista.
+   *
+   * `null` é "ainda não chegou"; `[]` é "chegou e está vazio" — a tela diz coisas diferentes nos
+   * dois casos.
+   */
+  const [publicacoes, setPublicacoes] = useState<ItemDeMidia[] | null>(null);
+  const [stories, setStories] = useState<ItemDeMidia[] | null>(null);
+  const [erroDasMidias, setErroDasMidias] = useState<string | null>(null);
   const [explicacaoAberta, setExplicacaoAberta] = useState(false);
 
   const doInstagram = BLOCOS_DISPONIVEIS.filter((b) => b.categoria === "gatilho" && b.grupo === "instagram");
@@ -205,6 +220,8 @@ export function GatilhosDoSocial({
   const palavrasAtuais = (dados[marcados[0]]?.palavras as string[] | undefined) ?? [];
   const modoGravado = (dados[marcados[0]]?.modoPalavra as ModoDePalavra | undefined) ?? "qualquer";
   const modoAtual = modoNaTela(modoGravado);
+  /** Nenhuma palavra configurada: é a opção "Qualquer palavra-chave" da referência. */
+  const semPalavras = palavrasAtuais.length === 0;
   const acentoConta = dados[marcados[0]]?.ignorarAcentos === false;
   const [palavraNova, setPalavraNova] = useState("");
   /** A caixa de escolha do modo está aberta? Fecha clicando fora e no Esc, como todo menu do CRM. */
@@ -253,6 +270,48 @@ export function GatilhosDoSocial({
       </button>
     );
   }
+
+  /*
+   * A BUSCA ACONTECE NA PRIMEIRA ETAPA DE ALCANCE, não ao abrir a gaveta.
+   *
+   * Quem marca só "mensagem recebida" nunca vê publicação nem story: buscar as duas listas na
+   * abertura seria duas chamadas à Meta por automação criada, pra uma tela que não vai aparecer.
+   * O `limite=100` existe pro "Meu próximo post": ele guarda os ids que já existem, e quanto mais
+   * completa essa foto, menor a chance de um post antigo ser confundido com um novo.
+   */
+  const precisaDeMidias = marcados.some((t) => ALCANCE[t]);
+  useEffect(() => {
+    if (!precisaDeMidias || publicacoes !== null || stories !== null) return;
+    let cancelado = false;
+    Promise.all([
+      fetch("/api/integracoes/instagram/publicacoes?limite=100")
+        .then(async (r) => {
+          const corpo = (await r.json()) as { publicacoes?: ItemDeMidia[]; erro?: string };
+          if (!r.ok) throw new Error(corpo.erro ?? "Falha ao buscar publicações.");
+          return corpo.publicacoes ?? [];
+        }),
+      fetch("/api/integracoes/instagram/stories")
+        .then(async (r) => {
+          const corpo = (await r.json()) as { stories?: ItemDeMidia[]; erro?: string };
+          if (!r.ok) throw new Error(corpo.erro ?? "Falha ao buscar os stories.");
+          return corpo.stories ?? [];
+        }),
+    ])
+      .then(([pubs, sts]) => {
+        if (cancelado) return;
+        setPublicacoes(pubs);
+        setStories(sts);
+      })
+      .catch((erro: Error) => {
+        if (cancelado) return;
+        setErroDasMidias(erro.message);
+        setPublicacoes([]);
+        setStories([]);
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, [precisaDeMidias, publicacoes, stories]);
 
   const etapaAtual = etapa >= 0 ? etapas[etapa] : null;
 
@@ -328,10 +387,9 @@ export function GatilhosDoSocial({
                 {/*
                   * COMO COMPARAR VEM ANTES DE O QUÊ COMPARAR.
                   *
-                  * A escolha é a REGRA; as palavras são o conteúdo dela. Posta embaixo do campo,
-                  * ela era uma pilha de quatro cartões nascendo depois do que a pessoa acabou de
-                  * digitar — "extremamente bagunçada" foi a palavra. Em cima, numa caixa fechada
-                  * que mostra só a resposta atual, a etapa volta a ter uma pergunta e um campo.
+                  * A escolha é a REGRA; as palavras são o conteúdo dela. É também o que decide se
+                  * existe conteúdo: em "Qualquer palavra-chave" não há palavra pra digitar, e o
+                  * campo some em vez de ficar ali pedindo algo que não vale.
                   */}
                 <div className="gat-escolha" data-menu-de-linha="">
                   <button
@@ -344,7 +402,9 @@ export function GatilhosDoSocial({
                     <span className="gat-escolha-valor">
                       <span className="gat-escolha-rotulo">{traduzir("Selecionado")}</span>
                       <strong>
-                        {traduzir(MODOS_DE_PALAVRA.find((m) => m.valor === modoAtual)?.label ?? "")}
+                        {semPalavras
+                          ? traduzir(SEM_PALAVRA)
+                          : traduzir(MODOS_DE_PALAVRA.find((m) => m.valor === modoAtual)?.label ?? "")}
                       </strong>
                     </span>
                     <IconExpandir
@@ -356,115 +416,174 @@ export function GatilhosDoSocial({
                   </button>
 
                   {modoAberto ? (
-                    <div className="gat-escolha-lista" role="listbox" aria-label={traduzir("Como a palavra tem que aparecer")}>
-                      {MODOS_DE_PALAVRA.map((modo) => (
-                        <button
-                          key={modo.valor}
-                          type="button"
-                          role="option"
-                          aria-selected={modoAtual === modo.valor}
-                          className={`gat-escolha-opcao${modoAtual === modo.valor ? " on" : ""}`}
-                          onClick={() => {
-                            mudarEmTodos({ modoPalavra: modo.valor });
-                            setModoAberto(false);
-                          }}
-                        >
-                          <span className="gat-escolha-marca" aria-hidden="true">
-                            {modoAtual === modo.valor ? <IconCheck width={13} height={13} /> : null}
-                          </span>
-                          <span className="gat-escolha-texto">
-                            <strong>{traduzir(modo.label)}</strong>
-                            <span>{traduzir(modo.exemplo)}</span>
-                          </span>
-                        </button>
-                      ))}
+                    <div
+                      className="gat-escolha-lista"
+                      role="listbox"
+                      aria-label={traduzir("Como a palavra tem que aparecer")}
+                    >
+                      <button
+                        type="button"
+                        role="option"
+                        aria-selected={semPalavras}
+                        className={`gat-escolha-opcao${semPalavras ? " on" : ""}`}
+                        onClick={() => {
+                          // Sem filtro: as palavras saem, porque é a lista vazia que o motor lê
+                          // como "qualquer mensagem serve".
+                          mudarEmTodos({ palavras: [] });
+                          setPalavraNova("");
+                          setModoAberto(false);
+                        }}
+                      >
+                        <span className="gat-escolha-marca" aria-hidden="true">
+                          {semPalavras ? <IconCheck width={13} height={13} /> : null}
+                        </span>
+                        <span className="gat-escolha-texto">
+                          <strong>{traduzir(SEM_PALAVRA)}</strong>
+                        </span>
+                      </button>
+                      {MODOS_DE_PALAVRA.map((modo) => {
+                        const escolhida = !semPalavras && modoAtual === modo.valor;
+                        return (
+                          <button
+                            key={modo.valor}
+                            type="button"
+                            role="option"
+                            aria-selected={escolhida}
+                            className={`gat-escolha-opcao${escolhida ? " on" : ""}`}
+                            onClick={() => {
+                              mudarEmTodos({ modoPalavra: modo.valor });
+                              setModoAberto(false);
+                            }}
+                          >
+                            <span className="gat-escolha-marca" aria-hidden="true">
+                              {escolhida ? <IconCheck width={13} height={13} /> : null}
+                            </span>
+                            <span className="gat-escolha-texto">
+                              <strong>{traduzir(modo.label)}</strong>
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
                   ) : null}
                 </div>
 
-                <div className="gat-palavras">
-                  {palavrasAtuais.length === 0 ? (
-                    <span className="gat-palavra-vazia">{traduzir("Qualquer palavra-chave")}</span>
-                  ) : (
-                    palavrasAtuais.map((p) => (
-                      <span key={p} className="gat-palavra">
-                        {p}
-                        <button
-                          type="button"
-                          aria-label={traduzir("Tirar a palavra {p}", { p })}
-                          onClick={() => mudarPalavras(palavrasAtuais.filter((x) => x !== p))}
-                        >
-                          <IconClose width={10} height={10} />
-                        </button>
-                      </span>
-                    ))
-                  )}
-                </div>
-                <div className="gat-palavra-nova">
-                  <input
-                    className="input"
-                    value={palavraNova}
-                    placeholder={traduzir("Ex.: quero, preço, guia")}
-                    onChange={(e) => setPalavraNova(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key !== "Enter") return;
-                      e.preventDefault();
-                      const nova = palavraNova.trim();
-                      if (nova && !palavrasAtuais.includes(nova)) mudarPalavras([...palavrasAtuais, nova]);
-                      setPalavraNova("");
-                    }}
-                  />
-                  <button
-                    type="button"
-                    className="btn ghost pequeno"
-                    disabled={!palavraNova.trim()}
-                    onClick={() => {
-                      const nova = palavraNova.trim();
-                      if (nova && !palavrasAtuais.includes(nova)) mudarPalavras([...palavrasAtuais, nova]);
-                      setPalavraNova("");
-                    }}
-                  >
-                    + {traduzir("Adicionar")}
-                  </button>
-                </div>
-                <p className="gat-nota">
-                  {traduzir("Sem nenhuma palavra, a automação vale para qualquer texto.")}
-                </p>
+                {/* Sem filtro não há o que digitar: o campo de palavras só existe nas outras três. */}
+                {!semPalavras ? (
+                  <>
+                    <div className="gat-palavras">
+                      {palavrasAtuais.map((p) => (
+                        <span key={p} className="gat-palavra">
+                          {p}
+                          <button
+                            type="button"
+                            aria-label={traduzir("Tirar a palavra {p}", { p })}
+                            onClick={() => mudarPalavras(palavrasAtuais.filter((x) => x !== p))}
+                          >
+                            <IconClose width={10} height={10} />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                    <div className="gat-palavra-nova">
+                      <input
+                        className="input"
+                        value={palavraNova}
+                        placeholder={traduzir("Ex.: quero, preço, guia")}
+                        onChange={(e) => setPalavraNova(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key !== "Enter") return;
+                          e.preventDefault();
+                          const nova = palavraNova.trim();
+                          if (nova && !palavrasAtuais.includes(nova)) mudarPalavras([...palavrasAtuais, nova]);
+                          setPalavraNova("");
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="btn ghost pequeno"
+                        disabled={!palavraNova.trim()}
+                        onClick={() => {
+                          const nova = palavraNova.trim();
+                          if (nova && !palavrasAtuais.includes(nova)) mudarPalavras([...palavrasAtuais, nova]);
+                          setPalavraNova("");
+                        }}
+                      >
+                        + {traduzir("Adicionar")}
+                      </button>
+                    </div>
 
-                {/*
-                  * MAIÚSCULA NUNCA CONTA, e dizer isso evita a pergunta.
-                  *
-                  * "A pessoa escreve ASOS, outra escreve asos" — já funciona nos dois casos,
-                  * sempre funcionou, e não havia nada na tela dizendo. Informação não é opção:
-                  * não há botão porque não há escolha a fazer. O acento, esse sim, é escolha, e
-                  * cabe numa linha — não num cartão do tamanho dos outros.
-                  */}
-                <label className="gat-acento">
-                  <input
-                    type="checkbox"
-                    checked={!acentoConta}
-                    onChange={() => mudarEmTodos({ ignorarAcentos: acentoConta })}
-                  />
-                  <span>
-                    {traduzir("Acento não importa")}
-                    <em>{traduzir("“começo” e “comeco” valem como a mesma palavra.")}</em>
-                  </span>
-                </label>
-                <p className="gat-nota">
-                  {traduzir(
-                    "Maiúscula e minúscula nunca importam: “ASOS”, “Asos” e “asos” disparam igual.",
-                  )}
-                </p>
+                    {/*
+                      * MAIÚSCULA NUNCA CONTA, e dizer isso evita a pergunta. Informação não é
+                      * opção: não há botão porque não há escolha a fazer. O acento, esse sim, é
+                      * escolha, e cabe numa linha.
+                      */}
+                    <label className="gat-acento">
+                      <input
+                        type="checkbox"
+                        checked={!acentoConta}
+                        onChange={() => mudarEmTodos({ ignorarAcentos: acentoConta })}
+                      />
+                      <span>
+                        {traduzir("Acento não importa")}
+                        <em>{traduzir("“começo” e “comeco” valem como a mesma palavra.")}</em>
+                      </span>
+                    </label>
+                    <p className="gat-nota">
+                      {traduzir(
+                        "Maiúscula e minúscula nunca importam: “ASOS”, “Asos” e “asos” disparam igual.",
+                      )}
+                    </p>
+                  </>
+                ) : null}
               </>
             ) : etapaAtual.tipo === "comentario_instagram" ? (
-              <ComentarioInstagramForm
-                data={dados.comentario_instagram ?? {}}
-                onChange={(novo) => mudarDados("comentario_instagram", novo as Record<string, unknown>)}
+              <EscolhaDeMidia
+                tipo="post"
+                itens={publicacoes ?? []}
+                carregando={publicacoes === null && !erroDasMidias}
+                erro={erroDasMidias}
+                dados={{
+                  ids: (dados.comentario_instagram?.publicacaoIds as string[] | undefined) ??
+                    (dados.comentario_instagram?.publicacaoId
+                      ? [dados.comentario_instagram.publicacaoId as string]
+                      : []),
+                  escopo: dados.comentario_instagram?.escopoPublicacao as DadosDeEscopo["escopo"],
+                  conhecidos: dados.comentario_instagram?.publicacoesConhecidas as string[] | undefined,
+                }}
+                onChange={(novo) =>
+                  mudarDados("comentario_instagram", {
+                    ...(dados.comentario_instagram ?? {}),
+                    publicacaoIds: novo.ids ?? [],
+                    escopoPublicacao: novo.escopo,
+                    publicacoesConhecidas: novo.conhecidos,
+                    // O campo antigo some quando a escolha passa a ser a nova: deixá-lo pra trás
+                    // faria o motor continuar lendo uma publicação que a tela já esqueceu.
+                    publicacaoId: "",
+                  })
+                }
               />
             ) : etapaAtual.tipo === "instagram_story_respondido" ? (
-              <StoryRespondidoForm
-                data={dados.instagram_story_respondido ?? {}}
-                onChange={(novo) => mudarDados("instagram_story_respondido", novo as Record<string, unknown>)}
+              <EscolhaDeMidia
+                tipo="story"
+                itens={stories ?? []}
+                carregando={stories === null && !erroDasMidias}
+                erro={erroDasMidias}
+                dados={{
+                  ids: (dados.instagram_story_respondido?.storyIds as string[] | undefined) ??
+                    (dados.instagram_story_respondido?.storyId
+                      ? [dados.instagram_story_respondido.storyId as string]
+                      : []),
+                  escopo: dados.instagram_story_respondido?.escopoStory as DadosDeEscopo["escopo"],
+                }}
+                onChange={(novo) =>
+                  mudarDados("instagram_story_respondido", {
+                    ...(dados.instagram_story_respondido ?? {}),
+                    storyIds: novo.ids ?? [],
+                    escopoStory: novo.escopo,
+                    storyId: "",
+                  })
+                }
               />
             ) : null}
           </div>

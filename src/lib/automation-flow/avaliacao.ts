@@ -451,21 +451,59 @@ export function avaliarNoDeGatilho(
     funilId?: string;
     etapaId?: string;
     publicacaoId?: string;
+    publicacaoIds?: string[];
+    escopoPublicacao?: "especifico" | "qualquer" | "proxima";
+    publicacoesConhecidas?: string[];
     storyId?: string;
+    storyIds?: string[];
+    escopoStory?: "especifico" | "qualquer" | "proxima";
   } & ConfiguracaoDePalavras;
   if (data.funilId && evento.funilId && data.funilId !== evento.funilId) return false;
   if (data.etapaId && evento.etapaId && data.etapaId !== evento.etapaId) return false;
 
-  // Automação de comentário pode valer só pra UMA publicação. Vazio = qualquer publicação.
-  if (data.publicacaoId && evento.publicacaoId && data.publicacaoId !== evento.publicacaoId) return false;
+  /*
+   * EM QUAIS PUBLICAÇÕES A AUTOMAÇÃO VALE.
+   *
+   * Eram uma só (`publicacaoId`) ou todas. A tela passou a deixar escolher VÁRIAS, como a
+   * referência mostra — uma campanha costuma ter três posts, e antes isso eram três automações
+   * iguais. O campo antigo continua valendo sozinho: fluxo gravado com ele não precisa de
+   * migração nenhuma.
+   *
+   * `evento.publicacaoId` ausente NÃO descarta, pelo mesmo motivo que já valia pro story: quando
+   * o id vem ele decide, quando não vem a automação roda.
+   */
+  const idsDePublicacao = data.publicacaoIds?.length
+    ? data.publicacaoIds
+    : data.publicacaoId
+      ? [data.publicacaoId]
+      : [];
+  const escopoPublicacao = data.escopoPublicacao ?? (idsDePublicacao.length ? "especifico" : "qualquer");
+  // `EventoAutomacao` tem índice livre (`[k: string]: unknown`): o id só conta quando é texto.
+  const publicacaoDoEvento = typeof evento.publicacaoId === "string" ? evento.publicacaoId : null;
+  const storyDoEvento = typeof evento.storyId === "string" ? evento.storyId : null;
+  if (escopoPublicacao === "especifico" && idsDePublicacao.length && publicacaoDoEvento) {
+    if (!idsDePublicacao.includes(publicacaoDoEvento)) return false;
+  }
+  /*
+   * "MEU PRÓXIMO POST": vale pro que for publicado DEPOIS da escolha.
+   *
+   * A tela guarda os ids que existiam naquele momento, e aqui a pergunta é só "esta publicação
+   * estava na lista?". Guardar a data não resolveria: o evento de comentário traz o id da
+   * publicação, não a data dela, e descobrir a data exigiria uma chamada à Graph por comentário
+   * recebido — dentro do caminho que precisa responder rápido.
+   *
+   * O limite honesto: a lista guardada é a das publicações recentes que a Meta devolveu. Um
+   * comentário numa publicação muito antiga, fora dessa lista, também é tratado como nova.
+   */
+  if (escopoPublicacao === "proxima" && publicacaoDoEvento) {
+    if ((data.publicacoesConhecidas ?? []).includes(publicacaoDoEvento)) return false;
+  }
 
-  // Mesma ideia pro story: a automação pode valer só pro story escolhido. Vazio = qualquer story,
-  // de qualquer dia, que é o padrão e continua sendo o comportamento de quem nunca abriu o campo.
-  //
-  // `evento.storyId` ausente NÃO descarta: a Meta nem sempre manda o id do story respondido, e
-  // tratar a ausência como "não é este" faria a automação parar de disparar em silêncio. Quando o
-  // id vem, ele decide; quando não vem, a automação roda, como rodava antes deste campo existir.
-  if (data.storyId && evento.storyId && data.storyId !== evento.storyId) return false;
+  // Mesma ideia pro story: a automação pode valer só pros stories escolhidos. Vazio = qualquer
+  // story, de qualquer dia, que é o padrão e continua sendo o comportamento de quem nunca abriu o
+  // campo.
+  const idsDeStory = data.storyIds?.length ? data.storyIds : data.storyId ? [data.storyId] : [];
+  if (idsDeStory.length && storyDoEvento && !idsDeStory.includes(storyDoEvento)) return false;
 
   // Palavra configurada no gatilho: comentário ou mensagem só dispara se casar.
   const textoDoEvento = typeof evento.mensagem === "string" ? evento.mensagem : undefined;
