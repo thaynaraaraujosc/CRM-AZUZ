@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { JANELA_HORAS } from "@/lib/social/janela-direct";
 import { cabecalhosComEtag, clienteJaTem, montarEtag, naoModificado } from "@/lib/conversas/assinatura";
 import { filtroDoDirect, whereDoDirect } from "@/lib/integracoes/filtro-instagram";
+import { nomeAindaEhIdCru } from "@/lib/conversas/exibicao";
 
 /**
  * A caixa de entrada do Direct: as conversas do Instagram, com o perfil de cada pessoa.
@@ -18,7 +19,10 @@ export type ConversaInstagram = {
   nome: string;
   /** IGSID de quem escreve, que é o destinatário do envio. */
   contato: string | null;
+  /** Como a linha é escrita: o @ quando ele existe, e o id cru só enquanto ele não existir. */
   exibicao: string;
+  /** O nome ainda é o id cru do Instagram: a tela pode pedir a resolução do @. */
+  precisaDoArroba: boolean;
   username: string | null;
   fotoUrl: string | null;
   ultimaMensagem: string | null;
@@ -162,10 +166,21 @@ export async function GET(request: Request) {
     const recebida = recebidaPorNome.get(c.nome) ?? null;
     const fecha = recebida ? new Date(recebida.getTime() + JANELA_HORAS * 60 * 60 * 1000) : null;
     const dados = contatoPorNome.get(c.nome);
+    /*
+     * O @ VEM DO CONTATO QUANDO A CONVERSA AINDA ESTÁ COM O NÚMERO.
+     *
+     * A conversa nasce com o IGSID no lugar do nome quando a busca do @ falha na primeira
+     * mensagem. O @ costuma ser resolvido depois — ao abrir a conversa, pela rota de perfil — e
+     * gravado no CONTATO. A lista, porém, escrevia sempre `c.nome`: o dado existia no banco e a
+     * tela continuava mostrando uma coluna de números.
+     */
+    const arroba = dados?.instagram ? `@${dados.instagram.replace(/^@/, "")}` : null;
+    const aindaNumero = nomeAindaEhIdCru(c.nome);
     return {
       nome: c.nome,
       contato: c.contato,
-      exibicao: c.nome,
+      exibicao: aindaNumero && arroba ? arroba : c.nome,
+      precisaDoArroba: aindaNumero && !arroba,
       username: dados?.instagram ?? null,
       // A foto pode estar na conversa OU no contato: o webhook grava nos dois, mas conversa antiga
       // (de antes disso) só tem no contato. Sem o segundo lugar, a lista aparecia só com iniciais.

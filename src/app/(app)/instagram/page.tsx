@@ -61,6 +61,24 @@ function iniciais(nome: string): string {
   );
 }
 
+/**
+ * Quantas conversas sem @ o CRM resolve por carregamento da tela.
+ *
+ * Cada uma é uma chamada à Meta — a API não responde em lote sobre várias pessoas. Oito cobre a
+ * primeira dobra da lista sem virar uma rajada contra a cota da conta; o resto entra na próxima
+ * vez que a tela abrir.
+ */
+const LIMITE_DE_ARROBAS_POR_CARGA = 8;
+
+/** O que `/api/instagram/perfil` devolve. */
+type RespostaDePerfil = {
+  fotoUrl?: string | null;
+  username?: string | null;
+  perfil?: ConversaInstagram["perfil"];
+  /** O nome novo da conversa, quando o @ resolveu o que era um número. */
+  renomeadaPara?: string | null;
+};
+
 function Avatar({ nome, fotoUrl, tamanho = 38 }: { nome: string; fotoUrl: string | null; tamanho?: number }) {
   if (fotoUrl) {
     // A foto vem embutida (data URL) porque o link do CDN da Meta vence em horas. Ver
@@ -115,6 +133,8 @@ export default function InstagramConversasPage() {
      novo a cada vez que a lista se renova: uma chamada à Meta por batida, pra sempre receber a
      mesma recusa. É chamada paga, e conta pro limite de requisições da conta. */
   const perfilTentadoRef = useRef<Set<string>>(new Set());
+  /** O preenchimento em segundo plano já está rodando? Um de cada vez, nunca dois. */
+  const resolvendoArrobasRef = useRef(false);
   const etagMensagensRef = useRef<{ de: string; etag: string } | null>(null);
 
   const carregarConversas = useCallback(async () => {
@@ -230,7 +250,16 @@ export default function InstagramConversasPage() {
   useEffect(() => {
     if (!aberta) return;
     const alvo = conversas?.find((c) => c.nome === aberta);
-    if (!alvo || (alvo.perfil?.seguidores != null && alvo.fotoUrl)) return;
+    if (!alvo) return;
+    /*
+     * FALTA O @ TAMBÉM CONTA COMO PERFIL FALTANDO.
+     *
+     * A condição olhava só seguidores e foto: uma conversa que tinha os dois e estava com o
+     * número no lugar do nome nunca era buscada, e o número ficava pra sempre. É o caso mais
+     * visível da lista, porque é o que a pessoa lê antes de tudo.
+     */
+    const completo = alvo.perfil?.seguidores != null && alvo.fotoUrl && !alvo.precisaDoArroba;
+    if (completo) return;
     if (perfilTentadoRef.current.has(aberta)) return;
     perfilTentadoRef.current.add(aberta);
 
@@ -241,7 +270,7 @@ export default function InstagramConversasPage() {
       body: JSON.stringify({ conversa: aberta }),
     })
       .then((r) => (r.ok ? r.json() : null))
-      .then((dados: { fotoUrl?: string | null; username?: string | null; perfil?: ConversaInstagram["perfil"] } | null) => {
+      .then((dados: RespostaDePerfil | null) => {
         if (cancelado || !dados) return;
         setConversas((atual) =>
           (atual ?? []).map((c) =>
@@ -250,11 +279,16 @@ export default function InstagramConversasPage() {
                   ...c,
                   fotoUrl: dados.fotoUrl ?? c.fotoUrl,
                   username: dados.username ?? c.username,
+                  exibicao: dados.username ? `@${dados.username.replace(/^@/, "")}` : c.exibicao,
+                  precisaDoArroba: dados.username ? false : c.precisaDoArroba,
                   perfil: dados.perfil ?? c.perfil,
                 }
               : c,
           ),
         );
+        // A conversa foi renomeada no banco: a próxima leitura da lista vem com o nome novo, e a
+        // conversa aberta precisa seguir o nome novo pra não apontar pra uma chave que sumiu.
+        if (dados.renomeadaPara) setAberta(dados.renomeadaPara);
       })
       .catch(() => {
         /* sem perfil a tela mostra traço, que já é o comportamento certo pra ausência */
@@ -263,6 +297,71 @@ export default function InstagramConversasPage() {
       cancelado = true;
     };
   }, [aberta, conversas]);
+
+  /**
+   * O @ DE QUEM AINDA ESTÁ COMO NÚMERO, preenchido em segundo plano.
+   *
+   * "Não está aparecendo o arroba e a foto da conta que está falando comigo." A conversa nasce
+   * com o IGSID no lugar do nome quando a busca do @ falha na primeira mensagem, e até aqui só
+   * duas coisas consertavam isso: uma mensagem nova daquela pessoa, ou alguém abrir a conversa.
+   * Quem parou de escrever ficava como número pra sempre, e é a maior parte da coluna.
+   *
+   * UM DE CADA VEZ E COM TETO. Cada resolução é uma chamada à Meta por pessoa — a API não
+   * responde em lote. Em série e limitado a {LIMITE} por carregamento, o preenchimento é
+   * invisível pra quem usa e não vira uma rajada contra a cota da conta. Quem sobrar entra na
+   * próxima vez que a tela abrir, e as já tentadas não são repetidas nesta sessão.
+   */
+  useEffect(() => {
+    if (!conversas?.length || resolvendoArrobasRef.current) return;
+    const pendentes = conversas
+      .filter((c) => c.precisaDoArroba && !perfilTentadoRef.current.has(c.nome))
+      .slice(0, LIMITE_DE_ARROBAS_POR_CARGA);
+    if (!pendentes.length) return;
+
+    resolvendoArrobasRef.current = true;
+    let cancelado = false;
+
+    (async () => {
+      for (const alvo of pendentes) {
+        if (cancelado) break;
+        perfilTentadoRef.current.add(alvo.nome);
+        const dados = await fetch("/api/instagram/perfil", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ conversa: alvo.nome }),
+        })
+          .then((r) => (r.ok ? (r.json() as Promise<RespostaDePerfil>) : null))
+          .catch(() => null);
+        if (cancelado || !dados?.username) continue;
+        const arroba = `@${dados.username.replace(/^@/, "")}`;
+        setConversas((atual) =>
+          (atual ?? []).map((c) =>
+            c.nome === alvo.nome
+              ? {
+                  ...c,
+                  nome: dados.renomeadaPara ?? c.nome,
+                  exibicao: arroba,
+                  username: dados.username ?? c.username,
+                  precisaDoArroba: false,
+                  fotoUrl: dados.fotoUrl ?? c.fotoUrl,
+                  perfil: dados.perfil ?? c.perfil,
+                }
+              : c,
+          ),
+        );
+        if (dados.renomeadaPara) {
+          setAberta((atualAberta) => (atualAberta === alvo.nome ? dados.renomeadaPara! : atualAberta));
+        }
+      }
+      resolvendoArrobasRef.current = false;
+    })().catch(() => {
+      resolvendoArrobasRef.current = false;
+    });
+
+    return () => {
+      cancelado = true;
+    };
+  }, [conversas]);
 
   const visiveis = useMemo(() => {
     const termo = busca.trim().toLowerCase();

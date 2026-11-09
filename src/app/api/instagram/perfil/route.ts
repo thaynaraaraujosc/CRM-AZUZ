@@ -7,7 +7,10 @@ import {
   baixarFotoPerfil,
   buscarDadosExtrasDoPerfil,
   buscarPerfilDeQuemMandou,
+  buscarPerfilNasConversas,
 } from "@/lib/integracoes/instagram-login";
+import { nomeAindaEhIdCru } from "@/lib/conversas/exibicao";
+import { renomearConversa } from "@/lib/conversas/renomear";
 
 /**
  * Busca o perfil de quem está do outro lado, AGORA, e guarda.
@@ -45,10 +48,25 @@ export async function POST(request: Request) {
 
   // `contato` guarda o IGSID, que é a chave estável da pessoa naquela conta.
   const igsid = linha.contato;
-  const [perfil, extras] = await Promise.all([
+  const [direto, extras] = await Promise.all([
     buscarPerfilDeQuemMandou(token, igsid).catch(() => null),
     buscarDadosExtrasDoPerfil(token, igsid).catch(() => null),
   ]);
+
+  /*
+   * DUAS VIAS PRO @, como o webhook já fazia — e esta rota não.
+   *
+   * A consulta direta pelo IGSID passa por uma permissão; a lista de conversas passa por outra, e
+   * numa conta em que a primeira não responde a segunda costuma responder. O webhook tentava as
+   * duas desde sempre; aqui só havia a primeira, e era por isso que uma conversa que nasceu com o
+   * número no lugar do @ seguia com o número mesmo depois de alguém abri-la: o CRM tinha um
+   * caminho a mais pra achar o nome e não usava.
+   */
+  let perfil = direto;
+  if (!perfil?.username) {
+    const pelaConversa = await buscarPerfilNasConversas(token, igsid).catch(() => null);
+    if (pelaConversa?.username || pelaConversa?.fotoUrl) perfil = { ...perfil, ...pelaConversa };
+  }
 
   // A foto vem embutida: o link do CDN da Meta vence em horas, e guardar só a URL deixaria a
   // conversa sem foto no dia seguinte.
@@ -83,9 +101,33 @@ export async function POST(request: Request) {
       .catch(() => {});
   }
 
+  /*
+   * RESOLVEU O @ DE UMA CONVERSA QUE ESTAVA COM O NÚMERO: renomeia, levando o histórico junto.
+   *
+   * O webhook já fazia isso a cada mensagem nova. Uma conversa que parou de receber mensagem
+   * ficava com o número pra sempre, porque nada mais passava por ela — e é justamente a maioria
+   * das que aparecem assim na lista. Agora a visita à tela também conserta.
+   *
+   * `renomearConversa` move mensagens, contato e card de uma vez; se falhar, o perfil já gravado
+   * acima continua valendo e a tela mostra o @ pelo contato.
+   */
+  const nomeNovo = perfil?.username ? `@${perfil.username}` : null;
+  let renomeadaPara: string | null = null;
+  if (nomeNovo && nomeNovo !== conversa && nomeAindaEhIdCru(conversa)) {
+    const ok = await renomearConversa(workspaceId, conversa, nomeNovo)
+      .then(() => true)
+      .catch((erro) => {
+        console.error("[instagram] Falha ao renomear a conversa que estava com o id:", erro);
+        return false;
+      });
+    if (ok) renomeadaPara = nomeNovo;
+  }
+
   return NextResponse.json({
     fotoUrl,
     username: perfil?.username ?? null,
+    /** O nome novo da conversa, quando o @ resolveu o que era um número. A tela troca a chave. */
+    renomeadaPara,
     perfil: extras
       ? {
           seguidores: extras.seguidores ?? null,

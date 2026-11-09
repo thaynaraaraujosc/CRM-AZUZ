@@ -29,6 +29,14 @@ import { SeletorDeData } from "@/components/seletor-de-data";
 import { useIdioma } from "@/lib/idioma-context";
 import { LimparDemonstracao } from "@/components/configuracoes/LimparDemonstracao";
 
+/**
+ * Quantas fotos de perfil o funil vai buscar por carregamento.
+ *
+ * Cada uma é uma chamada à Evolution pela mesma instância que envia mensagem. Oito cobre a
+ * primeira tela do quadro sem disputar com o envio; o resto entra na próxima abertura.
+ */
+const LIMITE_DE_FOTOS_POR_CARGA = 8;
+
 const ORIGENS_NEGOCIO: NegocioCard["origem"][] = [
   "Instagram",
   "Meta Ads",
@@ -79,7 +87,7 @@ function FunilPageInner() {
   } = useFunis();
   const { fluxos } = useAutomationFlows();
   const { contatos, excluirContato } = useContatos();
-  const { conversas, excluirConversa } = useConversas();
+  const { conversas, excluirConversa, recarregar: recarregarConversas } = useConversas();
 
   /**
    * Última movimentação por contato: é o que o card mostra no canto e o que dá sentido ao botão
@@ -105,6 +113,69 @@ function FunilPageInner() {
     () => new Map(conversas.map((c) => [chaveDeContato(c.nome), c])),
     [conversas],
   );
+  /*
+   * O CONTATO DAQUELE NEGÓCIO, pelo nome NORMALIZADO.
+   *
+   * Era `contatos.find((c) => c.nome === card.nome)`, dentro do desenho de cada cartão. Dois
+   * problemas num só: a comparação exigia a string idêntica — "+55 11 99746-1401" não casa com
+   * "5511997461401", e era por isso que uns cartões tinham foto e outros não — e a varredura
+   * acontecia por cartão, o que num quadro com dezenas deles é a lista inteira de contatos
+   * percorrida dezenas de vezes a cada render.
+   */
+  const contatoPorNome = useMemo(
+    () => new Map(contatos.map((c) => [chaveDeContato(c.nome), c])),
+    [contatos],
+  );
+
+  /*
+   * AS FOTOS QUE FALTAM NOS CARTÕES, buscadas em segundo plano.
+   *
+   * "Lá no WhatsApp, alguns não estão aparecendo as fotos. E eu preciso que todas as fotos
+   * apareçam." O webhook busca a foto a cada mensagem que chega, então quem continua conversando
+   * tem rosto e quem parou de escrever ficou com as iniciais — a diferença é só há quanto tempo
+   * aquela pessoa mandou a última mensagem, e no quadro isso parece aleatório.
+   *
+   * Uma por vez e no máximo {LIMITE} por carregamento: cada uma é uma chamada à Evolution, e uma
+   * rajada de trinta ao abrir o funil competiria com o envio de mensagem pela mesma instância. O
+   * que sobrar entra na próxima abertura; o que já foi tentado não repete nesta sessão.
+   */
+  const fotoTentadaRef = useRef<Set<string>>(new Set());
+  const buscandoFotosRef = useRef(false);
+  useEffect(() => {
+    if (buscandoFotosRef.current || !conversas.length) return;
+    const pendentes = conversas
+      .filter((c) => !c.fotoUrl && c.canal !== "Instagram" && !fotoTentadaRef.current.has(c.nome))
+      .slice(0, LIMITE_DE_FOTOS_POR_CARGA);
+    if (!pendentes.length) return;
+
+    buscandoFotosRef.current = true;
+    let cancelado = false;
+    (async () => {
+      let achouAlguma = false;
+      for (const alvo of pendentes) {
+        if (cancelado) break;
+        fotoTentadaRef.current.add(alvo.nome);
+        const dados = await fetch("/api/conversas/foto", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ conversa: alvo.nome }),
+        })
+          .then((r) => (r.ok ? (r.json() as Promise<{ fotoUrl?: string | null }>) : null))
+          .catch(() => null);
+        if (dados?.fotoUrl) achouAlguma = true;
+      }
+      buscandoFotosRef.current = false;
+      // A rota já gravou no banco; uma releitura traz tudo de uma vez, em vez de um `setState`
+      // por foto com a lista inteira sendo recriada a cada volta do laço.
+      if (achouAlguma && !cancelado) recarregarConversas();
+    })().catch(() => {
+      buscandoFotosRef.current = false;
+    });
+
+    return () => {
+      cancelado = true;
+    };
+  }, [conversas, recarregarConversas]);
   const { membros: equipe } = useEquipe();
   const motivosPerda = useMotivosPerda();
   const [configAberto, setConfigAberto] = useState(false);
@@ -1073,11 +1144,17 @@ function FunilPageInner() {
                           <span className="lname lname-com-msg" draggable={false}>
             {temMensagemNova ? <span className="msg-dot" aria-label={traduzir("Mensagem nova")} /> : null}
                             {(() => {
-                              const contato = contatos.find((c) => c.nome === card.nome);
-                              return contato?.fotoUrl ? (
+                              /* A foto mora na CONVERSA ou no CONTATO: o webhook grava nos dois,
+                                 mas conversa antiga (de antes disso) só tem num deles. Olhar um
+                                 lugar só deixava metade dos cartões sem foto. */
+                              const fotoDoCard =
+                                conversaDoCard?.fotoUrl ??
+                                contatoPorNome.get(chaveDeContato(card.nome))?.fotoUrl ??
+                                null;
+                              return fotoDoCard ? (
                                 <>
                                   <img
-                                    src={contato.fotoUrl}
+                                    src={fotoDoCard}
                                     alt=""
                                     style={{
                                       width: 20,
