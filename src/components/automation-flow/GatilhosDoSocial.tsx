@@ -147,8 +147,14 @@ export function GatilhosDoSocial({
 }: {
   /** Os gatilhos que o fluxo já tem, com a configuração de cada um. */
   gatilhosAtuais?: EscolhaDeGatilho[];
-  /** O que o fluxo já responde hoje: a mensagem do primeiro passo e as variações dela. */
-  respostasIniciais?: string[];
+  /**
+   * O QUE O FLUXO JÁ RESPONDE, GATILHO POR GATILHO.
+   *
+   * Era uma lista só, a do primeiro passo, porque os gatilhos todos desembocavam nele. Agora cada
+   * um tem o seu caminho, e a gaveta reabre com o texto de cada um na linha dele — em vez de
+   * mostrar a resposta do comentário embaixo do story.
+   */
+  respostasIniciais?: Partial<Record<FlowNodeType, string[]>>;
   /**
    * Onde a gaveta abre.
    *
@@ -158,12 +164,18 @@ export function GatilhosDoSocial({
    */
   etapaInicial?: "lista" | "palavras" | "painel" | "adicionar";
   /**
-   * As escolhas e, quando a última etapa foi preenchida, o que responder.
+   * As escolhas e, quando a última etapa foi preenchida, o que responder — UMA RESPOSTA POR
+   * GATILHO.
    *
-   * Lista vazia quer dizer "não mexa na resposta": é o que o botão "Pular" manda, e é o que
-   * protege quem já montou o fluxo à mão de ter a mensagem trocada por ter passado pela gaveta.
+   * "A resposta não tem como ir para todos os lugares": quem comentou no feed e quem respondeu um
+   * story estão em momentos diferentes. Gatilho ausente do objeto quer dizer "não mexa na resposta
+   * dele" — é o que o botão "Pular" manda, e é o que protege quem já montou o fluxo à mão de ter a
+   * mensagem trocada por ter passado pela gaveta.
    */
-  onEscolher: (escolhas: EscolhaDeGatilho[], respostas: string[]) => void;
+  onEscolher: (
+    escolhas: EscolhaDeGatilho[],
+    respostas: Partial<Record<FlowNodeType, string[]>>,
+  ) => void;
   onFechar: () => void;
 }) {
   const { t: traduzir } = useIdioma();
@@ -252,7 +264,16 @@ export function GatilhosDoSocial({
      * A pergunta muda com o gatilho principal: "quem comentar no seu feed" é outra pessoa que
      * "quem responder seu story", e escrever a resposta certa depende de saber pra quem é.
      */
-    { chave: "resposta", titulo: "Resposta automática", pergunta: perguntaDaResposta(marcados) },
+    {
+      chave: "resposta",
+      titulo: "Resposta automática",
+      /* Com mais de um gatilho a pergunta não é "o que responder" e sim "o que responder em cada
+         um": a tela abaixo tem um campo por gatilho, e a pergunta tem que preparar pra isso. */
+      pergunta:
+        marcados.length > 1
+          ? "O que o robô responde em cada gatilho?"
+          : perguntaDaResposta(marcados),
+    },
   ];
 
   function alternar(tipo: FlowNodeType) {
@@ -265,11 +286,101 @@ export function GatilhosDoSocial({
     setDados((atual) => ({ ...atual, [tipo]: novo }));
   }
 
-  function concluir(comResposta = true) {
-    const limpas = comResposta ? respostas.map((r) => r.trim()).filter(Boolean) : [];
+  /**
+   * FECHA A GAVETA devolvendo os gatilhos e, dependendo de onde o clique veio, as respostas.
+   *
+   * `todas` é o fim da montagem: tudo o que foi escrito vale. `nenhuma` é o "Pular". `tocadas` é o
+   * painel, onde só o gatilho que foi aberto e escrito volta — o resto fica como está no canvas.
+   */
+  function concluir(resposta: "todas" | "nenhuma" | "tocadas" = "todas") {
+    const limpas: Partial<Record<FlowNodeType, string[]>> = {};
+    if (resposta !== "nenhuma") {
+      for (const tipo of marcados) {
+        if (resposta === "tocadas" && !tocadas.includes(tipo)) continue;
+        const lista = (respostas[tipo] ?? []).map((r) => r.trim()).filter(Boolean);
+        if (lista.length) limpas[tipo] = lista;
+      }
+    }
     onEscolher(
       marcados.map((tipo) => ({ tipo, data: { ...(dados[tipo] ?? {}) } })),
       limpas,
+    );
+  }
+
+  /** Os campos de um gatilho, com um em branco quando ele ainda não tem resposta nenhuma. */
+  function respostasDe(tipo: FlowNodeType): string[] {
+    const lista = respostas[tipo];
+    return lista?.length ? lista : [""];
+  }
+
+  function mudarResposta(tipo: FlowNodeType, lista: string[]) {
+    setRespostas((atual) => ({ ...atual, [tipo]: lista }));
+    setTocadas((atual) => (atual.includes(tipo) ? atual : [...atual, tipo]));
+  }
+
+  /*
+   * OS CAMPOS DE RESPOSTA DE UM GATILHO, DESENHADOS UMA VEZ.
+   *
+   * Aparecem em dois lugares: na última etapa de quem está montando, um grupo por gatilho, e
+   * dentro do cartão do gatilho no painel, atrás da setinha. "Poderia ter uma setinha para baixo,
+   * que eu já criasse a automação" — é o mesmo campo nos dois, e duas cópias do JSX é como se
+   * chega, meses depois, numa tela que tem "Adicionar outra resposta" e na outra não.
+   */
+  function camposDeResposta(tipo: FlowNodeType, autoFoco: boolean) {
+    const lista = respostasDe(tipo);
+    return (
+      <div className="gat-respostas">
+        {lista.map((texto, i) => (
+          <div className="gat-resposta" key={i}>
+            <input
+              className="input"
+              value={texto}
+              autoFocus={autoFoco && i === 0}
+              placeholder={traduzir(i === 0 ? "Escreva a resposta" : "Escreva outra resposta")}
+              onChange={(e) =>
+                mudarResposta(
+                  tipo,
+                  lista.map((r, j) => (j === i ? e.target.value : r)),
+                )
+              }
+            />
+            {texto || lista.length > 1 ? (
+              <button
+                type="button"
+                className="gat-resposta-tirar"
+                aria-label={traduzir("Apagar esta resposta")}
+                onClick={() =>
+                  // Nunca fica sem nenhum campo: com um só, apagar limpa em vez de sumir.
+                  mudarResposta(tipo, lista.length === 1 ? [""] : lista.filter((_, j) => j !== i))
+                }
+              >
+                <IconClose width={12} height={12} />
+              </button>
+            ) : null}
+          </div>
+        ))}
+
+        <button
+          type="button"
+          className="gat-mais-resposta"
+          onClick={() => mudarResposta(tipo, [...lista, ""])}
+        >
+          <span aria-hidden="true">+</span> {traduzir("Adicionar outra resposta")}
+        </button>
+
+        {/*
+          VÁRIAS RESPOSTAS NÃO SÃO VÁRIAS MENSAGENS: o robô manda UMA, sorteada. Sem essa frase,
+          "adicionar outra resposta" lê como "mandar mais uma mensagem", e quem escrevesse três
+          acharia que o lead ia receber as três.
+        */}
+        {lista.filter((r) => r.trim()).length > 1 ? (
+          <p className="gat-nota">
+            {traduzir(
+              "O robô manda uma delas, sorteada a cada vez. Repetir a mesma frase embaixo do mesmo post é o que o Instagram lê como spam.",
+            )}
+          </p>
+        ) : null}
+      </div>
     );
   }
 
@@ -317,7 +428,19 @@ export function GatilhosDoSocial({
    * repetida vinte vezes embaixo do mesmo post é o que o Instagram lê como spam. O motor sorteia
    * uma a cada envio (ver `escolherVariacao`).
    */
-  const [respostas, setRespostas] = useState<string[]>(() => respostasIniciais ?? [""]);
+  const [respostas, setRespostas] = useState<Partial<Record<FlowNodeType, string[]>>>(() => ({
+    ...(respostasIniciais ?? {}),
+  }));
+  /*
+   * QUEM FOI MEXIDO AQUI DENTRO.
+   *
+   * Salvar do painel não pode reescrever a resposta de um gatilho que ninguém abriu: a pessoa veio
+   * trocar uma palavra-chave e sairia com a mensagem do canvas sobrescrita pelo que a gaveta
+   * tinha lido. Só o gatilho cujos campos foram tocados viaja de volta.
+   */
+  const [tocadas, setTocadas] = useState<FlowNodeType[]>([]);
+  /** De qual gatilho a resposta está aberta, no painel. Uma por vez: são campos de digitar. */
+  const [respostaAberta, setRespostaAberta] = useState<FlowNodeType | null>(null);
   /** A caixa de escolha do modo está aberta? Fecha clicando fora e no Esc, como todo menu do CRM. */
   const [modoAberto, setModoAberto] = useState(false);
   const fecharModo = useCallback(() => setModoAberto(false), []);
@@ -623,7 +746,7 @@ export function GatilhosDoSocial({
           {/* "Pular" só na etapa da resposta: é a única opcional — o resto define QUANDO o robô
               acorda, e pular isso deixaria um gatilho sem regra nenhuma. */}
           {etapaAtual?.chave === "resposta" ? (
-            <button type="button" className="gat-pular" onClick={() => concluir(false)}>
+            <button type="button" className="gat-pular" onClick={() => concluir("nenhuma")}>
               {traduzir("Pular")}
             </button>
           ) : null}
@@ -652,46 +775,84 @@ export function GatilhosDoSocial({
             <div className="pg-lista">
               {marcados.map((tipo) => {
                 const bloco = doInstagram.find((b) => b.tipo === tipo);
+                const abertoAqui = respostaAberta === tipo;
                 return (
-                  <div className="pg-cartao" key={tipo} data-menu-de-linha="">
-                    <span className="pg-textos">
-                      <strong>{traduzir(bloco?.label ?? tipo)}</strong>
-                      {bloco?.descricao ? <span>{traduzir(bloco.descricao)}</span> : null}
-                    </span>
-                    <button
-                      type="button"
-                      className="pg-mais"
-                      aria-label={traduzir("Opções deste gatilho")}
-                      aria-expanded={menuDoGatilho === tipo}
-                      onClick={() => setMenuDoGatilho((atual) => (atual === tipo ? null : tipo))}
-                    >
-                      ⋯
-                    </button>
-                    {menuDoGatilho === tipo ? (
-                      <div className="pg-menu" role="menu">
-                        {ALCANCE[tipo] ? (
+                  <div
+                    className={`pg-cartao${abertoAqui ? " aberto" : ""}`}
+                    key={tipo}
+                    data-menu-de-linha=""
+                  >
+                    <div className="pg-cartao-linha">
+                      <span className="pg-textos">
+                        <strong>{traduzir(bloco?.label ?? tipo)}</strong>
+                        {bloco?.descricao ? <span>{traduzir(bloco.descricao)}</span> : null}
+                      </span>
+                      {/*
+                        A SETINHA ABRE A RESPOSTA DESTE GATILHO, aqui mesmo.
+                      
+                        "Ao invés de eu ter que montar todo esse gatilho, aqui nessa parte lateral
+                        poderia ter uma setinha para baixo, que eu já criasse a automação." É o
+                        caminho curto: escrever a resposta de um gatilho sem passar pelas etapas nem
+                        arrastar bloco no quadro.
+                      */}
+                      <button
+                        type="button"
+                        className="pg-seta"
+                        aria-label={traduzir("Resposta deste gatilho")}
+                        aria-expanded={abertoAqui}
+                        onClick={() => setRespostaAberta((atual) => (atual === tipo ? null : tipo))}
+                      >
+                        <IconExpandir
+                          className={abertoAqui ? "girado" : undefined}
+                          width={14}
+                          height={14}
+                          aria-hidden="true"
+                        />
+                      </button>
+                      <button
+                        type="button"
+                        className="pg-mais"
+                        aria-label={traduzir("Opções deste gatilho")}
+                        aria-expanded={menuDoGatilho === tipo}
+                        onClick={() => setMenuDoGatilho((atual) => (atual === tipo ? null : tipo))}
+                      >
+                        ⋯
+                      </button>
+                      {menuDoGatilho === tipo ? (
+                        <div className="pg-menu" role="menu">
+                          {ALCANCE[tipo] ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setMenuDoGatilho(null);
+                                // Abre a etapa de alcance DESTE gatilho, direto.
+                                const alvo = etapas.findIndex((e) => e.chave === tipo);
+                                if (alvo >= 0) setEtapa(alvo);
+                              }}
+                            >
+                              {traduzir(ALCANCE[tipo]!.pergunta)}
+                            </button>
+                          ) : null}
                           <button
                             type="button"
+                            className="perigo"
                             onClick={() => {
                               setMenuDoGatilho(null);
-                              // Abre a etapa de alcance DESTE gatilho, direto.
-                              const alvo = etapas.findIndex((e) => e.chave === tipo);
-                              if (alvo >= 0) setEtapa(alvo);
+                              alternar(tipo);
                             }}
                           >
-                            {traduzir(ALCANCE[tipo]!.pergunta)}
+                            {traduzir("Tirar este gatilho")}
                           </button>
-                        ) : null}
-                        <button
-                          type="button"
-                          className="perigo"
-                          onClick={() => {
-                            setMenuDoGatilho(null);
-                            alternar(tipo);
-                          }}
-                        >
-                          {traduzir("Tirar este gatilho")}
-                        </button>
+                        </div>
+                      ) : null}
+                    </div>
+
+                    {abertoAqui ? (
+                      <div className="pg-resposta">
+                        <p className="pg-resposta-titulo">
+                          {traduzir(perguntaDaResposta([tipo]))}
+                        </p>
+                        {camposDeResposta(tipo, true)}
                       </div>
                     ) : null}
                   </div>
@@ -789,57 +950,31 @@ export function GatilhosDoSocial({
                 }
               />
             ) : etapaAtual.chave === "resposta" ? (
-              <div className="gat-respostas">
-                {respostas.map((texto, i) => (
-                  <div className="gat-resposta" key={i}>
-                    <input
-                      className="input"
-                      value={texto}
-                      autoFocus={i === 0}
-                      placeholder={traduzir(i === 0 ? "Escreva a resposta" : "Escreva outra resposta")}
-                      onChange={(e) =>
-                        setRespostas((atual) => atual.map((r, j) => (j === i ? e.target.value : r)))
-                      }
-                    />
-                    {texto || respostas.length > 1 ? (
-                      <button
-                        type="button"
-                        className="gat-resposta-tirar"
-                        aria-label={traduzir("Apagar esta resposta")}
-                        onClick={() =>
-                          setRespostas((atual) => {
-                            // Nunca fica sem nenhum campo: com um só, apagar limpa em vez de sumir.
-                            if (atual.length === 1) return [""];
-                            return atual.filter((_, j) => j !== i);
-                          })
-                        }
-                      >
-                        <IconClose width={12} height={12} />
-                      </button>
-                    ) : null}
-                  </div>
-                ))}
-
-                <button
-                  type="button"
-                  className="gat-mais-resposta"
-                  onClick={() => setRespostas((atual) => [...atual, ""])}
-                >
-                  <span aria-hidden="true">+</span> {traduzir("Adicionar outra resposta")}
-                </button>
-
-                {/*
-                  VÁRIAS RESPOSTAS NÃO SÃO VÁRIAS MENSAGENS: o robô manda UMA, sorteada. Sem essa
-                  frase, "adicionar outra resposta" lê como "mandar mais uma mensagem", e quem
-                  escrevesse três acharia que o lead ia receber as três.
-                */}
-                {respostas.filter((r) => r.trim()).length > 1 ? (
+              /*
+                UMA RESPOSTA POR GATILHO.
+                
+                Era um campo só, e o robô mandava o mesmo texto pra quem comentou no feed e pra
+                quem respondeu um story. "Essa resposta, ela não tem como ir para todos os
+                lugares." Cada gatilho tem o seu grupo, na ordem em que foram marcados, e o
+                primeiro passo de cada caminho nasce com o texto do grupo dele.
+              */
+              <div className="gat-resposta-grupos">
+                {marcados.length > 1 ? (
                   <p className="gat-nota">
                     {traduzir(
-                      "O robô manda uma delas, sorteada a cada vez. Repetir a mesma frase embaixo do mesmo post é o que o Instagram lê como spam.",
+                      "Cada gatilho tem a sua resposta: quem comentou no feed e quem respondeu um story estão em momentos diferentes.",
                     )}
                   </p>
                 ) : null}
+
+                {marcados.map((tipo, i) => (
+                  <div className="gat-resposta-grupo" key={tipo}>
+                    {marcados.length > 1 ? (
+                      <p className="gat-resposta-titulo">{traduzir(perguntaDaResposta([tipo]))}</p>
+                    ) : null}
+                    {camposDeResposta(tipo, i === 0)}
+                  </div>
+                ))}
               </div>
             ) : etapaAtual.tipo === "instagram_story_respondido" ? (
               <EscolhaDeMidia
@@ -876,9 +1011,10 @@ export function GatilhosDoSocial({
           type="button"
           className="cfg-salvar"
           disabled={marcados.length === 0}
-          /* Do painel, salvar não mexe na resposta: quem veio trocar um gatilho não veio reescrever
-             a mensagem, e sobrescrevê-la apagaria o que foi montado no canvas. */
-          onClick={() => (ehPainel ? concluir(false) : avancar())}
+          /* Do painel, salvar leva só a resposta do gatilho que foi aberto na setinha: quem veio
+             trocar uma palavra-chave não veio reescrever a mensagem, e sobrescrever as outras
+             apagaria o que foi montado no canvas. */
+          onClick={() => (ehPainel ? concluir("tocadas") : avancar())}
         >
           {!ehPainel && etapa + 1 < etapas.length ? traduzir("Continuar") : traduzir("Salvar")}
         </button>

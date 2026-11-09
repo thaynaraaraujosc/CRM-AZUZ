@@ -2829,4 +2829,24 @@ export const TRADUCOES_EN: Record<string, string> = {
   "Tentar de novo": "Try again",
   "Neste canal as mensagens começam a aparecer a partir de agora: a Meta não entrega as conversas que já estavam no celular. Pra trazer o histórico, a conexão precisa ser a do QR Code.":
     "On this channel messages start showing from now on: Meta does not deliver conversations that were already on the phone. To bring the history over, connect via QR Code instead.",
+
+  /* Gatilhos: uma resposta por gatilho, e a prévia do que o contato recebe. */
+  "O que o robô responde em cada gatilho?": "What does the bot reply for each trigger?",
+  "Cada gatilho tem a sua resposta: quem comentou no feed e quem respondeu um story estão em momentos diferentes.":
+    "Each trigger has its own reply: someone who commented on your feed and someone who replied to a story are in different moments.",
+  "Resposta deste gatilho": "Reply for this trigger",
+  "Como o cliente vê": "How the customer sees it",
+  "Isto é trocado pelo dado do contato no envio.": "This is replaced with the contact's data when sent.",
+  "Nenhum arquivo escolhido ainda": "No file chosen yet",
+  "Escreva a mensagem pra ver como ela chega.": "Write the message to see how it arrives.",
+  "Ver opções": "See options",
+  "No Direct são respostas rápidas: aparecem acima do teclado, cortadas em {n} caracteres, e somem depois de usadas.":
+    "In Direct these are quick replies: they show above the keyboard, trimmed to {n} characters, and disappear once used.",
+  "Na conexão oficial são botões de resposta. Na conexão por QR Code o WhatsApp não entrega botão: a pergunta sai como menu numerado.":
+    "On the official connection these are reply buttons. On a QR Code connection WhatsApp does not deliver buttons: the question goes out as a numbered menu.",
+  "São mais de {n} opções: no WhatsApp oficial elas não cabem em botão e chegam como lista, atrás do \"Ver opções\".":
+    "That is more than {n} options: on official WhatsApp they do not fit in buttons and arrive as a list, behind \"See options\".",
+  "As opções chegam numeradas dentro do próprio texto, e a pessoa responde com o número.":
+    "The options arrive numbered inside the text itself, and the person answers with the number.",
+  "O texto chega como está aqui, sem botão nenhum.": "The text arrives as it is here, with no buttons.",
 };

@@ -43,7 +43,6 @@ export default function GrupoGatilhosNode({ data, selected }: NodeProps<FlowRFNo
     aoAbrirPalavras,
     aoAdicionarGatilho,
     onAdicionarApos,
-    saidasConectadas,
     aoDesligarSaida,
     aoRemover,
     problemas = [],
@@ -54,7 +53,6 @@ export default function GrupoGatilhosNode({ data, selected }: NodeProps<FlowRFNo
      três linhas e o cartão deixa de caber na primeira olhada. É o que a referência faz. */
   const visiveis = nomes.slice(0, 2);
   const restantes = nomes.length - visiveis.length;
-  const saidaConectada = saidasConectadas?.has("__default__") ?? false;
 
   return (
     <div className={`flow-node grupo-gatilhos${selected ? " is-selected" : ""}`}>
@@ -166,35 +164,51 @@ export default function GrupoGatilhosNode({ data, selected }: NodeProps<FlowRFNo
         </button>
       ) : null}
 
-      <div className="flow-node-saida-unica">
-        <span className="flow-node-proximo">{traduzir("Próximo passo")}</span>
-        <Handle type="source" position={Position.Right} className="flow-handle" />
-        {!saidaConectada && onAdicionarApos ? (
-          <button
-            type="button"
-            className="flow-node-add-btn"
-            title={traduzir("O que acontece agora?")}
-            data-mais="__default__"
-            onClick={(e) => {
-              e.stopPropagation();
-              onAdicionarApos(undefined, e.currentTarget.getBoundingClientRect());
-            }}
-          >
-            +
-          </button>
-        ) : saidaConectada && aoDesligarSaida ? (
-          <button
-            type="button"
-            className="flow-node-add-btn flow-node-tirar-ligacao"
-            title={traduzir("Tirar a ligação desta saída")}
-            onClick={(e) => {
-              e.stopPropagation();
-              aoDesligarSaida(undefined);
-            }}
-          >
-            ×
-          </button>
-        ) : null}
+      {/*
+        UMA SAÍDA POR GATILHO, e não um "Próximo passo" só.
+        
+        Os três gatilhos desembocavam no mesmo primeiro passo, então quem respondeu o story e
+        quem comentou no feed recebiam exatamente o mesmo texto. São momentos diferentes e
+        merecem respostas diferentes — "a resposta não tem como ir para todos os lugares".
+        
+        O motor já sabia fazer isso: quando o evento chega, ele acha qual BLOCO de gatilho casou e
+        segue a aresta daquele bloco. O que faltava era o jeito de dizer. Cada linha aqui é a
+        saída de um bloco de verdade, e o `id` do ponto de ligação é o id dele — é assim que a
+        aresta desenhada a partir do cartão chega ao bloco certo.
+      */}
+      <div className="gg-saidas">
+        {gatilhosDoGrupo.map((g) => (
+          <div className="gg-saida" key={g.id}>
+            <span className="gg-saida-nome">{traduzir(g.label)}</span>
+            <Handle type="source" position={Position.Right} id={g.id} className="flow-handle" />
+            {!g.conectado && onAdicionarApos ? (
+              <button
+                type="button"
+                className="flow-node-add-btn"
+                title={traduzir("O que acontece quando este gatilho dispara?")}
+                data-mais={g.id}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAdicionarApos(g.id, e.currentTarget.getBoundingClientRect());
+                }}
+              >
+                +
+              </button>
+            ) : g.conectado && aoDesligarSaida ? (
+              <button
+                type="button"
+                className="flow-node-add-btn flow-node-tirar-ligacao"
+                title={traduzir("Tirar a ligação desta saída")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  aoDesligarSaida(g.id);
+                }}
+              >
+                ×
+              </button>
+            ) : null}
+          </div>
+        ))}
       </div>
     </div>
   );

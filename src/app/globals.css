@@ -27749,12 +27749,68 @@ td.trafego-col-crm:first-of-type {
 .pg-cartao {
   position: relative;
   display: flex;
-  align-items: flex-start;
-  gap: 8px;
+  flex-direction: column;
   padding: 12px 14px;
   border: 1px solid var(--line, #e2e8f0);
   border-radius: 10px;
   background: var(--surface-elevated, #fff);
+}
+
+/* Aberto, o cartão é o assunto da tela: a borda azul diz qual gatilho está sendo respondido. */
+.pg-cartao.aberto {
+  border-color: var(--ss-azul, #2563eb);
+  box-shadow: 0 0 0 3px var(--ss-azul-suave, #eff6ff);
+}
+
+.pg-cartao-linha {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+/* A setinha tem o mesmo tamanho do "⋯" ao lado: duas ações da mesma linha, mesmo peso. */
+.pg-seta {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 26px;
+  height: 22px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ss-tinta-fraca, #64748b);
+  cursor: pointer;
+}
+
+.pg-seta:hover {
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+
+.pg-seta svg {
+  transition: transform 140ms ease;
+}
+
+.pg-seta svg.girado {
+  transform: rotate(180deg);
+}
+
+/* A resposta mora DENTRO do cartão do gatilho, separada por uma divisa: é dele, não da tela. */
+.pg-resposta {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.pg-resposta-titulo {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.pg-resposta .gat-respostas {
+  margin-top: 10px;
 }
 
 .pg-textos {
@@ -27996,6 +28052,192 @@ td.trafego-col-crm:first-of-type {
 
 .gat-mais-resposta:hover {
   color: var(--ss-azul, #2563eb);
+}
+
+/* ---------------------------------------------------------------------------------------------
+   UM GRUPO DE RESPOSTA POR GATILHO, na última etapa.
+
+   Com um gatilho só não há grupo nenhum: a pergunta no alto já diz de quem é a resposta, e um
+   título repetindo isso seria ruído. Com dois ou mais, cada grupo ganha o seu título e a sua
+   divisa, porque é aí que a pessoa precisa saber qual campo é de qual momento.
+   --------------------------------------------------------------------------------------------- */
+.gat-resposta-grupos {
+  display: flex;
+  flex-direction: column;
+}
+
+.gat-resposta-grupo + .gat-resposta-grupo {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line-soft);
+}
+
+.gat-resposta-titulo {
+  margin: var(--space-3) 0 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.gat-resposta-titulo + .gat-respostas {
+  margin-top: 10px;
+}
+
+/* =============================================================================================
+   COMO O CLIENTE VÊ (ver `PreviaDaMensagem`).
+
+   Uma prévia não imita o aplicativo do destinatário: ela usa as superfícies do CRM e mostra a
+   ESTRUTURA do que chega — a bolha, as variáveis, os botões no formato daquele canal. Pintar de
+   verde do WhatsApp ou do degradê do Instagram deixaria a lateral do editor com duas linguagens
+   visuais, que é exatamente o que a unificação das mensagens acabou de desfazer.
+   ============================================================================================= */
+/* O acento é o azul do Social Seller onde ele existe, e a tinta navy da marca no editor do funil,
+   onde ele não existe: um azul genérico de reserva poria uma quarta cor na tela. */
+.prev-caixa {
+  margin-bottom: var(--space-4);
+  padding: 12px;
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 12px;
+  background: var(--surface-2, #f8fafc);
+}
+
+.prev-topo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.prev-topo strong {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.prev-canal {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.prev-tela {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+/* A bolha é a do OUTRO lado: chega do robô, encostada à esquerda, com o canto de cima quadrado. */
+.prev-bolha {
+  max-width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: 14px 14px 14px 4px;
+  background: var(--surface-elevated, #fff);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* A variável como ETIQUETA, e não como nome inventado: ela mostra onde o dado entra. */
+.prev-variavel {
+  display: inline-block;
+  /* Margem lateral quase zero: a etiqueta está DENTRO da frase, e com folga dos dois lados o
+     ponto final seguinte parecia uma palavra solta. */
+  margin: 0 1px;
+  padding: 0 5px;
+  border-radius: 6px;
+  background: var(--ss-azul-suave, var(--surface-hover));
+  color: var(--ss-azul, var(--ink));
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.prev-midia {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  padding: 12px;
+  border: 1px dashed var(--line, #e2e8f0);
+  border-radius: 12px;
+  background: var(--surface-elevated, #fff);
+}
+
+.prev-midia-tipo {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.prev-midia-nome {
+  font-size: 13px;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.prev-vazio {
+  margin: 0;
+  font-size: 12.5px;
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+/* Botão do WhatsApp oficial: largura da bolha, empilhado, texto centrado. */
+.prev-botoes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  max-width: 260px;
+}
+
+.prev-botao {
+  padding: 8px 10px;
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 10px;
+  background: var(--surface-elevated, #fff);
+  color: var(--ss-azul, var(--ink));
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Resposta rápida do Direct: pílula de contorno, em linha, acima do teclado. */
+.prev-rapidas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.prev-rapida {
+  padding: 6px 12px;
+  border: 1px solid var(--ss-azul, var(--ink));
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ss-azul, var(--ink));
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.prev-nota {
+  margin: 10px 0 0;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+/* O canal quando é informação, e não escolha: a linha diz qual é (ver `CanalDoBloco`). */
+.flow-canal-unico {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink);
 }
 
 /* =============================================================================================

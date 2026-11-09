@@ -69,6 +69,7 @@ import { IconAlerta, IconCheck, IconClose, IconErro } from "@/components/icons";
 import { Ajuda } from "@/components/ui";
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
 import { EscolhaDeConteudo } from "./forms/EscolhaDeConteudo";
+import { PreviaDaMensagem } from "./PreviaDaMensagem";
 import { DistribuirSorteioForm } from "./forms/DistribuirSorteioForm";
 
 /**
@@ -91,6 +92,23 @@ import type { AreaAutomacao } from "@/lib/canais/capacidades";
 import { useIdioma } from "@/lib/idioma-context";
 
 const TIPOS_OPCOES = new Set(["mensagem_botoes", "mensagem_lista"]);
+
+/**
+ * OS BLOCOS QUE GANHAM PRÉVIA.
+ *
+ * Os que chegam ao contato como uma bolha de conversa, e só eles. E-mail tem assunto e corpo, e
+ * cartão de contato e localização chegam como anexo do aparelho: desenhá-los como bolha de texto
+ * seria uma prévia errada, que é pior do que prévia nenhuma.
+ */
+const TIPOS_COM_PREVIA = new Set<string>([
+  "mensagem_texto",
+  "mensagem_botoes",
+  "mensagem_lista",
+  "mensagem_imagem",
+  "mensagem_video",
+  "mensagem_audio",
+  "mensagem_documento",
+]);
 const TIPOS_MIDIA = new Set(["mensagem_imagem", "mensagem_video", "mensagem_audio", "mensagem_documento"]);
 const TIPOS_TAREFA_EVENTO = new Set(["tarefa_criada", "tarefa_concluida"]);
 
@@ -445,6 +463,15 @@ export function ConfigPanel({
                 }}
               />
             ) : null}
+
+            {/*
+              A PRÉVIA VEM ANTES DO FORMULÁRIO.
+              
+              "Eu queria que aparecesse na lateral como que vai aparecer para o cliente." Ela é o
+              assunto do painel, não um detalhe no fim dele: quem abriu o bloco abriu pra ver o que
+              o contato recebe, e ela se reescreve enquanto o texto é digitado.
+            */}
+            {TIPOS_COM_PREVIA.has(node.type) ? <PreviaDaMensagem node={node} /> : null}
 
             {ehSocial ? null : (
             <div className="panel-h">

@@ -97,7 +97,14 @@ export type FlowRFNodeData = {
    * ele que desenha a lista inteira, e os outros ficam escondidos. Eles descrevem o FLUXO, não o
    * bloco, e por isso são montados no editor — o nó não tem como conhecer os irmãos.
    */
-  gatilhosDoGrupo?: { tipo: FlowNodeType; label: string }[];
+  /**
+   * Os gatilhos do fluxo, cada um com o seu bloco e o seu caminho.
+   *
+   * `id` é o bloco de verdade: é dele que a aresta sai, porque é ele que o motor casa com o
+   * evento. `conectado` diz se aquele caminho já leva a algum passo — é o que decide entre o "+"
+   * e o "×" na linha de saída.
+   */
+  gatilhosDoGrupo?: { id: string; tipo: FlowNodeType; label: string; conectado: boolean }[];
   palavrasDoGrupo?: string[];
   /** Abre a gaveta na lista de gatilhos. */
   aoAbrirGatilhos?: () => void;

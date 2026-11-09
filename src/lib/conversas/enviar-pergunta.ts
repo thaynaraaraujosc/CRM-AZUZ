@@ -5,7 +5,47 @@ import { slotDeEnvio } from "@/lib/integracoes/conexoes-whatsapp";
 import { enviarDirectComRespostasRapidas } from "@/lib/integracoes/instagram-login";
 import { contaConectada, enviarPelaCloudApi, janelaDeAtendimentoAberta } from "@/lib/integracoes/whatsapp-oficial";
 import { enviarTextoPeloCanal } from "./enviar-pelo-canal";
+import {
+  formatoDaPergunta,
+  rotuloCurto,
+  textoNumerado,
+  type FormatoEnviado,
+  type OpcaoPergunta,
+} from "./formato-pergunta";
 import { enviarModeloDeRetomada } from "./retomada-envio";
+
+/*
+ * O FORMATO E OS RÓTULOS MORAM EM `formato-pergunta.ts`, e são reexportados daqui.
+ *
+ * Eles eram deste arquivo, que abre o banco e fala com a Meta: o editor não conseguia importá-los
+ * sem arrastar o Prisma pro navegador, e a prévia do bloco teria que repetir a regra à mão. Os
+ * reexports ficam porque meia dúzia de arquivos já importava daqui.
+ */
+export {
+  MAX_ROTULO,
+  formatoDaPergunta,
+  rotuloCurto,
+  textoNumerado,
+  type FormatoEnviado,
+  type OpcaoPergunta,
+} from "./formato-pergunta";
+
+export type ResultadoPergunta = {
+  enviado: boolean;
+  formato: FormatoEnviado;
+  motivo?: string;
+  /** Por que não foi no formato interativo, quando não foi. Vai pro histórico. */
+  observacao?: string;
+  /**
+   * O id que a Meta devolve no envio.
+   *
+   * É por ele que o webhook de status acha a bolha depois pra dizer "entregue", "lido" ou
+   * "FALHOU". Sem guardar, a mensagem ficava com o tique de enviada pra sempre mesmo quando a Meta
+   * avisava minutos depois que a entrega falhou: a tela dizia que a automação tinha mandado e o
+   * celular da pessoa nunca recebia. Nulo no QR Code, que não tem id equivalente.
+   */
+  wamid?: string | null;
+};
 
 /**
  * Manda uma pergunta com opções pelo canal da conversa, no melhor formato que aquele canal
@@ -25,59 +65,6 @@ import { enviarModeloDeRetomada } from "./retomada-envio";
  * e `saidaDaResposta` já entende o número. O formato usado volta no retorno pra ficar no histórico
  *. A pessoa precisa saber que aquele fluxo saiu numerado, não em botões.
  */
-export type FormatoEnviado = "botoes" | "lista" | "respostas_rapidas" | "numerado";
-
-export type OpcaoPergunta = {
-  id: string;
-  rotulo: string;
-  /** Botão de URL: a opção leva a um endereço em vez de esperar resposta. */
-  url?: string;
-};
-
-export type ResultadoPergunta = {
-  enviado: boolean;
-  formato: FormatoEnviado;
-  motivo?: string;
-  /** Por que não foi no formato interativo, quando não foi. Vai pro histórico. */
-  observacao?: string;
-  /**
-   * O id que a Meta devolve no envio.
-   *
-   * É por ele que o webhook de status acha a bolha depois pra dizer "entregue", "lido" ou
-   * "FALHOU". Sem guardar, a mensagem ficava com o tique de enviada pra sempre mesmo quando a Meta
-   * avisava minutos depois que a entrega falhou: a tela dizia que a automação tinha mandado e o
-   * celular da pessoa nunca recebia. Nulo no QR Code, que não tem id equivalente.
-   */
-  wamid?: string | null;
-};
-
-/** Teto de caracteres do rótulo nos formatos interativos da Meta (botão, item de lista, resposta rápida). */
-export const MAX_ROTULO = 20;
-
-/** Encurta o rótulo pro teto do canal. Exportado porque a leitura da resposta precisa comparar
- * contra o MESMO texto que foi enviado. A pessoa clica no botão encurtado. */
-export function rotuloCurto(rotulo: string, max = MAX_ROTULO): string {
-  const limpo = rotulo.trim();
-  return limpo.length <= max ? limpo : `${limpo.slice(0, max - 1)}…`;
-}
-
-/** O menu numerado: a pergunta seguida de "1 - …", "2 - …". Funciona em qualquer canal. */
-export function textoNumerado(texto: string, opcoes: OpcaoPergunta[]): string {
-  if (!opcoes.length) return texto;
-  // A opção com endereço leva o endereço junto: é o único jeito de a pessoa chegar no link, já
-  // que nenhum destes canais manda botão de URL por aqui.
-  const linhas = opcoes.map((o, i) => (o.url ? `${i + 1} - ${o.rotulo}: ${o.url}` : `${i + 1} - ${o.rotulo}`));
-  return `${texto}\n\n${linhas.join("\n")}`;
-}
-
-/**
- * Uma opção com endereço não cabe em botão interativo aqui, e misturar formatos deixaria metade
- * das opções invisível. Com qualquer uma delas, a pergunta inteira sai numerada.
- */
-function temBotaoDeUrl(opcoes: OpcaoPergunta[]): boolean {
-  return opcoes.some((o) => !!o.url?.trim());
-}
-
 export async function enviarPerguntaPeloCanal(params: {
   workspaceId: string;
   conversaNome: string;
@@ -102,7 +89,7 @@ export async function enviarPerguntaPeloCanal(params: {
         return { enviado: false, formato: "numerado", motivo: "Instagram não conectado" };
       }
       const token = decriptar(integracao.accessTokenCriptografado);
-      if (opcoes.length && opcoes.length <= 13 && !temBotaoDeUrl(opcoes)) {
+      if (formatoDaPergunta("instagram", opcoes) === "respostas_rapidas") {
         await enviarDirectComRespostasRapidas(
           token,
           conversa.contato,
@@ -166,7 +153,7 @@ export async function enviarPerguntaPeloCanal(params: {
       };
     }
 
-    if (opcoes.length && opcoes.length <= 3 && !temBotaoDeUrl(opcoes)) {
+    if (formatoDaPergunta("whatsapp_oficial", opcoes) === "botoes") {
       const wamid = await enviarPelaCloudApi(conta, conversa.contato, {
         type: "interactive",
         interactive: {
@@ -180,7 +167,7 @@ export async function enviarPerguntaPeloCanal(params: {
       return { enviado: true, formato: "botoes", wamid };
     }
 
-    if (opcoes.length && opcoes.length <= 10 && !temBotaoDeUrl(opcoes)) {
+    if (formatoDaPergunta("whatsapp_oficial", opcoes) === "lista") {
       const wamid = await enviarPelaCloudApi(conta, conversa.contato, {
         type: "interactive",
         interactive: {

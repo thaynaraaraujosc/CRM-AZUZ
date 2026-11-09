@@ -417,11 +417,13 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     setRfEdges((eds) => applyEdgeChanges(changes.filter((c) => !ehDesenhado("id" in c ? c.id : "")), eds));
   }
   function onConnect(connection: Connection) {
+    // Arrastar a partir de uma saída do cartão: a ligação é do BLOCO daquele gatilho.
+    const origem = origemDaLigacao(rfNodes, ehSocial, connection.source, connection.sourceHandle ?? undefined);
     const novaEdge: FlowRFEdge = {
       id: novoIdAresta(),
-      source: connection.source,
+      source: origem.source,
       target: connection.target,
-      sourceHandle: connection.sourceHandle ?? undefined,
+      sourceHandle: origem.sourceHandle,
       type: "smoothstep",
       markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16 },
     };
@@ -733,12 +735,10 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
 
   /** Tira a ligação que sai desta saída. Uma saída tem no máximo um caminho. */
   function desligarSaida(nodeId: string, handleId: string | undefined) {
-    // O cartão de gatilhos fala por todos: desligar a saída dele desliga a dos gatilhos
-    // escondidos junto, senão eles seguiriam disparando pro passo que a tela diz ter sido solto.
-    const todos = idsDeGatilho(rfNodes, ehSocial);
-    const fontes = nodeId === todos[0] ? new Set(todos) : new Set([nodeId]);
+    // A saída do cartão é a saída de UM gatilho: o `handleId` diz qual.
+    const origem = origemDaLigacao(rfNodes, ehSocial, nodeId, handleId);
     const novoEdges = rfEdges.filter(
-      (e) => !(fontes.has(e.source) && (e.sourceHandle ?? undefined) === handleId),
+      (e) => !(e.source === origem.source && (e.sourceHandle ?? undefined) === origem.sourceHandle),
     );
     setRfEdges(novoEdges);
     persist(rfNodes, novoEdges);
@@ -797,36 +797,25 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
       data: bloco.dataPadrao() as Record<string, unknown>,
     };
     const novoRF: FlowRFNode = { id: novoDomain.id, type: novoDomain.category, position: pos, data: { flowNode: novoDomain, problemas: [] } };
+    const deOnde = origemDaLigacao(rfNodes, ehSocial, nodeOrigemId, handleId);
     const novaEdge: FlowRFEdge = {
       id: novoIdAresta(),
-      source: nodeOrigemId,
+      source: deOnde.source,
       target: novoDomain.id,
-      sourceHandle: handleId,
+      sourceHandle: deOnde.sourceHandle,
       type: "smoothstep",
       markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16 },
     };
     /*
-     * SAINDO DO CARTÃO DE GATILHOS, TODOS OS GATILHOS SE LIGAM AO PASSO NOVO.
+     * CADA GATILHO LIGA NO SEU, e só no seu.
      *
-     * O cartão desenha os gatilhos do fluxo inteiro, mas o "+" dele é o do PRIMEIRO bloco. Sem
-     * isto, um robô com três gatilhos sairia com um ligado ao primeiro passo e dois sem saída
-     * nenhuma: comentário dispararia e resposta de story não faria nada — e nada na tela diria
-     * por quê, porque os dois não são desenhados.
+     * Antes o "+" do cartão ligava TODOS os gatilhos ao mesmo passo novo, porque o cartão tinha
+     * uma saída só. Com uma saída por gatilho, ligar os outros junto seria desfazer no clique
+     * seguinte exatamente o que a pessoa veio separar.
      */
-    const irmaos =
-      nodeOrigemId === idsDeGatilho(rfNodes, ehSocial)[0]
-        ? idsDeGatilho(rfNodes, ehSocial).filter((id) => id !== nodeOrigemId)
-        : [];
-    const edgesDosIrmaos: FlowRFEdge[] = irmaos.map((id) => ({
-      id: novoIdAresta(),
-      source: id,
-      target: novoDomain.id,
-      type: "smoothstep",
-      markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16 },
-    }));
     // O prazo entra junto: ver `garantirPrazoDeEspera`.
-    const novoNodes = garantirPrazoDeEspera([...rfNodes, novoRF], nodeOrigemId, handleId);
-    const novoEdges = [...rfEdges, novaEdge, ...edgesDosIrmaos];
+    const novoNodes = garantirPrazoDeEspera([...rfNodes, novoRF], deOnde.source, deOnde.sourceHandle);
+    const novoEdges = [...rfEdges, novaEdge];
     setRfNodes(novoNodes);
     setRfEdges(novoEdges);
     setSelectedNodeIds([novoDomain.id]);
@@ -1059,7 +1048,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
    */
   function aplicarGatilhos(
     escolhas: { tipo: FlowNodeType; data: Record<string, unknown> }[],
-    respostas: string[] = [],
+    respostas: Partial<Record<FlowNodeType, string[]>> = {},
   ) {
     const antigos = rfNodes.filter((n) => n.data.flowNode.category === "gatilho");
     const primeiroPasso = rfEdges.find((e) => antigos.some((g) => g.id === e.source))?.target;
@@ -1104,6 +1093,9 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     if (primeiroPasso) {
       novosGatilhos.forEach((g) => {
         if (novoEdges.some((e) => e.source === g.id)) return;
+        /* Gatilho que chegou com resposta PRÓPRIA ganha o bloco dele logo abaixo: ligá-lo ao
+           primeiro passo dos outros faria a resposta dele sobrescrever a deles. */
+        if (respostas[g.data.flowNode.type]?.length) return;
         novoEdges.push({
           id: novoIdAresta(),
           source: g.id,
@@ -1115,27 +1107,50 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     }
 
     /*
-     * A RESPOSTA DA ÚLTIMA ETAPA VIRA O PRIMEIRO PASSO.
+     * A RESPOSTA DE CADA GATILHO VIRA O PRIMEIRO PASSO DAQUELE GATILHO.
      *
      * A gaveta terminava com os gatilhos ligados a nada, e quem acabou de criar a automação
-     * tinha que descobrir sozinho que faltava arrastar um bloco de mensagem no canvas — que é
+     * tinha que descobrir sozinho que faltava arrastar um bloco de mensagem no quadro — que é
      * exatamente o passo em que se desiste.
      *
-     * Existindo um primeiro passo de mensagem, ele é EDITADO; não existindo, nasce um. Trocar um
-     * bloco que a pessoa já configurou (com anexo, com botões) por um de texto apagaria trabalho
-     * feito, então só o texto é escrito.
+     * UMA MENSAGEM POR GATILHO, e não uma pra todos. Quem respondeu o story e quem comentou no
+     * feed estão em momentos diferentes: "a resposta não tem como ir para todos os lugares". O
+     * motor já sabia disso — ele segue a aresta do BLOCO que casou com o evento — faltava o jeito
+     * de dizer.
      *
-     * Lista vazia quer dizer "não mexa": é o que o "Pular" manda.
+     * Existindo uma mensagem naquele caminho, ela é EDITADA; não existindo, nasce uma. Trocar um
+     * bloco que a pessoa já configurou (com anexo, com botões) por um de texto apagaria trabalho
+     * feito, então só o texto é escrito. Gatilho sem resposta na lista não é tocado: é o que o
+     * "Pular" manda, e o que protege quem montou o caminho à mão.
      */
     let nodesComResposta = novoNodes;
     let edgesComResposta = novoEdges;
-    if (respostas.length) {
-      const [principal, ...variacoes] = respostas;
-      const alvo = primeiroPasso
-        ? nodesComResposta.find((n) => n.id === primeiroPasso && n.data.flowNode.category === "mensagem")
-        : undefined;
+    let nascidos = 0;
+    for (const gatilho of novosGatilhos) {
+      const texto = respostas[gatilho.data.flowNode.type];
+      if (!texto?.length) continue;
+      const [principal, ...variacoes] = texto;
 
-      if (alvo) {
+      const saida = edgesComResposta.find((e) => e.source === gatilho.id);
+      const alvo = saida
+        ? nodesComResposta.find((n) => n.id === saida.target && n.data.flowNode.category === "mensagem")
+        : undefined;
+      /*
+       * MENSAGEM DIVIDIDA COM OUTRO GATILHO NÃO É EDITADA: ELA É DESGRUDADA.
+       *
+       * Automação montada antes disto tem os gatilhos todos apontando pro mesmo primeiro passo.
+       * Escrever ali a resposta de um deles trocaria a resposta do outro, e a pessoa veria a frase
+       * que escreveu pro story aparecer no comentário do feed. Então este gatilho passa a ter a
+       * mensagem dele e o outro fica com a que já estava — que é o desenho que o motor sempre
+       * soube seguir.
+       */
+      const compartilhada =
+        !!alvo &&
+        edgesComResposta.filter(
+          (e) => e.target === alvo.id && novosGatilhos.some((g) => g.id === e.source),
+        ).length > 1;
+
+      if (alvo && !compartilhada) {
         nodesComResposta = nodesComResposta.map((n) =>
           n.id === alvo.id
             ? {
@@ -1150,34 +1165,48 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
               }
             : n,
         );
-      } else if (!primeiroPasso) {
-        const bloco = BLOCOS_DISPONIVEIS.find((b) => b.tipo === "mensagem_texto");
-        const id = novoIdNo();
-        const position = { x: ancora.x + 420, y: ancora.y };
-        const domain: DomainFlowNode = {
-          id,
-          type: "mensagem_texto",
-          category: "mensagem",
-          position,
-          data: {
-            ...(bloco?.dataPadrao() as Record<string, unknown> | undefined),
-            canal: "instagram",
-            texto: principal,
-            variacoes,
-          },
-        };
-        nodesComResposta = [...nodesComResposta, { id, type: "mensagem", position, data: { flowNode: domain, problemas: [] } }];
-        edgesComResposta = [
-          ...edgesComResposta,
-          ...novosGatilhos.map((g) => ({
-            id: novoIdAresta(),
-            source: g.id,
-            target: id,
-            type: "smoothstep",
-            markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16 },
-          })),
-        ];
+        continue;
       }
+      // Já existe um caminho que não é mensagem (uma espera, uma condição): quem montou isso
+      // sabia o que estava fazendo, e enfiar uma mensagem no meio quebraria o fluxo.
+      if (saida && !compartilhada) continue;
+      // Sai do passo compartilhado antes de nascer o próprio.
+      if (compartilhada) {
+        edgesComResposta = edgesComResposta.filter((e) => e.source !== gatilho.id);
+      }
+
+      const bloco = BLOCOS_DISPONIVEIS.find((b) => b.tipo === "mensagem_texto");
+      const id = novoIdNo();
+      // Uma abaixo da outra, na ordem dos gatilhos: duas mensagens no mesmo ponto nasceriam
+      // sobrepostas e a segunda pareceria não ter sido criada.
+      const position = { x: ancora.x + 420, y: ancora.y + nascidos * 220 };
+      nascidos += 1;
+      const domain: DomainFlowNode = {
+        id,
+        type: "mensagem_texto",
+        category: "mensagem",
+        position,
+        data: {
+          ...(bloco?.dataPadrao() as Record<string, unknown> | undefined),
+          canal: "instagram",
+          texto: principal,
+          variacoes,
+        },
+      };
+      nodesComResposta = [
+        ...nodesComResposta,
+        { id, type: "mensagem", position, data: { flowNode: domain, problemas: [] } },
+      ];
+      edgesComResposta = [
+        ...edgesComResposta,
+        {
+          id: novoIdAresta(),
+          source: gatilho.id,
+          target: id,
+          type: "smoothstep",
+          markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16 },
+        },
+      ];
     }
 
     setRfNodes(nodesComResposta);
@@ -1427,7 +1456,12 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
       const no = rfNodes.find((x) => x.id === id);
       const tipo = no?.data.flowNode.type as FlowNodeType;
       const bloco = BLOCOS_DISPONIVEIS.find((b) => b.tipo === tipo);
-      return { tipo, label: bloco?.label ?? String(tipo) };
+      return {
+        id,
+        tipo,
+        label: bloco?.label ?? String(tipo),
+        conectado: rfEdges.some((e) => e.source === id),
+      };
     });
     const dadosDoPrimeiro = (rfNodes.find((x) => x.id === host)?.data.flowNode.data ?? {}) as {
       palavras?: unknown;
@@ -1554,7 +1588,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `duplicarUm` e `removerNodes` são
     // funções recriadas a cada render; incluí-las refaria o mapa de nós em todo render, que é o
     // oposto do que este memo existe pra evitar. Elas só leem estado no momento do clique.
-    [rfNodes, problemasPorNode, saidasConectadasPorNode, entradasPorNode, ordemNarrativaPorNode, entenderFluxoAtivo, nodesRelacionados, modoConstrucao, funis, nodePiscando, area, ehSocial],
+    [rfNodes, rfEdges, problemasPorNode, saidasConectadasPorNode, entradasPorNode, ordemNarrativaPorNode, entenderFluxoAtivo, nodesRelacionados, modoConstrucao, funis, nodePiscando, area, ehSocial],
   );
   /**
    * De qual bloco o fluxo parte: o gatilho, ou o primeiro bloco sem nada chegando nele.
@@ -1676,16 +1710,24 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   ]);
 
   const edgesParaRenderizar = useMemo(() => {
-    /* A ligação de um gatilho escondido levaria ao mesmo lugar que a do cartão: desenhada,
-       seriam três curvas sobrepostas saindo do nada. */
-    const escondidos = new Set(idsDeGatilho(rfNodes, ehSocial).slice(1));
-    return rfEdges
-      .filter((e) => !escondidos.has(e.source))
-      .map((e) => ({
-        ...e,
-        className: arestasRelacionadas && !arestasRelacionadas.has(e.id) ? "flow-edge-apagada" : undefined,
-        zIndex: arestasRelacionadas?.has(e.id) ? 1 : 0,
-      }));
+    /*
+     * CADA GATILHO TEM O SEU CAMINHO, e todos saem do cartão.
+     *
+     * Os blocos escondidos existem, estão ligados e não são desenhados — mas a LINHA deles
+     * precisa aparecer, senão o quadro não diz pra onde vai quem respondeu o story. Ela passa a
+     * sair do cartão, pelo ponto de ligação daquele gatilho (`sourceHandle` é o id do bloco).
+     * O que está gravado não muda: a aresta continua saindo do bloco de verdade, que é quem o
+     * motor casa com o evento.
+     */
+    const ids = idsDeGatilho(rfNodes, ehSocial);
+    const host = ids.length ? ids[0] : null;
+    const doGrupo = new Set(ids);
+    return rfEdges.map((e) => ({
+      ...e,
+      ...(host && doGrupo.has(e.source) ? { source: host, sourceHandle: e.source } : {}),
+      className: arestasRelacionadas && !arestasRelacionadas.has(e.id) ? "flow-edge-apagada" : undefined,
+      zIndex: arestasRelacionadas?.has(e.id) ? 1 : 0,
+    }));
   }, [rfEdges, rfNodes, ehSocial, arestasRelacionadas]);
 
   const edgesComInicio = useMemo(
@@ -2004,13 +2046,19 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
               /* O que o fluxo já responde: a gaveta reabre com o texto na tela, em vez de pedir
                  de novo o que já está escrito no primeiro bloco. */
               respostasIniciais={(() => {
-                const ids = idsDeGatilho(rfNodes, ehSocial);
-                const alvoId = rfEdges.find((e) => ids.includes(e.source))?.target;
-                const alvo = alvoId ? rfNodes.find((n) => n.id === alvoId) : undefined;
-                if (!alvo || alvo.data.flowNode.category !== "mensagem") return undefined;
-                const d = (alvo.data.flowNode.data ?? {}) as { texto?: string; variacoes?: string[] };
-                const todas = [d.texto ?? "", ...(d.variacoes ?? [])].filter((t) => t.trim());
-                return todas.length ? todas : undefined;
+                const mapa: Partial<Record<FlowNodeType, string[]>> = {};
+                for (const g of rfNodes.filter((n) => n.data.flowNode.category === "gatilho")) {
+                  const alvoId = rfEdges.find((e) => e.source === g.id)?.target;
+                  const alvo = alvoId ? rfNodes.find((n) => n.id === alvoId) : undefined;
+                  if (!alvo || alvo.data.flowNode.category !== "mensagem") continue;
+                  const d = (alvo.data.flowNode.data ?? {}) as {
+                    texto?: string;
+                    variacoes?: string[];
+                  };
+                  const todas = [d.texto ?? "", ...(d.variacoes ?? [])].filter((t) => t.trim());
+                  if (todas.length) mapa[g.data.flowNode.type] = todas;
+                }
+                return Object.keys(mapa).length ? mapa : undefined;
               })()}
               gatilhosAtuais={domainNodesAtuais
                 .filter((n) => n.category === "gatilho")
@@ -2287,6 +2335,27 @@ const ID_INICIO = "__inicio__";
 function idsDeGatilho(nodes: FlowRFNode[], ehSocial: boolean): string[] {
   if (!ehSocial) return [];
   return nodes.filter((n) => n.data.flowNode.category === "gatilho").map((n) => n.id);
+}
+
+/**
+ * DE QUAL BLOCO ESTA LIGAÇÃO SAI, de verdade.
+ *
+ * O cartão de gatilhos desenha vários blocos, e cada saída dele é a saída de UM deles — o
+ * `handleId` da linha é o id do bloco. Quando a ligação vai ser gravada, ela precisa sair do
+ * bloco, não do cartão: é o bloco que o motor casa com o evento, e uma aresta saindo do cartão
+ * simplesmente não seria encontrada na hora de disparar.
+ */
+function origemDaLigacao(
+  nodes: FlowRFNode[],
+  ehSocial: boolean,
+  nodeId: string,
+  handleId: string | undefined,
+): { source: string; sourceHandle: string | undefined } {
+  const ids = idsDeGatilho(nodes, ehSocial);
+  if (handleId && ids[0] === nodeId && ids.includes(handleId)) {
+    return { source: handleId, sourceHandle: undefined };
+  }
+  return { source: nodeId, sourceHandle: handleId };
 }
 
 function retanguloDoNo(nodeId: string): DOMRect | undefined {

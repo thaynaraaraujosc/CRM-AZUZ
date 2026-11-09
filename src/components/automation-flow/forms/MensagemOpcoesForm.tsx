@@ -4,7 +4,6 @@ import { useRef } from "react";
 
 import type {
   AposTentativas,
-  CanalMensagem,
   FormatoResposta,
   MensagemBotoesData,
   OpcaoBotaoLista,
@@ -35,7 +34,7 @@ import { inserirTokenNoTexto } from "./variaveis";
 import { IconClose } from "@/components/icons";
 import { validarRegex } from "@/lib/automacoes/regex-seguro";
 import { CANAIS_DA_AREA, formatosDePergunta, type AreaAutomacao } from "@/lib/canais/capacidades";
-import { avisoDeJanela, canaisDaAreaParaBloco } from "./canais";
+import { CanalDoBloco } from "./CanalDoBloco";
 import { useIdioma } from "@/lib/idioma-context";
 import { Ajuda } from "@/components/ui";
 
@@ -119,8 +118,6 @@ export function MensagemOpcoesForm({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const opcoes = data.opcoes ?? [];
   const formatoAtual = data.formatoResposta ?? "menu_numerado";
-  const canais = canaisDaAreaParaBloco(area);
-  const janela = avisoDeJanela(area);
   // Os formatos que ALGUM canal desta área entrega. Lista interativa não existe no Direct, e
   // oferecê-la num robô de Instagram seria prometer um menu que não vai aparecer.
   const formatosDaArea = FORMATOS.filter((f) =>
@@ -146,23 +143,7 @@ export function MensagemOpcoesForm({
 
   return (
     <div className="flow-form">
-      <div className="field">
-        <label>
-          {traduzir("Canal")}
-          {janela ? <Ajuda texto={janela} /> : null}
-        </label>
-        <select
-          className="input"
-          value={data.canal ?? canais[0]?.valor}
-          onChange={(e) => onChange({ ...data, canal: e.target.value as CanalMensagem })}
-        >
-          {canais.map((c) => (
-            <option key={c.valor} value={c.valor}>
-              {c.label}
-            </option>
-          ))}
-        </select>
-      </div>
+      <CanalDoBloco area={area} valor={data.canal} onChange={(canal) => onChange({ ...data, canal })} />
 
       <div className="field">
         <div className="flow-form-label-row">

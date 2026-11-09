@@ -614,7 +614,23 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
               É uma chave por bloco, desligada por padrão: falar com quem nunca escreveu é decisão
               de quem monta, não comportamento automático.
             */}
-            {ehCartaoDeMensagem && aoMudarCampo ? (
+            {/*
+              O "CANAIS" NÃO EXISTE NO DIRECT.
+              
+              "Ali está escrito Direct, quais canais? Todos. Mas não é todos." Num robô de Instagram
+              o cartão já diz o canal uma linha acima — Instagram (Direct) — e a única conexão
+              possível é essa. "Canais: Todos" ali é uma escolha que não escolhe e uma promessa que
+              não se cumpre: a resposta de um comentário não tem como sair pelo WhatsApp.
+              
+              A chave do "se você nunca conversou com a pessoa" ia junto, e é certo que vá: ela
+              começa conversa pelo WhatsApp usando o número do cadastro, coisa que o Direct não faz
+              — o Instagram só aceita mensagem dentro das 24 horas depois de a pessoa escrever.
+              
+              A condição é o CANAL DO BLOCO, e não a área: no robô comercial o menu continua inteiro
+              (lá ele escolhe entre as conexões de WhatsApp e liga o envio pra quem nunca escreveu),
+              e some só onde não tem o que escolher.
+            */}
+            {ehCartaoDeMensagem && aoMudarCampo && canalDoBloco !== "instagram" ? (
               (() => {
                 const dados = (flowNode.data ?? {}) as {
                   canaisPermitidos?: string[];

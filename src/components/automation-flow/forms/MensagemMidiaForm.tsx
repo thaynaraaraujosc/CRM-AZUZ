@@ -9,8 +9,8 @@ import {
   type DocumentoBiblioteca,
   type TipoMidiaArquivo,
 } from "@/lib/biblioteca-documentos-context";
-import type { CanalMensagem, FlowNodeType, MensagemMidiaData } from "@/lib/automation-flow/types";
-import { avisoDeJanela, canaisDaAreaParaBloco } from "./canais";
+import type { FlowNodeType, MensagemMidiaData } from "@/lib/automation-flow/types";
+import { CanalDoBloco } from "./CanalDoBloco";
 import type { AreaAutomacao } from "@/lib/canais/capacidades";
 import { VariavelDropdown } from "./VariavelDropdown";
 import { inserirTokenNoTexto } from "./variaveis";
@@ -95,8 +95,6 @@ export function MensagemMidiaForm({
   const { t: traduzir } = useIdioma();
   const data = node.data as MensagemMidiaData;
   const tipoMidia = tipoMidiaDoBloco(node.type);
-  const canais = canaisDaAreaParaBloco(area);
-  const janela = avisoDeJanela(area);
   const { data: sessao } = useSession();
   const { documentos, adicionarDocumento } = useBibliotecaDocumentos();
   const arquivosDoTipo = documentos.filter((d) => (d.tipoMidia ?? "documento") === tipoMidia);
@@ -184,23 +182,7 @@ export function MensagemMidiaForm({
 
   return (
     <div className="flow-form">
-      <div className="field">
-        <label>
-          {traduzir("Canal")}
-          {janela ? <Ajuda texto={janela} /> : null}
-        </label>
-        <select
-          className="input"
-          value={data.canal ?? canais[0]?.valor ?? "whatsapp"}
-          onChange={(e) => set({ canal: e.target.value as CanalMensagem })}
-        >
-          {canais.map((c) => (
-            <option key={c.valor} value={c.valor}>
-              {c.label}
-            </option>
-          ))}
-        </select>
-      </div>
+      <CanalDoBloco area={area} valor={data.canal} onChange={(canal) => set({ canal })} />
 
       <div className="field">
         <label>

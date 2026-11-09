@@ -8,7 +8,7 @@ import { PreviaMensagem } from "@/components/automacoes/PreviaMensagem";
 import { mapearVariaveis } from "@/lib/campanhas/variaveis";
 import { inserirTokenNoTexto } from "./variaveis";
 import { useFormularios } from "@/lib/formularios-context";
-import { avisoDeJanela, canaisDaAreaParaBloco } from "./canais";
+import { CanalDoBloco } from "./CanalDoBloco";
 import type { AreaAutomacao } from "@/lib/canais/capacidades";
 import { useIdioma } from "@/lib/idioma-context";
 import { Ajuda } from "@/components/ui";
@@ -26,7 +26,7 @@ export function MensagemForm({
   onTrocarTipo,
 }: {
   node: FlowNode;
-  /** Comercial ou social: decide quais canais o seletor oferece. Ver `canaisDaAreaParaBloco`. */
+  /** Comercial ou social: decide quais canais o bloco oferece. Ver `CanalDoBloco`. */
   area: AreaAutomacao;
   onChange: (data: Record<string, unknown>) => void;
   /** Trocar o tipo do bloco. É o que faz "+ Botão de ação" virar uma pergunta. */
@@ -35,8 +35,6 @@ export function MensagemForm({
   const { t: traduzir } = useIdioma();
   const d = node.data as Record<string, unknown>;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const canais = canaisDaAreaParaBloco(area);
-  const janela = avisoDeJanela(area);
 
   function set(patch: Record<string, unknown>) {
     onChange({ ...d, ...patch });
@@ -67,23 +65,11 @@ export function MensagemForm({
   return (
     <div className="flow-form">
       {temCanal ? (
-        <div className="field">
-          <label>
-            {traduzir("Canal")}
-            {janela ? <Ajuda texto={janela} /> : null}
-          </label>
-          <select
-            className="input"
-            value={String(d.canal ?? canais[0]?.valor ?? "whatsapp")}
-            onChange={(e) => set({ canal: e.target.value })}
-          >
-            {canais.map((c) => (
-              <option key={c.valor} value={c.valor}>
-                {c.label}
-              </option>
-            ))}
-          </select>
-        </div>
+        <CanalDoBloco
+          area={area}
+          valor={typeof d.canal === "string" ? d.canal : undefined}
+          onChange={(canal) => set({ canal })}
+        />
       ) : null}
 
       {temFormularioOrigem ? (
