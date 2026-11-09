@@ -156,7 +156,7 @@ export function GatilhosDoSocial({
    * ao seu assunto. Abrir sempre na lista obrigaria a passar pela escolha de gatilhos pra chegar
    * numa palavra, que é o caminho que a linha existe pra encurtar.
    */
-  etapaInicial?: "lista" | "palavras" | "painel";
+  etapaInicial?: "lista" | "palavras" | "painel" | "adicionar";
   /**
    * As escolhas e, quando a última etapa foi preenchida, o que responder.
    *
@@ -187,12 +187,18 @@ export function GatilhosDoSocial({
    * porque tem que dar a opção de eu fazer alterações."
    */
   const [etapa, setEtapa] = useState(() => {
-    if (etapaInicial === "painel" && gatilhosAtuais?.length) return -2;
+    if ((etapaInicial === "painel" || etapaInicial === "adicionar") && gatilhosAtuais?.length) return -2;
     if (etapaInicial === "palavras" && gatilhosAtuais?.length) return 0;
     return -1;
   });
-  /** O modal de acrescentar gatilho, aberto pelo painel. */
-  const [adicionarAberto, setAdicionarAberto] = useState(false);
+  /*
+   * O modal de acrescentar gatilho.
+   *
+   * Ele já nasce aberto quando quem chamou foi o botão "Adicionar gatilho +" do cartão: o botão
+   * diz o que faz, e abrir só o painel — com o mesmo botão de novo lá dentro — faz o primeiro
+   * clique parecer que não fez nada.
+   */
+  const [adicionarAberto, setAdicionarAberto] = useState(etapaInicial === "adicionar");
   /** Gatilhos marcados DENTRO do modal, ainda não acrescentados. */
   const [paraAdicionar, setParaAdicionar] = useState<FlowNodeType[]>([]);
   /** De qual gatilho o menu "⋯" está aberto, no painel. */

@@ -94,6 +94,16 @@ const TIPOS_OPCOES = new Set(["mensagem_botoes", "mensagem_lista"]);
 const TIPOS_MIDIA = new Set(["mensagem_imagem", "mensagem_video", "mensagem_audio", "mensagem_documento"]);
 const TIPOS_TAREFA_EVENTO = new Set(["tarefa_criada", "tarefa_concluida"]);
 
+/** Gatilhos do Instagram cuja configuração mora na gaveta, e não neste painel. */
+const ALCANCE_NA_GAVETA = new Set<string>([
+  "comentario_instagram",
+  "instagram_resposta_comentario",
+  "instagram_story_respondido",
+  "instagram_comentario_live",
+  "instagram_direct_recebido",
+  "instagram_mencao_story",
+]);
+
 function FormularioDoNode({
   node,
   area,
@@ -101,6 +111,7 @@ function FormularioDoNode({
   onUpdateNodeData,
   onRemoverOpcaoAresta,
   onTrocarTipo,
+  onAbrirGatilhos,
 }: {
   node: FlowNode;
   /** Comercial ou social: decide os canais que os formulários de mensagem oferecem. */
@@ -110,7 +121,35 @@ function FormularioDoNode({
   onRemoverOpcaoAresta: (nodeId: string, opcaoId: string) => void;
   /** Troca o tipo do bloco. É o que transforma uma mensagem de texto em pergunta com botões. */
   onTrocarTipo?: (nodeId: string, tipo: FlowNodeType, data: Record<string, unknown>) => void;
+  /** Abre a gaveta dos gatilhos, que é onde palavra-chave e alcance moram no Social Seller. */
+  onAbrirGatilhos?: () => void;
 }) {
+  /*
+   * NO SOCIAL SELLER, A PALAVRA-CHAVE E O ALCANCE NÃO MORAM AQUI.
+   *
+   * Este painel tinha o formulário completo do gatilho — "PALAVRAS QUE DISPARAM", "COMO
+   * COMPARAR" com três opções, "EM QUAL STORY" — e a gaveta tem o mesmo assunto com OUTRAS
+   * palavras e outro desenho. Duas telas pra mesma configuração é como se chega em duas
+   * verdades: a pessoa muda numa, confere na outra e encontra coisa diferente.
+   *
+   * A gaveta ganhou: ela é a que a referência desenha, a que o cartão do canvas abre e a que
+   * edita TODOS os gatilhos de uma vez (as palavras valem pro fluxo, não pro bloco). Aqui fica o
+   * caminho pra ela — e o título e a observação do bloco, que são deste painel mesmo.
+   */
+  if (area === "social" && ALCANCE_NA_GAVETA.has(node.type) && onAbrirGatilhos) {
+    return (
+      <div className="flow-form">
+        <p className="hint">
+          As palavras-chave e onde este gatilho vale ficam no cartão{" "}
+          <strong>O que inicia a automação</strong>, no quadro — ali eles valem pra automação
+          inteira, e não só pra este bloco.
+        </p>
+        <button type="button" className="btn" onClick={onAbrirGatilhos}>
+          Abrir os gatilhos
+        </button>
+      </div>
+    );
+  }
   // Resposta a story: palavras, modo de comparação e a escolha de QUAL story, entre os que estão
   // no ar agora. Formulário separado do de comentário porque a lista tem regra própria: story
   // dura 24 horas e some sozinho.
@@ -281,6 +320,7 @@ export function ConfigPanel({
   onSelecionarNode,
   abaPedida,
   ehSocial,
+  onAbrirGatilhos,
   onFechar,
   onSalvar,
   temPendencia,
@@ -318,6 +358,8 @@ export function ConfigPanel({
    * sair da tela sem ver.
    */
   ehSocial?: boolean;
+  /** Abre a gaveta dos gatilhos: no Social Seller é lá que palavra-chave e alcance moram. */
+  onAbrirGatilhos?: () => void;
   onFechar?: () => void;
   onSalvar?: () => void;
   temPendencia?: boolean;
@@ -446,7 +488,7 @@ export function ConfigPanel({
               <h4>{traduzir("Configuração")}</h4>
               <Ajuda texto={resumoNaturalNo(node, funis)} />
             </div>
-            <FormularioDoNode node={node} area={fluxo?.area ?? "comercial"} fluxoAtualId={fluxo?.id} onTrocarTipo={onTrocarTipo} onUpdateNodeData={onUpdateNodeData} onRemoverOpcaoAresta={onRemoverOpcaoAresta} />
+            <FormularioDoNode node={node} area={fluxo?.area ?? "comercial"} fluxoAtualId={fluxo?.id} onTrocarTipo={onTrocarTipo} onUpdateNodeData={onUpdateNodeData} onRemoverOpcaoAresta={onRemoverOpcaoAresta} onAbrirGatilhos={onAbrirGatilhos} />
           </>
         ) : selectedNodes.length > 1 ? (
           <p className="hint">{selectedNodes.length} blocos selecionados: selecione um só pra configurar, ou nenhum pra ver as configurações gerais do fluxo.</p>

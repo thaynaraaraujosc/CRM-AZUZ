@@ -103,6 +103,8 @@ export type FlowRFNodeData = {
   aoAbrirGatilhos?: () => void;
   /** Abre a gaveta direto na etapa das palavras-chave. */
   aoAbrirPalavras?: () => void;
+  /** Abre a gaveta já com o modal de acrescentar gatilho na frente. */
+  aoAdicionarGatilho?: () => void;
   /** O tempo do cronômetro, em minutos, editado no próprio cartão do bloco de espera. */
   aoMudarCronometro?: (minutos: number) => void;
 };

@@ -177,7 +177,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const [toasts, setToasts] = useState<{ id: number; texto: string }[]>([]);
   const [escolherGatilhoAberto, setEscolherGatilhoAberto] = useState(false);
   /** Em qual etapa a gaveta de gatilhos abre: a lista, ou direto nas palavras-chave. */
-  const [etapaDaGaveta, setEtapaDaGaveta] = useState<"lista" | "palavras" | "painel">("lista");
+  const [etapaDaGaveta, setEtapaDaGaveta] = useState<"lista" | "palavras" | "painel" | "adicionar">("lista");
   /*
    * ONDE A PASTILHA DE INÍCIO ESTÁ ENQUANTO SE ARRASTA.
    *
@@ -1533,6 +1533,12 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                       setEscolherGatilhoAberto(true);
                     }
                   : undefined,
+                aoAdicionarGatilho: modoConstrucao
+                  ? () => {
+                      setEtapaDaGaveta(idsGatilho.length ? "adicionar" : "lista");
+                      setEscolherGatilhoAberto(true);
+                    }
+                  : undefined,
                 /* Apagar o cartão apaga o GRUPO: ele representa todos, e deixar um gatilho
                    invisível vivo depois de "tirar os gatilhos" é um robô que continua disparando
                    sem nada na tela dizendo por quê. */
@@ -2169,7 +2175,15 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           de tela pra mostrar o nome do fluxo — que já está escrito na barra de cima. Agora abre
           ao clicar num bloco, ou pelo "Configurações da automação" do menu "⋮".
         */}
-        {selectedNodes.length === 0 && !configGeralAberta ? null : (
+        {/*
+          E ELE SOME QUANDO A GAVETA DE GATILHOS ABRE.
+          
+          Os dois são painéis da ESQUERDA, e o de configuração é desenhado depois: abrir a gaveta
+          com um bloco selecionado punha uma em cima da outra, e o clique em "Adicionar gatilho"
+          parecia não fazer nada — "continua no mesmo lugar". A gaveta é quem manda enquanto está
+          aberta: ela é a configuração do gatilho.
+        */}
+        {(selectedNodes.length === 0 && !configGeralAberta) || escolhendoGatilho ? null : (
         <ConfigPanel
           fluxo={fluxoNaTela}
           selectedNodes={selectedNodes}
@@ -2183,6 +2197,10 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           onSelecionarNode={irParaONode}
           abaPedida={abaPedida}
           ehSocial={ehSocial}
+          onAbrirGatilhos={() => {
+            setEtapaDaGaveta("painel");
+            setEscolherGatilhoAberto(true);
+          }}
           onFechar={() => {
             setSelectedNodeIds([]);
             setConfigGeralAberta(false);

@@ -41,6 +41,7 @@ export default function GrupoGatilhosNode({ data, selected }: NodeProps<FlowRFNo
     palavrasDoGrupo = [],
     aoAbrirGatilhos,
     aoAbrirPalavras,
+    aoAdicionarGatilho,
     onAdicionarApos,
     saidasConectadas,
     aoDesligarSaida,
@@ -150,13 +151,15 @@ export default function GrupoGatilhosNode({ data, selected }: NodeProps<FlowRFNo
         <IconExpandir className="gg-seta" width={14} height={14} aria-hidden="true" />
       </button>
 
-      {aoAbrirGatilhos ? (
+      {aoAdicionarGatilho ?? aoAbrirGatilhos ? (
         <button
           type="button"
           className="gg-adicionar nodrag"
           onClick={(e) => {
             e.stopPropagation();
-            aoAbrirGatilhos();
+            // O botão diz "Adicionar gatilho": ele abre a escolha, não o painel com o mesmo
+            // botão de novo lá dentro.
+            (aoAdicionarGatilho ?? aoAbrirGatilhos)?.();
           }}
         >
           {traduzir("Adicionar gatilho")} <span aria-hidden="true">+</span>
