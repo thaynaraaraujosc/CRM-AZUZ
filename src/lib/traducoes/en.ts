@@ -2849,4 +2849,12 @@ export const TRADUCOES_EN: Record<string, string> = {
   "As opções chegam numeradas dentro do próprio texto, e a pessoa responde com o número.":
     "The options arrive numbered inside the text itself, and the person answers with the number.",
   "O texto chega como está aqui, sem botão nenhum.": "The text arrives as it is here, with no buttons.",
+
+  /* Configurações do robô: a regra de outras automações ao mesmo tempo. */
+  "Outras automações ao mesmo tempo": "Other automations at the same time",
+  "Pode rodar junto com as outras": "Can run alongside the others",
+  "Não começar enquanto houver outra rodando": "Do not start while another one is running",
+  "Encerrar as outras e começar esta": "End the others and start this one",
+  "Vale entre automações DIFERENTES para o mesmo contato. Conta qualquer execução viva, inclusive a que está parada esperando uma resposta ou um prazo de dias. Quando duas automações do mesmo evento disputam, quem começa é a de maior Prioridade. O bloco \"Executar robô\" não é afetado: ali é o próprio fluxo chamando o próximo.":
+    "This applies between DIFFERENT automations for the same contact. It counts any live run, including one parked waiting for a reply or a deadline days away. When two automations compete over the same event, the one with the higher Priority starts. The \"Run bot\" block is not affected: there the flow itself is calling the next one.",
 };

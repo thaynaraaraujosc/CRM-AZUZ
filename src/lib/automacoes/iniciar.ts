@@ -79,6 +79,13 @@ export async function iniciarFluxoComEstado(params: {
   gatilhoNoId?: string;
   /** Configurações do fluxo: dizem se ele pode rodar de novo pra este contato. */
   configuracoes?: ConfiguracoesFluxo | null;
+  /**
+   * Pula a regra de "outras automações ao mesmo tempo".
+   *
+   * É o bloco "Executar robô" passando o bastão: o robô que chama está vivo por definição, e
+   * aplicar a regra ali faria a chamada nunca acontecer.
+   */
+  ignorarConcorrencia?: boolean;
   /** Estado atual do fluxo, pra publicar uma versão quando ele ainda não tem nenhuma. */
   publicarSeFaltar?: { versao: number; nodes: FlowNode[]; edges: FlowEdge[]; configuracoes: ConfiguracoesFluxo };
   contatoNome: string;
@@ -118,8 +125,11 @@ export async function iniciarFluxoComEstado(params: {
     fluxoId: params.fluxoId,
     contatoNome: params.contatoNome,
     configuracoes: params.configuracoes ?? versao.configuracoes,
+    ignorarConcorrencia: params.ignorarConcorrencia,
   });
-  if (!veredito.pode) return { situacao: "cancelada", passos: 0, detalhe: `Não iniciou: ${veredito.motivo}.` };
+  if (!veredito.pode) {
+    return { situacao: "cancelada", passos: 0, detalhe: `Não iniciou: ${veredito.motivo}.`, naoIniciou: true };
+  }
 
   const configuracoes = params.configuracoes ?? versao.configuracoes;
   const agora = new Date();
@@ -130,7 +140,12 @@ export async function iniciarFluxoComEstado(params: {
   // janela abrir: o que a opção sempre prometeu e nunca fez, porque sem estado não havia onde
   // guardar uma execução parada.
   if (fora && comportamento === "encerrar") {
-    return { situacao: "cancelada", passos: 0, detalhe: "Fora do horário de funcionamento da automação." };
+    return {
+      situacao: "cancelada",
+      passos: 0,
+      detalhe: "Fora do horário de funcionamento da automação.",
+      naoIniciou: true,
+    };
   }
 
   // O expediente entra no contexto AQUI, uma vez. O motor é síncrono e não pode ir ao banco no

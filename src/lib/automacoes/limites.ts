@@ -21,12 +21,48 @@ const JANELAS: Record<string, number | null> = {
   uma_vez_por_mes: 30 * 24 * 60 * 60 * 1000,
 };
 
+export type ModoDeConcorrencia = NonNullable<ConfiguracoesFluxo["concorrencia"]>;
+
+/**
+ * O CONTATO JÁ ESTÁ EM OUTRA AUTOMAÇÃO: esta começa, não começa, ou derruba as outras?
+ *
+ * Pura de propósito, e separada da ida ao banco: é a tabela de decisão da chave "Outras
+ * automações ao mesmo tempo", e é ela que tem teste. `outras` são as execuções VIVAS do contato em
+ * fluxos DIFERENTES deste — o mesmo fluxo já é assunto de "não iniciar se já estiver nesse fluxo"
+ * e de "cancelar a execução anterior", e governá-lo duas vezes faria duas chaves se contradizerem.
+ */
+export function decidirConcorrencia(
+  modo: ModoDeConcorrencia,
+  outras: { id: string; fluxoId: string }[],
+): { pode: boolean; encerrar: string[]; motivo?: string } {
+  if (modo === "permitir" || outras.length === 0) return { pode: true, encerrar: [] };
+  if (modo === "nao_iniciar") {
+    return {
+      pode: false,
+      encerrar: [],
+      motivo:
+        outras.length === 1
+          ? "o contato já está em outra automação"
+          : `o contato já está em outras ${outras.length} automações`,
+    };
+  }
+  return { pode: true, encerrar: outras.map((e) => e.id) };
+}
+
 export async function podeIniciar(params: {
   workspaceId: string;
   fluxoId: string;
   contatoNome: string;
   configuracoes: ConfiguracoesFluxo | null | undefined;
   agora?: Date;
+  /**
+   * Pula a regra de concorrência.
+   *
+   * É o bloco "Executar robô" chamando o próximo: aquilo é passagem de bastão desenhada à mão, e
+   * quem a desenhou sabia que o robô de origem ainda estava vivo — ele é quem está chamando.
+   * Bloquear ali seria desligar o desenho em vez de evitar atropelo.
+   */
+  ignorarConcorrencia?: boolean;
 }): Promise<Veredito> {
   const cfg = params.configuracoes ?? {};
   const agora = params.agora ?? new Date();
@@ -48,16 +84,20 @@ export async function podeIniciar(params: {
   const limite = cfg.limiteExecucao ?? "sempre";
   // "sempre" e "uma vez por entrada" não travam nada aqui: cada entrada na etapa é um evento novo,
   // e é o próprio gatilho que decide se houve entrada.
-  if (limite === "sempre" || limite === "uma_vez_por_entrada") return { pode: true };
+  if (limite === "sempre" || limite === "uma_vez_por_entrada") return concorrencia(params, cfg);
 
   if (limite === "no_maximo") {
     const teto = Math.max(1, Math.round(cfg.maximoExecucoes ?? 1));
     const quantas = await prisma.execucaoAutomacao.count({
       where: { workspaceId: params.workspaceId, fluxoId: params.fluxoId, contatoNome: params.contatoNome },
     });
-    return quantas < teto
-      ? { pode: true }
-      : { pode: false, motivo: `esse fluxo já rodou ${quantas} ${quantas === 1 ? "vez" : "vezes"} para este contato (o teto é ${teto})` };
+    if (quantas >= teto) {
+      return {
+        pode: false,
+        motivo: `esse fluxo já rodou ${quantas} ${quantas === 1 ? "vez" : "vezes"} para este contato (o teto é ${teto})`,
+      };
+    }
+    return concorrencia(params, cfg);
   }
 
   const janela = JANELAS[limite];
@@ -71,9 +111,40 @@ export async function podeIniciar(params: {
       ...(desde ? { iniciadaEm: { gte: desde } } : {}),
     },
   });
-  if (!jaRodou) return { pode: true };
+  if (!jaRodou) return concorrencia(params, cfg);
 
   return { pode: false, motivo: MOTIVO[limite] ?? "limite de execução atingido" };
+}
+
+/**
+ * A regra de concorrência, aplicada POR ÚLTIMO.
+ *
+ * Por último porque "encerrar as outras" derruba execução de verdade: fazer isso antes de saber se
+ * esta automação pode rodar deixaria o contato sem nenhuma — a dela bloqueada por "uma vez por
+ * contato" e as outras já canceladas.
+ */
+async function concorrencia(
+  params: { workspaceId: string; fluxoId: string; contatoNome: string; ignorarConcorrencia?: boolean },
+  cfg: ConfiguracoesFluxo,
+): Promise<Veredito> {
+  const modo = cfg.concorrencia ?? "permitir";
+  if (modo === "permitir" || params.ignorarConcorrencia) return { pode: true };
+
+  const vivas = await execucoesVivasDoContato(params.workspaceId, params.contatoNome);
+  const decisao = decidirConcorrencia(
+    modo,
+    vivas.filter((e) => e.fluxoId !== params.fluxoId),
+  );
+  if (!decisao.pode) return { pode: false, motivo: decisao.motivo ?? "o contato já está em outra automação" };
+
+  for (const execucaoId of decisao.encerrar) {
+    await encerrarExecucao({
+      execucaoId,
+      situacao: "cancelada",
+      erroMensagem: "Encerrada por outra automação que não divide o contato.",
+    });
+  }
+  return { pode: true };
 }
 
 const MOTIVO: Record<string, string> = {

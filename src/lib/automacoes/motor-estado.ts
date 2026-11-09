@@ -105,6 +105,16 @@ export type FimDaRodada = {
   situacao: "concluida" | "cancelada" | "erro" | "aguardando_tempo" | "aguardando_evento" | "em_andamento";
   passos: number;
   detalhe?: string;
+  /**
+   * A EXECUÇÃO NEM CHEGOU A EXISTIR.
+   *
+   * "Cancelada com zero passos" acontece por dois motivos bem diferentes: a automação rodou e foi
+   * cancelada, ou ela foi barrada antes de começar (limite, horário, outra automação no contato).
+   * Sem distinguir os dois, quem dispara anotava "a automação começou" na linha do tempo do
+   * contato e somava +1 no contador de execuções de um robô que não mandou nada — e com a regra de
+   * concorrência ligada isso passaria a ser a maioria das anotações.
+   */
+  naoIniciou?: boolean;
 };
 
 /**

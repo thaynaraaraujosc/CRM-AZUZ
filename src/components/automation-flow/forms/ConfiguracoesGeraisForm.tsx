@@ -17,6 +17,18 @@ const LIMITES: { valor: NonNullable<ConfiguracoesFluxo["limiteExecucao"]>; label
   { valor: "no_maximo", label: "No máximo X vezes por contato"},
 ];
 
+/**
+ * O QUE FAZER QUANDO O CONTATO JÁ ESTÁ EM OUTRA AUTOMAÇÃO.
+ *
+ * As palavras dizem o efeito e não o conceito: "concorrência" é o nome da regra, mas o que a
+ * pessoa precisa escolher é se o robô fala por cima dos outros, espera a vez ou toma a vez.
+ */
+const CONCORRENCIAS: { valor: NonNullable<ConfiguracoesFluxo["concorrencia"]>; label: string }[] = [
+  { valor: "permitir", label: "Pode rodar junto com as outras" },
+  { valor: "nao_iniciar", label: "Não começar enquanto houver outra rodando" },
+  { valor: "encerrar_as_outras", label: "Encerrar as outras e começar esta" },
+];
+
 export function ConfiguracoesGeraisForm({
   fluxo,
   onChange,
@@ -211,6 +223,37 @@ export function ConfiguracoesGeraisForm({
           />
         </div>
       ) : null}
+
+      {/*
+        OUTRAS AUTOMAÇÕES AO MESMO TEMPO.
+        
+        As duas chaves abaixo falam da MESMA automação. Esta fala das outras, que é onde o cliente
+        sente: um comentário que casa com três robôs vira três mensagens em cima da outra, de três
+        conversas que não sabem uma da outra.
+      */}
+      <div className="field">
+        <label>
+          {traduzir("Outras automações ao mesmo tempo")}
+          <Ajuda
+            texto={traduzir(
+              "Vale entre automações DIFERENTES para o mesmo contato. Conta qualquer execução viva, inclusive a que está parada esperando uma resposta ou um prazo de dias. Quando duas automações do mesmo evento disputam, quem começa é a de maior Prioridade. O bloco \"Executar robô\" não é afetado: ali é o próprio fluxo chamando o próximo.",
+            )}
+          />
+        </label>
+        <select
+          className="input"
+          value={cfg.concorrencia ?? "permitir"}
+          onChange={(e) =>
+            onChangeConfiguracoes({ concorrencia: e.target.value as ConfiguracoesFluxo["concorrencia"] })
+          }
+        >
+          {CONCORRENCIAS.map((c) => (
+            <option key={c.valor} value={c.valor}>
+              {traduzir(c.label)}
+            </option>
+          ))}
+        </select>
+      </div>
 
       <div className="toggle-row">
         <span className="tl">{traduzir("Não iniciar se já estiver nesse fluxo")}</span>

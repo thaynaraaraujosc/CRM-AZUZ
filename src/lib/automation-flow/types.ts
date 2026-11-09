@@ -803,6 +803,29 @@ export type ConfiguracoesFluxo = {
   naoIniciarSeJaNoFluxo?: boolean;
   cancelarExecucaoAnterior?: boolean;
   /**
+   * O QUE FAZER QUANDO O CONTATO JÁ ESTÁ EM OUTRA AUTOMAÇÃO.
+   *
+   * As duas chaves acima falam da MESMA automação: "não iniciar se já estiver nesse fluxo",
+   * "cancelar a execução anterior". Nenhuma das duas via as outras — e é entre automações
+   * diferentes que o estrago aparece: a pessoa comenta num post e recebe a resposta do robô de
+   * comentário, a do robô de palavra-chave e a do robô de boas-vindas, três mensagens em cima da
+   * outra, de três conversas que não sabem uma da outra.
+   *
+   * - `permitir` (o padrão): o que o CRM sempre fez. Toda automação que casa com o evento roda.
+   * - `nao_iniciar`: esta não começa enquanto o contato estiver em outra. Vale pra automação
+   *   secundária — a de boas-vindas que não deve atropelar uma venda em andamento.
+   * - `encerrar_as_outras`: esta começa e derruba as outras. Vale pra automação que PRECISA ter a
+   *   palavra: o cancelamento, a reclamação, o atendimento humano.
+   *
+   * Ausente = `permitir`, porque todo fluxo gravado antes disto rodava assim e mudar o
+   * comportamento de robôs que já estão no ar seria quebrar automação em produção sem ninguém
+   * pedir.
+   *
+   * Vale só pro disparo por GATILHO. O bloco "Executar robô" é uma passagem de bastão escrita à
+   * mão por quem montou o fluxo, e bloqueá-la seria desligar o desenho dela.
+   */
+  concorrencia?: "permitir" | "nao_iniciar" | "encerrar_as_outras";
+  /**
    * Onde a pessoa deixou a pastilha de início no canvas.
    *
    * Fica nas CONFIGURAÇÕES e não entre os blocos porque o início não é um bloco: o motor não o

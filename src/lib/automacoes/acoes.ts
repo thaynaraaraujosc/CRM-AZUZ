@@ -668,6 +668,8 @@ export function acoesReais(params: {
           fluxoId: fluxo.id,
           gatilho: "outro_robo",
           configuracoes: fluxo.configuracoes as never,
+          // Passagem de bastão desenhada à mão: o robô que chama está vivo, e é ele quem chama.
+          ignorarConcorrencia: true,
           publicarSeFaltar: {
             versao: Math.max(1, Number(fluxo.versaoAtual ?? 1)),
             nodes: fluxo.nodes as never,
@@ -683,6 +685,10 @@ export function acoesReais(params: {
           },
         });
         if (!fim) return falha(`O robô "${fluxo.nome}" não tem versão publicada pra rodar.`);
+        /* Barrado pelas regras dele (limite de execução, horário): o passo não falhou, mas dizer
+           "começou" seria mentira — e é essa linha que alguém vai ler procurando por que o
+           segundo robô não mandou nada. */
+        if (fim.naoIniciou) return ok(`O robô "${fluxo.nome}" não começou: ${fim.detalhe ?? "regra do próprio robô"}`);
         return ok(`Robô "${fluxo.nome}" começou.`);
       } catch (erro) {
         return falha("Falha ao começar o outro robô.", mensagemDoErro(erro));

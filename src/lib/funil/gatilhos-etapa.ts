@@ -279,7 +279,7 @@ async function executarUmGatilho(params: {
     return false;
   }
 
-  await iniciarFluxoComEstado({
+  const fim = await iniciarFluxoComEstado({
     workspaceId,
     fluxoId: fluxo.id,
     gatilho: `etapa:${gatilho.quando}`,
@@ -294,6 +294,13 @@ async function executarUmGatilho(params: {
     contatoId: contatoNoBanco?.id ?? null,
     contato,
   });
+
+  /* Barrado antes de começar (limite, horário, outra automação no contato) não conta como
+     execução: o número ao lado do robô é quantas vezes ele RODOU. */
+  if (fim?.naoIniciou) {
+    console.log(`[gatilho-etapa] robô "${fluxo.nome}" não iniciou:`, fim.detalhe);
+    return false;
+  }
 
   await prisma.fluxoAutomacao
     .update({ where: { id: fluxo.id }, data: { execucoes: { increment: 1 } } })

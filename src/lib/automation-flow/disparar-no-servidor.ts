@@ -200,7 +200,7 @@ async function dispararAutomacoes(params: {
 
   const areaDoEvento = areaDoCanal(canal);
 
-  for (const linha of linhas) {
+  for (const linha of ordemDeDisparo(linhas)) {
     const fluxo = linha as unknown as FluxoAutomacao;
 
     // Robô social não atende WhatsApp, robô comercial não atende Direct. Sem isto, um fluxo de
@@ -324,6 +324,18 @@ async function dispararAutomacoes(params: {
         console.warn(`[automacao] fluxo ${linha.id} não tem versão publicada pra rodar`);
         continue;
       }
+      /*
+       * BARRADA ANTES DE COMEÇAR não é "começou".
+       *
+       * O limite de execução, o horário de funcionamento e a regra de outras automações ao mesmo
+       * tempo devolvem "cancelada" sem nunca ter criado execução. A anotação na linha do tempo e o
+       * +1 no contador saíam assim mesmo: o contato tinha "a automação X começou" registrado numa
+       * hora em que nada foi enviado, e o número ao lado do robô contava disparos que não houve.
+       */
+      if (fim.naoIniciou) {
+        console.log(`[automacao] fluxo "${linha.nome}" não iniciou:`, fim.detalhe);
+        continue;
+      }
       await anotarNaLinhaDoTempo({
         workspaceId,
         contatoNome,
@@ -336,6 +348,37 @@ async function dispararAutomacoes(params: {
       console.log(`[automacao] fluxo "${linha.nome}" executado`, fim);
     }
   }
+}
+
+/** O peso de cada prioridade na fila. Menor roda antes. */
+const PESO_DA_PRIORIDADE: Record<string, number> = { alta: 0, normal: 1, baixa: 2 };
+
+/**
+ * A ORDEM EM QUE AS AUTOMAÇÕES DO MESMO EVENTO SÃO DISPARADAS.
+ *
+ * Enquanto todas rodavam, a ordem não tinha consequência: as três respondiam e pronto. Com a regra
+ * de "outras automações ao mesmo tempo", a ordem passa a DECIDIR qual delas fala — a primeira a
+ * começar é a que fica viva, e as seguintes encontram o contato ocupado. Deixar isso por conta da
+ * ordem que o banco devolveu seria sortear, a cada evento, qual robô atende o cliente.
+ *
+ * Quem decide é a "Prioridade", que existia nas configurações desde sempre e não era lida por
+ * ninguém: alta antes de normal, normal antes de baixa. Empate vai por nome, pra a ordem ser a
+ * mesma em todo disparo e dar pra explicar por que aquele robô falou.
+ *
+ * Exportada pra teste: é decisão de roteamento, não detalhe interno.
+ */
+export function ordemDeDisparo<T extends { nome: string; configuracoes: unknown }>(linhas: T[]): T[] {
+  return [...linhas].sort((a, b) => {
+    const pa = PESO_DA_PRIORIDADE[prioridadeDaLinha(a.configuracoes)] ?? 1;
+    const pb = PESO_DA_PRIORIDADE[prioridadeDaLinha(b.configuracoes)] ?? 1;
+    if (pa !== pb) return pa - pb;
+    return a.nome.localeCompare(b.nome, "pt-BR");
+  });
+}
+
+function prioridadeDaLinha(configuracoes: unknown): string {
+  const valor = (configuracoes as { prioridade?: unknown } | null | undefined)?.prioridade;
+  return typeof valor === "string" ? valor : "normal";
 }
 
 /** De qual área é o evento. O canal da conversa é o que decide. Exportado pra teste: é decisão
