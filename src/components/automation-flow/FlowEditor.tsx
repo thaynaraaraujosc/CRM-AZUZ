@@ -1057,7 +1057,10 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
    * existiam. É isso que faz "responde a comentário E a story" ser uma automação só em vez de
    * duas: dois começos, um caminho.
    */
-  function aplicarGatilhos(escolhas: { tipo: FlowNodeType; data: Record<string, unknown> }[]) {
+  function aplicarGatilhos(
+    escolhas: { tipo: FlowNodeType; data: Record<string, unknown> }[],
+    respostas: string[] = [],
+  ) {
     const antigos = rfNodes.filter((n) => n.data.flowNode.category === "gatilho");
     const primeiroPasso = rfEdges.find((e) => antigos.some((g) => g.id === e.source))?.target;
 
@@ -1111,10 +1114,76 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
       });
     }
 
-    setRfNodes(novoNodes);
-    setRfEdges(novoEdges);
+    /*
+     * A RESPOSTA DA ÚLTIMA ETAPA VIRA O PRIMEIRO PASSO.
+     *
+     * A gaveta terminava com os gatilhos ligados a nada, e quem acabou de criar a automação
+     * tinha que descobrir sozinho que faltava arrastar um bloco de mensagem no canvas — que é
+     * exatamente o passo em que se desiste.
+     *
+     * Existindo um primeiro passo de mensagem, ele é EDITADO; não existindo, nasce um. Trocar um
+     * bloco que a pessoa já configurou (com anexo, com botões) por um de texto apagaria trabalho
+     * feito, então só o texto é escrito.
+     *
+     * Lista vazia quer dizer "não mexa": é o que o "Pular" manda.
+     */
+    let nodesComResposta = novoNodes;
+    let edgesComResposta = novoEdges;
+    if (respostas.length) {
+      const [principal, ...variacoes] = respostas;
+      const alvo = primeiroPasso
+        ? nodesComResposta.find((n) => n.id === primeiroPasso && n.data.flowNode.category === "mensagem")
+        : undefined;
+
+      if (alvo) {
+        nodesComResposta = nodesComResposta.map((n) =>
+          n.id === alvo.id
+            ? {
+                ...n,
+                data: {
+                  ...n.data,
+                  flowNode: {
+                    ...n.data.flowNode,
+                    data: { ...(n.data.flowNode.data ?? {}), texto: principal, variacoes },
+                  },
+                },
+              }
+            : n,
+        );
+      } else if (!primeiroPasso) {
+        const bloco = BLOCOS_DISPONIVEIS.find((b) => b.tipo === "mensagem_texto");
+        const id = novoIdNo();
+        const position = { x: ancora.x + 420, y: ancora.y };
+        const domain: DomainFlowNode = {
+          id,
+          type: "mensagem_texto",
+          category: "mensagem",
+          position,
+          data: {
+            ...(bloco?.dataPadrao() as Record<string, unknown> | undefined),
+            canal: "instagram",
+            texto: principal,
+            variacoes,
+          },
+        };
+        nodesComResposta = [...nodesComResposta, { id, type: "mensagem", position, data: { flowNode: domain, problemas: [] } }];
+        edgesComResposta = [
+          ...edgesComResposta,
+          ...novosGatilhos.map((g) => ({
+            id: novoIdAresta(),
+            source: g.id,
+            target: id,
+            type: "smoothstep",
+            markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16 },
+          })),
+        ];
+      }
+    }
+
+    setRfNodes(nodesComResposta);
+    setRfEdges(edgesComResposta);
     setSelectedNodeIds(novosGatilhos.length ? [novosGatilhos[0].id] : []);
-    persist(novoNodes, novoEdges);
+    persist(nodesComResposta, edgesComResposta);
   }
 
   function trocarTipoDoNode(nodeId: string, tipo: FlowNodeType, data: Record<string, unknown>) {
@@ -1919,12 +1988,23 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           {escolhendoGatilho && ehSocial ? (
             <GatilhosDoSocial
               etapaInicial={etapaDaGaveta}
+              /* O que o fluxo já responde: a gaveta reabre com o texto na tela, em vez de pedir
+                 de novo o que já está escrito no primeiro bloco. */
+              respostasIniciais={(() => {
+                const ids = idsDeGatilho(rfNodes, ehSocial);
+                const alvoId = rfEdges.find((e) => ids.includes(e.source))?.target;
+                const alvo = alvoId ? rfNodes.find((n) => n.id === alvoId) : undefined;
+                if (!alvo || alvo.data.flowNode.category !== "mensagem") return undefined;
+                const d = (alvo.data.flowNode.data ?? {}) as { texto?: string; variacoes?: string[] };
+                const todas = [d.texto ?? "", ...(d.variacoes ?? [])].filter((t) => t.trim());
+                return todas.length ? todas : undefined;
+              })()}
               gatilhosAtuais={domainNodesAtuais
                 .filter((n) => n.category === "gatilho")
                 .map((n) => ({ tipo: n.type, data: (n.data ?? {}) as Record<string, unknown> }))}
               onFechar={fecharEscolha}
-              onEscolher={(escolhas) => {
-                aplicarGatilhos(escolhas);
+              onEscolher={(escolhas, respostas) => {
+                aplicarGatilhos(escolhas, respostas);
                 setEscolherGatilhoAberto(false);
                 setEtapaDaGaveta("lista");
               }}

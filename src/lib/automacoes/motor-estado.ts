@@ -55,6 +55,23 @@ import {
   type GravadorDeExecucao,
 } from "./execucoes";
 
+
+/**
+ * QUAL DAS RESPOSTAS SAI DESTA VEZ.
+ *
+ * Uma automação de comentário responde em público e responde muito: a mesma frase repetida vinte
+ * vezes embaixo do mesmo post é o que o Instagram lê como spam, e é o que faz a conta ser
+ * limitada. Por isso a tela deixa escrever várias formas de dizer a mesma coisa, e aqui uma é
+ * sorteada a cada envio.
+ *
+ * Sem variação nenhuma, devolve o texto como sempre: nada muda pra quem escreveu uma frase só.
+ */
+export function escolherVariacao(texto: string, variacoes?: string[]): string {
+  const todas = [texto, ...(variacoes ?? [])].map((t) => (t ?? "").trim()).filter(Boolean);
+  if (todas.length <= 1) return todas[0] ?? "";
+  return todas[Math.floor(Math.random() * todas.length)];
+}
+
 /**
  * O motor com ESTADO: a diferença central em relação ao motor antigo.
  *
@@ -491,12 +508,14 @@ async function executarNo(params: {
       const data = no.data as {
         texto?: string;
         mensagem?: string;
+        /** Outras formas de dizer a mesma coisa. Ver `escolherVariacao`. */
+        variacoes?: string[];
         canal?: string;
         esperaMinutos?: number;
         iniciarSemConversa?: boolean;
         canaisPermitidos?: string[];
       };
-      const texto = preencher((data.texto ?? data.mensagem ?? "").trim(), contato);
+      const texto = preencher(escolherVariacao(data.texto ?? data.mensagem ?? "", data.variacoes), contato);
       if (!texto) return { tipo: "erro", detalhe: "Bloco de mensagem sem texto configurado." };
       const envio = await acoes.enviarTexto({
         contatoNome: nome,
