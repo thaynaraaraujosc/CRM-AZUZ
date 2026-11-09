@@ -156,7 +156,7 @@ export function GatilhosDoSocial({
    * ao seu assunto. Abrir sempre na lista obrigaria a passar pela escolha de gatilhos pra chegar
    * numa palavra, que é o caminho que a linha existe pra encurtar.
    */
-  etapaInicial?: "lista" | "palavras";
+  etapaInicial?: "lista" | "palavras" | "painel";
   /**
    * As escolhas e, quando a última etapa foi preenchida, o que responder.
    *
@@ -177,8 +177,28 @@ export function GatilhosDoSocial({
     });
     return inicial;
   });
-  /** `-1` é a lista de gatilhos; 0 em diante são as etapas de configuração (a 0 é a das palavras). */
-  const [etapa, setEtapa] = useState(etapaInicial === "palavras" && gatilhosAtuais?.length ? 0 : -1);
+  /*
+   * ONDE A GAVETA ESTÁ: `-2` é o PAINEL, `-1` é a lista de gatilhos, 0 em diante são as etapas.
+   *
+   * O painel e as etapas respondem a perguntas diferentes. As etapas são pra MONTAR — uma
+   * pergunta por vez, com barra de progresso, até o robô existir. O painel é pra MEXER no que já
+   * existe: mostra o que está escolhido e deixa trocar sem passar por nada que já foi respondido.
+   * "Quando eu clico lá, não aparece nada. Preciso que me mostre o que foi que eu selecionei,
+   * porque tem que dar a opção de eu fazer alterações."
+   */
+  const [etapa, setEtapa] = useState(() => {
+    if (etapaInicial === "painel" && gatilhosAtuais?.length) return -2;
+    if (etapaInicial === "palavras" && gatilhosAtuais?.length) return 0;
+    return -1;
+  });
+  /** O modal de acrescentar gatilho, aberto pelo painel. */
+  const [adicionarAberto, setAdicionarAberto] = useState(false);
+  /** Gatilhos marcados DENTRO do modal, ainda não acrescentados. */
+  const [paraAdicionar, setParaAdicionar] = useState<FlowNodeType[]>([]);
+  /** De qual gatilho o menu "⋯" está aberto, no painel. */
+  const [menuDoGatilho, setMenuDoGatilho] = useState<FlowNodeType | null>(null);
+  const fecharMenuDoGatilho = useCallback(() => setMenuDoGatilho(null), []);
+  useFecharMenuDeLinha(menuDoGatilho !== null, fecharMenuDoGatilho);
   const [avancadoAberto, setAvancadoAberto] = useState(false);
   /*
    * AS MÍDIAS DA CONTA, buscadas UMA VEZ pela gaveta.
@@ -253,7 +273,9 @@ export function GatilhosDoSocial({
   }
 
   function voltar() {
-    if (etapa === -1) onFechar();
+    // Do painel não se "volta": ele é a primeira tela de quem veio do cartão, e o que existe ali
+    // é fechar.
+    if (etapa <= -1) onFechar();
     else setEtapa(etapa - 1);
   }
 
@@ -389,18 +411,205 @@ export function GatilhosDoSocial({
   }, [precisaDeMidias, publicacoes, stories]);
 
   const etapaAtual = etapa >= 0 ? etapas[etapa] : null;
+  /** O painel do que já está escolhido, aberto pelo cartão do canvas. */
+  const ehPainel = etapa === -2;
+
+  /*
+   * A PALAVRA-CHAVE, DESENHADA UMA VEZ.
+   *
+   * A mesma caixa aparece em dois lugares — na etapa 1 de quem está montando, e no painel de
+   * quem veio mexer. Duas cópias do mesmo JSX é como se chega numa tela em que a opção existe e
+   * na outra não, meses depois, sem ninguém perceber.
+   */
+  const blocoDaPalavra = (
+    <>
+    {/*
+      * COMO COMPARAR VEM ANTES DE O QUÊ COMPARAR.
+      *
+      * A escolha é a REGRA; as palavras são o conteúdo dela. É também o que decide se
+      * existe conteúdo: em "Qualquer palavra-chave" não há palavra pra digitar, e o
+      * campo some em vez de ficar ali pedindo algo que não vale.
+      */}
+    <div className="gat-escolha" data-menu-de-linha="">
+      <button
+        type="button"
+        className={`gat-escolha-botao${modoAberto ? " aberto" : ""}`}
+        aria-haspopup="listbox"
+        aria-expanded={modoAberto}
+        onClick={() => setModoAberto((v) => !v)}
+      >
+        <span className="gat-escolha-valor">
+          <span className="gat-escolha-rotulo">{traduzir("Selecionado")}</span>
+          <strong>
+            {semPalavras
+              ? traduzir(SEM_PALAVRA)
+              : traduzir(MODOS_DE_PALAVRA.find((m) => m.valor === modoAtual)?.label ?? "")}
+          </strong>
+        </span>
+        <IconExpandir
+          className={modoAberto ? "girado" : undefined}
+          width={14}
+          height={14}
+          aria-hidden="true"
+        />
+      </button>
+
+      {modoAberto ? (
+        <div
+          className="gat-escolha-lista"
+          role="listbox"
+          aria-label={traduzir("Como a palavra tem que aparecer")}
+        >
+          <button
+            type="button"
+            role="option"
+            aria-selected={semPalavras}
+            className={`gat-escolha-opcao${semPalavras ? " on" : ""}`}
+            onClick={() => {
+              // Sem filtro: as palavras saem, porque é a lista vazia que o motor lê
+              // como "qualquer mensagem serve".
+              mudarEmTodos({ palavras: [], filtrarPorPalavra: false });
+              setPalavraNova("");
+              setModoAberto(false);
+            }}
+          >
+            <span className="gat-escolha-marca" aria-hidden="true">
+              {semPalavras ? <IconCheck width={13} height={13} /> : null}
+            </span>
+            <span className="gat-escolha-texto">
+              <strong>{traduzir(SEM_PALAVRA)}</strong>
+            </span>
+          </button>
+          {MODOS_DE_PALAVRA.map((modo) => {
+            const escolhida = !semPalavras && modoAtual === modo.valor;
+            return (
+              <button
+                key={modo.valor}
+                type="button"
+                role="option"
+                aria-selected={escolhida}
+                className={`gat-escolha-opcao${escolhida ? " on" : ""}`}
+                onClick={() => {
+                  mudarEmTodos({ modoPalavra: modo.valor, filtrarPorPalavra: true });
+                  setModoAberto(false);
+                }}
+              >
+                <span className="gat-escolha-marca" aria-hidden="true">
+                  {escolhida ? <IconCheck width={13} height={13} /> : null}
+                </span>
+                <span className="gat-escolha-texto">
+                  <strong>{traduzir(modo.label)}</strong>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+
+    {/* Sem filtro não há o que digitar: o campo de palavras só existe nas outras três. */}
+    {!semPalavras ? (
+      <>
+        <p className="gat-subtitulo">{traduzir("Adicionar palavras-chave")}</p>
+
+        <div className="gat-palavra-nova">
+          <input
+            className="input"
+            value={palavraNova}
+            placeholder={traduzir("Adicionar texto")}
+            onChange={(e) => setPalavraNova(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key !== "Enter") return;
+              e.preventDefault();
+              guardarPalavra();
+            }}
+          />
+          <button
+            type="button"
+            className="gat-palavra-ok"
+            aria-label={traduzir("Adicionar esta palavra")}
+            disabled={!palavraNova.trim()}
+            onClick={guardarPalavra}
+          >
+            <IconCheck width={15} height={15} />
+          </button>
+        </div>
+
+        {palavrasAtuais.length === 0 ? (
+          /*
+            AINDA SEM NENHUMA PALAVRA: a tela diz o que falta, em vez de ficar em
+            branco. É o desenho da referência — o ícone, e a frase que explica o que
+            acontece quando uma das palavras for usada.
+          */
+          <div className="gat-vazio">
+            <span className="gat-vazio-icone" aria-hidden="true">
+              <IconChave width={18} height={18} />
+            </span>
+            <p>
+              {traduzir(
+                "Adicione palavras-chave para ativar a automação quando uma delas for usada.",
+              )}
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="gat-palavras">
+              {palavrasAtuais.map((p) => (
+                <span key={p} className="gat-palavra">
+                  {p}
+                  <button
+                    type="button"
+                    aria-label={traduzir("Tirar a palavra {p}", { p })}
+                    onClick={() => mudarPalavras(palavrasAtuais.filter((x) => x !== p))}
+                  >
+                    <IconClose width={10} height={10} />
+                  </button>
+                </span>
+              ))}
+            </div>
+
+            {/*
+              * MAIÚSCULA NUNCA CONTA, e dizer isso evita a pergunta. Informação não é
+              * opção: não há botão porque não há escolha a fazer. O acento, esse sim,
+              * é escolha, e cabe numa linha.
+              *
+              * Os dois só aparecem DEPOIS da primeira palavra: antes dela não há do
+              * que falar, e a referência mostra a tela limpa nesse momento.
+              */}
+            <label className="gat-acento">
+              <input
+                type="checkbox"
+                checked={!acentoConta}
+                onChange={() => mudarEmTodos({ ignorarAcentos: acentoConta })}
+              />
+              <span>
+                {traduzir("Acento não importa")}
+                <em>{traduzir("“começo” e “comeco” valem como a mesma palavra.")}</em>
+              </span>
+            </label>
+            <p className="gat-nota">
+              {traduzir(
+                "Maiúscula e minúscula nunca importam: “ASOS”, “Asos” e “asos” disparam igual.",
+              )}
+            </p>
+          </>
+        )}
+      </>
+    ) : null}
+    </>
+  );
 
   return (
     <aside className="flow-config flow-config-social gat-gaveta" aria-label={traduzir("Gatilhos")}>
       <header className="cfg-topo">
-        <h2>{etapaAtual ? traduzir(etapaAtual.titulo) : traduzir("Gatilhos")}</h2>
+        <h2>{etapaAtual && !ehPainel ? traduzir(etapaAtual.titulo) : traduzir("Gatilhos")}</h2>
         <button type="button" className="cfg-fechar" aria-label={traduzir("Fechar")} onClick={onFechar}>
           <IconClose width={14} height={14} />
         </button>
       </header>
 
       {/* A barra de progresso só existe depois da escolha: antes dela não há quantas etapas. */}
-      {etapaAtual ? (
+      {etapaAtual && !ehPainel ? (
         <div className="gat-progresso">
           <span className="gat-progresso-texto">
             {traduzir("Etapa {n} de {total}", { n: String(etapa + 1), total: String(etapas.length) })}
@@ -422,7 +631,86 @@ export function GatilhosDoSocial({
       ) : null}
 
       <div className="flow-config-body gat-corpo">
-        {!etapaAtual ? (
+        {ehPainel ? (
+          /*
+            O PAINEL DO QUE JÁ ESTÁ ESCOLHIDO.
+            
+            Dois blocos, como na referência: os gatilhos de cima, cada um num cartão com o seu
+            "⋯", e a palavra-chave embaixo, com a mesma caixa de escolha das etapas. Entre os
+            dois, o botão de acrescentar — que é a ação que faltava, e a razão de a pessoa ter
+            clicado aqui.
+          */
+          <div className="pg-painel">
+            <p className="pg-secao">{traduzir("Gatilhos")}</p>
+
+            <div className="pg-lista">
+              {marcados.map((tipo) => {
+                const bloco = doInstagram.find((b) => b.tipo === tipo);
+                return (
+                  <div className="pg-cartao" key={tipo} data-menu-de-linha="">
+                    <span className="pg-textos">
+                      <strong>{traduzir(bloco?.label ?? tipo)}</strong>
+                      {bloco?.descricao ? <span>{traduzir(bloco.descricao)}</span> : null}
+                    </span>
+                    <button
+                      type="button"
+                      className="pg-mais"
+                      aria-label={traduzir("Opções deste gatilho")}
+                      aria-expanded={menuDoGatilho === tipo}
+                      onClick={() => setMenuDoGatilho((atual) => (atual === tipo ? null : tipo))}
+                    >
+                      ⋯
+                    </button>
+                    {menuDoGatilho === tipo ? (
+                      <div className="pg-menu" role="menu">
+                        {ALCANCE[tipo] ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMenuDoGatilho(null);
+                              // Abre a etapa de alcance DESTE gatilho, direto.
+                              const alvo = etapas.findIndex((e) => e.chave === tipo);
+                              if (alvo >= 0) setEtapa(alvo);
+                            }}
+                          >
+                            {traduzir(ALCANCE[tipo]!.pergunta)}
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          className="perigo"
+                          onClick={() => {
+                            setMenuDoGatilho(null);
+                            alternar(tipo);
+                          }}
+                        >
+                          {traduzir("Tirar este gatilho")}
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
+              {!marcados.length ? (
+                <p className="hint">{traduzir("Nenhum gatilho escolhido ainda.")}</p>
+              ) : null}
+            </div>
+
+            <button
+              type="button"
+              className="pg-adicionar"
+              onClick={() => {
+                setParaAdicionar([]);
+                setAdicionarAberto(true);
+              }}
+            >
+              {traduzir("Adicionar gatilho")} <span aria-hidden="true">+</span>
+            </button>
+
+            <p className="pg-secao pg-secao-palavra">{traduzir("Palavra-chave")}</p>
+            {blocoDaPalavra}
+          </div>
+        ) : !etapaAtual ? (
           <>
             <p className="gat-pergunta">{traduzir("O que inicia essa automação?")}</p>
             <button type="button" className="gat-ajuda" onClick={() => setExplicacaoAberta(true)}>
@@ -466,179 +754,7 @@ export function GatilhosDoSocial({
                   {traduzir("As palavras-chave valem para todos os gatilhos desta automação.")}
                 </p>
 
-                {/*
-                  * COMO COMPARAR VEM ANTES DE O QUÊ COMPARAR.
-                  *
-                  * A escolha é a REGRA; as palavras são o conteúdo dela. É também o que decide se
-                  * existe conteúdo: em "Qualquer palavra-chave" não há palavra pra digitar, e o
-                  * campo some em vez de ficar ali pedindo algo que não vale.
-                  */}
-                <div className="gat-escolha" data-menu-de-linha="">
-                  <button
-                    type="button"
-                    className={`gat-escolha-botao${modoAberto ? " aberto" : ""}`}
-                    aria-haspopup="listbox"
-                    aria-expanded={modoAberto}
-                    onClick={() => setModoAberto((v) => !v)}
-                  >
-                    <span className="gat-escolha-valor">
-                      <span className="gat-escolha-rotulo">{traduzir("Selecionado")}</span>
-                      <strong>
-                        {semPalavras
-                          ? traduzir(SEM_PALAVRA)
-                          : traduzir(MODOS_DE_PALAVRA.find((m) => m.valor === modoAtual)?.label ?? "")}
-                      </strong>
-                    </span>
-                    <IconExpandir
-                      className={modoAberto ? "girado" : undefined}
-                      width={14}
-                      height={14}
-                      aria-hidden="true"
-                    />
-                  </button>
-
-                  {modoAberto ? (
-                    <div
-                      className="gat-escolha-lista"
-                      role="listbox"
-                      aria-label={traduzir("Como a palavra tem que aparecer")}
-                    >
-                      <button
-                        type="button"
-                        role="option"
-                        aria-selected={semPalavras}
-                        className={`gat-escolha-opcao${semPalavras ? " on" : ""}`}
-                        onClick={() => {
-                          // Sem filtro: as palavras saem, porque é a lista vazia que o motor lê
-                          // como "qualquer mensagem serve".
-                          mudarEmTodos({ palavras: [], filtrarPorPalavra: false });
-                          setPalavraNova("");
-                          setModoAberto(false);
-                        }}
-                      >
-                        <span className="gat-escolha-marca" aria-hidden="true">
-                          {semPalavras ? <IconCheck width={13} height={13} /> : null}
-                        </span>
-                        <span className="gat-escolha-texto">
-                          <strong>{traduzir(SEM_PALAVRA)}</strong>
-                        </span>
-                      </button>
-                      {MODOS_DE_PALAVRA.map((modo) => {
-                        const escolhida = !semPalavras && modoAtual === modo.valor;
-                        return (
-                          <button
-                            key={modo.valor}
-                            type="button"
-                            role="option"
-                            aria-selected={escolhida}
-                            className={`gat-escolha-opcao${escolhida ? " on" : ""}`}
-                            onClick={() => {
-                              mudarEmTodos({ modoPalavra: modo.valor, filtrarPorPalavra: true });
-                              setModoAberto(false);
-                            }}
-                          >
-                            <span className="gat-escolha-marca" aria-hidden="true">
-                              {escolhida ? <IconCheck width={13} height={13} /> : null}
-                            </span>
-                            <span className="gat-escolha-texto">
-                              <strong>{traduzir(modo.label)}</strong>
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ) : null}
-                </div>
-
-                {/* Sem filtro não há o que digitar: o campo de palavras só existe nas outras três. */}
-                {!semPalavras ? (
-                  <>
-                    <p className="gat-subtitulo">{traduzir("Adicionar palavras-chave")}</p>
-
-                    <div className="gat-palavra-nova">
-                      <input
-                        className="input"
-                        value={palavraNova}
-                        placeholder={traduzir("Adicionar texto")}
-                        onChange={(e) => setPalavraNova(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key !== "Enter") return;
-                          e.preventDefault();
-                          guardarPalavra();
-                        }}
-                      />
-                      <button
-                        type="button"
-                        className="gat-palavra-ok"
-                        aria-label={traduzir("Adicionar esta palavra")}
-                        disabled={!palavraNova.trim()}
-                        onClick={guardarPalavra}
-                      >
-                        <IconCheck width={15} height={15} />
-                      </button>
-                    </div>
-
-                    {palavrasAtuais.length === 0 ? (
-                      /*
-                        AINDA SEM NENHUMA PALAVRA: a tela diz o que falta, em vez de ficar em
-                        branco. É o desenho da referência — o ícone, e a frase que explica o que
-                        acontece quando uma das palavras for usada.
-                      */
-                      <div className="gat-vazio">
-                        <span className="gat-vazio-icone" aria-hidden="true">
-                          <IconChave width={18} height={18} />
-                        </span>
-                        <p>
-                          {traduzir(
-                            "Adicione palavras-chave para ativar a automação quando uma delas for usada.",
-                          )}
-                        </p>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="gat-palavras">
-                          {palavrasAtuais.map((p) => (
-                            <span key={p} className="gat-palavra">
-                              {p}
-                              <button
-                                type="button"
-                                aria-label={traduzir("Tirar a palavra {p}", { p })}
-                                onClick={() => mudarPalavras(palavrasAtuais.filter((x) => x !== p))}
-                              >
-                                <IconClose width={10} height={10} />
-                              </button>
-                            </span>
-                          ))}
-                        </div>
-
-                        {/*
-                          * MAIÚSCULA NUNCA CONTA, e dizer isso evita a pergunta. Informação não é
-                          * opção: não há botão porque não há escolha a fazer. O acento, esse sim,
-                          * é escolha, e cabe numa linha.
-                          *
-                          * Os dois só aparecem DEPOIS da primeira palavra: antes dela não há do
-                          * que falar, e a referência mostra a tela limpa nesse momento.
-                          */}
-                        <label className="gat-acento">
-                          <input
-                            type="checkbox"
-                            checked={!acentoConta}
-                            onChange={() => mudarEmTodos({ ignorarAcentos: acentoConta })}
-                          />
-                          <span>
-                            {traduzir("Acento não importa")}
-                            <em>{traduzir("“começo” e “comeco” valem como a mesma palavra.")}</em>
-                          </span>
-                        </label>
-                        <p className="gat-nota">
-                          {traduzir(
-                            "Maiúscula e minúscula nunca importam: “ASOS”, “Asos” e “asos” disparam igual.",
-                          )}
-                        </p>
-                      </>
-                    )}
-                  </>
-                ) : null}
+                {blocoDaPalavra}
               </>
             ) : etapaAtual.tipo === "comentario_instagram" ? (
               <EscolhaDeMidia
@@ -748,12 +864,142 @@ export function GatilhosDoSocial({
 
       <footer className="cfg-rodape gat-rodape">
         <button type="button" className="btn ghost pequeno" onClick={voltar}>
-          {traduzir("Voltar")}
+          {traduzir(ehPainel ? "Fechar" : "Voltar")}
         </button>
-        <button type="button" className="cfg-salvar" disabled={marcados.length === 0} onClick={avancar}>
-          {etapa + 1 < etapas.length ? traduzir("Continuar") : traduzir("Salvar")}
+        <button
+          type="button"
+          className="cfg-salvar"
+          disabled={marcados.length === 0}
+          /* Do painel, salvar não mexe na resposta: quem veio trocar um gatilho não veio reescrever
+             a mensagem, e sobrescrevê-la apagaria o que foi montado no canvas. */
+          onClick={() => (ehPainel ? concluir(false) : avancar())}
+        >
+          {!ehPainel && etapa + 1 < etapas.length ? traduzir("Continuar") : traduzir("Salvar")}
         </button>
       </footer>
+
+      {/*
+        ACRESCENTAR GATILHO, pelo painel.
+        
+        Só os que AINDA NÃO ESTÃO no robô: repetir na lista os que já foram escolhidos obrigaria
+        a pessoa a comparar duas listas pra saber o que falta. O botão conta quantos vão entrar,
+        como na referência — é o que diz que marcar não é o mesmo que acrescentar.
+      */}
+      {adicionarAberto ? (
+        <div className="modal-overlay" onClick={() => setAdicionarAberto(false)}>
+          <div
+            className="gat-modal gat-modal-escolher"
+            role="dialog"
+            aria-label={traduzir("O que inicia essa automação?")}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <header className="tpl-topo">
+              <h3>{traduzir("O que inicia essa automação?")}</h3>
+              <button
+                type="button"
+                className="tpl-fechar"
+                aria-label={traduzir("Fechar")}
+                onClick={() => setAdicionarAberto(false)}
+              >
+                <IconClose width={14} height={14} />
+              </button>
+            </header>
+
+            <div className="gat-modal-corpo">
+              <button type="button" className="gat-ajuda" onClick={() => setExplicacaoAberta(true)}>
+                <span aria-hidden="true">?</span> {traduzir("Como funciona cada gatilho?")}
+              </button>
+
+              <div className="gat-lista" role="group">
+                {principais
+                  .filter((b) => !marcados.includes(b.tipo))
+                  .map((b) => (
+                    <button
+                      key={b.tipo}
+                      type="button"
+                      role="checkbox"
+                      aria-checked={paraAdicionar.includes(b.tipo)}
+                      className={`gat-item${paraAdicionar.includes(b.tipo) ? " on" : ""}`}
+                      title={b.descricao ? traduzir(b.descricao) : undefined}
+                      onClick={() =>
+                        setParaAdicionar((atual) =>
+                          atual.includes(b.tipo) ? atual.filter((t) => t !== b.tipo) : [...atual, b.tipo],
+                        )
+                      }
+                    >
+                      <span className="gat-marca gat-marca-caixa" aria-hidden="true" />
+                      <span className="gat-textos">
+                        <strong>{traduzir(b.label)}</strong>
+                      </span>
+                    </button>
+                  ))}
+                {principais.every((b) => marcados.includes(b.tipo)) ? (
+                  <p className="hint">{traduzir("Todos os gatilhos principais já estão nesta automação.")}</p>
+                ) : null}
+              </div>
+
+              {avancados.filter((b) => !marcados.includes(b.tipo)).length ? (
+                <>
+                  <button
+                    type="button"
+                    className="gat-avancado"
+                    aria-expanded={avancadoAberto}
+                    onClick={() => setAvancadoAberto((v) => !v)}
+                  >
+                    {traduzir("Opções avançadas")}
+                    <IconExpandir
+                      className={avancadoAberto ? "girado" : undefined}
+                      width={14}
+                      height={14}
+                      aria-hidden="true"
+                    />
+                  </button>
+                  {avancadoAberto ? (
+                    <div className="gat-lista" role="group">
+                      {avancados
+                        .filter((b) => !marcados.includes(b.tipo))
+                        .map((b) => (
+                          <button
+                            key={b.tipo}
+                            type="button"
+                            role="checkbox"
+                            aria-checked={paraAdicionar.includes(b.tipo)}
+                            className={`gat-item${paraAdicionar.includes(b.tipo) ? " on" : ""}`}
+                            onClick={() =>
+                              setParaAdicionar((atual) =>
+                                atual.includes(b.tipo)
+                                  ? atual.filter((t) => t !== b.tipo)
+                                  : [...atual, b.tipo],
+                              )
+                            }
+                          >
+                            <span className="gat-marca gat-marca-caixa" aria-hidden="true" />
+                            <span className="gat-textos">
+                              <strong>{traduzir(b.label)}</strong>
+                            </span>
+                          </button>
+                        ))}
+                    </div>
+                  ) : null}
+                </>
+              ) : null}
+
+              <button
+                type="button"
+                className="cfg-salvar gat-modal-confirmar"
+                disabled={!paraAdicionar.length}
+                onClick={() => {
+                  setMarcados((atual) => [...atual, ...paraAdicionar.filter((t) => !atual.includes(t))]);
+                  setParaAdicionar([]);
+                  setAdicionarAberto(false);
+                }}
+              >
+                {traduzir("Adicionar gatilho")} ({paraAdicionar.length})
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {explicacaoAberta ? (
         <div className="modal-overlay" onClick={() => setExplicacaoAberta(false)}>

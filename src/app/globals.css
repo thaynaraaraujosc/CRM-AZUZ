@@ -27716,6 +27716,153 @@ td.trafego-col-crm:first-of-type {
   color: var(--ss-tinta-fraca, #64748b);
 }
 
+/* =============================================================================================
+   O PAINEL DO QUE JÁ ESTÁ ESCOLHIDO (a gaveta aberta pelo cartão do canvas).
+
+   O passo a passo é pra MONTAR — uma pergunta por vez, com barra de progresso. Este painel é pra
+   MEXER: mostra o que está escolhido e deixa trocar sem passar por nada que já foi respondido.
+   ============================================================================================= */
+.pg-painel {
+  display: flex;
+  flex-direction: column;
+}
+
+.pg-secao {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.pg-secao-palavra {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line-soft);
+}
+
+.pg-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pg-cartao {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 10px;
+  background: var(--surface-elevated, #fff);
+}
+
+.pg-textos {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.pg-textos strong {
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--ink);
+}
+
+.pg-textos > span {
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--ss-tinta-fraca, #64748b);
+}
+
+.pg-mais {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 22px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ss-tinta-fraca, #64748b);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.pg-mais:hover {
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+
+.pg-menu {
+  position: absolute;
+  z-index: 20;
+  top: 36px;
+  right: 10px;
+  display: flex;
+  flex-direction: column;
+  min-width: 190px;
+  padding: 6px;
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 10px;
+  background: var(--surface-elevated, #fff);
+  box-shadow: 0 12px 28px rgb(15 23 42 / 14%);
+}
+
+.pg-menu button {
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pg-menu button:hover {
+  background: var(--surface-hover);
+}
+
+.pg-menu button.perigo {
+  color: var(--danger);
+}
+
+/* O botão de acrescentar é o AZUL CHEIO: é a ação que a pessoa veio fazer ao abrir o painel. */
+.pg-adicionar {
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--ss-azul, #2563eb);
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 120ms ease;
+}
+
+.pg-adicionar:hover {
+  filter: brightness(0.94);
+}
+
+/* O modal de acrescentar: a mesma lista de marcar, com o botão contando quantos vão entrar. */
+.gat-modal-escolher .gat-modal-corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.gat-modal-confirmar {
+  width: 100%;
+  margin-top: 4px;
+}
+
 /* O segundo título dentro da mesma etapa: menor que a pergunta, e com uma divisa antes. */
 .gat-subtitulo {
   margin: var(--space-4) 0 var(--space-2);

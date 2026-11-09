@@ -177,7 +177,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const [toasts, setToasts] = useState<{ id: number; texto: string }[]>([]);
   const [escolherGatilhoAberto, setEscolherGatilhoAberto] = useState(false);
   /** Em qual etapa a gaveta de gatilhos abre: a lista, ou direto nas palavras-chave. */
-  const [etapaDaGaveta, setEtapaDaGaveta] = useState<"lista" | "palavras">("lista");
+  const [etapaDaGaveta, setEtapaDaGaveta] = useState<"lista" | "palavras" | "painel">("lista");
   /*
    * ONDE A PASTILHA DE INÍCIO ESTÁ ENQUANTO SE ARRASTA.
    *
@@ -1514,15 +1514,22 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
             ? {
                 gatilhosDoGrupo: doGrupo,
                 palavrasDoGrupo,
+                /*
+                 * O CARTÃO ABRE O PAINEL, não o passo a passo.
+                 *
+                 * Clicar em "Gatilhos ativos" num robô que já existe não é começar de novo: é ir
+                 * ver o que está escolhido e mexer. O passo a passo continua sendo o caminho de
+                 * quem está MONTANDO — ele abre sozinho no quadro vazio.
+                 */
                 aoAbrirGatilhos: modoConstrucao
                   ? () => {
-                      setEtapaDaGaveta("lista");
+                      setEtapaDaGaveta(idsGatilho.length ? "painel" : "lista");
                       setEscolherGatilhoAberto(true);
                     }
                   : undefined,
                 aoAbrirPalavras: modoConstrucao
                   ? () => {
-                      setEtapaDaGaveta("palavras");
+                      setEtapaDaGaveta(idsGatilho.length ? "painel" : "palavras");
                       setEscolherGatilhoAberto(true);
                     }
                   : undefined,
