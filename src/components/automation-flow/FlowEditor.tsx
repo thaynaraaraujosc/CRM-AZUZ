@@ -1927,6 +1927,23 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                   ? prev
                   : ids,
               );
+              /*
+               * UM PAINEL SÓ, E ELE É O DO BLOCO QUE ACABOU DE SER CLICADO.
+               *
+               * A gaveta dos gatilhos e o painel de configuração dividem a mesma beirada esquerda,
+               * e a gaveta tem a frente enquanto está aberta. Com ela aberta, clicar no bloco de
+               * espera não fazia nada visível: o painel dele só aparecia depois de fechar a gaveta
+               * no "x". "Quando eu clicar de aguardar, some o de gatilho e aparece de aguardar."
+               *
+               * Escolher um bloco que NÃO é gatilho fecha a gaveta. O gatilho fica de fora de
+               * propósito: a gaveta É a configuração dele, e é o cartão dele que a abre — fechá-la
+               * ali desfaria o clique que acabou de abri-la.
+               */
+              const escolheuOutroBloco = ids.some((id) => {
+                const no = rfNodes.find((n) => n.id === id);
+                return no && no.data.flowNode.category !== "gatilho";
+              });
+              if (escolheuOutroBloco) setEscolherGatilhoAberto(false);
             }}
             onNodeContextMenu={(e, node) => {
               e.preventDefault();
