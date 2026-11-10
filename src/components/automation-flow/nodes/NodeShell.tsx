@@ -1039,6 +1039,7 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
         /* O bloco "Condição" se edita no cartão: ver `CartaoCondicaoRamos`. As saídas continuam
            desenhadas embaixo, uma por caminho, como em todo bloco que ramifica. */
         <CartaoCondicaoRamos
+          area={area}
           data={(flowNode.data ?? { ramos: [] }) as CondicaoRamosData}
           aoMudar={(ramos) => aoMudarCampo?.("ramos", ramos)}
           saidasConectadas={saidasConectadas}

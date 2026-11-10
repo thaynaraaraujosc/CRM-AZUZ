@@ -1,6 +1,7 @@
 "use client";
 
 import type { GrupoCondicoes, RegraCondicao } from "@/lib/automation-flow/types";
+import type { AreaAutomacao } from "@/lib/canais/capacidades";
 import { regraPadrao } from "@/lib/automation-flow/campos-condicao";
 import { IconClose } from "@/components/icons";
 import { useIdioma } from "@/lib/idioma-context";
@@ -39,13 +40,16 @@ export function CondicaoForm({
   grupo,
   onChange,
   nivel = 0,
+  area,
 }: {
   grupo: GrupoCondicoes;
   onChange: (novo: GrupoCondicoes) => void;
   nivel?: number;
+  /** Decide quais campos a lista oferece: Instagram no social, WhatsApp no funil. */
+  area?: AreaAutomacao;
 }) {
   const { t: traduzir } = useIdioma();
-  const campos = useCamposDeCondicao();
+  const campos = useCamposDeCondicao(area);
 
   function atualizarRegra(id: string, patch: Partial<RegraCondicao>) {
     onChange({ ...grupo, regras: grupo.regras.map((r) => (r.id === id ? { ...r, ...patch } : r)) });
@@ -117,7 +121,7 @@ export function CondicaoForm({
 
       {grupo.subgrupos.map((sub) => (
         <div className="flow-cond-subgrupo" key={sub.id}>
-          <CondicaoForm grupo={sub} onChange={(novo) => atualizarSubgrupo(sub.id, novo)} nivel={nivel + 1} />
+          <CondicaoForm grupo={sub} onChange={(novo) => atualizarSubgrupo(sub.id, novo)} nivel={nivel + 1} area={area} />
           <button type="button" className="btn ghost mt8" onClick={() => removerSubgrupo(sub.id)}>
             {traduzir("Remover subgrupo")}
           </button>

@@ -175,6 +175,7 @@ function FormularioDoNode({
     return (
       <CondicaoRamosForm
         data={node.data as CondicaoRamosData}
+        area={area}
         onChange={(d) => onUpdateNodeData(node.id, d)}
       />
     );
@@ -228,7 +229,7 @@ function FormularioDoNode({
   }
   if (node.type === "condicao_grupo") {
     const data = node.data as CondicaoGrupoData;
-    return <CondicaoForm grupo={data.grupo} onChange={(grupo) => onUpdateNodeData(node.id, { grupo })} />;
+    return <CondicaoForm grupo={data.grupo} area={area} onChange={(grupo) => onUpdateNodeData(node.id, { grupo })} />;
   }
   if (node.type === "aguardar") {
     return (

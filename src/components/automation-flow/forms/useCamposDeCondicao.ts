@@ -7,7 +7,7 @@ import { useEquipe } from "@/lib/equipe-context";
 import { useFunis } from "@/lib/funis-context";
 import { lerCamposDoContato, type CampoDoContato } from "@/lib/contatos/campos-do-contato";
 import {
-  CAMPOS_CONDICAO,
+  camposDaArea,
   PERFIS_INSTAGRAM,
   PREFIXO_CAMPO_PERSONALIZADO,
   infoDoCampo,
@@ -15,6 +15,7 @@ import {
   type TipoDeCampoCondicao,
 } from "@/lib/automation-flow/campos-condicao";
 import type { CampoCondicao } from "@/lib/automation-flow/types";
+import type { AreaAutomacao } from "@/lib/canais/capacidades";
 import { useEquipesDisponiveis } from "./useEquipesDisponiveis";
 import { useEtiquetasDisponiveis } from "./EtiquetaSelect";
 import type { OpcaoBuscavel } from "./SeletorBuscavel";
@@ -78,7 +79,12 @@ export type CamposDeCondicao = {
   opcoesDeValor: (campo: CampoCondicao, funilEscolhido?: string) => { valor: string; label: string }[] | null;
 };
 
-export function useCamposDeCondicao(): CamposDeCondicao {
+/**
+ * `area` decide QUAIS campos a lista oferece: "É seguidor" é pergunta de robô de Instagram, e
+ * "Número salvo" é de robô de WhatsApp. Sem área, oferece todos — é o que as telas que não sabem
+ * de qual robô se trata precisam.
+ */
+export function useCamposDeCondicao(area?: AreaAutomacao): CamposDeCondicao {
   const { funis } = useFunis();
   const { membros } = useEquipe();
   const equipes = useEquipesDisponiveis();
@@ -99,12 +105,12 @@ export function useCamposDeCondicao(): CamposDeCondicao {
 
   const opcoes = useMemo<OpcaoBuscavel[]>(
     () =>
-      [...CAMPOS_CONDICAO, ...personalizados]
+      [...camposDaArea(area), ...personalizados]
         // O campo "pelo nome" é só compatibilidade com fluxos antigos: quem monta hoje escolhe o
         // campo da empresa direto na lista, e oferecer os dois caminhos convida ao errado.
         .filter((c) => c.valor !== "campo_personalizado")
         .map((c) => ({ valor: c.valor, label: c.label, grupo: c.grupo })),
-    [personalizados],
+    [personalizados, area],
   );
 
   return {

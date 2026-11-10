@@ -3,6 +3,7 @@
 import { CondicaoForm, novoGrupoCondicoes } from "./CondicaoForm";
 import { IconClose } from "@/components/icons";
 import type { CondicaoRamosData, RamoDeCondicao } from "@/lib/automation-flow/types";
+import type { AreaAutomacao } from "@/lib/canais/capacidades";
 import { useIdioma } from "@/lib/idioma-context";
 import { Ajuda } from "@/components/ui";
 
@@ -17,9 +18,12 @@ import { Ajuda } from "@/components/ui";
 export function CondicaoRamosForm({
   data,
   onChange,
+  area,
 }: {
   data: CondicaoRamosData;
   onChange: (novo: CondicaoRamosData) => void;
+  /** Decide quais campos a lista oferece: Instagram no social, WhatsApp no funil. */
+  area?: AreaAutomacao;
 }) {
   const { t: traduzir } = useIdioma();
   const ramos = data.ramos ?? [];
@@ -55,6 +59,7 @@ export function CondicaoRamosForm({
           </div>
           <CondicaoForm
             grupo={ramo.grupo}
+            area={area}
             onChange={(grupo) => trocar(ramos.map((r) => (r.id === ramo.id ? { ...r, grupo } : r)))}
           />
         </div>

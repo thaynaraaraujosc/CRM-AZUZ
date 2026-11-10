@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { avaliarGrupoCondicoes, booleanoDoValor, dataDoValor, diaEmSaoPaulo } from "../avaliacao";
 import {
+  camposDaArea,
   ehCampoDeInstagram,
   operadoresDoCampo,
   pedeNumeroDeDias,
@@ -319,5 +320,48 @@ describe("o valor da regra escrito no bloco", () => {
     expect(resumoGrupoCondicoes(grupoComLista)).toBe(
       'Tipo de interação é um destes "Comentário em post/Reels", "Resposta de story"',
     );
+  });
+});
+
+/**
+ * O QUE É DO INSTAGRAM FICA NO INSTAGRAM, O QUE É DO WHATSAPP FICA NO WHATSAPP.
+ *
+ * Campo que pergunta por um dado que aquele robô nunca vai ter responde "não existe" pra todo
+ * mundo — um caminho que parece configurado e manda todos pelo mesmo lugar. A lista filtra; a
+ * AVALIAÇÃO não, porque fluxo já gravado (ou copiado de uma área pra outra) continua decidindo
+ * como sempre decidiu.
+ */
+describe("campos por área", () => {
+  const nomes = (area: "social" | "comercial" | undefined) => camposDaArea(area).map((c) => c.valor);
+
+  it("o robô de Instagram não oferece campo de WhatsApp", () => {
+    expect(nomes("social")).not.toContain("numero_salvo");
+    expect(nomes("social")).not.toContain("consentimento");
+    expect(nomes("social")).toContain("ig_seguidor");
+  });
+
+  it("o robô de funil não oferece campo de Instagram", () => {
+    expect(nomes("comercial")).not.toContain("ig_seguidor");
+    expect(nomes("comercial")).not.toContain("ig_janela_24h");
+    expect(nomes("comercial")).not.toContain("cliente_perfil");
+    expect(nomes("comercial")).toContain("numero_salvo");
+  });
+
+  it("o que serve aos dois continua nos dois", () => {
+    for (const campo of ["mensagem", "etiqueta", "valor_negocio", "data_ultima_conversa", "utm_source"]) {
+      expect(nomes("social")).toContain(campo);
+      expect(nomes("comercial")).toContain(campo);
+    }
+  });
+
+  it("sem área, a lista é inteira: filtrar no escuro esconderia campo de quem tem direito", () => {
+    expect(nomes(undefined).length).toBeGreaterThan(nomes("social").length);
+  });
+
+  it("a avaliação não filtra nada: regra gravada continua valendo", () => {
+    // Um fluxo de funil com "é seguidor" gravado (copiado de um robô de Instagram) continua sendo
+    // avaliado — e responde "não existe", que é a verdade, em vez de sumir.
+    expect(vale({ campo: "ig_seguidor", operador: "verdadeiro" }, { igSegueVoce: true })).toBe(true);
+    expect(vale({ campo: "numero_salvo", operador: "verdadeiro" }, { numero_salvo: "sim" })).toBe(true);
   });
 });

@@ -1,6 +1,7 @@
 "use client";
 
 import { Handle, Position } from "@xyflow/react";
+import type { AreaAutomacao } from "@/lib/canais/capacidades";
 
 import { RegraDeCondicao } from "@/components/automation-flow/forms/RegraDeCondicao";
 import { useCamposDeCondicao } from "@/components/automation-flow/forms/useCamposDeCondicao";
@@ -101,15 +102,18 @@ export function CartaoCondicaoRamos({
   saidasConectadas,
   onAdicionarApos,
   aoDesligarSaida,
+  area,
 }: {
   data: CondicaoRamosData;
   aoMudar: (ramos: RamoDeCondicao[]) => void;
   saidasConectadas?: Set<string>;
   onAdicionarApos?: (handleId: string | undefined, ancora?: DOMRect) => void;
   aoDesligarSaida?: (handleId: string | undefined) => void;
+  /** Decide quais campos a lista oferece: Instagram no social, WhatsApp no funil. */
+  area?: AreaAutomacao;
 }) {
   const { t: traduzir } = useIdioma();
-  const campos = useCamposDeCondicao();
+  const campos = useCamposDeCondicao(area);
   const ramos = data.ramos ?? [];
 
   function mudarRamo(ramoId: string, mudanca: (r: RamoDeCondicao) => RamoDeCondicao) {

@@ -18,6 +18,7 @@
  * pede pelo `opcoes` e resolve no seu lado — o catálogo diz de onde vêm, não vai buscar.
  */
 
+import type { AreaAutomacao } from "@/lib/canais/capacidades";
 import type { CampoCondicao, OperadorCondicao, RamoDeCondicao, RegraCondicao } from "./types";
 
 /**
@@ -75,6 +76,19 @@ export type CampoCondicaoInfo = {
   label: string;
   grupo: GrupoDeCampo;
   tipo: TipoDeCampoCondicao;
+  /**
+   * EM QUE ÁREAS ESTE CAMPO FAZ PERGUNTA DE VERDADE. Ausente = nas duas.
+   *
+   * "É seguidor" num robô de funil pergunta por um dado que aquele robô nunca vai ter: o lead
+   * chegou por WhatsApp, não tem perfil de Instagram ligado, e a regra responde "não existe" pra
+   * todo mundo — um caminho que parece configurado e manda todos pelo mesmo lugar. "Número salvo"
+   * no Direct é a mesma coisa ao contrário.
+   *
+   * A lista FILTRA; a avaliação NÃO. Regra já gravada com um campo de outra área continua sendo
+   * avaliada igual, e continua aparecendo na tela de quem abrir o bloco (ver `RegraDeCondicao`):
+   * esconder a regra que está lá seria pior do que oferecê-la.
+   */
+  areas?: AreaAutomacao[];
   /** Só em `tipo === "lista"`: de onde saem as opções. */
   opcoes?: OrigemDeOpcoes;
   /** Opções fixas, quando elas não dependem do workspace. */
@@ -99,11 +113,15 @@ export const CAMPOS_CONDICAO: CampoCondicaoInfo[] = [
   // A regra que quase todo roteador de atendimento escreve primeiro, e por isso a padrão.
   { valor: "mensagem", label: "Cliente enviar (última mensagem)", grupo: "Conversa", tipo: "texto" },
   { valor: "comentario", label: "Comentário do cliente", grupo: "Conversa", tipo: "texto" },
-  { valor: "cliente_perfil", label: "Cliente", grupo: "Conversa", tipo: "lista", opcoes: "perfil_instagram" },
+  /* O jeito antigo de perguntar pelo perfil do Instagram. Continua pros fluxos publicados; quem
+     monta hoje usa o grupo "Instagram", que pergunta a mesma coisa com nome de gente. */
+  { valor: "cliente_perfil", label: "Cliente", grupo: "Conversa", tipo: "lista", opcoes: "perfil_instagram", areas: ["social"] },
   { valor: "canal", label: "Canal (mensageiro ativo)", grupo: "Conversa", tipo: "lista", opcoes: "canais" },
   { valor: "palavra_chave", label: "Palavra-chave", grupo: "Conversa", tipo: "texto" },
   { valor: "respondeu", label: "Respondeu", grupo: "Conversa", tipo: "booleano" },
-  { valor: "numero_salvo", label: "Número salvo", grupo: "Conversa", tipo: "booleano" },
+  /* "Número salvo" e o consentimento são do WhatsApp: no Direct não existe número pra salvar nem
+     opt-in de WhatsApp pra conferir. */
+  { valor: "numero_salvo", label: "Número salvo", grupo: "Conversa", tipo: "booleano", areas: ["comercial"] },
   { valor: "recebeu_automacao", label: "Recebeu automação", grupo: "Conversa", tipo: "booleano" },
   { valor: "em_outra_automacao", label: "Está em outra automação", grupo: "Conversa", tipo: "booleano" },
   { valor: "tentativas", label: "Tentativas", grupo: "Conversa", tipo: "numero" },
@@ -126,14 +144,15 @@ export const CAMPOS_CONDICAO: CampoCondicaoInfo[] = [
    * que não carrega o dado: a regra responde "não existe" em vez de "falso". A diferença decide
    * pra onde o lead vai, e chutar "falso" mandaria todo mundo pelo caminho de quem não segue.
    */
-  { valor: "ig_seguidor", label: "É seguidor (segue seu perfil)", grupo: "Instagram", tipo: "booleano" },
-  { valor: "ig_voce_segue", label: "Você segue o contato", grupo: "Instagram", tipo: "booleano" },
-  { valor: "ig_janela_24h", label: "Dentro da janela de 24h", grupo: "Instagram", tipo: "booleano" },
+  { valor: "ig_seguidor", label: "É seguidor (segue seu perfil)", grupo: "Instagram", tipo: "booleano", areas: ["social"] },
+  { valor: "ig_voce_segue", label: "Você segue o contato", grupo: "Instagram", tipo: "booleano", areas: ["social"] },
+  { valor: "ig_janela_24h", label: "Dentro da janela de 24h", grupo: "Instagram", tipo: "booleano", areas: ["social"] },
   {
     valor: "ig_tipo_interacao",
     label: "Tipo de interação",
     grupo: "Instagram",
     tipo: "lista",
+    areas: ["social"],
     opcoesFixas: [
       { valor: "comentario", label: "Comentário em post/Reels" },
       { valor: "story_respondido", label: "Resposta de story" },
@@ -142,11 +161,11 @@ export const CAMPOS_CONDICAO: CampoCondicaoInfo[] = [
       { valor: "comentario_live", label: "Comentário em Live" },
     ],
   },
-  { valor: "ig_post_id", label: "Post comentado (ID)", grupo: "Instagram", tipo: "texto" },
-  { valor: "ig_post_link", label: "Link do post comentado", grupo: "Instagram", tipo: "texto" },
-  { valor: "ig_arroba", label: "@ do contato", grupo: "Instagram", tipo: "texto" },
-  { valor: "ig_verificado", label: "Conta verificada", grupo: "Instagram", tipo: "booleano" },
-  { valor: "ig_seguidores", label: "Nº de seguidores do contato", grupo: "Instagram", tipo: "numero" },
+  { valor: "ig_post_id", label: "Post comentado (ID)", grupo: "Instagram", tipo: "texto", areas: ["social"] },
+  { valor: "ig_post_link", label: "Link do post comentado", grupo: "Instagram", tipo: "texto", areas: ["social"] },
+  { valor: "ig_arroba", label: "@ do contato", grupo: "Instagram", tipo: "texto", areas: ["social"] },
+  { valor: "ig_verificado", label: "Conta verificada", grupo: "Instagram", tipo: "booleano", areas: ["social"] },
+  { valor: "ig_seguidores", label: "Nº de seguidores do contato", grupo: "Instagram", tipo: "numero", areas: ["social"] },
 
   /* ---------------------------------- Negócio ---------------------------------- */
   { valor: "funil", label: "Funil", grupo: "Negócio", tipo: "lista", opcoes: "funis" },
@@ -166,7 +185,7 @@ export const CAMPOS_CONDICAO: CampoCondicaoInfo[] = [
   { valor: "empresa", label: "Empresa (nome)", grupo: "Contato", tipo: "texto" },
   { valor: "cidade", label: "Cidade", grupo: "Contato", tipo: "texto" },
   { valor: "estado", label: "Estado", grupo: "Contato", tipo: "texto" },
-  { valor: "consentimento", label: "Termos do usuário (consentimento)", grupo: "Contato", tipo: "booleano" },
+  { valor: "consentimento", label: "Termos do usuário (consentimento)", grupo: "Contato", tipo: "booleano", areas: ["comercial"] },
 
   /* ---------------------------------- Rastreio --------------------------------- */
   // Tudo isto sai de `OrigemDoLead`, a tabela que guarda de onde o lead veio com precisão de
@@ -525,6 +544,17 @@ export function novoRamoDeCondicao(): RamoDeCondicao {
 export const CAMPOS_DE_INSTAGRAM: CampoCondicao[] = CAMPOS_CONDICAO.filter((c) => c.grupo === "Instagram").map(
   (c) => c.valor,
 );
+
+/**
+ * OS CAMPOS QUE A LISTA OFERECE NAQUELA ÁREA.
+ *
+ * Sem área (uma tela que não sabe de qual robô se trata) a lista é inteira: filtrar no escuro
+ * esconderia campo de quem tem direito a ele.
+ */
+export function camposDaArea(area?: AreaAutomacao): CampoCondicaoInfo[] {
+  if (!area) return CAMPOS_CONDICAO;
+  return CAMPOS_CONDICAO.filter((c) => !c.areas || c.areas.includes(area));
+}
 
 export function ehCampoDeInstagram(campo: string): boolean {
   return (CAMPOS_DE_INSTAGRAM as string[]).includes(campo);

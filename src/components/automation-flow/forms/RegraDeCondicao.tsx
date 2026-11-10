@@ -233,9 +233,22 @@ export function RegraDeCondicao({
         <span className="cond-regra-e">{primeira ? traduzir("Se") : traduzir("e")}</span>
       ) : null}
 
+      {/*
+        O CAMPO GRAVADO SEMPRE APARECE, mesmo quando a lista daquela área não o oferece mais.
+        
+        A lista do funil não mostra "É seguidor" e a do Instagram não mostra "Número salvo" — são
+        perguntas que aquele robô não tem como responder. Mas regra JÁ GRAVADA com um deles (num
+        fluxo copiado de uma área pra outra, ou montado antes do filtro existir) tem que continuar
+        visível e editável: sumir da lista faria o campo aparecer em branco e a pessoa acharia que
+        a regra está pela metade, enquanto o motor continua avaliando ela normalmente.
+      */}
       <SeletorBuscavel
         valor={regra.campo}
-        opcoes={campos.opcoes}
+        opcoes={
+          campos.opcoes.some((o) => o.valor === regra.campo)
+            ? campos.opcoes
+            : [...campos.opcoes, { valor: regra.campo, label: campos.nomeDoCampo(regra.campo) ?? regra.campo, grupo: "Nesta regra" }]
+        }
         aoEscolher={trocarCampo}
         className={classeCampo}
         ariaLabel={traduzir("Campo da condição")}
