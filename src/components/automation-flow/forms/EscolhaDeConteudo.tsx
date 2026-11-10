@@ -1,10 +1,13 @@
 "use client";
 
+import { useState } from "react";
+
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
 import type { FlowNodeType } from "@/lib/automation-flow/types";
 import {
   IconConversas,
   IconDoc,
+  IconExpandir,
   IconImage,
   IconMic,
   IconRelogio,
@@ -28,6 +31,13 @@ import { useIdioma } from "@/lib/idioma-context";
  * "Cartões" (o carrossel) não está aqui porque o CRM não tem esse bloco. Desenhar a opção e não
  * entregar o carrossel seria a definição de botão falso, que é o que `canais/capacidades.ts`
  * existe pra impedir.
+ *
+ * E ELA ABRE FECHADA, mostrando o formato atual numa linha só.
+ *
+ * Aberta, a lista ocupava quatrocentos e cinquenta pixels no topo do painel e empurrava pra baixo
+ * da dobra justamente o que a pessoa foi ali fazer: "quando eu clico em aguardar, o menu lateral
+ * não aparece a janelinha de tempo". Aparecia — mas só pra quem rolasse. Trocar o formato é coisa
+ * que se faz de vez em quando; configurar o bloco é o que se faz toda vez que ele é aberto.
  */
 type Opcao = {
   tipo: FlowNodeType;
@@ -56,10 +66,31 @@ export function EscolhaDeConteudo({
   onEscolher: (tipo: FlowNodeType, dados: Record<string, unknown>) => void;
 }) {
   const { t: traduzir } = useIdioma();
+  const [aberta, setAberta] = useState(false);
+  const atual = OPCOES.find((o) => o.tipo === tipoAtual);
+  const IconeAtual = atual?.Icone ?? IconConversas;
 
   return (
     <div className="esc-conteudo">
-      <p className="esc-conteudo-titulo">{traduzir("Escolha um bloco para começar")}</p>
+      {/* A linha do formato atual. É ela que abre a lista, e é o cabeçalho do painel inteiro. */}
+      <button
+        type="button"
+        className={`esc-conteudo-atual${aberta ? " aberta" : ""}`}
+        aria-expanded={aberta}
+        onClick={() => setAberta((v) => !v)}
+      >
+        <span className="esc-conteudo-icone" aria-hidden="true">
+          <IconeAtual width={17} height={17} />
+        </span>
+        <span className="esc-conteudo-textos">
+          <strong>{traduzir(atual?.rotulo ?? "Bloco")}</strong>
+          <span>{traduzir(atual?.descricao ?? "Formato deste bloco")}</span>
+        </span>
+        <span className="esc-conteudo-trocar">{traduzir("Trocar")}</span>
+        <IconExpandir className={aberta ? "girado" : undefined} width={14} height={14} aria-hidden="true" />
+      </button>
+
+      {aberta ? (
       <div className="esc-conteudo-lista">
         {OPCOES.filter((o) => BLOCOS_DISPONIVEIS.some((b) => b.tipo === o.tipo)).map((o) => (
           <button
@@ -67,7 +98,10 @@ export function EscolhaDeConteudo({
             type="button"
             className={`esc-conteudo-item${o.tipo === tipoAtual ? " on" : ""}`}
             aria-pressed={o.tipo === tipoAtual}
-            onClick={() => onEscolher(o.tipo, o.dados ?? {})}
+            onClick={() => {
+              setAberta(false);
+              onEscolher(o.tipo, o.dados ?? {});
+            }}
           >
             <span className="esc-conteudo-icone" aria-hidden="true">
               <o.Icone width={17} height={17} />
@@ -82,6 +116,7 @@ export function EscolhaDeConteudo({
           </button>
         ))}
       </div>
+      ) : null}
     </div>
   );
 }

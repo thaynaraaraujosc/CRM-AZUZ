@@ -2875,4 +2875,9 @@ export const TRADUCOES_EN: Record<string, string> = {
     "A pause of up to 10 seconds happens right away. Above that the sweep resumes it, and it runs once a minute: a 30-second pause can take up to a minute.",
   "✓ Respondeu antes do tempo": "✓ Replied in time",
   "⏱ Não respondeu": "⏱ Did not reply",
+
+  /* A escolha de formato do bloco, agora fechada por padrão. */
+  "Trocar": "Change",
+  "Formato deste bloco": "This block's format",
+  "Bloco": "Block",
 };

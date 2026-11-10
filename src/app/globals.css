@@ -27367,10 +27367,10 @@ td.trafego-col-crm:first-of-type {
  * em uso fica marcado, e não escondido: sem a marca, quem abre o bloco pela segunda vez não sabe
  * se a lista é "o que ele é" ou "o que ele pode virar".
  */
+/* Sem divisa própria: quem separa o cabeçalho do resto é a linha da seção "Configuração", logo
+   abaixo. Com as duas, o painel abria com dois riscos quase colados. */
 .esc-conteudo {
-  margin-bottom: var(--space-4);
-  padding-bottom: var(--space-4);
-  border-bottom: 1px solid var(--line-soft);
+  margin-bottom: var(--space-2);
 }
 
 .esc-conteudo-titulo {
@@ -27378,6 +27378,47 @@ td.trafego-col-crm:first-of-type {
   font-size: 16px;
   line-height: 24px;
   font-weight: 600;
+}
+
+/* A LINHA DO FORMATO ATUAL: o cabeçalho do painel, e o botão que abre a lista.
+   Sem contorno próprio — ela é um cabeçalho, não mais um cartão igual aos sete de dentro. */
+.esc-conteudo-atual {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 2px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  color: var(--ink);
+}
+
+.esc-conteudo-atual.aberta {
+  margin-bottom: var(--space-3);
+}
+
+.esc-conteudo-atual .esc-conteudo-textos strong {
+  font-size: 16px;
+}
+
+.esc-conteudo-trocar {
+  flex: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ss-azul, var(--ink));
+}
+
+.esc-conteudo-atual svg:last-child {
+  flex: none;
+  color: var(--ss-tinta-fraca, #64748b);
+  transition: transform 140ms ease;
+}
+
+.esc-conteudo-atual svg.girado {
+  transform: rotate(180deg);
 }
 
 .esc-conteudo-lista {

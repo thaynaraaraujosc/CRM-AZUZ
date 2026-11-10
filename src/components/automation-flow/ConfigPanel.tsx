@@ -480,49 +480,93 @@ export function ConfigPanel({
             */}
             {TIPOS_COM_PREVIA.has(node.type) ? <PreviaDaMensagem node={node} /> : null}
 
-            {ehSocial ? null : (
-            <div className="panel-h">
-              <h4>{node.titulo || node.type}</h4>
-            </div>
-            )}
-            <div className="flow-form">
-              <div className="field">
-                <label>
-                  {traduzir("Título do bloco")}
-                  <Ajuda texto={traduzir("O nome que aparece no cartão, no desenho. Em branco, vale o nome do tipo de bloco.")} />
-                </label>
-                <input
-                  className="input"
-                  placeholder={node.type}
-                  value={node.titulo ?? ""}
-                  onChange={(e) => onUpdateNode(node.id, { titulo: e.target.value })}
-                />
-              </div>
-              <div className="field">
-                <label>
-                  {traduzir("Observação")}
-                  <Ajuda texto={traduzir("Só pra sua equipe: fica guardada no bloco e nunca é enviada pro contato.")} />
-                </label>
-                <textarea
-                  className="input"
-                  style={{ width: "100%", minHeight: 50, resize: "vertical" }}
-                  value={node.observacao ?? ""}
-                  onChange={(e) => onUpdateNode(node.id, { observacao: e.target.value })}
-                />
-              </div>
-            </div>
-            {/*
-              "O QUE ESTE BLOCO FARÁ" VIROU UM "?" NO CABEÇALHO.
-              
-              Era uma seção inteira no fim do painel — título, divisória e um parágrafo — pra uma
-              frase que a pessoa lê uma vez e nunca mais. Ela continua lá, no mesmo lugar onde
-              está a pergunta ("o que isto aqui faz?"), só que sob demanda.
-            */}
-            <div className="panel-h divided">
-              <h4>{traduzir("Configuração")}</h4>
-              <Ajuda texto={resumoNaturalNo(node, funis)} />
-            </div>
-            <FormularioDoNode node={node} area={fluxo?.area ?? "comercial"} fluxoAtualId={fluxo?.id} onTrocarTipo={onTrocarTipo} onUpdateNodeData={onUpdateNodeData} onRemoverOpcaoAresta={onRemoverOpcaoAresta} onAbrirGatilhos={onAbrirGatilhos} />
+            {(() => {
+              /*
+                O QUE O BLOCO CONFIGURA VEM ANTES DO NOME DELE, no Social Seller.
+                
+                "Quando eu clico em aguardar, o menu lateral não aparece a janelinha de tempo."
+                Ela aparecia: estava embaixo da escolha de formato, do título e da observação, uns
+                quatrocentos pixels abaixo da dobra do painel. Um campo que existe e não se vê é um
+                campo que não existe.
+                
+                A ordem agora segue a pergunta que fez a pessoa abrir o bloco: primeiro o que ele
+                FAZ (o tempo da espera, o texto da mensagem), depois o nome e a observação, que são
+                etiquetas pra organizar o desenho e se leem depois. No funil a ordem fica como
+                estava: lá o painel abre em abas e não tem a escolha de formato empurrando nada.
+              */
+              const identificacao = (
+                <>
+                  {ehSocial ? null : (
+                    <div className="panel-h">
+                      <h4>{node.titulo || node.type}</h4>
+                    </div>
+                  )}
+                  <div className="flow-form">
+                    <div className="field">
+                      <label>
+                        {traduzir("Título do bloco")}
+                        <Ajuda texto={traduzir("O nome que aparece no cartão, no desenho. Em branco, vale o nome do tipo de bloco.")} />
+                      </label>
+                      <input
+                        className="input"
+                        placeholder={node.type}
+                        value={node.titulo ?? ""}
+                        onChange={(e) => onUpdateNode(node.id, { titulo: e.target.value })}
+                      />
+                    </div>
+                    <div className="field">
+                      <label>
+                        {traduzir("Observação")}
+                        <Ajuda texto={traduzir("Só pra sua equipe: fica guardada no bloco e nunca é enviada pro contato.")} />
+                      </label>
+                      <textarea
+                        className="input"
+                        style={{ width: "100%", minHeight: 50, resize: "vertical" }}
+                        value={node.observacao ?? ""}
+                        onChange={(e) => onUpdateNode(node.id, { observacao: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </>
+              );
+
+              const configuracao = (
+                <>
+                  {/*
+                    "O QUE ESTE BLOCO FARÁ" VIROU UM "?" NO CABEÇALHO.
+                    
+                    Era uma seção inteira no fim do painel — título, divisória e um parágrafo — pra
+                    uma frase que a pessoa lê uma vez e nunca mais. Ela continua lá, no mesmo lugar
+                    onde está a pergunta ("o que isto aqui faz?"), só que sob demanda.
+                  */}
+                  <div className="panel-h divided">
+                    <h4>{traduzir("Configuração")}</h4>
+                    <Ajuda texto={resumoNaturalNo(node, funis)} />
+                  </div>
+                  <FormularioDoNode
+                    node={node}
+                    area={fluxo?.area ?? "comercial"}
+                    fluxoAtualId={fluxo?.id}
+                    onTrocarTipo={onTrocarTipo}
+                    onUpdateNodeData={onUpdateNodeData}
+                    onRemoverOpcaoAresta={onRemoverOpcaoAresta}
+                    onAbrirGatilhos={onAbrirGatilhos}
+                  />
+                </>
+              );
+
+              return ehSocial ? (
+                <>
+                  {configuracao}
+                  {identificacao}
+                </>
+              ) : (
+                <>
+                  {identificacao}
+                  {configuracao}
+                </>
+              );
+            })()}
           </>
         ) : selectedNodes.length > 1 ? (
           <p className="hint">{selectedNodes.length} blocos selecionados: selecione um só pra configurar, ou nenhum pra ver as configurações gerais do fluxo.</p>
