@@ -49,14 +49,38 @@ describe("catálogo: cada campo só oferece o que faz sentido pra ele", () => {
     const daData = operadoresDoCampo("data_ultima_conversa").map((o) => o.valor);
     expect(daData).not.toContain("comeca_com");
     expect(daData).toContain("entre");
-    expect(operadoresDoCampo("respondeu").map((o) => o.valor)).toEqual(["igual", "diferente"]);
-    expect(operadoresDoCampo("etiqueta").map((o) => o.valor)).toEqual(["igual", "diferente", "existe", "nao_existe"]);
+    /*
+     * BOOLEANO PERGUNTA SE É VERDADE, e não se é igual ao texto "sim".
+     *
+     * Era "é igual a: sim", e o "sim" dependia do texto gravado na coluna — um fluxo comparando
+     * com "true" ou "Sim" com maiúscula decidia errado sem aviso. `existe`/`não existe` ficam
+     * porque "não se sabe" é uma terceira resposta de verdade: Instagram desconectado não é "não
+     * segue".
+     */
+    expect(operadoresDoCampo("respondeu").map((o) => o.valor)).toEqual([
+      "verdadeiro",
+      "falso",
+      "existe",
+      "nao_existe",
+    ]);
+    /* A etiqueta é um CONJUNTO: ela não "é igual a" nada, ela tem ou não tem. */
+    expect(operadoresDoCampo("etiqueta").map((o) => o.valor)).toEqual([
+      "tem",
+      "nao_tem",
+      "tem_qualquer",
+      "tem_todas",
+      "nao_tem_nenhuma",
+      "existe",
+      "nao_existe",
+    ]);
   });
 
   it("o mesmo operador muda de nome conforme o campo", () => {
-    expect(rotuloDoOperador("menor_que", "data_ultima_conversa")).toBe("antes de");
+    expect(rotuloDoOperador("menor_que", "data_ultima_conversa")).toBe("é antes de");
     expect(rotuloDoOperador("menor_que", "valor_negocio")).toBe("menor que");
-    expect(rotuloDoOperador("igual", "respondeu")).toBe("é");
+    expect(rotuloDoOperador("menor_que", "horario")).toBe("antes de");
+    /* Regra gravada antes de o tipo existir: o rótulo genérico aparece em vez de sumir da tela. */
+    expect(rotuloDoOperador("igual", "respondeu")).toBe("é igual a");
   });
 
   it("\"Cliente enviar\" existe na lista, e é a regra com que todo caminho nasce", () => {

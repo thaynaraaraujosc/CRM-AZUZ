@@ -12,6 +12,8 @@ import {
   pedeValor,
   rotuloDaFonte,
   rotuloDoCampo,
+  pedeNumeroDeDias,
+  pedeVariosValores,
   rotuloDoOperador,
 } from "./campos-condicao";
 import type {
@@ -258,7 +260,14 @@ function valorDaRegraEmTexto(r: RegraCondicao): string {
   if (r.fonteValor && r.fonteValor !== "manual") {
     return r.fonteValor === "vazio" ? " nada preenchido" : ` ${rotuloDaFonte(r.fonteValor)}`;
   }
+  /* Vários valores viram uma lista legível: "é um destes "Novo", "Qualificado"". */
+  if (pedeVariosValores(r.operador)) {
+    const lista = (r.valores ?? []).map((v) => v.trim()).filter(Boolean);
+    return lista.length ? ` ${lista.map((v) => `"${v}"`).join(", ")}` : " (sem valor)";
+  }
   const de = r.valor?.trim();
+  /* "nos últimos 7 dias" é uma contagem, não um texto: as aspas fariam parecer comparação literal. */
+  if (pedeNumeroDeDias(r.operador)) return de ? ` ${de} dias` : " (sem valor)";
   if (r.operador === "entre") {
     const ate = r.valorFim?.trim();
     return de && ate ? ` "${de}" e "${ate}"` : " (preencha os valores)";

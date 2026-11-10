@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { ORIGENS } from "@/lib/data";
 import { useEquipe } from "@/lib/equipe-context";
 import { useFunis } from "@/lib/funis-context";
 import { lerCamposDoContato, type CampoDoContato } from "@/lib/contatos/campos-do-contato";
@@ -120,7 +121,9 @@ export function useCamposDeCondicao(): CamposDeCondicao {
         ];
       }
       if (info.opcoesFixas) return info.opcoesFixas;
-      if (info.tipo !== "lista") return null;
+      // `multi` (etiqueta) escolhe das MESMAS opções que uma lista; o que muda é quantas de cada
+      // vez, e isso é o operador que diz.
+      if (info.tipo !== "lista" && info.tipo !== "multi") return null;
       switch (info.opcoes) {
         case "canais":
           return CANAIS;
@@ -150,6 +153,10 @@ export function useCamposDeCondicao(): CamposDeCondicao {
           return DIAS_SEMANA.map((d) => ({ valor: d, label: d }));
         case "perfil_instagram":
           return PERFIS_INSTAGRAM;
+        case "origens_do_lead":
+          // As origens que o CRM grava de verdade (ver `ORIGENS` em `data.ts`). Era campo de texto
+          // livre: quem escrevesse "instagram" com minúscula montava uma regra que nunca batia.
+          return ORIGENS.map((o) => ({ valor: o, label: o }));
         default:
           return null;
       }

@@ -396,7 +396,7 @@ async function executarNo(params: {
   switch (no.type) {
     case "condicao_grupo": {
       const data = no.data as CondicaoGrupoData;
-      const passou = avaliarGrupoCondicoes(data.grupo, contato);
+      const passou = avaliarGrupoCondicoes(data.grupo, contato, agora);
       return {
         tipo: "seguir",
         saida: passou ? "sim" : "nao",
@@ -416,7 +416,7 @@ async function executarNo(params: {
     case "condicao_ramos": {
       const data = no.data as CondicaoRamosData;
       const ramos = data.ramos ?? [];
-      const escolhido = ramos.find((r) => avaliarGrupoCondicoes(r.grupo, contato));
+      const escolhido = ramos.find((r) => avaliarGrupoCondicoes(r.grupo, contato, agora));
       if (escolhido) {
         return {
           tipo: "seguir",

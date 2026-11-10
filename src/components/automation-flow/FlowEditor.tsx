@@ -176,6 +176,29 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const [menuContexto, setMenuContexto] = useState<{ x: number; y: number; nodeId: string } | null>(null);
   const [toasts, setToasts] = useState<{ id: number; texto: string }[]>([]);
   const [escolherGatilhoAberto, setEscolherGatilhoAberto] = useState(false);
+  /*
+   * O INSTAGRAM ESTÁ CONECTADO?
+   *
+   * `undefined` enquanto não se sabe, e a validação não acusa nada nesse estado: avisar que a
+   * conta está desligada sem ter checado seria pior do que não avisar. Só no Social Seller, que é
+   * onde as condições de Instagram existem.
+   */
+  const [instagramConectado, setInstagramConectado] = useState<boolean | undefined>(undefined);
+  useEffect(() => {
+    if (!ehSocial) return;
+    let vivo = true;
+    fetch("/api/integracoes/instagram/diagnostico", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((dados: { conectado?: boolean } | null) => {
+        if (vivo && typeof dados?.conectado === "boolean") setInstagramConectado(dados.conectado);
+      })
+      .catch(() => {
+        /* Sem resposta, segue sem saber: nenhuma pendência é inventada. */
+      });
+    return () => {
+      vivo = false;
+    };
+  }, [ehSocial]);
   /** Em qual etapa a gaveta de gatilhos abre: a lista, ou direto nas palavras-chave. */
   const [etapaDaGaveta, setEtapaDaGaveta] = useState<"lista" | "palavras" | "painel" | "adicionar">("lista");
   /*
@@ -1369,8 +1392,11 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const domainEdgesAtuais = useMemo(() => rfEdgesToDomain(rfEdges), [rfEdges]);
   const problemas: ProblemaValidacao[] = useMemo(() => {
     if (!fluxo) return [];
-    return validarFluxo({ ...fluxo, nodes: domainNodesAtuais, edges: domainEdgesAtuais });
-  }, [fluxo, domainNodesAtuais, domainEdgesAtuais]);
+    return validarFluxo(
+      { ...fluxo, nodes: domainNodesAtuais, edges: domainEdgesAtuais },
+      { instagramConectado },
+    );
+  }, [fluxo, domainNodesAtuais, domainEdgesAtuais, instagramConectado]);
   const problemasPorNode = useMemo(() => {
     const m = new Map<string, ProblemaValidacao[]>();
     problemas.forEach((p) => {

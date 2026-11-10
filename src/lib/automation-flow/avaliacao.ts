@@ -113,6 +113,35 @@ function valorDoCampo(campo: string, contato: ContextoExecucao["contato"]): stri
       return texto(contato.numero_salvo) ?? simOuNao(contato.salvoEm);
     case "possui_agendamento":
       return texto(contato.possui_agendamento) ?? simOuNao(contato.reuniao);
+    /* ------------------------------- Instagram -------------------------------- */
+    /*
+     * AUSÊNCIA SOBE COMO AUSÊNCIA.
+     *
+     * Instagram desconectado, permissão não concedida, evento que não carrega o dado: a resposta é
+     * `undefined`, e a regra responde "não existe". Devolver "nao" aqui mandaria todo mundo pelo
+     * caminho de quem não segue — incluindo os seguidores, no dia em que o token vencesse.
+     */
+    case "ig_seguidor":
+      return texto(contato.ig_seguidor) ?? simNaoOuNada(contato.igSegueVoce);
+    case "ig_voce_segue":
+      return texto(contato.ig_voce_segue) ?? simNaoOuNada(contato.igVoceSegue);
+    case "ig_verificado":
+      return texto(contato.ig_verificado) ?? simNaoOuNada(contato.igVerificado);
+    case "ig_seguidores":
+      return texto(contato.ig_seguidores) ?? texto(contato.igSeguidores);
+    case "ig_arroba": {
+      // O @ sem o arroba: é assim que a Meta manda e é assim que a pessoa digita na regra.
+      const bruto = texto(contato.ig_arroba) ?? texto(contato.instagram) ?? texto(contato.username);
+      return bruto?.replace(/^@/, "");
+    }
+    case "ig_janela_24h":
+      return simNaoOuNada(contato.ig_janela_24h);
+    case "ig_tipo_interacao":
+      return texto(contato.ig_tipo_interacao);
+    case "ig_post_id":
+      return texto(contato.ig_post_id) ?? texto(contato.publicacaoId);
+    case "ig_post_link":
+      return texto(contato.ig_post_link);
     default: {
       const direto = contato[campo];
       if (typeof direto === "string") return direto;
@@ -124,6 +153,11 @@ function valorDoCampo(campo: string, contato: ContextoExecucao["contato"]): stri
 
 function texto(v: unknown): string | undefined {
   return typeof v === "string" ? v : typeof v === "number" ? String(v) : undefined;
+}
+
+/** "sim"/"nao" pra booleano de verdade, e NADA pra nulo: ausência não é negativa. */
+function simNaoOuNada(v: unknown): string | undefined {
+  return typeof v === "boolean" ? (v ? "sim" : "nao") : undefined;
 }
 
 /**
@@ -218,7 +252,109 @@ function alvoDaRegra(regra: GrupoCondicoes["regras"][number], contato: ContextoE
   return preencher(fonte, contato as Record<string, unknown>);
 }
 
-function avaliarRegra(regra: GrupoCondicoes["regras"][number], contato: ContextoExecucao["contato"]): boolean {
+/* -------------------------------------------------------------------------- */
+/* Tipos de dado, operadores e tempo                                         */
+/* -------------------------------------------------------------------------- */
+
+/** O fuso em que "hoje" e "nos últimos 7 dias" são contados. O CRM é brasileiro. */
+const FUSO = "America/Sao_Paulo";
+
+/**
+ * O DIA DE UMA DATA, EM SÃO PAULO, como "2026-11-10".
+ *
+ * Sem o fuso, "é hoje" às 22h de Brasília é amanhã pro servidor (que roda em UTC) e a regra
+ * respondia falso pra uma conversa que acabou de acontecer. `en-CA` é o formato ISO já pronto, e
+ * `Intl` faz a conversão de fuso sem biblioteca nenhuma.
+ */
+export function diaEmSaoPaulo(data: Date): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: FUSO,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(data);
+}
+
+/**
+ * A data gravada num campo, como `Date`.
+ *
+ * Aceita o que o CRM guarda de verdade: ISO completo do banco, "2026-11-10" dos seletores, e
+ * "10/11/2026" que veio de importação ou de campo digitado. Devolve `undefined` pro que não é
+ * data — e aí a regra de data responde "não existe" em vez de comparar lixo.
+ */
+export function dataDoValor(valor: string | undefined): Date | undefined {
+  if (!valor) return undefined;
+  const texto = valor.trim();
+  const brasileira = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(texto);
+  if (brasileira) {
+    const d = new Date(`${brasileira[3]}-${brasileira[2]}-${brasileira[1]}T12:00:00`);
+    return Number.isNaN(d.getTime()) ? undefined : d;
+  }
+  // Só data, sem hora: meio-dia evita que o fuso jogue o dia pro anterior.
+  if (/^\d{4}-\d{2}-\d{2}$/.test(texto)) {
+    const d = new Date(`${texto}T12:00:00`);
+    return Number.isNaN(d.getTime()) ? undefined : d;
+  }
+  const d = new Date(texto);
+  return Number.isNaN(d.getTime()) ? undefined : d;
+}
+
+/** Quantos dias inteiros se passaram desde aquela data, contados no fuso de São Paulo. */
+function diasDesde(valor: string | undefined, agora: Date): number | undefined {
+  const data = dataDoValor(valor);
+  if (!data) return undefined;
+  const umDia = 86_400_000;
+  const inicioDe = (d: Date) => new Date(`${diaEmSaoPaulo(d)}T00:00:00`).getTime();
+  return Math.floor((inicioDe(agora) - inicioDe(data)) / umDia);
+}
+
+/**
+ * O VALOR DE UM CAMPO BOOLEANO COMO SIM, NÃO OU NÃO SE SABE.
+ *
+ * Três respostas, não duas. "O Instagram não está conectado" e "a pessoa não te segue" levam o
+ * lead por caminhos diferentes, e tratar ausência como falso mandaria todo mundo pelo mesmo.
+ *
+ * O texto é aceito porque é como o dado chega de colunas antigas e do simulador: "sim"/"não",
+ * "true"/"false", "1"/"0".
+ */
+export function booleanoDoValor(bruto: unknown): boolean | undefined {
+  if (typeof bruto === "boolean") return bruto;
+  if (typeof bruto === "number") return bruto !== 0;
+  if (typeof bruto !== "string") return undefined;
+  const t = textoComparavel(bruto);
+  if (!t) return undefined;
+  if (["sim", "true", "1", "verdadeiro", "s", "y", "yes"].includes(t)) return true;
+  if (["nao", "false", "0", "falso", "n", "no"].includes(t)) return false;
+  return undefined;
+}
+
+/** O conjunto de um campo multi-valor (etiquetas): da lista real ou do texto grudado por vírgula. */
+function conjuntoDoCampo(campo: string, contato: ContextoExecucao["contato"]): string[] | undefined {
+  if (campo === "etiqueta") {
+    const lista = contato.etiquetas;
+    return Array.isArray(lista) ? lista.map((e) => textoComparavel(String(e))) : undefined;
+  }
+  const bruto = contato[campo];
+  if (Array.isArray(bruto)) return bruto.map((e) => textoComparavel(String(e)));
+  const texto = valorDoCampo(campo, contato);
+  if (texto === undefined || texto === "") return undefined;
+  return texto
+    .split(",")
+    .map((p) => textoComparavel(p))
+    .filter(Boolean);
+}
+
+/** Os valores com que um operador de vários compara, já normalizados. */
+function alvosDaRegra(regra: GrupoCondicoes["regras"][number]): string[] {
+  const lista = regra.valores?.length ? regra.valores : regra.valor ? [regra.valor] : [];
+  return lista.map((v) => textoComparavel(v)).filter(Boolean);
+}
+
+function avaliarRegra(
+  regra: GrupoCondicoes["regras"][number],
+  contato: ContextoExecucao["contato"],
+  agora: Date,
+): boolean {
   /*
    * CAMPO CRIADO PELA EMPRESA: `cp:<id>`. O valor mora em `camposExtras` (o JSON do contato, com o
    * id do campo como chave) ou em `camposPersonalizados`, que é como o simulador monta o contato.
@@ -230,13 +366,69 @@ function avaliarRegra(regra: GrupoCondicoes["regras"][number], contato: Contexto
       : valorDoCampo(regra.campo, contato);
 
   // "Cliente é um seguidor no Instagram" é a única regra cuja resposta depende da OPÇÃO escolhida,
-  // e não do valor de uma coluna só: cada opção lê uma coluna diferente.
+  // e não do valor de uma coluna só: cada opção lê uma coluna diferente. Continua aqui porque há
+  // fluxos publicados com ela; o grupo "Instagram" da lista de campos faz a mesma pergunta melhor.
   if (regra.campo === "cliente_perfil") {
     const resposta = perfilDoInstagram(regra.valor, contato);
     if (resposta === undefined) return regra.operador === "nao_existe";
     if (regra.operador === "existe") return true;
     if (regra.operador === "nao_existe") return false;
+    if (regra.operador === "verdadeiro") return resposta;
+    if (regra.operador === "falso") return !resposta;
     return regra.operador === "diferente" ? !resposta : resposta;
+  }
+
+  /*
+   * O CONJUNTO VEM ANTES DO TEXTO, pros operadores que perguntam por pertencimento.
+   *
+   * "tem a etiqueta cliente" lido como texto comparava "cliente" com "vip,cliente,quente" grudado
+   * por vírgula — e só batia em quem tivesse exatamente uma etiqueta. É o tipo de defeito que
+   * passa despercebido porque a regra funciona nos testes feitos com um contato de uma etiqueta só.
+   */
+  if (["tem", "nao_tem", "tem_qualquer", "tem_todas", "nao_tem_nenhuma"].includes(regra.operador)) {
+    const conjunto = conjuntoDoCampo(regra.campo, contato) ?? [];
+    const alvos = alvosDaRegra(regra);
+    switch (regra.operador) {
+      case "tem":
+        return alvos.length > 0 && alvos.every((a) => conjunto.includes(a));
+      case "nao_tem":
+        return alvos.length > 0 && !alvos.some((a) => conjunto.includes(a));
+      case "tem_qualquer":
+        return alvos.some((a) => conjunto.includes(a));
+      case "tem_todas":
+        return alvos.length > 0 && alvos.every((a) => conjunto.includes(a));
+      default:
+        return !alvos.some((a) => conjunto.includes(a));
+    }
+  }
+
+  // Comparar com VÁRIAS opções de uma lista. Vazio não é "qualquer um": é regra pela metade, e
+  // responder verdadeiro ali mandaria todo mundo pelo caminho.
+  if (regra.operador === "um_destes" || regra.operador === "nenhum_destes") {
+    const alvos = alvosDaRegra(regra);
+    const campoTexto = textoComparavel(valorCampo);
+    if (!alvos.length) return false;
+    const achou = alvos.includes(campoTexto);
+    return regra.operador === "um_destes" ? achou : !achou;
+  }
+
+  // O booleano responde com o que ele é, e "não se sabe" não é nem um nem outro.
+  if (regra.operador === "verdadeiro" || regra.operador === "falso") {
+    const bruto = booleanoDoValor(contato[regra.campo] ?? valorCampo);
+    if (bruto === undefined) return false;
+    return regra.operador === "verdadeiro" ? bruto : !bruto;
+  }
+
+  // Perguntas de calendário, contadas no fuso de São Paulo.
+  if (regra.operador === "e_hoje") {
+    const data = dataDoValor(valorCampo);
+    return data !== undefined && diaEmSaoPaulo(data) === diaEmSaoPaulo(agora);
+  }
+  if (regra.operador === "ultimos_dias" || regra.operador === "ha_mais_de_dias") {
+    const dias = diasDesde(valorCampo, agora);
+    const limite = numeroDeTexto(regra.valor);
+    if (dias === undefined || limite === undefined) return false;
+    return regra.operador === "ultimos_dias" ? dias <= limite : dias > limite;
   }
 
   const alvoBruto = alvoDaRegra(regra, contato);
@@ -272,17 +464,32 @@ function avaliarRegra(regra: GrupoCondicoes["regras"][number], contato: Contexto
       const d = ordenar(valorCampo, alvoBruto);
       return d !== undefined && d > 0;
     }
+    case "maior_igual": {
+      const d = ordenar(valorCampo, alvoBruto);
+      return d !== undefined && d >= 0;
+    }
     case "menor_que": {
       const d = ordenar(valorCampo, alvoBruto);
       return d !== undefined && d < 0;
+    }
+    case "menor_igual": {
+      const d = ordenar(valorCampo, alvoBruto);
+      return d !== undefined && d <= 0;
     }
     case "entre": {
       const deBaixo = ordenar(valorCampo, alvoBruto);
       const deCima = ordenar(valorCampo, regra.valorFim);
       return deBaixo !== undefined && deCima !== undefined && deBaixo >= 0 && deCima <= 0;
     }
+    /*
+     * OPERADOR DESCONHECIDO É FALSO, não verdadeiro.
+     *
+     * Era `true`, e isso fazia uma regra que o motor não entende aceitar TODO MUNDO — o caminho
+     * parecia configurado e pegava todos os leads. Falso deixa o lead seguir pro próximo caminho
+     * ou pro "Nenhuma das condições", que é o desvio que existe justamente pra isso.
+     */
     default:
-      return true;
+      return false;
   }
 }
 
@@ -300,9 +507,24 @@ function valorDoCampoPersonalizado(chave: string, contato: ContextoExecucao["con
   return undefined;
 }
 
-export function avaliarGrupoCondicoes(grupo: GrupoCondicoes, contato: ContextoExecucao["contato"]): boolean {
-  const resultadosRegras = grupo.regras.map((r) => avaliarRegra(r, contato));
-  const resultadosSubgrupos = grupo.subgrupos.map((g) => avaliarGrupoCondicoes(g, contato));
+/**
+ * O GRUPO INTEIRO: "E" quer todas verdadeiras, "OU" quer uma.
+ *
+ * `agora` entra por fora pra as perguntas de calendário ("é hoje", "nos últimos 7 dias") serem
+ * testáveis e pro simulador poder adiantar o relógio. Sem ele, a mesma condição responderia
+ * diferente conforme a hora em que o teste roda.
+ *
+ * GRUPO VAZIO É VERDADEIRO no "E" e FALSO no "OU", que é como a lógica funciona em qualquer
+ * lugar — e é por isso que a validação cobra uma regra em toda condição: um "E" vazio pega todo
+ * mundo e apaga os caminhos de baixo.
+ */
+export function avaliarGrupoCondicoes(
+  grupo: GrupoCondicoes,
+  contato: ContextoExecucao["contato"],
+  agora: Date = new Date(),
+): boolean {
+  const resultadosRegras = grupo.regras.map((r) => avaliarRegra(r, contato, agora));
+  const resultadosSubgrupos = grupo.subgrupos.map((g) => avaliarGrupoCondicoes(g, contato, agora));
   const todos = [...resultadosRegras, ...resultadosSubgrupos];
 
   if (grupo.tipo === "E") return todos.every(Boolean);

@@ -198,6 +198,25 @@ async function dispararAutomacoes(params: {
     ...(params.etapaTitulo ? { etapaTitulo: params.etapaTitulo } : {}),
   };
 
+  /*
+   * O QUE O INSTAGRAM SABE SOBRE ESTE EVENTO, pras condições poderem perguntar.
+   *
+   * Só em evento do Instagram: numa mensagem de WhatsApp estes campos não existem, e inventar
+   * `false` neles faria "é seguidor" responder "não" pra quem nem tem Instagram. Ausente é
+   * ausente, e a condição lê isso como "não existe".
+   */
+  const doInstagram =
+    canal === "Instagram"
+      ? await dadosDoInstagramParaCondicoes({
+          workspaceId,
+          contatoNome,
+          tipoGatilho: params.tipoGatilho,
+          publicacaoId: params.publicacaoId,
+          fluxos: linhas,
+        })
+      : {};
+  Object.assign(contato, doInstagram);
+
   const areaDoEvento = areaDoCanal(canal);
 
   for (const linha of ordemDeDisparo(linhas)) {
@@ -379,6 +398,110 @@ export function ordemDeDisparo<T extends { nome: string; configuracoes: unknown 
 function prioridadeDaLinha(configuracoes: unknown): string {
   const valor = (configuracoes as { prioridade?: unknown } | null | undefined)?.prioridade;
   return typeof valor === "string" ? valor : "normal";
+}
+
+/**
+ * QUE TIPO DE INTERAÇÃO FOI, na linguagem da condição.
+ *
+ * O gatilho tem o nome técnico do evento ("instagram_comentario_live"); a condição pergunta em
+ * português o que a pessoa fez. Resposta a comentário entra como comentário de propósito: pra
+ * quem monta o fluxo é a mesma situação — alguém escreveu embaixo da sua publicação.
+ */
+const INTERACAO_DO_GATILHO: Record<string, string> = {
+  comentario_instagram: "comentario",
+  instagram_resposta_comentario: "comentario",
+  instagram_comentario_live: "comentario_live",
+  instagram_story_respondido: "story_respondido",
+  instagram_mencao_story: "mencao_story",
+  instagram_direct_recebido: "direct",
+  instagram_midia_recebida: "direct",
+  instagram_publicacao_compartilhada: "direct",
+  instagram_reacao_recebida: "direct",
+  mensagem_recebida: "direct",
+};
+
+/** Quanto tempo a Meta deixa responder livremente depois da última mensagem da pessoa. */
+const JANELA_INSTAGRAM_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * ALGUMA AUTOMAÇÃO PUBLICADA PERGUNTA POR ESTE CAMPO?
+ *
+ * Existe pra uma coisa só: não gastar uma chamada à Meta (e o tempo dela) por evento recebido pra
+ * buscar um dado que nenhuma condição do workspace usa. Exportada pra teste porque errar aqui é
+ * silencioso dos dois lados — ou se paga uma chamada à toa em toda conta, ou o campo fica vazio
+ * justamente em quem o configurou.
+ */
+export function fluxoUsaCampoDeCondicao(fluxos: { nodes?: unknown }[], campo: string): boolean {
+  return fluxos.some((fluxo) => {
+    const nodes = Array.isArray(fluxo.nodes) ? (fluxo.nodes as Record<string, unknown>[]) : [];
+    return nodes.some((no) => {
+      const dados = (no?.data ?? {}) as { grupo?: unknown; ramos?: unknown[] };
+      const grupos = [dados.grupo, ...((dados.ramos ?? []) as { grupo?: unknown }[]).map((r) => r?.grupo)];
+      return grupos.some((g) => grupoUsaCampo(g, campo));
+    });
+  });
+}
+
+function grupoUsaCampo(grupo: unknown, campo: string): boolean {
+  if (!grupo || typeof grupo !== "object") return false;
+  const g = grupo as { regras?: { campo?: string }[]; subgrupos?: unknown[] };
+  if ((g.regras ?? []).some((r) => r?.campo === campo)) return true;
+  return (g.subgrupos ?? []).some((sub) => grupoUsaCampo(sub, campo));
+}
+
+/**
+ * Os campos do grupo "Instagram" da condição, para ESTE evento e ESTE contato.
+ *
+ * O que vem do contato (segue, é seguido, verificado, seguidores, @) já está no contexto: são
+ * colunas da linha dele. O que esta função acrescenta é o que só o evento sabe — o tipo de
+ * interação e a publicação — e a janela de 24 horas, que é uma conta sobre a última mensagem
+ * recebida e não um dado guardado.
+ */
+async function dadosDoInstagramParaCondicoes(params: {
+  workspaceId: string;
+  contatoNome: string;
+  tipoGatilho: string;
+  publicacaoId?: string;
+  fluxos: { nodes?: unknown }[];
+}): Promise<Record<string, unknown>> {
+  const dados: Record<string, unknown> = {};
+
+  const interacao = INTERACAO_DO_GATILHO[params.tipoGatilho];
+  if (interacao) dados.ig_tipo_interacao = interacao;
+  if (params.publicacaoId) dados.ig_post_id = params.publicacaoId;
+
+  /*
+   * A JANELA DE 24 HORAS é a última mensagem RECEBIDA, não a última conversa.
+   *
+   * Sem nenhuma mensagem recebida a janela está fechada de verdade — não é "não se sabe": o
+   * Instagram não deixa escrever primeiro pra quem nunca escreveu. Por isso aqui é `false`, e não
+   * ausência: a condição precisa poder desviar pra outro caminho em vez de ficar sem resposta.
+   */
+  const ultimaRecebida = await prisma.mensagemExtra
+    .findFirst({
+      where: { workspaceId: params.workspaceId, contato: params.contatoNome, tipo: "in" },
+      orderBy: { criadoEm: "desc" },
+      select: { criadoEm: true },
+    })
+    .catch(() => null);
+  dados.ig_janela_24h = ultimaRecebida?.criadoEm
+    ? Date.now() - ultimaRecebida.criadoEm.getTime() < JANELA_INSTAGRAM_MS
+    : false;
+
+  // O link da publicação custa uma chamada à Meta: só quando alguma automação pergunta por ele.
+  if (params.publicacaoId && fluxoUsaCampoDeCondicao(params.fluxos, "ig_post_link")) {
+    const integracao = await prisma.integracao
+      .findUnique({ where: { workspaceId_provedor_slot: { workspaceId: params.workspaceId, provedor: "meta_instagram", slot: 1 } } })
+      .catch(() => null);
+    if (integracao?.accessTokenCriptografado && integracao.status === "conectado") {
+      const { decriptar } = await import("@/lib/integracoes/crypto");
+      const { buscarPermalinkDaMidia } = await import("@/lib/integracoes/instagram-login");
+      const link = await buscarPermalinkDaMidia(decriptar(integracao.accessTokenCriptografado), params.publicacaoId);
+      if (link) dados.ig_post_link = link;
+    }
+  }
+
+  return dados;
 }
 
 /** De qual área é o evento. O canal da conversa é o que decide. Exportado pra teste: é decisão

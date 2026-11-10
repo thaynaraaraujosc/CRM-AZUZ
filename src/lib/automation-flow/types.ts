@@ -205,6 +205,27 @@ export type CampoCondicao =
   | "ultimo_anuncio"
   | "ultimo_caminho"
   | "ultimo_toque_em"
+  /* ------------------------------------------------------------------------
+   * INSTAGRAM: o que a conta conectada sabe sobre quem está do outro lado.
+   *
+   * Os três primeiros são relação de seguir e selo, e saem do perfil que a Meta devolve pra quem
+   * MANDOU mensagem pra conta conectada (`is_user_follow_business`, `is_business_follow_user`,
+   * `is_verified_user`, `follower_count`) — já gravados em `Contato`. Os outros saem do EVENTO que
+   * disparou o fluxo: que tipo de interação foi, em qual publicação, e o @ de quem interagiu.
+   *
+   * `ig_janela_24h` é calculado, não guardado: é "a última mensagem recebida desta pessoa tem
+   * menos de 24 horas?". É a pergunta que decide se o robô ainda PODE mandar mensagem livre no
+   * Direct, e a única forma de tratar isso no desenho em vez de descobrir pelo erro da Meta.
+   * --------------------------------------------------------------------- */
+  | "ig_seguidor"
+  | "ig_voce_segue"
+  | "ig_janela_24h"
+  | "ig_tipo_interacao"
+  | "ig_post_id"
+  | "ig_post_link"
+  | "ig_arroba"
+  | "ig_verificado"
+  | "ig_seguidores"
   /**
    * UM CAMPO CRIADO PELA PRÓPRIA EMPRESA, como `cp:<id do campo>`.
    *
@@ -227,7 +248,33 @@ export type OperadorCondicao =
   | "menor_que"
   | "entre"
   | "existe"
-  | "nao_existe";
+  | "nao_existe"
+  /* ------------------------------------------------------------------------
+   * Operadores que chegaram com os tipos de campo.
+   *
+   * Até aqui todo campo comparava com os onze de cima, e a falta deles obrigava a escrever a
+   * pergunta errada: "maior ou igual" virava "maior que" com o número mudado à mão, "é verdadeiro"
+   * virava "é igual a: sim" (que depende do texto gravado na coluna), e "a etiqueta é" comparava
+   * com a lista inteira de etiquetas grudada por vírgula — nunca batia com uma etiqueta só.
+   * --------------------------------------------------------------------- */
+  | "maior_igual"
+  | "menor_igual"
+  /** Booleano: o operador já diz tudo, e não há valor a comparar. */
+  | "verdadeiro"
+  | "falso"
+  /** Data: perguntas de calendário, resolvidas no fuso de São Paulo. */
+  | "e_hoje"
+  | "ultimos_dias"
+  | "ha_mais_de_dias"
+  /** Lista: comparar com VÁRIAS opções de uma vez. */
+  | "um_destes"
+  | "nenhum_destes"
+  /** Multi-valor (etiquetas): o campo é um conjunto, não um texto. */
+  | "tem"
+  | "nao_tem"
+  | "tem_qualquer"
+  | "tem_todas"
+  | "nao_tem_nenhuma";
 
 export type RegraCondicao = {
   id: string;
@@ -236,6 +283,13 @@ export type RegraCondicao = {
   valor?: string;
   /** Só usado com o operador "entre". */
   valorFim?: string;
+  /**
+   * OS VÁRIOS VALORES, pros operadores que comparam com mais de um ("é um destes", "tem todas de").
+   *
+   * Separado de `valor` de propósito: guardar "a,b,c" num campo de texto faria uma etiqueta com
+   * vírgula no nome virar duas, e nenhuma delas existiria.
+   */
+  valores?: string[];
   /** Só usado quando `campo === "campo_personalizado"`. */
   campoPersonalizadoNome?: string;
   /**

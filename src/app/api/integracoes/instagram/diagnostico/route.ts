@@ -19,7 +19,14 @@ export async function GET() {
 
   const desde = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-  const [porTipo, falhas, ultimo, compartilhamentos] = await Promise.all([
+  const [integracao, porTipo, falhas, ultimo, compartilhamentos] = await Promise.all([
+    // A pergunta mais simples da tela — "está conectado?" — e a que não tinha resposta aqui. O
+    // editor de automação precisa dela pra avisar que uma condição de Instagram não vai decidir
+    // nada enquanto a conta não estiver ligada.
+    prisma.integracao.findUnique({
+      where: { workspaceId_provedor_slot: { workspaceId, provedor: "meta_instagram", slot: 1 } },
+      select: { status: true },
+    }),
     prisma.instagramEvento.groupBy({
       by: ["tipo"],
       where: { workspaceId, criadoEm: { gte: desde } },
@@ -48,6 +55,7 @@ export async function GET() {
 
   return NextResponse.json(
     {
+      conectado: integracao?.status === "conectado",
       ultimoEvento: ultimo ? { tipo: ultimo.tipo, quando: ultimo.criadoEm.toISOString() } : null,
       seteDias: porTipo.map((t) => ({ tipo: t.tipo, quantidade: t._count._all })),
       compartilhamentos: compartilhamentos.map((c) => ({

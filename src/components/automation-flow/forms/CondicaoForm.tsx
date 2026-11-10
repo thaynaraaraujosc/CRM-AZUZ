@@ -83,6 +83,18 @@ export function CondicaoForm({
         </div>
       </div>
 
+      {/* O que a escolha acima quer dizer, em uma linha: "E" e "OU" são óbvios pra quem programa e
+          não pra quem está montando um atendimento. */}
+      <p className="hint flow-cond-explica">
+        {traduzir(
+          grupo.tipo === "OU"
+            ? "Basta UMA das regras ser verdadeira."
+            : grupo.tipo === "NAO"
+              ? "Vale quando as regras NÃO são todas verdadeiras."
+              : "TODAS as regras precisam ser verdadeiras.",
+        )}
+      </p>
+
       {grupo.regras.map((regra) => (
         <div className="flow-cond-regra" key={regra.id}>
           <RegraDeCondicao

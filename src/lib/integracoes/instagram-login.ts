@@ -587,6 +587,33 @@ export function permalinkDaUltimaMidia(): string | null {
   return ultimoPermalinkDaMidia;
 }
 
+/**
+ * O ENDEREÇO PÚBLICO DE UMA PUBLICAÇÃO, pelo id que o webhook do comentário manda.
+ *
+ * O id da mídia não contém o endereço: `instagram.com/p/<código>` usa um código curto que a Meta
+ * não deriva do id. Então quem quiser o link tem que perguntar — e é por isso que esta chamada
+ * acontece SÓ quando alguma automação publicada usa o campo "Link do post comentado" (ver
+ * `fluxoUsaCampoDeCondicao` no disparo). Uma chamada à Meta por comentário recebido, em toda
+ * conta, pra um campo que quase ninguém usa, seria caro e lento à toa.
+ */
+export async function buscarPermalinkDaMidia(accessToken: string, midiaId: string): Promise<string | null> {
+  try {
+    const resposta = await fetch(
+      `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/${midiaId}?fields=permalink&access_token=${accessToken}`,
+      { signal: prazoDe(PRAZO_CONSULTA_MS) },
+    );
+    const dados = (await resposta.json()) as { permalink?: string } & ErroGraph;
+    if (!resposta.ok) {
+      console.error("[instagram] Falha ao buscar o link da publicação:", dados.error?.message ?? resposta.status);
+      return null;
+    }
+    return dados.permalink ?? null;
+  } catch (erro) {
+    console.error("[instagram] Falha ao buscar o link da publicação:", erro);
+    return null;
+  }
+}
+
 export async function buscarCapaDaMidia(accessToken: string, midiaId: string): Promise<string | null> {
   try {
     const resposta = await fetch(

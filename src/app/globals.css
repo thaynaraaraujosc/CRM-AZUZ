@@ -31083,6 +31083,94 @@ td.trafego-col-crm:first-of-type {
   color: var(--text-muted);
 }
 
+/*
+ * O CONECTOR ENTRE DUAS REGRAS É UM BOTÃO: "e" ou "ou".
+ *
+ * Ele ocupa o lugar onde a palavra já estava, e com o mesmo peso de texto — quem não precisa de
+ * OU não repara que ele virou clicável. Em "ou" ele ganha cor, porque aí a condição mudou de
+ * sentido e isso tem que se ver de relance na leitura do cartão.
+ */
+.cond-conector {
+  flex: none;
+  padding: 1px 5px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+}
+
+.cond-conector:hover {
+  border-color: var(--line);
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+
+.cond-conector.ou {
+  border-color: var(--ss-azul-suave, var(--line));
+  background: var(--ss-azul-suave, var(--surface-hover));
+  color: var(--ss-azul, var(--ink));
+  font-weight: 600;
+}
+
+/* Os vários valores de "é um destes" / "tem todas de": cada um é uma pastilha que se tira. */
+.cond-varios {
+  display: inline-flex;
+  flex: 1 1 120px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.cond-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 4px 1px 6px;
+  border-radius: 6px;
+  background: var(--surface-2, #f1f5f9);
+  font-size: 11px;
+  color: var(--ink);
+}
+
+.cond-chip button {
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.cond-chip button:hover {
+  color: var(--danger);
+}
+
+/* "nos últimos [7] dias": o número e a palavra andam juntos. */
+/* Dentro da lista de pastilhas o seletor é só o "Acrescentar…": sem isto ele herda o `flex: 1`
+   do campo de valor e ocupa uma linha inteira só pra ele. */
+.cond-varios > .cond-valor {
+  flex: 0 1 auto;
+  min-width: 90px;
+}
+
+.cond-dias {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.cond-dias input {
+  width: 46px;
+  flex: none;
+  text-align: center;
+}
+
 /* Seletores sem cara de formulário: na referência eles são texto com sublinhado tracejado, e é o
    que deixa a condição legível como uma frase em vez de uma fila de caixas. */
 .cond-campo,

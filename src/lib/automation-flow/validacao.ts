@@ -6,9 +6,11 @@
 
 import {
   campoDeCondicaoExiste,
+  ehCampoDeInstagram,
   fontePedeTexto,
   operadoresDoCampo,
   pedeValor,
+  pedeVariosValores,
   rotuloDoCampo,
 } from "./campos-condicao";
 import { numeroDeTexto } from "./avaliacao";
@@ -57,7 +59,21 @@ const TIPOS_MENSAGEM_TEXTO = new Set(["mensagem_texto", "mensagem_email", "notif
 const TIPOS_MENSAGEM_OPCOES = new Set(["mensagem_botoes", "mensagem_lista"]);
 const TIPOS_MENSAGEM_MIDIA = new Set(["mensagem_imagem", "mensagem_video", "mensagem_audio", "mensagem_documento"]);
 
-export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
+/**
+ * O QUE A VALIDAÇÃO NÃO TEM COMO SABER SOZINHA.
+ *
+ * Este arquivo é puro: ele lê o desenho do fluxo e mais nada. Mas há pendência que só existe
+ * olhando pra FORA do desenho — "esta condição pergunta pelo Instagram e o Instagram não está
+ * conectado" — e sem ela o fluxo é publicado com um caminho que nunca vai ser escolhido.
+ *
+ * Ausente quer dizer "não se sabe", e aí a pendência não aparece: avisar que a conta está
+ * desligada sem ter checado seria pior do que não avisar.
+ */
+export type ContextoDeValidacao = {
+  instagramConectado?: boolean;
+};
+
+export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidacao = {}): ProblemaValidacao[] {
   const problemas: ProblemaValidacao[] = [];
   const { nodes, edges } = fluxo;
   const nodesPorId = new Map<string, FlowNode>(nodes.map((n) => [n.id, n]));
@@ -380,7 +396,22 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
         // "existe"/"não existe" não comparam valor nenhum: cobrar um campo preenchido neles seria
         // pedir uma informação que a regra não usa. Valor que vem de outro campo também não.
         const precisaValor = pedeValor(regra.operador) && fontePedeTexto(regra.fonteValor);
-        if (precisaValor && ehTextoVazio(regra.valor)) {
+        /*
+         * "É UM DESTES" GUARDA A LISTA EM `valores`, não em `valor`.
+         *
+         * Cobrar `valor` preenchido aqui acusaria de errada uma regra certa com três opções
+         * escolhidas — e a pessoa ficaria olhando pra um erro sem ter o que corrigir.
+         */
+        if (pedeVariosValores(regra.operador)) {
+          if (!(regra.valores ?? []).filter((v) => !ehTextoVazio(v)).length) {
+            problemas.push({
+              id: proximoIdProblema(),
+              severidade: "erro",
+              mensagem: `Bloco "${n.titulo ?? n.type}": uma regra da condição ${i + 1} está sem nenhum valor escolhido.`,
+              nodeId: n.id,
+            });
+          }
+        } else if (precisaValor && ehTextoVazio(regra.valor)) {
           problemas.push({
             id: proximoIdProblema(),
             severidade: "erro",
@@ -388,7 +419,7 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
             nodeId: n.id,
           });
         }
-        if (regra.operador === "entre") {
+        if (regra.operador === "entre" && !pedeVariosValores(regra.operador)) {
           if (ehTextoVazio(regra.valor) || ehTextoVazio(regra.valorFim)) {
             problemas.push({
               id: proximoIdProblema(),
@@ -741,6 +772,58 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
     }
   });
 
+  /*
+   * 7.1 CONDIÇÃO DE INSTAGRAM NUM CRM SEM INSTAGRAM CONECTADO.
+   *
+   * Os campos do grupo Instagram saem do perfil que a Meta devolve e do evento que disparou o
+   * fluxo. Sem a conta conectada eles não existem — e a regra responde "não existe" pra todo
+   * mundo, o que manda TODOS os leads pelo mesmo caminho. O fluxo roda, não dá erro, e decide
+   * sempre igual: é o tipo de defeito que só aparece quando alguém compara o resultado com o que
+   * esperava.
+   *
+   * Aviso e não erro: a pessoa pode estar montando a automação ANTES de conectar a conta, que é
+   * uma ordem perfeitamente razoável de trabalhar.
+   */
+  if (contexto.instagramConectado === false) {
+    const comCampoDeInstagram = nodes.filter((n) => {
+      const dados = (n.data ?? {}) as { grupo?: GrupoCondicoes; ramos?: { grupo?: GrupoCondicoes }[] };
+      const grupos = [dados.grupo, ...(dados.ramos ?? []).map((r) => r.grupo)];
+      return grupos.some((g) => grupoUsaCampoDeInstagram(g));
+    });
+    comCampoDeInstagram.forEach((n) => {
+      problemas.push({
+        id: proximoIdProblema(),
+        severidade: "aviso",
+        mensagem: `Bloco "${n.titulo ?? n.type}" usa campos do Instagram, mas o Instagram não está conectado: essas regras não vão decidir nada.`,
+        nodeId: n.id,
+      });
+    });
+  }
+
+  /*
+   * 7.2 MANDAR MENSAGEM DEPOIS DE SABER QUE A JANELA FECHOU.
+   *
+   * "Dentro da janela de 24h: é falso" é a pergunta que existe justamente pra tratar quem a Meta
+   * não deixa mais responder. Ligar um envio de mensagem nesse caminho é desenhar uma entrega que
+   * a Meta vai recusar — e o fluxo segue como se tivesse mandado.
+   *
+   * O que cabe ali é outra coisa: etiquetar, criar tarefa, avisar o time, responder o comentário
+   * em público. Por isso é aviso: o caminho pode estar certo, e quem decide é quem montou.
+   */
+  nodes.forEach((n) => {
+    const saidaFechada = saidaDeJanelaFechada(n);
+    if (!saidaFechada) return;
+    const alvos = (saidasPorNo.get(n.id) ?? []).filter((e) => (e.sourceHandle ?? "") === saidaFechada.handle);
+    const mensagemAdiante = alvos.some((e) => alcancaEnvioDeMensagem(e.target, nodesPorId, saidasPorNo));
+    if (!mensagemAdiante) return;
+    problemas.push({
+      id: proximoIdProblema(),
+      severidade: "aviso",
+      mensagem: `Bloco "${n.titulo ?? n.type}": o caminho de quem está FORA da janela de 24h leva a um envio de mensagem, e o Instagram recusa mensagem fora dela.`,
+      nodeId: n.id,
+    });
+  });
+
   // 8. Ciclo: heurística simples: DFS de detecção de ciclo; se o ciclo não
   // passar por nenhum nó "aguardar" ou "condicao_grupo", é risco real de loop
   // infinito (nada quebra o círculo nem no tempo, nem numa condição).
@@ -880,4 +963,64 @@ export function condicaoCobre(a: GrupoCondicoes | undefined, b: GrupoCondicoes |
   // Toda regra da de cima precisa ser mais larga que alguma da de baixo. Se ela exige algo que a
   // de baixo não exige, quem passa na de baixo pode não passar na de cima — e aí não cobre.
   return deA.every((ra) => deB.some((rb) => regraCobre(ra, rb)));
+}
+
+/** Alguma regra deste grupo (ou dos subgrupos) pergunta por um campo do Instagram? */
+function grupoUsaCampoDeInstagram(grupo: GrupoCondicoes | undefined): boolean {
+  if (!grupo) return false;
+  if ((grupo.regras ?? []).some((r) => ehCampoDeInstagram(r.campo))) return true;
+  return (grupo.subgrupos ?? []).some((sub) => grupoUsaCampoDeInstagram(sub));
+}
+
+/**
+ * QUAL SAÍDA DESTE BLOCO É A DE "A JANELA DE 24H ESTÁ FECHADA".
+ *
+ * No bloco de sim/não é a saída "nao" quando a regra pergunta se está DENTRO da janela, e a "sim"
+ * quando ela pergunta se está fora. No bloco de vários caminhos é a saída do ramo cuja regra diz
+ * que a janela está fechada. Devolve `null` quando o bloco não pergunta isso.
+ */
+function saidaDeJanelaFechada(no: FlowNode): { handle: string } | null {
+  const dados = (no.data ?? {}) as { grupo?: GrupoCondicoes; ramos?: { id: string; grupo?: GrupoCondicoes }[] };
+
+  const fechada = (grupo: GrupoCondicoes | undefined, quandoVerdadeiro: boolean): boolean => {
+    const regra = (grupo?.regras ?? []).find((r) => r.campo === "ig_janela_24h");
+    if (!regra) return false;
+    // "é falso" (ou o antigo "é igual a: não") no caminho verdadeiro; "é verdadeiro" no falso.
+    const perguntaSeEstaDentro =
+      regra.operador === "verdadeiro" || (regra.operador === "igual" && (regra.valor ?? "") !== "nao");
+    return quandoVerdadeiro ? !perguntaSeEstaDentro : perguntaSeEstaDentro;
+  };
+
+  if (no.type === "condicao_grupo") {
+    if (fechada(dados.grupo, true)) return { handle: "sim" };
+    if (fechada(dados.grupo, false)) return { handle: "nao" };
+    return null;
+  }
+  if (no.type === "condicao_ramos") {
+    const ramo = (dados.ramos ?? []).find((r) => fechada(r.grupo, true));
+    return ramo ? { handle: ramo.id } : null;
+  }
+  return null;
+}
+
+/** Deste bloco em diante, alguma mensagem é enviada? Caminha pra frente até achar uma ou acabar. */
+function alcancaEnvioDeMensagem(
+  inicio: string,
+  nodesPorId: Map<string, FlowNode>,
+  saidasPorNo: Map<string, FlowEdge[]>,
+): boolean {
+  const vistos = new Set<string>();
+  const fila = [inicio];
+  while (fila.length) {
+    const id = fila.shift()!;
+    if (vistos.has(id)) continue;
+    vistos.add(id);
+    const no = nodesPorId.get(id);
+    if (!no) continue;
+    if (no.category === "mensagem") return true;
+    // Parar no próximo gatilho/condição seria esconder o envio que está logo depois dela: o
+    // caminho inteiro adiante continua sendo "o que acontece com quem está fora da janela".
+    (saidasPorNo.get(id) ?? []).forEach((e) => fila.push(e.target));
+  }
+  return false;
 }

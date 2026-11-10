@@ -20,8 +20,22 @@
 
 import type { CampoCondicao, OperadorCondicao, RamoDeCondicao, RegraCondicao } from "./types";
 
-/** O tipo do dado decide os operadores e o controle de valor. */
-export type TipoDeCampoCondicao = "texto" | "lista" | "numero" | "moeda" | "data" | "hora" | "booleano";
+/**
+ * O tipo do dado decide os operadores e o controle de valor.
+ *
+ * `multi` é o campo que guarda um CONJUNTO, não um valor: a etiqueta. Ele não "é igual a" nada —
+ * ele TEM ou NÃO TEM. Enquanto era tratado como lista, a regra comparava a etiqueta escolhida com
+ * todas as etiquetas do contato grudadas por vírgula, e só batia em quem tivesse exatamente uma.
+ */
+export type TipoDeCampoCondicao =
+  | "texto"
+  | "lista"
+  | "multi"
+  | "numero"
+  | "moeda"
+  | "data"
+  | "hora"
+  | "booleano";
 
 /** De onde a tela tira as opções de um campo do tipo "lista". */
 export type OrigemDeOpcoes =
@@ -32,12 +46,23 @@ export type OrigemDeOpcoes =
   | "responsaveis"
   | "equipes"
   | "dias_semana"
-  | "perfil_instagram";
+  | "perfil_instagram"
+  | "origens_do_lead";
 
-export type GrupoDeCampo = "Conversa" | "Negócio" | "Contato" | "Rastreio" | "Atividade" | "Campos personalizados";
+export type GrupoDeCampo =
+  | "Conversa"
+  | "Instagram"
+  | "Negócio"
+  | "Contato"
+  | "Rastreio"
+  | "Atividade"
+  | "Campos personalizados";
 
+/* Instagram logo depois de Conversa: numa automação do Social Seller é o segundo grupo mais usado,
+   e no fim da lista ninguém o encontra. */
 export const GRUPOS_DE_CAMPO: GrupoDeCampo[] = [
   "Conversa",
+  "Instagram",
   "Negócio",
   "Contato",
   "Rastreio",
@@ -85,14 +110,53 @@ export const CAMPOS_CONDICAO: CampoCondicaoInfo[] = [
   { valor: "data_ultima_conversa", label: "Data da última conversa", grupo: "Conversa", tipo: "data" },
   { valor: "horario_ultima_mensagem", label: "Horário da última mensagem", grupo: "Conversa", tipo: "hora" },
 
+  /* --------------------------------- Instagram --------------------------------- */
+  /*
+   * O QUE A CONTA CONECTADA SABE SOBRE QUEM ESTÁ DO OUTRO LADO.
+   *
+   * Relação de seguir, selo e número de seguidores vêm do perfil que a Meta devolve pra quem
+   * MANDOU mensagem pra conta (ver `Contato.igSegueVoce` e companhia). Não é consulta livre a
+   * qualquer perfil: a API não permite, e por isso o dado só existe depois que a pessoa escreve.
+   *
+   * Tipo de interação, publicação e @ saem do EVENTO que disparou o fluxo, e por isso valem
+   * durante aquela execução — é com eles que se escreve "se veio de comentário, responde assim; se
+   * veio de story, assim".
+   *
+   * TODOS TRATAM AUSÊNCIA COMO AUSÊNCIA. Instagram desconectado, permissão não concedida, evento
+   * que não carrega o dado: a regra responde "não existe" em vez de "falso". A diferença decide
+   * pra onde o lead vai, e chutar "falso" mandaria todo mundo pelo caminho de quem não segue.
+   */
+  { valor: "ig_seguidor", label: "É seguidor (segue seu perfil)", grupo: "Instagram", tipo: "booleano" },
+  { valor: "ig_voce_segue", label: "Você segue o contato", grupo: "Instagram", tipo: "booleano" },
+  { valor: "ig_janela_24h", label: "Dentro da janela de 24h", grupo: "Instagram", tipo: "booleano" },
+  {
+    valor: "ig_tipo_interacao",
+    label: "Tipo de interação",
+    grupo: "Instagram",
+    tipo: "lista",
+    opcoesFixas: [
+      { valor: "comentario", label: "Comentário em post/Reels" },
+      { valor: "story_respondido", label: "Resposta de story" },
+      { valor: "mencao_story", label: "Menção em story" },
+      { valor: "direct", label: "Mensagem direta (DM)" },
+      { valor: "comentario_live", label: "Comentário em Live" },
+    ],
+  },
+  { valor: "ig_post_id", label: "Post comentado (ID)", grupo: "Instagram", tipo: "texto" },
+  { valor: "ig_post_link", label: "Link do post comentado", grupo: "Instagram", tipo: "texto" },
+  { valor: "ig_arroba", label: "@ do contato", grupo: "Instagram", tipo: "texto" },
+  { valor: "ig_verificado", label: "Conta verificada", grupo: "Instagram", tipo: "booleano" },
+  { valor: "ig_seguidores", label: "Nº de seguidores do contato", grupo: "Instagram", tipo: "numero" },
+
   /* ---------------------------------- Negócio ---------------------------------- */
   { valor: "funil", label: "Funil", grupo: "Negócio", tipo: "lista", opcoes: "funis" },
   { valor: "etapa", label: "Etapa", grupo: "Negócio", tipo: "lista", opcoes: "etapas" },
   { valor: "valor_negocio", label: "Valor do negócio", grupo: "Negócio", tipo: "moeda" },
 
   /* ---------------------------------- Contato ---------------------------------- */
-  { valor: "origem", label: "Origem (fonte do lead)", grupo: "Contato", tipo: "texto" },
-  { valor: "etiqueta", label: "Etiqueta", grupo: "Contato", tipo: "lista", opcoes: "etiquetas" },
+  { valor: "origem", label: "Origem (fonte do lead)", grupo: "Contato", tipo: "lista", opcoes: "origens_do_lead" },
+  /* A etiqueta é um CONJUNTO: o contato tem várias. Ver `TipoDeCampoCondicao`. */
+  { valor: "etiqueta", label: "Etiqueta", grupo: "Contato", tipo: "multi", opcoes: "etiquetas" },
   { valor: "responsavel", label: "Responsável", grupo: "Contato", tipo: "lista", opcoes: "responsaveis" },
   { valor: "equipe", label: "Equipe", grupo: "Contato", tipo: "lista", opcoes: "equipes" },
   { valor: "cargo", label: "Cargo", grupo: "Contato", tipo: "texto" },
@@ -144,7 +208,19 @@ export const CAMPOS_CONDICAO: CampoCondicaoInfo[] = [
 
   /* --------------------------------- Atividade --------------------------------- */
   { valor: "possui_agendamento", label: "Possui agendamento", grupo: "Atividade", tipo: "booleano" },
-  { valor: "situacao_agendamento", label: "Situação do agendamento", grupo: "Atividade", tipo: "texto" },
+  {
+    valor: "situacao_agendamento",
+    label: "Situação do agendamento",
+    grupo: "Atividade",
+    tipo: "lista",
+    opcoesFixas: [
+      { valor: "agendado", label: "Agendado" },
+      { valor: "confirmado", label: "Confirmado" },
+      { valor: "realizado", label: "Realizado" },
+      { valor: "cancelado", label: "Cancelado" },
+      { valor: "faltou", label: "Faltou" },
+    ],
+  },
   { valor: "dia_semana", label: "Dia da semana", grupo: "Atividade", tipo: "lista", opcoes: "dias_semana" },
   { valor: "horario", label: "Horário", grupo: "Atividade", tipo: "hora" },
 
@@ -208,14 +284,33 @@ export const OPERADORES_POR_TIPO: Record<TipoDeCampoCondicao, { valor: OperadorC
   lista: [
     { valor: "igual", label: "é" },
     { valor: "diferente", label: "não é" },
+    { valor: "um_destes", label: "é um destes" },
+    { valor: "nenhum_destes", label: "não é nenhum destes" },
     { valor: "existe", label: "existe" },
     { valor: "nao_existe", label: "não existe" },
+  ],
+  /*
+   * O CAMPO QUE É UM CONJUNTO não "é igual a" nada: ele TEM ou NÃO TEM.
+   *
+   * "tem qualquer uma de" e "tem todas de" são perguntas diferentes e as duas aparecem em
+   * automação de verdade: "é cliente OU é vip" não é o mesmo que "é cliente E é vip".
+   */
+  multi: [
+    { valor: "tem", label: "tem" },
+    { valor: "nao_tem", label: "não tem" },
+    { valor: "tem_qualquer", label: "tem qualquer uma de" },
+    { valor: "tem_todas", label: "tem todas de" },
+    { valor: "nao_tem_nenhuma", label: "não tem nenhuma de" },
+    { valor: "existe", label: "tem alguma" },
+    { valor: "nao_existe", label: "não tem nenhuma" },
   ],
   numero: [
     { valor: "igual", label: "é igual a" },
     { valor: "diferente", label: "é diferente de" },
     { valor: "maior_que", label: "maior que" },
+    { valor: "maior_igual", label: "maior ou igual a" },
     { valor: "menor_que", label: "menor que" },
+    { valor: "menor_igual", label: "menor ou igual a" },
     { valor: "entre", label: "entre" },
     { valor: "existe", label: "existe" },
     { valor: "nao_existe", label: "não existe" },
@@ -224,15 +319,27 @@ export const OPERADORES_POR_TIPO: Record<TipoDeCampoCondicao, { valor: OperadorC
     { valor: "igual", label: "é igual a" },
     { valor: "diferente", label: "é diferente de" },
     { valor: "maior_que", label: "maior que" },
+    { valor: "maior_igual", label: "maior ou igual a" },
     { valor: "menor_que", label: "menor que" },
+    { valor: "menor_igual", label: "menor ou igual a" },
     { valor: "entre", label: "entre" },
     { valor: "existe", label: "existe" },
     { valor: "nao_existe", label: "não existe" },
   ],
+  /*
+   * DATA PERGUNTA EM DIAS, não em texto.
+   *
+   * "nos últimos X dias" e "há mais de X dias" são o que quase toda automação quer saber de uma
+   * data ("falou com a gente esta semana?"), e sem elas a pessoa tinha que digitar uma data fixa
+   * que envelhecia no dia seguinte — a regra continuava lá, parecendo certa, decidindo errado.
+   */
   data: [
+    { valor: "e_hoje", label: "é hoje" },
+    { valor: "ultimos_dias", label: "nos últimos X dias" },
+    { valor: "ha_mais_de_dias", label: "há mais de X dias" },
+    { valor: "menor_que", label: "é antes de" },
+    { valor: "maior_que", label: "é depois de" },
     { valor: "igual", label: "é igual a" },
-    { valor: "menor_que", label: "antes de" },
-    { valor: "maior_que", label: "depois de" },
     { valor: "entre", label: "entre" },
     { valor: "existe", label: "existe" },
     { valor: "nao_existe", label: "não existe" },
@@ -242,12 +349,44 @@ export const OPERADORES_POR_TIPO: Record<TipoDeCampoCondicao, { valor: OperadorC
     { valor: "menor_que", label: "antes de" },
     { valor: "maior_que", label: "depois de" },
     { valor: "entre", label: "entre" },
+    { valor: "existe", label: "existe" },
+    { valor: "nao_existe", label: "não existe" },
   ],
+  /*
+   * BOOLEANO NÃO TEM CAMPO DE VALOR: o operador já é a pergunta inteira.
+   *
+   * Era "é igual a: sim", e o "sim" dependia do texto gravado na coluna — um fluxo comparando com
+   * "true", "1" ou "Sim" com maiúscula decidia errado sem aviso. `existe`/`não existe` continuam
+   * porque "não se sabe" é uma terceira resposta de verdade: Instagram desconectado não é "não
+   * segue".
+   */
   booleano: [
-    { valor: "igual", label: "é" },
-    { valor: "diferente", label: "não é" },
+    { valor: "verdadeiro", label: "é verdadeiro" },
+    { valor: "falso", label: "é falso" },
+    { valor: "existe", label: "existe" },
+    { valor: "nao_existe", label: "não existe" },
   ],
 };
+
+/** Operadores que comparam com uma LISTA de valores, e não com um valor só. */
+export const OPERADORES_MULTIVALOR: OperadorCondicao[] = [
+  "um_destes",
+  "nenhum_destes",
+  "tem_qualquer",
+  "tem_todas",
+  "nao_tem_nenhuma",
+];
+
+export function pedeVariosValores(operador: OperadorCondicao): boolean {
+  return OPERADORES_MULTIVALOR.includes(operador);
+}
+
+/** Operadores cujo valor é um NÚMERO DE DIAS, mesmo num campo de data. */
+export const OPERADORES_EM_DIAS: OperadorCondicao[] = ["ultimos_dias", "ha_mais_de_dias"];
+
+export function pedeNumeroDeDias(operador: OperadorCondicao): boolean {
+  return OPERADORES_EM_DIAS.includes(operador);
+}
 
 export function operadoresDoCampo(
   campo: CampoCondicao,
@@ -269,7 +408,14 @@ export function rotuloDoOperador(
 }
 
 /** Operadores que não comparam valor nenhum: o controle de valor some com eles. */
-export const OPERADORES_SEM_VALOR: OperadorCondicao[] = ["existe", "nao_existe"];
+export const OPERADORES_SEM_VALOR: OperadorCondicao[] = [
+  "existe",
+  "nao_existe",
+  // O booleano cabe inteiro no operador: "é verdadeiro" não compara com nada.
+  "verdadeiro",
+  "falso",
+  "e_hoje",
+];
 
 export function pedeValor(operador: OperadorCondicao): boolean {
   return !OPERADORES_SEM_VALOR.includes(operador);
@@ -349,6 +495,15 @@ export function novoRamoDeCondicao(): RamoDeCondicao {
       subgrupos: [],
     },
   };
+}
+
+/** Os campos do grupo Instagram. Usado pela validação: eles só decidem com a conta conectada. */
+export const CAMPOS_DE_INSTAGRAM: CampoCondicao[] = CAMPOS_CONDICAO.filter((c) => c.grupo === "Instagram").map(
+  (c) => c.valor,
+);
+
+export function ehCampoDeInstagram(campo: string): boolean {
+  return (CAMPOS_DE_INSTAGRAM as string[]).includes(campo);
 }
 
 /**

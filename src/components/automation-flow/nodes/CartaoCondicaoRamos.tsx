@@ -175,11 +175,39 @@ export function CartaoCondicaoRamos({
 
           {ramo.grupo.regras.map((regra, j) => (
             <div className="cond-regra" key={regra.id}>
+              {/*
+                O "E" ENTRE DUAS REGRAS VIRA UM BOTÃO.
+                
+                Era texto: as regras de uma condição valiam sempre todas juntas, e escrever "veio
+                de comentário OU de story" obrigava a criar duas condições iguais em tudo menos
+                numa linha. O conector é o mesmo lugar onde a palavra já estava — quem não precisa
+                de OU nem repara que ele virou clicável.
+              */}
+              {j > 0 ? (
+                <button
+                  type="button"
+                  className={`cond-conector${ramo.grupo.tipo === "OU" ? " ou" : ""}`}
+                  title={traduzir(
+                    ramo.grupo.tipo === "OU"
+                      ? "Basta uma das regras ser verdadeira. Clique para exigir todas."
+                      : "Todas as regras precisam ser verdadeiras. Clique para exigir só uma.",
+                  )}
+                  onClick={() =>
+                    mudarRamo(ramo.id, (r) => ({
+                      ...r,
+                      grupo: { ...r.grupo, tipo: r.grupo.tipo === "OU" ? "E" : "OU" },
+                    }))
+                  }
+                >
+                  {ramo.grupo.tipo === "OU" ? traduzir("ou") : traduzir("e")}
+                </button>
+              ) : null}
               <RegraDeCondicao
                 regra={regra}
                 campos={campos}
                 variante="cartao"
                 primeira={j === 0}
+                semConector
                 funilEscolhido={funilDaCondicao(ramo)}
                 aoMudar={(patch) => mudarRegra(ramo.id, regra.id, patch)}
               />
@@ -202,7 +230,7 @@ export function CartaoCondicaoRamos({
             condição montada no painel aparecia no cartão como as regras do primeiro nível — a
             mesma condição dizendo duas coisas diferentes em duas telas.
           */}
-          {ramo.grupo.subgrupos.length > 0 || ramo.grupo.tipo !== "E" ? (
+          {ramo.grupo.subgrupos.length > 0 || ramo.grupo.tipo === "NAO" ? (
             <p className="cond-avancado" title={resumoGrupoCondicoes(ramo.grupo)}>
               {traduzir("Montada no painel")}: {resumoGrupoCondicoes(ramo.grupo)}
             </p>
@@ -225,7 +253,7 @@ export function CartaoCondicaoRamos({
               mudarRamo(ramo.id, (r) => ({ ...r, grupo: { ...r.grupo, regras: [...r.grupo.regras, novaRegra()] } }))
             }
           >
-            + {traduzir("Adicionar condição (e)")}
+            + {traduzir(ramo.grupo.tipo === "OU" ? "Adicionar condição (ou)" : "Adicionar condição (e)")}
           </button>
 
           <SaidaDaCondicao
