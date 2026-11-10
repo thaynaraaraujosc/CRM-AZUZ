@@ -7,8 +7,10 @@ import {
   pedeNumeroDeDias,
   pedeValor,
   pedeVariosValores,
+  rotuloDoValorDaRegra,
   tipoDoCampo,
 } from "../campos-condicao";
+import { resumoGrupoCondicoes } from "../resumo";
 import type { CampoCondicao, GrupoCondicoes, OperadorCondicao, RegraCondicao } from "../types";
 
 /**
@@ -279,5 +281,43 @@ describe("fluxos antigos", () => {
   it("grupo sem tipo gravado cai no E, como antes", () => {
     const antigo = { id: "g", tipo: "E" as const, regras: [regra({ campo: "cidade", operador: "existe" })], subgrupos: [] };
     expect(avaliarGrupoCondicoes(antigo, contato({ cidade: "Recife" }), agora)).toBe(true);
+  });
+});
+
+/**
+ * A FRASE DO BLOCO FALA A LÍNGUA DE QUEM ESCOLHEU.
+ *
+ * Campo de lista guarda o identificador e mostra o rótulo. A saída do bloco imprimia o
+ * identificador cru — `Tipo de interação é "story_respondido"` —, e aí a tela passava a falar uma
+ * língua que ninguém escolheu na hora de montar.
+ */
+describe("o valor da regra escrito no bloco", () => {
+  it("troca o identificador pelo nome que está na lista", () => {
+    expect(rotuloDoValorDaRegra("ig_tipo_interacao", "story_respondido")).toBe("Resposta de story");
+    expect(rotuloDoValorDaRegra("ig_tipo_interacao", "comentario_live")).toBe("Comentário em Live");
+    expect(rotuloDoValorDaRegra("situacao_agendamento", "faltou")).toBe("Faltou");
+    expect(rotuloDoValorDaRegra("cliente_perfil", "seguidor")).toBe("um seguidor no Instagram");
+  });
+
+  it("lista que vem do workspace já guarda o próprio nome", () => {
+    expect(rotuloDoValorDaRegra("etapa", "Qualificado")).toBe("Qualificado");
+    expect(rotuloDoValorDaRegra("mensagem", "orçamento")).toBe("orçamento");
+  });
+
+  it("valor vazio continua vazio, e identificador desconhecido aparece como está", () => {
+    expect(rotuloDoValorDaRegra("ig_tipo_interacao", "")).toBe("");
+    expect(rotuloDoValorDaRegra("ig_tipo_interacao", "coisa_que_saiu_do_produto")).toBe("coisa_que_saiu_do_produto");
+  });
+
+  it("a frase inteira do bloco sai legível", () => {
+    const grupoComLista: GrupoCondicoes = {
+      id: "g",
+      tipo: "E",
+      regras: [regra({ campo: "ig_tipo_interacao", operador: "um_destes", valores: ["comentario", "story_respondido"] })],
+      subgrupos: [],
+    };
+    expect(resumoGrupoCondicoes(grupoComLista)).toBe(
+      'Tipo de interação é um destes "Comentário em post/Reels", "Resposta de story"',
+    );
   });
 });

@@ -15,6 +15,7 @@ import {
   pedeNumeroDeDias,
   pedeVariosValores,
   rotuloDoOperador,
+  rotuloDoValorDaRegra,
 } from "./campos-condicao";
 import type {
   AguardarData,
@@ -262,14 +263,14 @@ function valorDaRegraEmTexto(r: RegraCondicao): string {
   }
   /* Vários valores viram uma lista legível: "é um destes "Novo", "Qualificado"". */
   if (pedeVariosValores(r.operador)) {
-    const lista = (r.valores ?? []).map((v) => v.trim()).filter(Boolean);
+    const lista = (r.valores ?? []).map((v) => rotuloDoValorDaRegra(r.campo, v)).filter(Boolean);
     return lista.length ? ` ${lista.map((v) => `"${v}"`).join(", ")}` : " (sem valor)";
   }
-  const de = r.valor?.trim();
+  const de = rotuloDoValorDaRegra(r.campo, r.valor);
   /* "nos últimos 7 dias" é uma contagem, não um texto: as aspas fariam parecer comparação literal. */
   if (pedeNumeroDeDias(r.operador)) return de ? ` ${de} dias` : " (sem valor)";
   if (r.operador === "entre") {
-    const ate = r.valorFim?.trim();
+    const ate = rotuloDoValorDaRegra(r.campo, r.valorFim);
     return de && ate ? ` "${de}" e "${ate}"` : " (preencha os valores)";
   }
   return de ? ` "${de}"` : " (sem valor)";

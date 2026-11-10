@@ -407,6 +407,30 @@ export function rotuloDoOperador(
   return OPERADORES_POR_TIPO.texto.find((o) => o.valor === operador)?.label ?? operador;
 }
 
+/**
+ * O VALOR DE UMA REGRA COMO A PESSOA O ESCOLHEU NA TELA.
+ *
+ * Campo de lista guarda o IDENTIFICADOR e mostra o rótulo: a regra grava `story_respondido` e a
+ * lista oferece "Resposta de story". Quem escreve a frase do bloco — a saída no desenho, o resumo
+ * do cartão — estava imprimindo o identificador cru, e a tela passava a falar uma língua que
+ * ninguém escolheu: `Tipo de interação é "story_respondido"`.
+ *
+ * Só resolve o que o catálogo conhece (opções fixas e os perfis do Instagram). Lista que vem do
+ * workspace — funil, etapa, etiqueta, responsável — guarda o próprio nome como valor, então ali o
+ * identificador JÁ é o que a pessoa leu.
+ */
+export function rotuloDoValorDaRegra(campo: CampoCondicao, valor: string | undefined): string {
+  const bruto = (valor ?? "").trim();
+  if (!bruto) return bruto;
+  const info = POR_VALOR.get(campo);
+  const fixa = info?.opcoesFixas?.find((o) => o.valor === bruto);
+  if (fixa) return fixa.label;
+  if (info?.opcoes === "perfil_instagram") {
+    return PERFIS_INSTAGRAM.find((p) => p.valor === bruto)?.label ?? bruto;
+  }
+  return bruto;
+}
+
 /** Operadores que não comparam valor nenhum: o controle de valor some com eles. */
 export const OPERADORES_SEM_VALOR: OperadorCondicao[] = [
   "existe",
