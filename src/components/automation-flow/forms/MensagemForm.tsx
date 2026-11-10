@@ -9,6 +9,7 @@ import { mapearVariaveis } from "@/lib/campanhas/variaveis";
 import { inserirTokenNoTexto } from "./variaveis";
 import { useFormularios } from "@/lib/formularios-context";
 import { CanalDoBloco } from "./CanalDoBloco";
+import { blocoEscolheDestinoNoInstagram } from "./canais";
 import type { AreaAutomacao } from "@/lib/canais/capacidades";
 import { useIdioma } from "@/lib/idioma-context";
 import { Ajuda } from "@/components/ui";
@@ -69,6 +70,8 @@ export function MensagemForm({
           area={area}
           valor={typeof d.canal === "string" ? d.canal : undefined}
           onChange={(canal) => set({ canal })}
+          destino={blocoEscolheDestinoNoInstagram(node.type) ? d.destino : undefined}
+          aoMudarDestino={blocoEscolheDestinoNoInstagram(node.type) ? (destino) => set({ destino }) : undefined}
         />
       ) : null}
 

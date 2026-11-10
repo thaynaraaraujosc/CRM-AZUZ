@@ -541,9 +541,32 @@ async function executarNo(params: {
         esperaMinutos?: number;
         iniciarSemConversa?: boolean;
         canaisPermitidos?: string[];
+        /** "direct" (padrão) ou "comentario": onde o robô escreve. Ver `DESTINOS_INSTAGRAM`. */
+        destino?: string;
       };
       const texto = preencher(escolherVariacao(data.texto ?? data.mensagem ?? "", data.variacoes), contato);
       if (!texto) return { tipo: "erro", detalhe: "Bloco de mensagem sem texto configurado." };
+
+      /*
+       * A MESMA MENSAGEM, NO LUGAR QUE O BLOCO ESCOLHEU.
+       *
+       * "Às vezes vai ser comentário": o bloco de texto do Instagram pode responder no Direct
+       * (privado, dentro das 24 horas) ou embaixo do comentário (público, sem janela). Era só
+       * Direct, e quem queria a resposta pública tinha que trocar o bloco inteiro por
+       * "Responder o comentário" — perdendo o texto, as variações e os caminhos já ligados.
+       *
+       * Sem comentário na origem, `responderComentario` não falha: devolve "ignorado, este
+       * disparo não veio de um comentário" e o fluxo segue. É de propósito — o mesmo fluxo pode
+       * ser disparado por comentário e por Direct, e derrubar a execução por causa disso faria o
+       * robô parar justamente pra quem mandou mensagem.
+       */
+      if (data.destino === "comentario") {
+        const r = await acoes.responderComentario(texto);
+        return r.ok
+          ? { tipo: "seguir", detalhe: r.detalhe }
+          : { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+      }
+
       const envio = await acoes.enviarTexto({
         contatoNome: nome,
         texto,

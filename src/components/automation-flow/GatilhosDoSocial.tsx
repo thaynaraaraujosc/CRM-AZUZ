@@ -910,6 +910,27 @@ export function GatilhosDoSocial({
                 ) : null}
               </>
             ) : null}
+
+            {/*
+              O GATILHO QUE NÃO EXISTE, dito com o motivo e com a saída.
+              
+              "Tá faltando a opção de começou a me seguir. A partir do momento que a pessoa começou
+              a me seguir, ela recebe uma mensagem." O Instagram não avisa isso: entre os campos de
+              webhook que a Meta oferece (mensagem, comentário, comentário de live, reação, menção)
+              não existe nenhum de seguidor novo — e também não existe endereço pra perguntar QUEM
+              seguiu, só quantos seguidores a conta tem.
+              
+              Então o gatilho não entra na lista: ele seria o botão falso que o CRM evita por regra
+              — marcado, nunca dispararia, e a pessoa descobriria dias depois pelo robô que nunca
+              rodou. O que entra é a ausência EXPLICADA, com o caminho que funciona de verdade: o
+              robô acorda por um evento que existe e a condição "É seguidor" decide o caminho.
+            */}
+            <p className="gat-ausente">
+              <strong>{traduzir("Procurando \u201ccomeçou a me seguir\u201d?")}</strong>
+              {traduzir(
+                "O Instagram não avisa quando alguém passa a te seguir — não existe esse aviso na API da Meta, nem jeito de saber quem foi. O que dá pra fazer: escolha um gatilho que existe (comentário, resposta de story, Direct) e, no bloco de Condição, use \u201cÉ seguidor\u201d pra tratar quem segue de um jeito e quem não segue de outro.",
+              )}
+            </p>
           </>
         ) : (
           <div className="gat-etapa" key={etapaAtual.chave}>

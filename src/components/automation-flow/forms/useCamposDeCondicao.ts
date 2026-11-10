@@ -109,7 +109,13 @@ export function useCamposDeCondicao(area?: AreaAutomacao): CamposDeCondicao {
         // O campo "pelo nome" é só compatibilidade com fluxos antigos: quem monta hoje escolhe o
         // campo da empresa direto na lista, e oferecer os dois caminhos convida ao errado.
         .filter((c) => c.valor !== "campo_personalizado")
-        .map((c) => ({ valor: c.valor, label: c.label, grupo: c.grupo })),
+        .map((c) => ({
+          valor: c.valor,
+          label: c.label,
+          grupo: c.grupo,
+          descricao: c.descricao,
+          sinonimos: c.sinonimos,
+        })),
     [personalizados, area],
   );
 

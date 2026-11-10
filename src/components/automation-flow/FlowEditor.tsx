@@ -96,6 +96,15 @@ function explicacaoDoNo(flowNode: DomainFlowNode, funis: Funil[]): string {
   }
 }
 
+/**
+ * Quanto tempo PARADO antes de o editor gravar o rascunho sozinho.
+ *
+ * Três segundos é o número que a Thaynara pediu, e ele é o ponto certo por uma razão prática: é
+ * mais longo que a pausa entre duas palavras digitadas e mais curto que a pausa de quem já terminou
+ * e foi olhar outra coisa.
+ */
+const SEGUNDOS_ATE_GRAVAR_SOZINHO = 3;
+
 function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const { t: traduzir } = useIdioma();
   const { fluxos, carregado, recarregarFluxos, atualizarFluxo, publicarFluxo, restaurarVersao, alternarAtivo, excluirFluxo } =
@@ -161,10 +170,10 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   /**
    * O que foi mexido e ainda NÃO foi gravado.
    *
-   * O editor gravava sozinho, a cada tecla, com meio segundo de espera. Isso tem dois preços que
-   * só aparecem com o robô ligado: a tela pisca a cada gravação enquanto se digita um título, e um
-   * erro de digitação vai pro ar antes de a pessoa terminar a frase. Agora nada é gravado sem
-   * clique: o que muda fica aqui, com "Salvar" e "Descartar" à vista.
+   * O editor gravava sozinho a cada meio segundo, o que na prática era a cada tecla: a tela piscava
+   * enquanto se digitava um título. Isso foi substituído por uma gravação com TRÊS SEGUNDOS de
+   * parada (ver `SEGUNDOS_ATE_GRAVAR_SOZINHO`): o que muda fica aqui, com "Salvar" e "Descartar" à
+   * vista, e o relógio grava sozinho quando a pessoa para de mexer.
    */
   const [temPendencia, setTemPendencia] = useState(false);
   /** Alterações de nome/descrição/configuração do fluxo, ainda não gravadas. */
@@ -387,6 +396,34 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     setTemPendencia(false);
     marcarSalvando(400);
   }
+
+  /**
+   * GRAVA SOZINHO TRÊS SEGUNDOS DEPOIS DA ÚLTIMA ALTERAÇÃO.
+   *
+   * "Sempre que eu fizer uma alteração, salvar automaticamente, depois de 3 segundos. Não precisa
+   * ficar salvando o tempo todo, mas eu fiz uma alteração, espera 3 segundos e salva."
+   *
+   * É o que resolve o problema que a gravação automática ANTERIOR tinha. Aquela gravava a cada meio
+   * segundo, o que na prática era a cada tecla: a tela piscava enquanto se digitava um título. Com
+   * três segundos de PARADA, uma frase inteira digitada sem pausa é uma gravação só — o relógio
+   * reinicia a cada alteração, e só dispara quando a pessoa para.
+   *
+   * O QUE ISSO GRAVA É O RASCUNHO, não o que está no ar. Publicar continua sendo um clique à parte
+   * (ver `publicar`): um erro de digitação que o relógio pegou pela metade fica no rascunho, na
+   * tela de quem edita, e não vai pros clientes. Era essa a preocupação que tinha tirado a
+   * gravação automática, e ela não se aplica ao rascunho.
+   *
+   * O botão "Salvar" fica: ele grava AGORA, pra quem não quer esperar os três segundos. E o aviso
+   * de "você tem alterações não salvas" também, pra alteração feita em cima de sair da tela.
+   */
+  useEffect(() => {
+    if (!temPendencia || !modoConstrucao) return;
+    const relogio = setTimeout(() => salvarAlteracoes(), SEGUNDOS_ATE_GRAVAR_SOZINHO * 1000);
+    return () => clearTimeout(relogio);
+    // `rfNodes`/`rfEdges`/`metaPendente` nas dependências de propósito: é o que reinicia o relógio
+    // a cada alteração, que é o "espera 3 segundos depois da ÚLTIMA".
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [temPendencia, modoConstrucao, rfNodes, rfEdges, metaPendente]);
 
   /**
    * Joga fora o que não foi gravado e volta pro que está no banco.

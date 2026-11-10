@@ -7,7 +7,13 @@ import { useFecharMenuDeLinha } from "@/lib/menu-de-linha";
 import { CartaoCondicaoRamos } from "./CartaoCondicaoRamos";
 import { relogioDaGravacao, useGravadorDeAudio } from "@/lib/audio/gravador";
 import { VARIAVEIS_MENSAGEM, inserirTokenNoTexto } from "../forms/variaveis";
-import { canaisDaAreaParaBloco } from "../forms/canais";
+import {
+  blocoEscolheDestinoNoInstagram,
+  canaisDaAreaParaBloco,
+  destinoDoBloco,
+  DESTINOS_INSTAGRAM,
+  rotuloDoCanalComDestino,
+} from "../forms/canais";
 import { useBibliotecaDocumentos } from "@/lib/biblioteca-documentos-context";
 import { PlayerDeAudio } from "./PlayerDeAudio";
 
@@ -97,6 +103,33 @@ function textoDaMensagem(node: FlowNodeDominio): string | null {
 }
 
 /**
+ * QUANTAS LINHAS O CAMPO DA BOLHA MOSTRA ANTES DE ROLAR.
+ *
+ * "Lá em cima, onde está o texto, tem que ter a opção de rolagem pra eu conseguir ver o texto
+ * completo." A altura vinha de `texto.split("\n").length` — o número de ENTERS —, e isso conta
+ * errado justamente no caso que importa: uma mensagem de oito linhas escrita como um parágrafo só
+ * tem um `\n` nenhum, então o campo nascia com uma linha de altura e escondia o resto sem dizer.
+ *
+ * Aqui a conta inclui a quebra que o próprio campo faz: cada linha escrita vale quantas linhas ela
+ * ocupa na largura do cartão. Daí o teto de oito — mais que isso o cartão passa a ser um textão no
+ * meio do canvas — e a rolagem (no CSS, `overflow-y: auto`) cuida do que não cabe. O `nowheel` do
+ * React Flow já estava lá: sem ele, rolar dentro do campo daria zoom no canvas.
+ *
+ * `CARACTERES_POR_LINHA` é medida, não chute: 13px de fonte em ~230px úteis de bolha dão perto de
+ * 34 caracteres. Errar um pouco pra mais só faz sobrar uma linha em branco; errar pra menos é o
+ * defeito que estamos consertando, então a conta arredonda PRA CIMA.
+ */
+const CARACTERES_POR_LINHA = 34;
+const LINHAS_ANTES_DE_ROLAR = 8;
+
+function linhasVisiveisDoTexto(texto: string): number {
+  const ocupadas = texto
+    .split("\n")
+    .reduce((soma, linha) => soma + Math.max(1, Math.ceil(linha.length / CARACTERES_POR_LINHA)), 0);
+  return Math.min(LINHAS_ANTES_DE_ROLAR, Math.max(1, ocupadas));
+}
+
+/**
  * Renderizador único de nó, reaproveitado pelos 8 componentes registrados em
  * `nodeTypes` (um por `FlowNodeCategory`). A diferença visual/comportamental
  * entre tipos dentro da mesma categoria vem só de `saidasDoNo`/`resumoNo`,
@@ -132,6 +165,8 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
   const [renomeando, setRenomeando] = useState(false);
   const [variaveisAbertas, setVariaveisAbertas] = useState(false);
   const [canaisAberto, setCanaisAberto] = useState(false);
+  /* "Direct" ou "comentário": o menu da linha do canal. Ver `DESTINOS_INSTAGRAM`. */
+  const [destinoAberto, setDestinoAberto] = useState(false);
   const entradaDeArquivo = useRef<HTMLInputElement>(null);
   const campoDoTexto = useRef<HTMLTextAreaElement>(null);
   const { documentos } = useBibliotecaDocumentos();
@@ -139,8 +174,9 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
     setMenuAberto(false);
     setVariaveisAbertas(false);
     setCanaisAberto(false);
+    setDestinoAberto(false);
   }, []);
-  useFecharMenuDeLinha(menuAberto || variaveisAbertas || canaisAberto, fecharMenus);
+  useFecharMenuDeLinha(menuAberto || variaveisAbertas || canaisAberto || destinoAberto, fecharMenus);
 
   const gravador = useGravadorDeAudio((audio) => {
     aoAnexar?.({
@@ -609,9 +645,72 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
                     </option>
                   ))}
                 </select>
+              ) : canalDoBloco === "instagram" && aoMudarCampo && blocoEscolheDestinoNoInstagram(flowNode.type) ? (
+                /*
+                  NO INSTAGRAM A LINHA DO CANAL É UM BOTÃO, porque ali há o que escolher.
+                  
+                  "Lá em canal está escrito Instagram Direct, mas às vezes vai ser comentário."
+                  Era uma afirmação errada escrita como se fosse informação: o mesmo bloco de
+                  mensagem serve pros dois lugares, e qual deles vale é decisão de quem monta. A
+                  linha passou a dizer a escolha ATUAL — "Instagram (Direct)", "Instagram
+                  (comentário)" — e a abrir as duas quando se clica nela.
+                  
+                  Com um canal só e dois destinos, o seletor de canal continua não existindo: o
+                  que se escolhe aqui não é por onde sai, é ONDE o robô escreve.
+                */
+                (() => {
+                  const canal = canaisPossiveis.find((c) => c.valor === canalDoBloco)?.label ?? canalDoBloco;
+                  const destino = destinoDoBloco(flowNode.data);
+                  return (
+                    <div className="msg-destino-caixa" data-menu-de-linha="">
+                      <button
+                        type="button"
+                        className="msg-canal msg-destino-alvo nodrag"
+                        aria-expanded={destinoAberto}
+                        aria-label={traduzir("Onde o robô escreve")}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDestinoAberto((v) => !v);
+                        }}
+                      >
+                        {rotuloDoCanalComDestino(traduzir(canal), destino)}
+                      </button>
+                      {destinoAberto ? (
+                        <div className="msg-menu msg-destino-menu nodrag nowheel" role="menu">
+                          {DESTINOS_INSTAGRAM.map((d) => (
+                            <button
+                              key={d.valor}
+                              type="button"
+                              role="menuitemradio"
+                              aria-checked={d.valor === destino}
+                              className={d.valor === destino ? "on" : undefined}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDestinoAberto(false);
+                                aoMudarCampo("destino", d.valor);
+                              }}
+                            >
+                              <span>
+                                {traduzir(d.label)}
+                                <em>{traduzir(d.descricao)}</em>
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                })()
               ) : (
+                /* Sem escolha a fazer, a linha volta a ser informação — mas continua dizendo ONDE,
+                   e não só o canal: mídia e botão só existem no Direct. */
                 <span className="msg-canal-fixo">
-                  {canaisPossiveis.find((c) => c.valor === canalDoBloco)?.label ?? canalDoBloco}
+                  {(() => {
+                    const canal = canaisPossiveis.find((c) => c.valor === canalDoBloco)?.label ?? canalDoBloco;
+                    return canalDoBloco === "instagram"
+                      ? rotuloDoCanalComDestino(traduzir(canal), destinoDoBloco(flowNode.data))
+                      : traduzir(canal);
+                  })()}
                 </span>
               )
             ) : null}
@@ -744,7 +843,7 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
               className="msg-texto nodrag nowheel"
               value={textoDoBloco}
               readOnly={!aoEditarTexto}
-              rows={Math.min(8, Math.max(1, textoDoBloco.split("\n").length))}
+              rows={linhasVisiveisDoTexto(textoDoBloco)}
               placeholder={traduzir("Escreva a mensagem do robô…")}
               onChange={(e) => aoEditarTexto?.(e.target.value)}
               onClick={(e) => e.stopPropagation()}

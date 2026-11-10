@@ -10,6 +10,7 @@ import {
   type OpcaoPergunta,
 } from "@/lib/conversas/formato-pergunta";
 import { useIdioma } from "@/lib/idioma-context";
+import { destinoDoBloco, rotuloDoCanalComDestino } from "./forms/canais";
 import { VARIAVEIS_MENSAGEM } from "./forms/variaveis";
 
 /**
@@ -82,6 +83,11 @@ export function PreviaDaMensagem({ node }: { node: FlowNode }) {
    */
   const canalDaPrevia = ehInstagram ? "instagram" : "whatsapp_oficial";
   const capacidade = CAPACIDADES[canalDaPrevia];
+  /* ONDE ISSO VAI APARECER: no Direct ou embaixo do comentário. A prévia tem que dizer, porque a
+     resposta pública é vista por todo mundo que abrir a publicação — e é o tipo de coisa que não
+     se descobre depois. */
+  const destino = ehInstagram ? destinoDoBloco(dados) : "direct";
+  const ehComentario = destino === "comentario";
 
   const chave = CHAVES_DE_TEXTO.find((c) => typeof dados[c] === "string");
   const texto = chave ? String(dados[chave]) : "";
@@ -109,7 +115,11 @@ export function PreviaDaMensagem({ node }: { node: FlowNode }) {
     <section className="prev-caixa" aria-label={traduzir("Como o cliente vê")}>
       <header className="prev-topo">
         <strong>{traduzir("Como o cliente vê")}</strong>
-        <span className="prev-canal">{traduzir(capacidade.label)}</span>
+        <span className="prev-canal">
+          {ehInstagram
+            ? rotuloDoCanalComDestino(traduzir(capacidade.label), destino)
+            : traduzir(capacidade.label)}
+        </span>
       </header>
 
       <div className="prev-tela">
@@ -187,7 +197,11 @@ export function PreviaDaMensagem({ node }: { node: FlowNode }) {
         souber vai apagar e escrever de novo achando que errou em algo.
       */}
       <p className="prev-nota">
-        {formato === "botao_link_ig"
+        {ehComentario
+          ? traduzir(
+              "Esta resposta é PÚBLICA: ela aparece embaixo do comentário, e quem abrir a publicação vê. Só sai quando a automação foi disparada por um comentário.",
+            )
+          : formato === "botao_link_ig"
           ? traduzir(
               "São botões de link: ficam na mensagem, não somem depois do toque, e cabem até {n} por mensagem.",
               { n: String(3) },
@@ -211,6 +225,30 @@ export function PreviaDaMensagem({ node }: { node: FlowNode }) {
                       "As opções chegam numeradas dentro do próprio texto, e a pessoa responde com o número.",
                     )
                   : traduzir("O texto chega como está aqui, sem botão nenhum.")}
+      </p>
+
+      {/*
+        NEGRITO: EXISTE NUM CANAL E NÃO NO OUTRO.
+        
+        "Como deixar algumas partes do texto em negrito? E se o Instagram também aceita?" São duas
+        respostas diferentes, e é por isso que a linha é escrita pelo canal:
+        
+        - WhatsApp: aceita. O aplicativo troca os sinais pela formatação ao mostrar — *negrito*,
+          _itálico_, ~riscado~. Quem envia é a API, que passa o texto como está; quem formata é o
+          aplicativo de quem recebe.
+        - Instagram: não aceita. O Direct mostra texto puro. Escrever *assim* entrega os asteriscos
+          junto, e é pior que não formatar — a mensagem chega com sujeira no meio.
+        
+        Dizer isso aqui, e não num manual, é o que impede de descobrir pelo print do cliente.
+      */}
+      <p className="prev-nota prev-nota-formato">
+        {ehInstagram
+          ? traduzir(
+              "Negrito e itálico: o Direct não tem. O texto chega exatamente como está escrito — se você usar *asteriscos*, eles chegam junto.",
+            )
+          : traduzir(
+              "Dá pra formatar: *negrito*, _itálico_, ~riscado~. O WhatsApp troca os sinais pela formatação na hora de mostrar.",
+            )}
       </p>
     </section>
   );
