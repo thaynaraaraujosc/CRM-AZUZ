@@ -3,7 +3,13 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
-import { EscolhaDeMidia, type DadosDeEscopo, type ItemDeMidia } from "./forms/EscolhaDeMidia";
+import {
+  gatilhoTemAlcance,
+  gravarAlcance,
+  lerAlcance,
+  resumoDoAlcance,
+} from "@/lib/automation-flow/alcance-do-gatilho";
+import { EscolhaDeMidia, type ItemDeMidia } from "./forms/EscolhaDeMidia";
 import { IconChave, IconCheck, IconClose, IconSetaBaixo } from "@/components/icons";
 import type { FlowNodeType } from "@/lib/automation-flow/types";
 import { useFecharMenuDeLinha } from "@/lib/menu-de-linha";
@@ -215,6 +221,15 @@ export function GatilhosDoSocial({
   const [paraAdicionar, setParaAdicionar] = useState<FlowNodeType[]>([]);
   /** De qual gatilho o menu "⋯" está aberto, no painel. */
   const [menuDoGatilho, setMenuDoGatilho] = useState<FlowNodeType | null>(null);
+  /**
+   * De qual gatilho o ALCANCE está aberto pra troca, no painel.
+   *
+   * Fechado por padrão: o painel é pra LER o que foi escolhido, e a grade de miniaturas aberta em
+   * todos os gatilhos de uma vez transformaria a leitura numa rolagem. A linha diz o estado, o
+   * "Trocar" abre a escolha — e só a de um gatilho por vez, porque trocar o alcance de dois ao
+   * mesmo tempo não é uma coisa que alguém faça.
+   */
+  const [alcanceAberto, setAlcanceAberto] = useState<FlowNodeType | null>(null);
   const fecharMenuDoGatilho = useCallback(() => setMenuDoGatilho(null), []);
   useFecharMenuDeLinha(menuDoGatilho !== null, fecharMenuDoGatilho);
   const [avancadoAberto, setAvancadoAberto] = useState(false);
@@ -304,6 +319,37 @@ export function GatilhosDoSocial({
     onEscolher(
       marcados.map((tipo) => ({ tipo, data: { ...(dados[tipo] ?? {}) } })),
       limpas,
+    );
+  }
+
+  /**
+   * A ESCOLHA DE ALCANCE DE UM GATILHO, DESENHADA UMA VEZ.
+   *
+   * Aparece em dois lugares: na etapa da montagem ("Em quais Posts ou Reels a automação deve
+   * funcionar?") e, agora, dentro do cartão do gatilho no painel, atrás do "Trocar". Eram dois
+   * trechos de JSX quase iguais, cada um mapeando à mão os nomes de campo daquele gatilho
+   * (`publicacaoIds` de um lado, `storyIds` do outro) — e foi assim que a gravação do escopo do
+   * story passou a existir numa cópia e ser ignorada na avaliação. A leitura e a escrita moram em
+   * `alcance-do-gatilho.ts`, que tem teste; aqui ficou só o desenho.
+   */
+  function escolhaDeAlcance(tipo: FlowNodeType) {
+    if (!gatilhoTemAlcance(tipo)) return null;
+    const ehPost = tipo === "comentario_instagram";
+    const atual = lerAlcance(tipo, dados[tipo]);
+    return (
+      <EscolhaDeMidia
+        tipo={ehPost ? "post" : "story"}
+        itens={(ehPost ? publicacoes : stories) ?? []}
+        carregando={(ehPost ? publicacoes : stories) === null && !erroDasMidias}
+        erro={erroDasMidias}
+        dados={{ ids: atual?.ids ?? [], escopo: atual?.escopo, conhecidos: atual?.conhecidos }}
+        onChange={(novo) =>
+          mudarDados(tipo, {
+            ...(dados[tipo] ?? {}),
+            ...gravarAlcance(tipo, { escopo: novo.escopo, ids: novo.ids, conhecidos: novo.conhecidos }),
+          })
+        }
+      />
     );
   }
 
@@ -786,6 +832,15 @@ export function GatilhosDoSocial({
                       <span className="pg-textos">
                         <strong>{traduzir(bloco?.label ?? tipo)}</strong>
                         {bloco?.descricao ? <span>{traduzir(bloco.descricao)}</span> : null}
+                        {/* Fechado, o cartão já diz onde aquele gatilho vale: é a pergunta de quem
+                            abre a lista de gatilhos ativos pra conferir o que montou. Aberto, a
+                            mesma informação aparece embaixo, com o botão de trocar — repetir as
+                            duas ao mesmo tempo seria dizer a mesma coisa duas vezes. */}
+                        {!abertoAqui && gatilhoTemAlcance(tipo) ? (
+                          <span className="pg-alcance-resumo">
+                            {traduzir("Onde vale")}: <b>{traduzir(resumoDoAlcance(tipo, dados[tipo]) ?? "")}</b>
+                          </span>
+                        ) : null}
                       </span>
                       {/*
                         A SETINHA ABRE A RESPOSTA DESTE GATILHO, aqui mesmo.
@@ -821,13 +876,16 @@ export function GatilhosDoSocial({
                       {menuDoGatilho === tipo ? (
                         <div className="pg-menu" role="menu">
                           {ALCANCE[tipo] ? (
+                            /* Abre a troca AQUI DENTRO, e não numa etapa à parte: o painel agora
+                               mostra e edita o alcance no próprio cartão, e mandar pra outra tela
+                               seria um segundo caminho pro mesmo lugar — o tipo de coisa que faz
+                               duas telas divergirem com o tempo. */
                             <button
                               type="button"
                               onClick={() => {
                                 setMenuDoGatilho(null);
-                                // Abre a etapa de alcance DESTE gatilho, direto.
-                                const alvo = etapas.findIndex((e) => e.chave === tipo);
-                                if (alvo >= 0) setEtapa(alvo);
+                                setRespostaAberta(tipo);
+                                setAlcanceAberto(tipo);
                               }}
                             >
                               {traduzir(ALCANCE[tipo]!.pergunta)}
@@ -849,6 +907,44 @@ export function GatilhosDoSocial({
 
                     {abertoAqui ? (
                       <div className="pg-resposta">
+                        {/*
+                          ONDE ESTE GATILHO VALE — a escolha que estava gravada e invisível.
+                          
+                          "Seria interessante se eu pudesse ver COMO que foi que eu escolhi.
+                          Resposta nos stories: se eu escolhi que é em todos os stories, se não é —
+                          e aí a opção de mudar."
+                          
+                          Dava pra escolher (numa etapa da montagem, ou pelo "⋯" daqui) e não dava
+                          pra LER: o cartão mostrava o nome do gatilho e a resposta automática, e
+                          mais nada. Quem montou na semana passada não tinha como saber se o robô
+                          valia pro feed inteiro ou pra um post só sem reabrir a etapa e olhar o
+                          que estava marcado.
+                          
+                          Agora a linha diz o estado em palavras — "Qualquer publicação", "3 posts
+                          escolhidos", "Só na próxima publicação" — e o "Trocar" abre a mesma grade
+                          de miniaturas da montagem, aqui dentro. Sem ir pra outra tela: trocar o
+                          alcance e escrever a resposta são a mesma visita.
+                        */}
+                        {gatilhoTemAlcance(tipo) ? (
+                          <div className="pg-alcance">
+                            <div className="pg-alcance-linha">
+                              <span className="pg-alcance-rotulo">{traduzir("Onde vale")}</span>
+                              <strong>{traduzir(resumoDoAlcance(tipo, dados[tipo]) ?? "")}</strong>
+                              <button
+                                type="button"
+                                className="pg-alcance-trocar"
+                                aria-expanded={alcanceAberto === tipo}
+                                onClick={() => setAlcanceAberto((atual) => (atual === tipo ? null : tipo))}
+                              >
+                                {traduzir(alcanceAberto === tipo ? "Pronto" : "Trocar")}
+                              </button>
+                            </div>
+                            {alcanceAberto === tipo ? (
+                              <div className="pg-alcance-escolha">{escolhaDeAlcance(tipo)}</div>
+                            ) : null}
+                          </div>
+                        ) : null}
+
                         <p className="pg-resposta-titulo">
                           {traduzir(perguntaDaResposta([tipo]))}
                         </p>
@@ -945,31 +1041,7 @@ export function GatilhosDoSocial({
                 {blocoDaPalavra}
               </>
             ) : etapaAtual.tipo === "comentario_instagram" ? (
-              <EscolhaDeMidia
-                tipo="post"
-                itens={publicacoes ?? []}
-                carregando={publicacoes === null && !erroDasMidias}
-                erro={erroDasMidias}
-                dados={{
-                  ids: (dados.comentario_instagram?.publicacaoIds as string[] | undefined) ??
-                    (dados.comentario_instagram?.publicacaoId
-                      ? [dados.comentario_instagram.publicacaoId as string]
-                      : []),
-                  escopo: dados.comentario_instagram?.escopoPublicacao as DadosDeEscopo["escopo"],
-                  conhecidos: dados.comentario_instagram?.publicacoesConhecidas as string[] | undefined,
-                }}
-                onChange={(novo) =>
-                  mudarDados("comentario_instagram", {
-                    ...(dados.comentario_instagram ?? {}),
-                    publicacaoIds: novo.ids ?? [],
-                    escopoPublicacao: novo.escopo,
-                    publicacoesConhecidas: novo.conhecidos,
-                    // O campo antigo some quando a escolha passa a ser a nova: deixá-lo pra trás
-                    // faria o motor continuar lendo uma publicação que a tela já esqueceu.
-                    publicacaoId: "",
-                  })
-                }
-              />
+              escolhaDeAlcance("comentario_instagram")
             ) : etapaAtual.chave === "resposta" ? (
               /*
                 UMA RESPOSTA POR GATILHO.
@@ -998,27 +1070,7 @@ export function GatilhosDoSocial({
                 ))}
               </div>
             ) : etapaAtual.tipo === "instagram_story_respondido" ? (
-              <EscolhaDeMidia
-                tipo="story"
-                itens={stories ?? []}
-                carregando={stories === null && !erroDasMidias}
-                erro={erroDasMidias}
-                dados={{
-                  ids: (dados.instagram_story_respondido?.storyIds as string[] | undefined) ??
-                    (dados.instagram_story_respondido?.storyId
-                      ? [dados.instagram_story_respondido.storyId as string]
-                      : []),
-                  escopo: dados.instagram_story_respondido?.escopoStory as DadosDeEscopo["escopo"],
-                }}
-                onChange={(novo) =>
-                  mudarDados("instagram_story_respondido", {
-                    ...(dados.instagram_story_respondido ?? {}),
-                    storyIds: novo.ids ?? [],
-                    escopoStory: novo.escopo,
-                    storyId: "",
-                  })
-                }
-              />
+              escolhaDeAlcance("instagram_story_respondido")
             ) : null}
           </div>
         )}

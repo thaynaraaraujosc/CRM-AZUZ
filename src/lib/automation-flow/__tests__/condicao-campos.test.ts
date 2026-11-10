@@ -297,14 +297,27 @@ describe("o que a aba Problemas cobra antes de publicar", () => {
   });
 
   it("fluxo antigo, com a regra preenchida, não ganha erro NA CONDIÇÃO", () => {
-    // O recorte importa: um fluxo de teste sem gatilho e sem fim tem erros de ESTRUTURA, que não
-    // têm nada a ver com a regra. O que esta garantia cobre é que nada do que mudou aqui passou a
-    // reprovar uma condição que já estava publicada e certa.
+    /*
+     * O RECORTE IMPORTA: um fluxo de teste sem gatilho e sem fim tem erros de ESTRUTURA, que não
+     * têm nada a ver com a regra. O que esta garantia cobre é que nada do que mudou aqui passou a
+     * reprovar uma condição que já estava publicada e certa.
+     *
+     * O recorte era "a mensagem fala em condição ou regra", e isso só funcionava por acidente:
+     * as mensagens de estrutura chamavam o bloco pelo identificador (`condicao_grupo`), que não
+     * tem acento e escapava do filtro. Desde que elas passaram a chamar o bloco pelo nome de
+     * verdade ("Condição: um caminho por condição"), a palavra aparece nas duas famílias — então
+     * o recorte passou a dizer qual é a família de estrutura, em vez de torcer pra ela não se
+     * parecer com a outra.
+     */
     const problemas = validarFluxo(
       fluxo([{ id: "a", grupo: grupo({ campo: "mensagem", operador: "contem", valor: "orçamento" }) }]) as never,
     );
+    const deEstrutura = ["termina o fluxo", "não está conectado", "pontos de partida", "não leva a passo nenhum"];
     const daCondicao = problemas.filter(
-      (p) => p.severidade === "erro" && (p.mensagem.includes("condição") || p.mensagem.includes("regra")),
+      (p) =>
+        p.severidade === "erro" &&
+        (p.mensagem.includes("condição") || p.mensagem.includes("regra")) &&
+        !deEstrutura.some((frase) => p.mensagem.includes(frase)),
     );
     expect(daCondicao).toEqual([]);
   });

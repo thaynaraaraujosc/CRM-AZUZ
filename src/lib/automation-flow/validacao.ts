@@ -14,6 +14,7 @@ import {
   rotuloDoCampo,
 } from "./campos-condicao";
 import { numeroDeTexto } from "./avaliacao";
+import { BLOCOS_DISPONIVEIS } from "./blocos";
 import type {
   CondicaoRamosData,
   AgendarConsultaData,
@@ -73,6 +74,25 @@ export type ContextoDeValidacao = {
   instagramConectado?: boolean;
 };
 
+/**
+ * O NOME DO BLOCO COMO A PESSOA O VÊ NA TELA.
+ *
+ * As pendências diziam `instagram_story_respondido` e `comentario_instagram` — o identificador do
+ * código, que não aparece em lugar nenhum da interface. "O gatilho instagram_story_respondido não
+ * leva a passo nenhum" manda procurar no quadro uma coisa que, no quadro, se chama "Resposta nos
+ * stories". É o mesmo defeito que a frase da condição já tinha tido, aqui em cinquenta e cinco
+ * mensagens de uma vez.
+ *
+ * A ordem é: o nome que a pessoa deu ao bloco, senão o nome do bloco na biblioteca, e só em último
+ * caso o identificador — que sobra pro bloco de um tipo que a biblioteca não conhece mais, onde
+ * dizer o identificador é melhor que não dizer nada.
+ */
+function nomeDoBloco(no: { titulo?: string; type: string } | undefined, seNaoHouver = ""): string {
+  if (!no) return seNaoHouver;
+  if (no.titulo?.trim()) return no.titulo;
+  return BLOCOS_DISPONIVEIS.find((b) => b.tipo === no.type)?.label ?? no.type;
+}
+
 export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidacao = {}): ProblemaValidacao[] {
   const problemas: ProblemaValidacao[] = [];
   const { nodes, edges } = fluxo;
@@ -120,7 +140,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
       problemas.push({
         id: proximoIdProblema(),
         severidade: "erro",
-        mensagem: `O robô tem ${raizes.length} pontos de partida, e "${n.titulo ?? n.type}" é um deles. Ligue os blocos num começo só, senão ele não roda.`,
+        mensagem: `O robô tem ${raizes.length} pontos de partida, e "${nomeDoBloco(n)}" é um deles. Ligue os blocos num começo só, senão ele não roda.`,
         nodeId: n.id,
       });
     });
@@ -131,7 +151,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
         problemas.push({
           id: proximoIdProblema(),
           severidade: "erro",
-          mensagem: `Bloco "${n.titulo ?? n.type}" não está conectado a nada antes dele.`,
+          mensagem: `Bloco "${nomeDoBloco(n)}" não está conectado a nada antes dele.`,
           nodeId: n.id,
         });
       }
@@ -158,7 +178,11 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
       problemas.push({
         id: proximoIdProblema(),
         severidade: "aviso",
-        mensagem: `O gatilho "${n.titulo ?? n.type}" não leva a passo nenhum: quem disparar por ele não vai receber nada.`,
+        /* A frase diz O QUE FAZER, e não só o que está errado. O cartão dos gatilhos lista um por
+           linha, e o que não tem caminho tem um "+" do lado do nome: é dali que se diz o que
+           acontece quando ele dispara. Sem essa segunda metade, a pendência manda procurar a
+           solução no quadro inteiro. */
+        mensagem: `O gatilho "${nomeDoBloco(n)}" não leva a passo nenhum: quem disparar por ele não vai receber nada. Clique no "+" ao lado do nome dele, no cartão dos gatilhos, pra dizer o que ele faz.`,
         nodeId: n.id,
       });
       return;
@@ -166,7 +190,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
     problemas.push({
       id: proximoIdProblema(),
       severidade: "erro",
-      mensagem: `Bloco "${n.titulo ?? n.type}" termina o fluxo sem passar por um bloco de "Encerrar fluxo".`,
+      mensagem: `Bloco "${nomeDoBloco(n)}" termina o fluxo sem passar por um bloco de "Encerrar fluxo".`,
       nodeId: n.id,
     });
   });
@@ -182,7 +206,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
       problemas.push({
         id: proximoIdProblema(),
         severidade: "erro",
-        mensagem: `Bloco "${n.titulo ?? n.type}" é uma pergunta sem nenhuma opção de resposta.`,
+        mensagem: `Bloco "${nomeDoBloco(n)}" é uma pergunta sem nenhuma opção de resposta.`,
         nodeId: n.id,
       });
     }
@@ -192,14 +216,14 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
       problemas.push({
         id: proximoIdProblema(),
         severidade: "aviso",
-        mensagem: `Bloco "${n.titulo ?? n.type}" tem ${opcoes.length} opções: o WhatsApp oficial só entrega 3 como botões, então vai como lista.`,
+        mensagem: `Bloco "${nomeDoBloco(n)}" tem ${opcoes.length} opções: o WhatsApp oficial só entrega 3 como botões, então vai como lista.`,
         nodeId: n.id,
       });
     } else if (opcoes.length > 10) {
       problemas.push({
         id: proximoIdProblema(),
         severidade: "aviso",
-        mensagem: `Bloco "${n.titulo ?? n.type}" tem ${opcoes.length} opções: acima de 10 nenhum canal tem formato interativo, e a pergunta sai como menu numerado.`,
+        mensagem: `Bloco "${nomeDoBloco(n)}" tem ${opcoes.length} opções: acima de 10 nenhum canal tem formato interativo, e a pergunta sai como menu numerado.`,
         nodeId: n.id,
       });
     }
@@ -208,7 +232,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
       problemas.push({
         id: proximoIdProblema(),
         severidade: "aviso",
-        mensagem: `Bloco "${n.titulo ?? n.type}": ${longas.length === 1 ? "uma opção passa" : `${longas.length} opções passam`} de 20 caracteres e ${longas.length === 1 ? "vai" : "vão"} aparecer cortada${longas.length === 1 ? "" : "s"} no botão.`,
+        mensagem: `Bloco "${nomeDoBloco(n)}": ${longas.length === 1 ? "uma opção passa" : `${longas.length} opções passam`} de 20 caracteres e ${longas.length === 1 ? "vai" : "vão"} aparecer cortada${longas.length === 1 ? "" : "s"} no botão.`,
         nodeId: n.id,
       });
     }
@@ -221,7 +245,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
       problemas.push({
         id: proximoIdProblema(),
         severidade: "aviso",
-        mensagem: `O caminho "Não respondeu" do bloco "${n.titulo ?? n.type}" nunca é seguido: a pergunta espera sem prazo. Pra ter desistência por tempo, use o bloco "Aguardar" com tempo máximo depois da pergunta.`,
+        mensagem: `O caminho "Não respondeu" do bloco "${nomeDoBloco(n)}" nunca é seguido: a pergunta espera sem prazo. Pra ter desistência por tempo, use o bloco "Aguardar" com tempo máximo depois da pergunta.`,
         nodeId: n.id,
       });
     }
@@ -231,7 +255,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
         problemas.push({
           id: proximoIdProblema(),
           severidade: "erro",
-          mensagem: `Uma opção do bloco "${n.titulo ?? n.type}" está sem valor de resposta (rótulo vazio).`,
+          mensagem: `Uma opção do bloco "${nomeDoBloco(n)}" está sem valor de resposta (rótulo vazio).`,
           nodeId: n.id,
         });
         return;
@@ -243,7 +267,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
         problemas.push({
           id: proximoIdProblema(),
           severidade: "erro",
-          mensagem: `A opção "${opcao.rotulo}" do bloco "${n.titulo ?? n.type}" não leva a lugar nenhum.`,
+          mensagem: `A opção "${opcao.rotulo}" do bloco "${nomeDoBloco(n)}" não leva a lugar nenhum.`,
           nodeId: n.id,
         });
       }
@@ -258,7 +282,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
       problemas.push({
         id: proximoIdProblema(),
         severidade: "erro",
-        mensagem: `Bloco "${n.titulo ?? n.type}" está sem arquivo escolhido.`,
+        mensagem: `Bloco "${nomeDoBloco(n)}" está sem arquivo escolhido.`,
         nodeId: n.id,
       });
     } else if (ehTextoVazio(data.arquivoId)) {
@@ -267,7 +291,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
       problemas.push({
         id: proximoIdProblema(),
         severidade: "erro",
-        mensagem: `Bloco "${n.titulo ?? n.type}": o arquivo "${data.arquivoNome}" não ficou guardado na biblioteca. Escolha o arquivo de novo.`,
+        mensagem: `Bloco "${nomeDoBloco(n)}": o arquivo "${data.arquivoNome}" não ficou guardado na biblioteca. Escolha o arquivo de novo.`,
         nodeId: n.id,
       });
     }
@@ -283,8 +307,8 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
         id: proximoIdProblema(),
         severidade: "erro",
         mensagem: externo
-          ? `Bloco "${n.titulo ?? n.type}" está sem o endereço do formulário externo.`
-          : `Bloco "${n.titulo ?? n.type}" está sem formulário escolhido.`,
+          ? `Bloco "${nomeDoBloco(n)}" está sem o endereço do formulário externo.`
+          : `Bloco "${nomeDoBloco(n)}" está sem formulário escolhido.`,
         nodeId: n.id,
       });
     }
@@ -299,7 +323,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
       problemas.push({
         id: proximoIdProblema(),
         severidade: "aviso",
-        mensagem: `Bloco "${n.titulo ?? n.type}" está sem texto pra enviar.`,
+        mensagem: `Bloco "${nomeDoBloco(n)}" está sem texto pra enviar.`,
         nodeId: n.id,
       });
     }
@@ -331,7 +355,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
       problemas.push({
         id: proximoIdProblema(),
         severidade: "erro",
-        mensagem: `Bloco "${n.titulo ?? n.type}" está sem definir o que verificar.`,
+        mensagem: `Bloco "${nomeDoBloco(n)}" está sem definir o que verificar.`,
         nodeId: n.id,
       });
     }
@@ -355,7 +379,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
       problemas.push({
         id: proximoIdProblema(),
         severidade: "erro",
-        mensagem: `Bloco "${n.titulo ?? n.type}" não tem nenhuma condição: só sobra "Nenhuma das condições".`,
+        mensagem: `Bloco "${nomeDoBloco(n)}" não tem nenhuma condição: só sobra "Nenhuma das condições".`,
         nodeId: n.id,
       });
     }
@@ -378,8 +402,8 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
           severidade: "erro",
           mensagem:
             i < ramos.length - 1
-              ? `Bloco "${n.titulo ?? n.type}": a condição ${i + 1} está sem regra, então ela pega todo mundo e as condições abaixo dela nunca acontecem.`
-              : `Bloco "${n.titulo ?? n.type}": a condição ${i + 1} está sem regra, então ela pega todo mundo e "Nenhuma das condições" nunca acontece.`,
+              ? `Bloco "${nomeDoBloco(n)}": a condição ${i + 1} está sem regra, então ela pega todo mundo e as condições abaixo dela nunca acontecem.`
+              : `Bloco "${nomeDoBloco(n)}": a condição ${i + 1} está sem regra, então ela pega todo mundo e "Nenhuma das condições" nunca acontece.`,
           nodeId: n.id,
         });
       }
@@ -391,7 +415,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
           problemas.push({
             id: proximoIdProblema(),
             severidade: "erro",
-            mensagem: `Bloco "${n.titulo ?? n.type}": a condição ${i + 1} usa um campo que não existe mais ("${regra.campo}").`,
+            mensagem: `Bloco "${nomeDoBloco(n)}": a condição ${i + 1} usa um campo que não existe mais ("${regra.campo}").`,
             nodeId: n.id,
           });
           return;
@@ -409,7 +433,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
           problemas.push({
             id: proximoIdProblema(),
             severidade: "aviso",
-            mensagem: `Bloco "${n.titulo ?? n.type}": a condição ${i + 1} compara "${rotuloDoCampo(regra.campo)}" de um jeito que não combina com esse tipo de campo, e pode nunca ser verdadeira.`,
+            mensagem: `Bloco "${nomeDoBloco(n)}": a condição ${i + 1} compara "${rotuloDoCampo(regra.campo)}" de um jeito que não combina com esse tipo de campo, e pode nunca ser verdadeira.`,
             nodeId: n.id,
           });
         }
@@ -427,7 +451,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
             problemas.push({
               id: proximoIdProblema(),
               severidade: "erro",
-              mensagem: `Bloco "${n.titulo ?? n.type}": uma regra da condição ${i + 1} está sem nenhum valor escolhido.`,
+              mensagem: `Bloco "${nomeDoBloco(n)}": uma regra da condição ${i + 1} está sem nenhum valor escolhido.`,
               nodeId: n.id,
             });
           }
@@ -435,7 +459,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
           problemas.push({
             id: proximoIdProblema(),
             severidade: "erro",
-            mensagem: `Bloco "${n.titulo ?? n.type}": uma regra da condição ${i + 1} está sem valor pra comparar.`,
+            mensagem: `Bloco "${nomeDoBloco(n)}": uma regra da condição ${i + 1} está sem valor pra comparar.`,
             nodeId: n.id,
           });
         }
@@ -444,7 +468,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
             problemas.push({
               id: proximoIdProblema(),
               severidade: "erro",
-              mensagem: `Bloco "${n.titulo ?? n.type}": a regra "entre" da condição ${i + 1} precisa dos dois limites.`,
+              mensagem: `Bloco "${nomeDoBloco(n)}": a regra "entre" da condição ${i + 1} precisa dos dois limites.`,
               nodeId: n.id,
             });
           } else if (intervaloInvertido(regra.valor, regra.valorFim)) {
@@ -452,7 +476,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
             problemas.push({
               id: proximoIdProblema(),
               severidade: "erro",
-              mensagem: `Bloco "${n.titulo ?? n.type}": a regra "entre" da condição ${i + 1} começa depois de onde termina ("${regra.valor}" a "${regra.valorFim}").`,
+              mensagem: `Bloco "${nomeDoBloco(n)}": a regra "entre" da condição ${i + 1} começa depois de onde termina ("${regra.valor}" a "${regra.valorFim}").`,
               nodeId: n.id,
             });
           }
@@ -472,7 +496,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
         problemas.push({
           id: proximoIdProblema(),
           severidade: "aviso",
-          mensagem: `Bloco "${n.titulo ?? n.type}": a condição ${i + 1} nunca acontece, porque a condição ${cobertaPor + 1} já pega todo mundo que ela pegaria.`,
+          mensagem: `Bloco "${nomeDoBloco(n)}": a condição ${i + 1} nunca acontece, porque a condição ${cobertaPor + 1} já pega todo mundo que ela pegaria.`,
           nodeId: n.id,
         });
       }
@@ -483,7 +507,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
         problemas.push({
           id: proximoIdProblema(),
           severidade: "aviso",
-          mensagem: `Bloco "${n.titulo ?? n.type}": a condição ${i + 1} não leva a lugar nenhum. Quem sair por ela para aqui.`,
+          mensagem: `Bloco "${nomeDoBloco(n)}": a condição ${i + 1} não leva a lugar nenhum. Quem sair por ela para aqui.`,
           nodeId: n.id,
         });
       }
@@ -493,7 +517,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
       problemas.push({
         id: proximoIdProblema(),
         severidade: "aviso",
-        mensagem: `Bloco "${n.titulo ?? n.type}": "Nenhuma das condições" não leva a lugar nenhum. Quem não bater em nenhuma condição para aqui.`,
+        mensagem: `Bloco "${nomeDoBloco(n)}": "Nenhuma das condições" não leva a lugar nenhum. Quem não bater em nenhuma condição para aqui.`,
         nodeId: n.id,
       });
     }
@@ -508,7 +532,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
       problemas.push({
         id: proximoIdProblema(),
         severidade: "erro",
-        mensagem: `Bloco "${n.titulo ?? n.type}" está sem funil e etapa escolhidos.`,
+        mensagem: `Bloco "${nomeDoBloco(n)}" está sem funil e etapa escolhidos.`,
         nodeId: n.id,
       });
     }
@@ -523,7 +547,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
       problemas.push({
         id: proximoIdProblema(),
         severidade: "erro",
-        mensagem: `Bloco "${n.titulo ?? n.type}" está sem etiqueta escolhida.`,
+        mensagem: `Bloco "${nomeDoBloco(n)}" está sem etiqueta escolhida.`,
         nodeId: n.id,
       });
     }
@@ -537,7 +561,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
       problemas.push({
         id: proximoIdProblema(),
         severidade: "erro",
-        mensagem: `Bloco "${n.titulo ?? n.type}" está sem título de tarefa definido.`,
+        mensagem: `Bloco "${nomeDoBloco(n)}" está sem título de tarefa definido.`,
         nodeId: n.id,
       });
     }
@@ -558,7 +582,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
       problemas.push({
         id: proximoIdProblema(),
         severidade: "erro",
-        mensagem: `Bloco "${n.titulo ?? n.type}" está com o filtro de tarefa incompleto.`,
+        mensagem: `Bloco "${nomeDoBloco(n)}" está com o filtro de tarefa incompleto.`,
         nodeId: n.id,
       });
     }
@@ -572,7 +596,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
       problemas.push({
         id: proximoIdProblema(),
         severidade: "erro",
-        mensagem: `Bloco "${n.titulo ?? n.type}" está sem equipe escolhida.`,
+        mensagem: `Bloco "${nomeDoBloco(n)}" está sem equipe escolhida.`,
         nodeId: n.id,
       });
     }
@@ -586,14 +610,14 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
       problemas.push({
         id: proximoIdProblema(),
         severidade: "erro",
-        mensagem: `Bloco "${n.titulo ?? n.type}" está sem status escolhido.`,
+        mensagem: `Bloco "${nomeDoBloco(n)}" está sem status escolhido.`,
         nodeId: n.id,
       });
     } else if (data.status === "perdido" && ehTextoVazio(data.motivoPerda)) {
       problemas.push({
         id: proximoIdProblema(),
         severidade: "erro",
-        mensagem: `Bloco "${n.titulo ?? n.type}" marca como perdido mas está sem motivo da perda.`,
+        mensagem: `Bloco "${nomeDoBloco(n)}" marca como perdido mas está sem motivo da perda.`,
         nodeId: n.id,
       });
     }
@@ -607,7 +631,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
       problemas.push({
         id: proximoIdProblema(),
         severidade: "erro",
-        mensagem: `Bloco "${n.titulo ?? n.type}" está sem valor definido.`,
+        mensagem: `Bloco "${nomeDoBloco(n)}" está sem valor definido.`,
         nodeId: n.id,
       });
     }
@@ -621,7 +645,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
       problemas.push({
         id: proximoIdProblema(),
         severidade: "erro",
-        mensagem: `Bloco "${n.titulo ?? n.type}" está sem data e horário definidos.`,
+        mensagem: `Bloco "${nomeDoBloco(n)}" está sem data e horário definidos.`,
         nodeId: n.id,
       });
     }
@@ -635,7 +659,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
       problemas.push({
         id: proximoIdProblema(),
         severidade: "erro",
-        mensagem: `Bloco "${n.titulo ?? n.type}" está sem modelo escolhido.`,
+        mensagem: `Bloco "${nomeDoBloco(n)}" está sem modelo escolhido.`,
         nodeId: n.id,
       });
     }
@@ -649,7 +673,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
       problemas.push({
         id: proximoIdProblema(),
         severidade: "erro",
-        mensagem: `Bloco "${n.titulo ?? n.type}" está sem nome de negócio definido.`,
+        mensagem: `Bloco "${nomeDoBloco(n)}" está sem nome de negócio definido.`,
         nodeId: n.id,
       });
     }
@@ -663,7 +687,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
       problemas.push({
         id: proximoIdProblema(),
         severidade: "erro",
-        mensagem: `Bloco "${n.titulo ?? n.type}" está sem equipe escolhida.`,
+        mensagem: `Bloco "${nomeDoBloco(n)}" está sem equipe escolhida.`,
         nodeId: n.id,
       });
     }
@@ -681,14 +705,14 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
       problemas.push({
         id: proximoIdProblema(),
         severidade: "erro",
-        mensagem: `Bloco "${n.titulo ?? n.type}" está sem atendente ou equipe escolhidos.`,
+        mensagem: `Bloco "${nomeDoBloco(n)}" está sem atendente ou equipe escolhidos.`,
         nodeId: n.id,
       });
     } else if (data.moverFunil && ehTextoVazio(data.funilId)) {
       problemas.push({
         id: proximoIdProblema(),
         severidade: "erro",
-        mensagem: `Bloco "${n.titulo ?? n.type}" vai mover o lead no funil, mas está sem funil e etapa escolhidos.`,
+        mensagem: `Bloco "${nomeDoBloco(n)}" vai mover o lead no funil, mas está sem funil e etapa escolhidos.`,
         nodeId: n.id,
       });
     }
@@ -703,21 +727,21 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
       problemas.push({
         id: proximoIdProblema(),
         severidade: "erro",
-        mensagem: `Bloco "${n.titulo ?? n.type}" está sem definir qual agendamento será cancelado.`,
+        mensagem: `Bloco "${nomeDoBloco(n)}" está sem definir qual agendamento será cancelado.`,
         nodeId: n.id,
       });
     } else if (data.enviarMensagem && data.origemMensagem === "modelo" && ehTextoVazio(data.modeloId)) {
       problemas.push({
         id: proximoIdProblema(),
         severidade: "erro",
-        mensagem: `Bloco "${n.titulo ?? n.type}" vai enviar mensagem, mas está sem modelo escolhido.`,
+        mensagem: `Bloco "${nomeDoBloco(n)}" vai enviar mensagem, mas está sem modelo escolhido.`,
         nodeId: n.id,
       });
     } else if (data.enviarMensagem && data.origemMensagem !== "modelo" && ehTextoVazio(data.mensagem)) {
       problemas.push({
         id: proximoIdProblema(),
         severidade: "erro",
-        mensagem: `Bloco "${n.titulo ?? n.type}" vai enviar mensagem, mas está sem o texto da mensagem.`,
+        mensagem: `Bloco "${nomeDoBloco(n)}" vai enviar mensagem, mas está sem o texto da mensagem.`,
         nodeId: n.id,
       });
     }
@@ -731,7 +755,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
       problemas.push({
         id: proximoIdProblema(),
         severidade: "erro",
-        mensagem: `Bloco "${n.titulo ?? n.type}" está sem o contato escolhido.`,
+        mensagem: `Bloco "${nomeDoBloco(n)}" está sem o contato escolhido.`,
         nodeId: n.id,
       });
     } else {
@@ -743,7 +767,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
         problemas.push({
           id: proximoIdProblema(),
           severidade: "erro",
-          mensagem: `Bloco "${n.titulo ?? n.type}" está sem o destino de envio escolhido.`,
+          mensagem: `Bloco "${nomeDoBloco(n)}" está sem o destino de envio escolhido.`,
           nodeId: n.id,
         });
       }
@@ -762,7 +786,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
       problemas.push({
         id: proximoIdProblema(),
         severidade: "erro",
-        mensagem: `Bloco "${n.titulo ?? n.type}" está sem uma localização definida.`,
+        mensagem: `Bloco "${nomeDoBloco(n)}" está sem uma localização definida.`,
         nodeId: n.id,
       });
     }
@@ -779,14 +803,14 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
       problemas.push({
         id: proximoIdProblema(),
         severidade: "erro",
-        mensagem: `Bloco "${n.titulo ?? n.type}" está sem o destinatário definido.`,
+        mensagem: `Bloco "${nomeDoBloco(n)}" está sem o destinatário definido.`,
         nodeId: n.id,
       });
     } else if (ehTextoVazio(data.assunto) || ehTextoVazio(data.corpo)) {
       problemas.push({
         id: proximoIdProblema(),
         severidade: "erro",
-        mensagem: `Bloco "${n.titulo ?? n.type}" está sem destinatário e conteúdo definidos.`,
+        mensagem: `Bloco "${nomeDoBloco(n)}" está sem destinatário e conteúdo definidos.`,
         nodeId: n.id,
       });
     }
@@ -814,7 +838,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
       problemas.push({
         id: proximoIdProblema(),
         severidade: "aviso",
-        mensagem: `Bloco "${n.titulo ?? n.type}" usa campos do Instagram, mas o Instagram não está conectado: essas regras não vão decidir nada.`,
+        mensagem: `Bloco "${nomeDoBloco(n)}" usa campos do Instagram, mas o Instagram não está conectado: essas regras não vão decidir nada.`,
         nodeId: n.id,
       });
     });
@@ -839,7 +863,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
     problemas.push({
       id: proximoIdProblema(),
       severidade: "aviso",
-      mensagem: `Bloco "${n.titulo ?? n.type}": o caminho de quem está FORA da janela de 24h leva a um envio de mensagem, e o Instagram recusa mensagem fora dela.`,
+      mensagem: `Bloco "${nomeDoBloco(n)}": o caminho de quem está FORA da janela de 24h leva a um envio de mensagem, e o Instagram recusa mensagem fora dela.`,
       nodeId: n.id,
     });
   });
@@ -868,7 +892,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
         problemas.push({
           id: proximoIdProblema(),
           severidade: "aviso",
-          mensagem: `Bloco "${n.titulo ?? n.type}" responde EM PÚBLICO, embaixo do comentário, mas nenhum gatilho deste fluxo é de comentário: esse passo vai ser ignorado. Troque pra Direct ou acrescente o gatilho de comentário.`,
+          mensagem: `Bloco "${nomeDoBloco(n)}" responde EM PÚBLICO, embaixo do comentário, mas nenhum gatilho deste fluxo é de comentário: esse passo vai ser ignorado. Troque pra Direct ou acrescente o gatilho de comentário.`,
           nodeId: n.id,
         });
       });
@@ -882,7 +906,7 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
     problemas.push({
       id: proximoIdProblema(),
       severidade: "erro",
-      mensagem: `Bloco "${nodesPorId.get(nodeId)?.titulo ?? nodeId}" faz parte de um ciclo sem espera nem condição. Risco de loop infinito.`,
+      mensagem: `Bloco "${nomeDoBloco(nodesPorId.get(nodeId), nodeId)}" faz parte de um ciclo sem espera nem condição. Risco de loop infinito.`,
       nodeId,
     });
   });

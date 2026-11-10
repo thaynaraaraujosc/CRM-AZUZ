@@ -1270,6 +1270,45 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
       ];
     }
 
+    /*
+     * NENHUM GATILHO SAI DAQUI LIGADO A NADA.
+     *
+     * "O gatilho Resposta nos stories não leva a passo nenhum: quem disparar por ele não vai
+     * receber nada." Duas pendências assim, numa automação que a pessoa acabou de montar pela
+     * gaveta — e sem nada na tela explicando como resolver.
+     *
+     * A causa era de ordem. O `primeiroPasso` lá em cima é lido ANTES de o laço acima criar as
+     * mensagens: num fluxo que ainda não tinha passo nenhum, ele é indefinido, então os gatilhos
+     * sem resposta própria não eram ligados a lugar nenhum — e a mensagem que nasceu logo em
+     * seguida, pro gatilho que tinha resposta, não era oferecida a eles.
+     *
+     * Agora a pergunta é feita DEPOIS: quem continua sem saída ganha o primeiro passo que existe
+     * no fluxo. Ligar vários gatilhos à mesma mensagem é o desenho normal — é o que "não escrevi
+     * resposta própria pra este" quer dizer — e o motor sempre soube segui-lo.
+     *
+     * Se não houver passo nenhum (a pessoa pulou as respostas), eles continuam soltos e a
+     * pendência continua aparecendo. Está certo: aí não há o que ligar, e inventar um bloco de
+     * mensagem vazio seria criar trabalho no lugar de resolver.
+     */
+    const alvoDeSobra =
+      edgesComResposta.find((e) => novosGatilhos.some((g) => g.id === e.source))?.target ??
+      nodesComResposta.find((n) => n.data.flowNode.category === "mensagem")?.id;
+    if (alvoDeSobra) {
+      for (const gatilho of novosGatilhos) {
+        if (edgesComResposta.some((e) => e.source === gatilho.id)) continue;
+        edgesComResposta = [
+          ...edgesComResposta,
+          {
+            id: novoIdAresta(),
+            source: gatilho.id,
+            target: alvoDeSobra,
+            type: "smoothstep",
+            markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16 },
+          },
+        ];
+      }
+    }
+
     setRfNodes(nodesComResposta);
     setRfEdges(edgesComResposta);
     setSelectedNodeIds(novosGatilhos.length ? [novosGatilhos[0].id] : []);

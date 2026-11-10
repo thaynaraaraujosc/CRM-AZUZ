@@ -2967,4 +2967,11 @@ export const TRADUCOES_EN: Record<string, string> = {
   "A sua conta segue a pessoa. É o contrário do campo de cima.": "Your account follows that person. It is the opposite of the field above.",
   "Dá pra mandar Direct livre? Vale por 24 horas depois da última mensagem da pessoa.": "Can you send a free-form Direct message? Valid for 24 hours after that person's last message.",
   "Quantos seguidores a pessoa tem. Serve pra separar perfil grande de perfil pequeno.": "How many followers that person has. Useful to tell a large profile from a small one.",
+
+  /* Onde aquele gatilho vale, no painel de gatilhos ativos. */
+  "Onde vale": "Where it applies",
+  "Pronto": "Done",
+  "Só na próxima publicação": "Only on the next post",
+  "Nenhuma publicação escolhida ainda — vale pra todas": "No post chosen yet — it applies to all of them",
+  "Nenhum story escolhido ainda — vale pra todos": "No story chosen yet — it applies to all of them",
 };
