@@ -28408,6 +28408,37 @@ td.trafego-col-crm:first-of-type {
   text-align: center;
 }
 
+/*
+ * BOTÃO DE LINK DO DIRECT: DENTRO da bolha, largura quase inteira, texto centrado.
+ *
+ * É como o Instagram desenha — a bolha com o texto e, dentro dela, o botão branco. Ele faz parte
+ * da mensagem: não some depois do toque, e quem abrir a conversa amanhã ainda clica. A resposta
+ * rápida, logo abaixo, é o oposto: solta, em pílulas, porque não pertence à mensagem.
+ */
+.prev-bolha.com-botoes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 300px;
+  padding: 12px;
+}
+
+.prev-botao-colado {
+  padding: 9px 10px;
+  border-radius: 10px;
+  background: var(--surface-2, #f1f5f9);
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+:root[data-theme="dark"] .prev-botao-colado {
+  background: var(--surface-hover);
+}
+
 /* Resposta rápida do Direct: pílula de contorno, em linha, acima do teclado. */
 .prev-rapidas {
   display: flex;

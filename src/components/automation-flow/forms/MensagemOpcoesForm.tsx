@@ -124,6 +124,25 @@ export function MensagemOpcoesForm({
     CANAIS_DA_AREA[area].some((canal) => formatosDePergunta(canal).includes(f.valor)),
   );
 
+  /*
+   * NO DIRECT, "BOTÃO" NÃO É UMA COISA SÓ, e a frase genérica escondia isso.
+   *
+   * "Disponibilidade conforme a integração" é honesto no funil, onde a mesma área tem o WhatsApp
+   * oficial e o QR Code. Num robô de Instagram só existe uma conexão, e aí dá pra dizer o que
+   * acontece de verdade: botão de AÇÃO vira resposta rápida (some depois do toque) e botão de
+   * LINK fica na mensagem. São duas coisas diferentes, e quem monta precisa saber qual está
+   * escolhendo antes de o cliente receber.
+   */
+  const noDirect = area === "social";
+  function descricaoDoFormato(f: (typeof FORMATOS)[number]): string {
+    if (!noDirect || f.valor !== "botoes") return f.desc;
+    return "No Direct: botão de ação vira resposta rápida (até 13, somem depois do toque) e botão de URL fica na mensagem (até 3).";
+  }
+  function compatibilidadeDoFormato(f: (typeof FORMATOS)[number]): string {
+    if (!noDirect || f.valor !== "botoes") return f.compatibilidade;
+    return "Funciona no Direct";
+  }
+
   function moverOpcao(indice: number, direcao: -1 | 1) {
     const alvo = indice + direcao;
     if (alvo < 0 || alvo >= opcoes.length) return;
@@ -178,13 +197,13 @@ export function MensagemOpcoesForm({
               className={`flow-formato-resposta-opcao${formatoAtual === f.valor ? " sel" : ""}`}
               onClick={() => onChange({ ...data, formatoResposta: f.valor })}
             >
-              <span className="n">{f.label}</span>
-              <span className="r">{f.desc}</span>
+              <span className="n">{traduzir(f.label)}</span>
+              <span className="r">{traduzir(descricaoDoFormato(f))}</span>
               <span
-                className={`flow-formato-compat${f.compatibilidade === "Compatibilidade ampla" ? " ampla" : ""}`}
+                className={`flow-formato-compat${compatibilidadeDoFormato(f) === f.compatibilidade && f.compatibilidade !== "Compatibilidade ampla" ? "" : " ampla"}`}
                 title={traduzir("Alguns recursos interativos dependem do provedor e do tipo de conexão configurado.")}
               >
-                {f.compatibilidade}
+                {traduzir(compatibilidadeDoFormato(f))}
               </span>
             </button>
           ))}

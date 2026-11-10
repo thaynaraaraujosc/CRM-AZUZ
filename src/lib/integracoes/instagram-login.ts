@@ -192,6 +192,62 @@ export async function enviarDirectComRespostasRapidas(
   return dados.message_id;
 }
 
+/** Teto da Meta no template de botão do Direct: três botões, 20 caracteres de rótulo cada. */
+export const MAX_BOTOES_TEMPLATE_IG = 3;
+
+/**
+ * Manda um direct com BOTÕES QUE FICAM NA MENSAGEM (template de botão).
+ *
+ * É a mensagem que a gente vê todo dia no Direct: um texto e, embaixo dele, um botão largo que
+ * leva pra algum lugar. Diferente da resposta rápida, ele não some depois do toque — fica na
+ * conversa, e quem abrir o histórico amanhã ainda pode clicar.
+ *
+ * Até aqui o CRM não mandava isto: uma opção com endereço caía no menu numerado, e o link ia como
+ * texto no meio da frase. A pessoa que montou o fluxo tinha desenhado um botão e o cliente recebia
+ * uma linha de texto com uma URL.
+ *
+ * SÓ BOTÃO DE URL, de propósito. O template aceita também `postback`, que volta pelo webhook como
+ * um evento próprio — e o CRM lê a resposta do contato pelo caminho da mensagem (`quick_reply`),
+ * não por postback. Mandar um botão de ação por aqui criaria um botão que, tocado, não continua o
+ * fluxo: o pior tipo de botão. Enquanto for assim, ação continua sendo resposta rápida.
+ *
+ * Teto: três botões (`MAX_BOTOES_TEMPLATE_IG`) e 20 caracteres de rótulo, como nos outros formatos
+ * interativos da Meta.
+ */
+export async function enviarDirectComBotoesDeLink(
+  accessToken: string,
+  destinatarioId: string,
+  texto: string,
+  botoes: { titulo: string; url: string }[],
+): Promise<string | undefined> {
+  const resposta = await fetch(`https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/me/messages`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${accessToken}`, "content-type": "application/json" },
+    body: JSON.stringify({
+      recipient: { id: destinatarioId },
+      message: {
+        attachment: {
+          type: "template",
+          payload: {
+            template_type: "button",
+            text: texto,
+            buttons: botoes.slice(0, MAX_BOTOES_TEMPLATE_IG).map((b) => ({
+              type: "web_url",
+              url: b.url,
+              title: b.titulo,
+            })),
+          },
+        },
+      },
+    }),
+  });
+  const dados = (await resposta.json()) as { message_id?: string } & ErroGraph;
+  if (!resposta.ok) {
+    throw new Error(dados.error_message ?? dados.error?.message ?? `Falha ao enviar (HTTP ${resposta.status})`);
+  }
+  return dados.message_id;
+}
+
 /**
  * Baixa a foto de perfil e devolve embutida (data URL).
  *

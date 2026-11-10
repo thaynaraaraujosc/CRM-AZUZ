@@ -914,6 +914,7 @@ const NOME_DO_FORMATO = {
   botoes: "botões",
   lista: "lista",
   respostas_rapidas: "respostas rápidas",
+  botao_link_ig: "botão de link",
   numerado: "menu numerado",
 } as const;
 

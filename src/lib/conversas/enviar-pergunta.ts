@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { decriptar } from "@/lib/integracoes/crypto";
 import { enviarMensagemWhatsAppNaoOficial } from "@/lib/integracoes/evolution";
 import { slotDeEnvio } from "@/lib/integracoes/conexoes-whatsapp";
-import { enviarDirectComRespostasRapidas } from "@/lib/integracoes/instagram-login";
+import { enviarDirectComBotoesDeLink, enviarDirectComRespostasRapidas } from "@/lib/integracoes/instagram-login";
 import { contaConectada, enviarPelaCloudApi, janelaDeAtendimentoAberta } from "@/lib/integracoes/whatsapp-oficial";
 import { enviarTextoPeloCanal } from "./enviar-pelo-canal";
 import {
@@ -89,6 +89,22 @@ export async function enviarPerguntaPeloCanal(params: {
         return { enviado: false, formato: "numerado", motivo: "Instagram não conectado" };
       }
       const token = decriptar(integracao.accessTokenCriptografado);
+      /*
+       * BOTÃO QUE FICA NA MENSAGEM, quando todas as opções são link.
+       *
+       * O formato que faltava: a pessoa desenhava um botão de URL e o contato recebia o endereço
+       * como texto no meio de um menu numerado. Até três, e eles não somem depois do toque — quem
+       * abrir a conversa amanhã ainda clica.
+       */
+      if (formatoDaPergunta("instagram", opcoes) === "botao_link_ig") {
+        await enviarDirectComBotoesDeLink(
+          token,
+          conversa.contato,
+          texto,
+          opcoes.map((o) => ({ titulo: rotuloCurto(o.rotulo), url: o.url! })),
+        );
+        return { enviado: true, formato: "botao_link_ig" };
+      }
       if (formatoDaPergunta("instagram", opcoes) === "respostas_rapidas") {
         await enviarDirectComRespostasRapidas(
           token,

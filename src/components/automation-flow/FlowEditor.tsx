@@ -37,6 +37,7 @@ import type {
 } from "@/lib/automation-flow/types";
 
 import { FLOW_DND_MIME } from "./BlockLibrary";
+import { canalPadraoDaArea } from "./forms/canais";
 import { blocoApareceNaArea } from "@/lib/canais/capacidades";
 import { ConfigPanel } from "./ConfigPanel";
 import { HistoricoExecucoes } from "./HistoricoExecucoes";
@@ -1241,12 +1242,34 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   function trocarTipoDoNode(nodeId: string, tipo: FlowNodeType, data: Record<string, unknown>) {
     const bloco = BLOCOS_DISPONIVEIS.find((b) => b.tipo === tipo);
     if (!bloco) return;
+    const anterior = rfNodes.find((n) => n.id === nodeId);
+    const dadosAntigos = (anterior?.data.flowNode.data ?? {}) as Record<string, unknown>;
+    /*
+     * TROCAR O FORMATO NÃO APAGA O QUE JÁ FOI ESCRITO.
+     *
+     * "Mensagem" vira "Pergunta" com um clique na lista de formatos, e o bloco recomeçava do zero:
+     * o texto digitado sumia e o canal voltava pro padrão do catálogo (WhatsApp), mesmo dentro de
+     * um robô de Instagram. Quem trocou o formato queria acrescentar botões à mensagem que acabou
+     * de escrever, não escrevê-la de novo.
+     *
+     * Só o que os dois formatos têm em comum atravessa: o texto, a legenda e o canal. O resto
+     * (opções, anexo, prazos) é do tipo antigo e fica pra trás de propósito — uma opção de
+     * pergunta pendurada numa imagem seria um caminho que o motor não segue.
+     */
+    const herdados: Record<string, unknown> = {};
+    for (const campo of ["canal", "texto", "legenda", "mensagem"]) {
+      if (dadosAntigos[campo] !== undefined && dadosAntigos[campo] !== "") herdados[campo] = dadosAntigos[campo];
+    }
+    const dadosNovos = { ...dadosIniciais(bloco, ehSocial), ...herdados, ...data };
     const novoNodes = rfNodes.map((n) =>
       n.id === nodeId
         ? {
             ...n,
             type: bloco.categoria,
-            data: { ...n.data, flowNode: { ...n.data.flowNode, type: tipo, category: bloco.categoria, data } },
+            data: {
+              ...n.data,
+              flowNode: { ...n.data.flowNode, type: tipo, category: bloco.categoria, data: dadosNovos },
+            },
           }
         : n,
     );
@@ -2390,8 +2413,21 @@ const ID_INICIO = "__inicio__";
  */
 function dadosIniciais(bloco: { tipo: FlowNodeType; dataPadrao: () => unknown }, ehSocial: boolean) {
   const base = bloco.dataPadrao() as Record<string, unknown>;
-  if (!ehSocial || bloco.tipo !== "aguardar") return base;
-  return { ...base, modo: "segundos", valor: 5, interromperSeResponder: true };
+  if (!ehSocial) return base;
+  /*
+   * NO SOCIAL SELLER O CANAL É O INSTAGRAM, e isso não pode depender de alguém trocar à mão.
+   *
+   * Todo bloco de mensagem nasce com `canal: "whatsapp"` escrito no catálogo — ele foi escrito pro
+   * funil, que é de WhatsApp. Num robô de Instagram isso aparecia em três lugares errados de uma
+   * vez: o cartão dizia "whatsapp", o painel dizia "whatsapp", e a prévia prometia o formato do
+   * WhatsApp ("na conexão oficial são botões de resposta") pra uma mensagem que vai sair no
+   * Direct, onde botão de ação é resposta rápida.
+   *
+   * `canalPadraoDaArea` existia desde sempre pra isto e não era chamada por ninguém.
+   */
+  const comCanal = "canal" in base ? { ...base, canal: canalPadraoDaArea("social") } : base;
+  if (bloco.tipo !== "aguardar") return comCanal;
+  return { ...comCanal, modo: "segundos", valor: 5, interromperSeResponder: true };
 }
 
 function idsDeGatilho(nodes: FlowRFNode[], ehSocial: boolean): string[] {

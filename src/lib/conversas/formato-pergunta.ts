@@ -22,7 +22,22 @@ export type OpcaoPergunta = {
   url?: string;
 };
 
-export type FormatoEnviado = "botoes" | "lista" | "respostas_rapidas" | "numerado";
+export type FormatoEnviado =
+  | "botoes"
+  | "lista"
+  | "respostas_rapidas"
+  /**
+   * TEXTO COM BOTÕES DE LINK QUE FICAM NA MENSAGEM, no Direct.
+   *
+   * É o template de botão do Instagram: até três botões de endereço, que não somem depois do
+   * toque. Era o formato que faltava — uma opção com link caía no menu numerado e o endereço ia
+   * como texto no meio da frase, embora a Meta aceite o botão de verdade.
+   */
+  | "botao_link_ig"
+  | "numerado";
+
+/** Teto do template de botão do Direct. */
+const MAX_BOTOES_LINK_IG = 3;
 
 /** Encurta o rótulo pro teto do canal. Exportado porque a leitura da resposta precisa comparar
  * contra o MESMO texto que foi enviado. A pessoa clica no botão encurtado. */
@@ -61,7 +76,19 @@ export function temBotaoDeUrl(opcoes: OpcaoPergunta[]): boolean {
  */
 export function formatoDaPergunta(canal: CanalId, opcoes: OpcaoPergunta[]): FormatoEnviado {
   const capacidade = CAPACIDADES[canal];
-  if (!opcoes.length || temBotaoDeUrl(opcoes)) return "numerado";
+  if (!opcoes.length) return "numerado";
+  /*
+   * NO DIRECT, OPÇÃO COM LINK VIRA BOTÃO DE VERDADE — até três.
+   *
+   * Só quando TODAS têm endereço: o template aceita botão de ação (`postback`), mas ele volta pelo
+   * webhook por um caminho que o CRM não lê, e aí seria um botão que, tocado, não continua o
+   * fluxo. Misturando os dois tipos, metade das opções ficaria sem resposta: por isso a pergunta é
+   * "todas são link?", e qualquer outra combinação segue pro menu numerado.
+   */
+  if (canal === "instagram" && opcoes.length <= MAX_BOTOES_LINK_IG && opcoes.every((o) => !!o.url?.trim())) {
+    return "botao_link_ig";
+  }
+  if (temBotaoDeUrl(opcoes)) return "numerado";
   if (capacidade.botoes && opcoes.length <= capacidade.botoes) {
     // No Direct não é botão: é resposta rápida, que aparece acima do teclado e some depois de
     // usada. São coisas diferentes na tela de quem recebe, então têm nomes diferentes aqui.

@@ -2933,4 +2933,15 @@ export const TRADUCOES_EN: Record<string, string> = {
   "Confirmado": "Confirmed",
   "Cancelado": "Cancelled",
   "Faltou": "No-show",
+
+  /* Prévia e formatos de resposta no Direct. */
+  "São botões de link: ficam na mensagem, não somem depois do toque, e cabem até {n} por mensagem.": "These are link buttons: they stay on the message, do not disappear after being tapped, and up to {n} fit per message.",
+  "No Direct: botão de ação vira resposta rápida (até 13, somem depois do toque) e botão de URL fica na mensagem (até 3).": "In Direct: an action button becomes a quick reply (up to 13, they disappear once tapped) and a URL button stays on the message (up to 3).",
+  "Funciona no Direct": "Works in Direct",
+  "Menu numerado": "Numbered menu",
+  "Botões clicáveis": "Clickable buttons",
+  "Texto livre": "Free text",
+  "Lista interativa": "Interactive list",
+  "Compatibilidade ampla": "Broad compatibility",
+  "Disponibilidade conforme a integração": "Availability depends on the integration",
 };

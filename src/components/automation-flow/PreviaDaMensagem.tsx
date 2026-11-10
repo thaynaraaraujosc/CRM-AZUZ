@@ -125,8 +125,24 @@ export function PreviaDaMensagem({ node }: { node: FlowNode }) {
         {vazia ? (
           <p className="prev-vazio">{traduzir("Escreva a mensagem pra ver como ela chega.")}</p>
         ) : textoDaBolha.trim() ? (
-          <div className="prev-bolha">
-            <TextoComVariaveis texto={textoDaBolha} />
+          /*
+            O BOTÃO DE LINK MORA DENTRO DA BOLHA, e não embaixo dela.
+            
+            É assim que o Direct desenha: a bolha cinza com o texto e, dentro dela, o botão branco
+            quase da largura toda. Desenhado como irmão da bolha, ele ficava com a largura errada e
+            parecia uma resposta rápida, que é justamente a outra coisa.
+          */
+          <div className={`prev-bolha${formato === "botao_link_ig" ? " com-botoes" : ""}`}>
+            <span className="prev-bolha-texto">
+              <TextoComVariaveis texto={textoDaBolha} />
+            </span>
+            {formato === "botao_link_ig"
+              ? opcoes.map((o) => (
+                  <span className="prev-botao-colado" key={o.id}>
+                    {rotuloCurto(o.rotulo)}
+                  </span>
+                ))
+              : null}
           </div>
         ) : null}
 
@@ -171,25 +187,30 @@ export function PreviaDaMensagem({ node }: { node: FlowNode }) {
         souber vai apagar e escrever de novo achando que errou em algo.
       */}
       <p className="prev-nota">
-        {formato === "respostas_rapidas"
+        {formato === "botao_link_ig"
           ? traduzir(
-              "No Direct são respostas rápidas: aparecem acima do teclado, cortadas em {n} caracteres, e somem depois de usadas.",
-              { n: String(20) },
+              "São botões de link: ficam na mensagem, não somem depois do toque, e cabem até {n} por mensagem.",
+              { n: String(3) },
             )
-          : formato === "botoes"
+          : formato === "respostas_rapidas"
             ? traduzir(
-                "Na conexão oficial são botões de resposta. Na conexão por QR Code o WhatsApp não entrega botão: a pergunta sai como menu numerado.",
+                "No Direct são respostas rápidas: aparecem acima do teclado, cortadas em {n} caracteres, e somem depois de usadas.",
+                { n: String(20) },
               )
-            : formato === "lista"
+            : formato === "botoes"
               ? traduzir(
-                  "São mais de {n} opções: no WhatsApp oficial elas não cabem em botão e chegam como lista, atrás do \"Ver opções\".",
-                  { n: String(capacidade.botoes) },
+                  "Na conexão oficial são botões de resposta. Na conexão por QR Code o WhatsApp não entrega botão: a pergunta sai como menu numerado.",
                 )
-              : opcoes.length
+              : formato === "lista"
                 ? traduzir(
-                    "As opções chegam numeradas dentro do próprio texto, e a pessoa responde com o número.",
+                    "São mais de {n} opções: no WhatsApp oficial elas não cabem em botão e chegam como lista, atrás do \"Ver opções\".",
+                    { n: String(capacidade.botoes) },
                   )
-                : traduzir("O texto chega como está aqui, sem botão nenhum.")}
+                : opcoes.length
+                  ? traduzir(
+                      "As opções chegam numeradas dentro do próprio texto, e a pessoa responde com o número.",
+                    )
+                  : traduzir("O texto chega como está aqui, sem botão nenhum.")}
       </p>
     </section>
   );
