@@ -43,6 +43,7 @@ describe("tela de Conversas: o que a renderização lê nasce antes", () => {
      renderização. Acrescentar uma leitura nova à cadeia pede uma linha nova aqui. */
   const lidasNaRenderizacao = [
     "const [canalEscolhido, setCanalEscolhido]",
+    "const canalEfetivo = canalDeSaida(",
     "mensagensExtraPorContato,",
     "const naoOficialConectado =",
     "const [lidas, setLidas]",

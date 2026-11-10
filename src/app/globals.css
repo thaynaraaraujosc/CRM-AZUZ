@@ -8603,6 +8603,19 @@ button.camp-row:hover {
 .chat-canal-aviso {
   font-size: var(--fs-caption);
   color: var(--text-muted);
+  /* Empurra o botão pra ponta da linha: o aviso explica, o botão resolve, e os dois juntos no meio
+     da linha competiriam pelo mesmo olhar. */
+  margin-right: auto;
+}
+
+/* O caminho de verdade do oficial, ao lado do aviso em vez de escondido no menu do clipe. */
+.chat-canal-modelo {
+  flex: none;
+}
+
+.chat-canal-rotulo b {
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
 }
 
 /* ---------------- Respostas lidas por pergunta ---------------- */
