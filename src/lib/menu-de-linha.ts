@@ -40,13 +40,22 @@ export function useFecharMenuDeLinha(aberto: boolean, fechar: () => void) {
       if (evento.key === "Escape") fechar();
     }
 
-    // `mousedown`, e não `click`: fechar no apertar é o que faz o menu sumir antes de o clique
-    // chegar no que está embaixo, que é como todo menu de sistema se comporta.
-    document.addEventListener("mousedown", aoApontar);
-    document.addEventListener("keydown", aoTeclar);
+    /*
+     * `mousedown`, e não `click`: fechar no apertar é o que faz o menu sumir antes de o clique
+     * chegar no que está embaixo, que é como todo menu de sistema se comporta.
+     *
+     * E NA FASE DE CAPTURA, que é o que conserta o menu que não fechava no quadro da automação.
+     * O React Flow usa d3-drag pra arrastar bloco e tela, e o d3 chama `stopPropagation` no
+     * mousedown: na fase de borbulha, o clique no canvas morria antes de chegar no documento, e o
+     * menu aberto continuava lá enquanto a pessoa mexia em tudo. Na captura o documento vê o
+     * evento ANTES de quem o interrompe, e aí "clicar em qualquer lugar fecha" volta a ser verdade
+     * em todo menu do CRM de uma vez.
+     */
+    document.addEventListener("mousedown", aoApontar, true);
+    document.addEventListener("keydown", aoTeclar, true);
     return () => {
-      document.removeEventListener("mousedown", aoApontar);
-      document.removeEventListener("keydown", aoTeclar);
+      document.removeEventListener("mousedown", aoApontar, true);
+      document.removeEventListener("keydown", aoTeclar, true);
     };
   }, [aberto, fechar]);
 }

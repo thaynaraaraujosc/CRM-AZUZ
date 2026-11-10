@@ -193,3 +193,47 @@ describe("quando buscar o link da publicação", () => {
     expect(fluxoUsaCampoDeCondicao([{}], "ig_post_link")).toBe(false);
   });
 });
+
+/**
+ * GATILHO LIGADO A NADA NÃO É "FIM DE FLUXO".
+ *
+ * A mensagem genérica aparecia nos gatilhos marcados e ainda não ligados, dizendo que eles
+ * "terminam o fluxo sem passar por Encerrar fluxo" — uma frase que não é verdade sobre um
+ * gatilho, e que travava a publicação no meio da montagem.
+ */
+describe("gatilho que não leva a lugar nenhum", () => {
+  const gatilhoSolto = {
+    id: "g2",
+    type: "instagram_story_respondido",
+    category: "gatilho",
+    position: { x: 0, y: 1 },
+    data: {},
+  };
+
+  it("vira aviso, com a frase do que realmente acontece", () => {
+    const problemas = validarFluxo(fluxo([gatilho, gatilhoSolto]));
+    const dele = problemas.filter((p) => p.nodeId === "g2");
+    expect(dele).toHaveLength(1);
+    expect(dele[0].severidade).toBe("aviso");
+    expect(dele[0].mensagem).toContain("não leva a passo nenhum");
+    expect(dele[0].mensagem).not.toContain("Encerrar fluxo");
+  });
+
+  it("não trava a publicação", () => {
+    const erros = validarFluxo(fluxo([gatilho, gatilhoSolto])).filter((p) => p.severidade === "erro");
+    expect(erros.some((p) => p.nodeId === "g2")).toBe(false);
+  });
+
+  it("bloco que não é gatilho continua cobrando o fim do caminho", () => {
+    const mensagemSolta = {
+      id: "m9",
+      type: "mensagem_texto",
+      category: "mensagem",
+      position: { x: 1, y: 0 },
+      data: { canal: "instagram", texto: "Oi" },
+    };
+    const edges = [{ id: "e9", source: "g1", target: "m9" }];
+    const problemas = validarFluxo(fluxo([gatilho, mensagemSolta], edges));
+    expect(problemas.some((p) => p.nodeId === "m9" && p.mensagem.includes("Encerrar fluxo"))).toBe(true);
+  });
+});

@@ -141,14 +141,34 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
   // 3. Caminho pendurado: sem saída e não é um bloco de fim.
   nodes.forEach((n) => {
     const temSaida = (saidasPorNo.get(n.id)?.length ?? 0) > 0;
-    if (!temSaida && n.category !== "fim") {
+    if (temSaida || n.category === "fim") return;
+    /*
+     * GATILHO SEM CAMINHO NÃO "TERMINA O FLUXO": ELE NÃO COMEÇA NADA.
+     *
+     * A mensagem genérica aparecia nos gatilhos marcados e ainda não ligados — "o bloco
+     * instagram_story_respondido termina o fluxo sem passar por Encerrar fluxo" — e dizia uma
+     * coisa que não é verdade sobre eles: gatilho não termina, gatilho começa. O que está errado
+     * ali é outra coisa, e tem outro tamanho: quem responder o story vai disparar uma automação
+     * que não faz nada.
+     *
+     * E é AVISO, não erro. Marcar três gatilhos e ligar um de cada vez é como se monta uma
+     * automação; travar a publicação no meio disso seria cobrar que o robô nascesse pronto.
+     */
+    if (n.category === "gatilho") {
       problemas.push({
         id: proximoIdProblema(),
-        severidade: "erro",
-        mensagem: `Bloco "${n.titulo ?? n.type}" termina o fluxo sem passar por um bloco de "Encerrar fluxo".`,
+        severidade: "aviso",
+        mensagem: `O gatilho "${n.titulo ?? n.type}" não leva a passo nenhum: quem disparar por ele não vai receber nada.`,
         nodeId: n.id,
       });
+      return;
     }
+    problemas.push({
+      id: proximoIdProblema(),
+      severidade: "erro",
+      mensagem: `Bloco "${n.titulo ?? n.type}" termina o fluxo sem passar por um bloco de "Encerrar fluxo".`,
+      nodeId: n.id,
+    });
   });
 
   // 4. Botões/lista: precisa ter pelo menos uma opção, cada opção precisa de rótulo preenchido, e

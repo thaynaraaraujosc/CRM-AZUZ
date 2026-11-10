@@ -26236,9 +26236,13 @@ td.trafego-col-crm:first-of-type {
   background: #c9550c;
 }
 
+/* O balão não captura o ponteiro: ele existe pra ser LIDO. Capturando, bastava o mouse entrar
+   nele pra a aba deixar de estar sob o cursor — o balão piscava, e dava a impressão de ter ficado
+   preso na tela. */
 .flow-node-pendencias {
   position: absolute;
   z-index: 30;
+  pointer-events: none;
   top: calc(100% + 6px);
   left: 0;
   display: none;

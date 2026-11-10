@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
+
+import { useFecharMenuDeLinha } from "@/lib/menu-de-linha";
 
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
 import type { FlowNodeType } from "@/lib/automation-flow/types";
@@ -67,11 +69,15 @@ export function EscolhaDeConteudo({
 }) {
   const { t: traduzir } = useIdioma();
   const [aberta, setAberta] = useState(false);
+  // Clicar em qualquer lugar fecha, como todo menu do CRM. Sem isto a lista dos sete formatos
+  // ficava aberta no topo do painel enquanto a pessoa trabalhava no bloco embaixo dela.
+  const fechar = useCallback(() => setAberta(false), []);
+  useFecharMenuDeLinha(aberta, fechar);
   const atual = OPCOES.find((o) => o.tipo === tipoAtual);
   const IconeAtual = atual?.Icone ?? IconConversas;
 
   return (
-    <div className="esc-conteudo">
+    <div className="esc-conteudo" data-menu-de-linha="">
       {/* A linha do formato atual. É ela que abre a lista, e é o cabeçalho do painel inteiro. */}
       <button
         type="button"

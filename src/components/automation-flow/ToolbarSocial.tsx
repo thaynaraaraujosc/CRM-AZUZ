@@ -102,8 +102,10 @@ export function ToolbarSocial({
         setPublicarAberto(false);
       }
     }
-    document.addEventListener("mousedown", aoClicar);
-    return () => document.removeEventListener("mousedown", aoClicar);
+    // Na captura: o canvas do React Flow interrompe o mousedown (d3-drag), e na borbulha este
+    // ouvinte nunca via o clique que acontecia lá — os menus ficavam abertos por cima do quadro.
+    document.addEventListener("mousedown", aoClicar, true);
+    return () => document.removeEventListener("mousedown", aoClicar, true);
   }, [menuAberto, publicarAberto]);
 
   function fecharEntao(acao: () => void) {
