@@ -938,6 +938,33 @@ function ConversasPageInner() {
 
   const naoOficialConectado = naoOficial.estado?.status === "conectado";
 
+  /**
+   * O canal escolhido pra uma conversa que ainda não tem dono, quando os DOIS WhatsApp estão
+   * conectados. Padrão no QR Code: é o que não tem janela de 24h nem modelo aprovado no caminho,
+   * e é o que o servidor já assumia pra conversa sem dono.
+   *
+   * DECLARADO AQUI EM CIMA, E ESTE LUGAR É O CONSERTO DE UM DEFEITO — o segundo da mesma família
+   * (ver o comentário logo acima, sobre `mensagensExtraPorContato`).
+   *
+   * `conversaUsaWhatsappNaoOficial` lê esta variável, e quem a chama é `conversasFiltradas`, que é
+   * calculado no corpo do componente — ou seja, DURANTE a renderização. Com o `useState` lá
+   * embaixo, perto do resto da tela de escrever, a leitura acontecia antes da declaração: um
+   * `const` em zona morta temporal, que em produção aparece como "Cannot access 'nu' before
+   * initialization" e derruba a tela inteira de Conversas (e, como ela reabre a cada navegação, o
+   * app inteiro).
+   *
+   * E ele só aparecia numa combinação: WhatsApp OFICIAL conectado e QR Code desconectado — o
+   * estado de quem acabou de trocar de celular. Nos outros casos o filtro nem chega a chamar a
+   * função, e a tela abre normalmente. Por isso passou pelo build, pelos testes e por meses de uso.
+   *
+   * Qualquer coisa que `conversasFiltradas` leia, direta ou indiretamente, precisa nascer ANTES
+   * dele.
+   */
+  const [canalEscolhido, setCanalEscolhido] = useState<"whatsapp_nao_oficial" | "whatsapp_oficial">(
+    "whatsapp_nao_oficial",
+  );
+
+
   // Conversa de WhatsApp sem nenhum canal conectado (nem Meta, nem QR Code) some da lista. Volta a
   // aparecer sozinha quando reconectar (não apaga nada do banco, só deixa de mostrar; ver pedido
   // explícito: ao desconectar, nem a conversa aberta no momento pode continuar visível). Com só UMA
@@ -1027,14 +1054,6 @@ function ConversasPageInner() {
   /** Já tentamos atender o `?contato=` desta visita? Sem isto, a criação da conversa mudaria a
    *  lista, o efeito rodaria de novo e criaria outra. */
   const contatoDaUrlAtendido = useRef(false);
-  /**
-   * O canal escolhido pra uma conversa que ainda não tem dono, quando os DOIS WhatsApp estão
-   * conectados. Padrão no QR Code: é o que não tem janela de 24h nem modelo aprovado no caminho,
-   * e é o que o servidor já assumia pra conversa sem dono.
-   */
-  const [canalEscolhido, setCanalEscolhido] = useState<"whatsapp_nao_oficial" | "whatsapp_oficial">(
-    "whatsapp_nao_oficial",
-  );
   /** Quais canais de WhatsApp estão conectados agora. Só com os DOIS a escolha faz sentido: com um
    *  só, não há o que perguntar. */
   const [canaisWhats, setCanaisWhats] = useState<{ oficial: boolean; qr: boolean }>({ oficial: false, qr: false });
