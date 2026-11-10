@@ -237,3 +237,43 @@ describe("gatilho que não leva a lugar nenhum", () => {
     expect(problemas.some((p) => p.nodeId === "m9" && p.mensagem.includes("Encerrar fluxo"))).toBe(true);
   });
 });
+
+/**
+ * A PENDÊNCIA CHAMA O BLOCO PELO NOME QUE ESTÁ NA TELA.
+ *
+ * "O gatilho instagram_story_respondido não leva a passo nenhum" manda procurar no quadro uma
+ * coisa que, no quadro, se chama "Resposta nos stories". O identificador do código não aparece em
+ * lugar nenhum da interface, e vazou em cinquenta e cinco mensagens de pendência de uma vez.
+ */
+describe("o nome do bloco nas pendências", () => {
+  const soltoNoFluxo = {
+    id: "g1",
+    type: "instagram_story_respondido",
+    category: "gatilho",
+    position: { x: 0, y: 0 },
+    data: {},
+  };
+
+  it("usa o nome da biblioteca quando o bloco não foi renomeado", () => {
+    const problemas = validarFluxo(fluxo([soltoNoFluxo]));
+    const doGatilho = problemas.find((p) => p.mensagem.includes("não leva a passo nenhum"));
+    expect(doGatilho?.mensagem).toContain("Resposta nos stories");
+    expect(doGatilho?.mensagem).not.toContain("instagram_story_respondido");
+  });
+
+  /* Renomear ganha de tudo: se a pessoa chamou aquele bloco de "Promo de outubro", é esse o nome
+     que ela vai procurar no quadro. */
+  it("o nome dado pela pessoa ganha do nome da biblioteca", () => {
+    const problemas = validarFluxo(fluxo([{ ...soltoNoFluxo, titulo: "Promo de outubro" }]));
+    const doGatilho = problemas.find((p) => p.mensagem.includes("não leva a passo nenhum"));
+    expect(doGatilho?.mensagem).toContain("Promo de outubro");
+  });
+
+  /* A frase diz o que fazer, e não só o que está errado. */
+  it("diz onde clicar pra resolver", () => {
+    const problemas = validarFluxo(fluxo([soltoNoFluxo]));
+    const doGatilho = problemas.find((p) => p.mensagem.includes("não leva a passo nenhum"));
+    expect(doGatilho?.mensagem).toContain("+");
+    expect(doGatilho?.severidade).toBe("aviso");
+  });
+});

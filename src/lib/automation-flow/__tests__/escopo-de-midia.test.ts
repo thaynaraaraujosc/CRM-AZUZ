@@ -127,4 +127,33 @@ describe("escopo do story", () => {
     const fluxo = fluxoDeStory({ storyIds: [] });
     expect(avaliarGatilho(fluxo, respostaA("s9"))).toBe(true);
   });
+
+  /*
+   * "QUALQUER STORY" SOLTA DE NOVO — o que a publicação já fazia e o story não.
+   *
+   * A tela deixava escolher entre "Story específico" e "Qualquer story" e GRAVAVA a escolha em
+   * `escopoStory`, mas aqui ela não era lida: o filtro olhava só se havia ids guardados. Quem
+   * escolhia stories específicos e depois voltava pra "Qualquer story" continuava com o robô
+   * preso aos antigos. A tela dizia uma coisa e o motor fazia outra, sem dar erro em lugar
+   * nenhum — e agora que o painel MOSTRA essa escolha, mostrar uma coisa que não vale seria pior
+   * do que não mostrar.
+   */
+  it("escolher 'qualquer story' solta de novo, mesmo com ids guardados", () => {
+    const fluxo = fluxoDeStory({ escopoStory: "qualquer", storyIds: ["s1"] });
+    expect(avaliarGatilho(fluxo, respostaA("s9"))).toBe(true);
+    expect(avaliarGatilho(fluxo, respostaA("s1"))).toBe(true);
+  });
+
+  it("'específico' continua filtrando", () => {
+    const fluxo = fluxoDeStory({ escopoStory: "especifico", storyIds: ["s1"] });
+    expect(avaliarGatilho(fluxo, respostaA("s1"))).toBe(true);
+    expect(avaliarGatilho(fluxo, respostaA("s9"))).toBe(false);
+  });
+
+  /* Fluxo publicado antes de o escopo existir tem ids e não tem escopo. Ele sempre valeu só pra
+     eles, e continua valendo: a ausência vira "específico" porque há ids. */
+  it("ids sem escopo gravado continuam filtrando", () => {
+    const fluxo = fluxoDeStory({ storyIds: ["s1"] });
+    expect(avaliarGatilho(fluxo, respostaA("s9"))).toBe(false);
+  });
 });

@@ -27934,6 +27934,73 @@ td.trafego-col-crm:first-of-type {
   margin-top: 10px;
 }
 
+/* ---------------- Onde aquele gatilho vale, no painel ------------------------
+ *
+ * A escolha de alcance estava gravada e invisível: dava pra escolher numa etapa da montagem e
+ * depois não dava pra LER. Agora o cartão diz em palavras ("Qualquer publicação", "3 posts
+ * escolhidos") e abre a mesma grade de miniaturas da montagem, aqui dentro.
+ */
+.pg-alcance {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed var(--line-soft);
+}
+
+.pg-alcance-linha {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+
+.pg-alcance-rotulo {
+  font-size: 12.5px;
+  color: var(--ss-tinta-fraca, #64748b);
+}
+
+.pg-alcance-linha strong {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* "Trocar" é um link, não um botão de ação: o botão desta tela é o "Salvar" do rodapé, e dois
+   botões sólidos no mesmo cartão disputariam a mesma atenção. */
+.pg-alcance-trocar {
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ss-azul, #2563eb);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pg-alcance-trocar:hover {
+  text-decoration: underline;
+}
+
+.pg-alcance-escolha {
+  margin-top: 10px;
+}
+
+/* Fechado, o cartão diz o alcance numa linha menor que a descrição: é detalhe de conferência, e
+   não pode competir com o nome do gatilho. */
+.pg-alcance-resumo {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--ss-tinta-fraca, #64748b);
+}
+
+.pg-alcance-resumo b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
 .pg-textos {
   display: flex;
   flex-direction: column;

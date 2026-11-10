@@ -721,11 +721,24 @@ export function avaliarNoDeGatilho(
     if ((data.publicacoesConhecidas ?? []).includes(publicacaoDoEvento)) return false;
   }
 
-  // Mesma ideia pro story: a automação pode valer só pros stories escolhidos. Vazio = qualquer
-  // story, de qualquer dia, que é o padrão e continua sendo o comportamento de quem nunca abriu o
-  // campo.
+  /*
+   * MESMA IDEIA PRO STORY — inclusive o "qualquer", que faltava.
+   *
+   * A tela deixa escolher entre "Story específico" e "Qualquer story", e GRAVAVA essa escolha em
+   * `escopoStory`. Só que aqui ela não era lida: o filtro olhava apenas se havia ids guardados.
+   * Quem escolhia stories específicos e depois voltava pra "Qualquer story" continuava com o robô
+   * preso aos antigos — a tela dizia uma coisa e o motor fazia outra, que é o pior tipo de defeito
+   * porque não dá erro em lugar nenhum.
+   *
+   * Vazio e sem escopo continua sendo "qualquer story, de qualquer dia": é o padrão de quem nunca
+   * abriu o campo, e fluxo publicado com ids e sem escopo continua valendo só pra eles (ver
+   * `lerAlcance`, que é esta mesma regra escrita uma vez).
+   */
   const idsDeStory = data.storyIds?.length ? data.storyIds : data.storyId ? [data.storyId] : [];
-  if (idsDeStory.length && storyDoEvento && !idsDeStory.includes(storyDoEvento)) return false;
+  const escopoStory = data.escopoStory ?? (idsDeStory.length ? "especifico" : "qualquer");
+  if (escopoStory === "especifico" && idsDeStory.length && storyDoEvento) {
+    if (!idsDeStory.includes(storyDoEvento)) return false;
+  }
 
   // Palavra configurada no gatilho: comentário ou mensagem só dispara se casar.
   const textoDoEvento = typeof evento.mensagem === "string" ? evento.mensagem : undefined;
