@@ -277,3 +277,48 @@ describe("o nome do bloco nas pendências", () => {
     expect(doGatilho?.severidade).toBe("aviso");
   });
 });
+
+/**
+ * BLOCO SOLTO NÃO TRAVA A PUBLICAÇÃO.
+ *
+ * "Condição não precisa estar ligada a nada." O bloco que ninguém alcança continua sendo apontado
+ * — ele nunca vai rodar, e isso precisa aparecer —, mas como AVISO: largar um bloco no quadro e
+ * ligar depois é como se monta uma automação, e o resto do robô, que está pronto, não pode ficar
+ * sem ir pro ar por causa de uma peça ainda solta.
+ *
+ * O erro de verdade continua sendo erro: fluxo sem gatilho nenhum é o robô que não roda.
+ */
+describe("bloco sem nada antes dele", () => {
+  const condicaoSolta = {
+    id: "c9",
+    type: "condicao_ramos",
+    category: "condicao",
+    titulo: "CONDICAO SEGUIDOR",
+    position: { x: 3, y: 3 },
+    data: { ramos: [{ id: "r1", titulo: "Seguidor", grupo: { id: "g", tipo: "E", regras: [{ id: "x", campo: "ig_seguidor", operador: "verdadeiro" }], subgrupos: [] } }] },
+  };
+
+  it("é aviso, e não erro que impede publicar", () => {
+    const problemas = validarFluxo(fluxo([gatilho, condicaoSolta]));
+    const solto = problemas.find((p) => p.mensagem.includes("Nada leva até"));
+    expect(solto?.severidade).toBe("aviso");
+    expect(solto?.nodeId).toBe("c9");
+  });
+
+  /* A frase diz o que acontece ("o robô nunca passa por ele") e as duas saídas: ligar ou tirar. */
+  it("diz o que acontece e o que fazer", () => {
+    const problemas = validarFluxo(fluxo([gatilho, condicaoSolta]));
+    const solto = problemas.find((p) => p.mensagem.includes("Nada leva até"));
+    expect(solto?.mensagem).toContain("nunca passa por ele");
+    expect(solto?.mensagem).toContain("CONDICAO SEGUIDOR");
+  });
+
+  /* Fluxo sem gatilho nenhum continua sendo ERRO: aí não é uma peça solta, é o robô inteiro que
+     não tem o que o faça começar. */
+  it("fluxo sem gatilho continua sendo erro", () => {
+    const problemas = validarFluxo(fluxo([condicaoSolta]));
+    expect(
+      problemas.some((p) => p.severidade === "erro" && p.mensagem.includes("não tem nenhum gatilho")),
+    ).toBe(true);
+  });
+});

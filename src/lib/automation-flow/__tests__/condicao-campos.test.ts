@@ -312,7 +312,7 @@ describe("o que a aba Problemas cobra antes de publicar", () => {
     const problemas = validarFluxo(
       fluxo([{ id: "a", grupo: grupo({ campo: "mensagem", operador: "contem", valor: "orçamento" }) }]) as never,
     );
-    const deEstrutura = ["termina o fluxo", "não está conectado", "pontos de partida", "não leva a passo nenhum"];
+    const deEstrutura = ["termina o fluxo", "Nada leva até", "pontos de partida", "não leva a passo nenhum"];
     const daCondicao = problemas.filter(
       (p) =>
         p.severidade === "erro" &&
