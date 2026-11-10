@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 
 import { IconCheck, IconSearch } from "@/components/icons";
 import { ATRIBUTO_MENU_DE_LINHA, useFecharMenuDeLinha } from "@/lib/menu-de-linha";
+import { filtrarOpcoes } from "@/lib/busca-de-opcoes";
 import { useIdioma } from "@/lib/idioma-context";
 
 /**
@@ -21,14 +22,20 @@ import { useIdioma } from "@/lib/idioma-context";
  * cortado pelo nó do canvas, que tem o seu próprio recorte e a sua própria escala.
  */
 
-export type OpcaoBuscavel = { valor: string; label: string; grupo?: string; descricao?: string };
-
-function semAcento(texto: string): string {
-  return texto
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "");
-}
+export type OpcaoBuscavel = {
+  valor: string;
+  label: string;
+  grupo?: string;
+  descricao?: string;
+  /**
+   * Termos que ACHAM esta opção sem aparecer nela.
+   *
+   * A busca olhava só o rótulo e o identificador, e por isso "começou a me seguir" não achava "É
+   * seguidor" — o campo existia e parecia não existir. Os sinônimos consertam isso sem criar um
+   * segundo nome na tela: entram no filtro, não no texto da opção.
+   */
+  sinonimos?: string[];
+};
 
 export function SeletorBuscavel({
   valor,
@@ -63,11 +70,9 @@ export function SeletorBuscavel({
 
   const escolhida = opcoes.find((o) => o.valor === valor);
 
-  const filtradas = useMemo(() => {
-    const termo = semAcento(busca.trim());
-    if (!termo) return opcoes;
-    return opcoes.filter((o) => semAcento(o.label).includes(termo) || semAcento(o.valor).includes(termo));
-  }, [opcoes, busca]);
+  /* O filtro mora em `lib/busca-de-opcoes`: é regra (rótulo, identificador, descrição e sinônimos),
+     tem teste, e o próximo seletor com busca lê do mesmo lugar. */
+  const filtradas = useMemo(() => filtrarOpcoes(opcoes, busca), [opcoes, busca]);
 
   /** As opções agrupadas, na ordem em que os grupos aparecem na lista. */
   const grupos = useMemo(() => {

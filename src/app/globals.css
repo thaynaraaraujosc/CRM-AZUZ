@@ -22478,7 +22478,34 @@ table.tbl .name-cell .r {
   font-size: 13px;
   line-height: 1.4;
   resize: none;
-  overflow: hidden;
+  /*
+   * ROLA EM VEZ DE CORTAR.
+   *
+   * Era `overflow: hidden`, e com a altura vinda do número de enters (ver `linhasVisiveisDoTexto`)
+   * uma mensagem longa aparecia pela metade sem nenhum sinal de que havia mais. Agora o campo tem
+   * um teto de oito linhas e o resto se alcança rolando — dentro do campo, porque o `nowheel` do
+   * React Flow impede que a roda do mouse vire zoom do canvas.
+   *
+   * A barra é fina e com a cor da própria bolha: a barra padrão do sistema, branca e larga, cortava
+   * a bolha azul ao meio.
+   */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.45) transparent;
+}
+
+.msg-texto::-webkit-scrollbar {
+  width: 6px;
+}
+
+.msg-texto::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.msg-texto::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .msg-texto:focus {
@@ -22843,8 +22870,21 @@ table.tbl .name-cell .r {
   color: rgba(255, 255, 255, 0.6);
 }
 
+/*
+ * O BOTÃO DE LINK É UM QUADRADO, não uma pastilha.
+ *
+ * "No lugar desse redondo onde está escrito 'presente o link', deixa quadrado." E é o certo pelos
+ * dois lados: a pastilha de 999px é a forma da RESPOSTA RÁPIDA, aquela que aparece acima do teclado
+ * e some depois do toque. O botão de link é outra coisa — fica na mensagem, não some, e no Direct é
+ * desenhado como um retângulo da largura da bolha. Duas coisas diferentes com a mesma forma fazem o
+ * cartão prometer o comportamento errado.
+ *
+ * O raio é o mesmo da bolha (8px): quadrado de canto vivo num cartão todo arredondado lê como peça
+ * de outro desenho.
+ */
 .msg-opcao-url {
   flex-wrap: wrap;
+  border-radius: 8px;
 }
 
 .msg-opcao-link {
@@ -28467,11 +28507,25 @@ td.trafego-col-crm:first-of-type {
   color: var(--text-muted);
 }
 
+/* A segunda nota (negrito e itálico) é continuação da primeira: separada por um fio, não por um
+   espaço em branco, pra não parecer um bloco novo da prévia. */
+.prev-nota-formato {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--line);
+}
+
 /* O canal quando é informação, e não escolha: a linha diz qual é (ver `CanalDoBloco`). */
 .flow-canal-unico {
   margin: 0;
   font-size: 13px;
   color: var(--ink);
+}
+
+/* "Onde o robô escreve", logo embaixo do canal: é a segunda pergunta do mesmo campo, e por isso
+   não abre um bloco novo — só ganha o ar que separa um rótulo do anterior. */
+.flow-destino-rotulo {
+  margin-top: 10px;
 }
 
 /* =============================================================================================
@@ -29745,6 +29799,31 @@ td.trafego-col-crm:first-of-type {
   color: var(--text-muted);
 }
 
+/*
+ * A AUSÊNCIA EXPLICADA, no fim da lista de gatilhos.
+ *
+ * Não é um gatilho: é a resposta pra quem procura um que o Instagram não oferece ("começou a me
+ * seguir"). Por isso não tem caixa de marcar, não tem a borda dos itens e não reage ao clique —
+ * parecer um item da lista seria convidar a marcá-lo. Fundo levemente destacado só pra não se
+ * perder como se fosse rodapé.
+ */
+.gat-ausente {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--surface-hover);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.gat-ausente strong {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--ink);
+  font-weight: var(--fw-semibold);
+}
+
 .gat-palavras {
   display: flex;
   flex-wrap: wrap;
@@ -30867,6 +30946,55 @@ td.trafego-col-crm:first-of-type {
 
 .msg-canais-alvo b {
   font-weight: var(--fw-semibold);
+}
+
+/* ------------ "Instagram (Direct)" / "Instagram (comentário)" ----------------
+ *
+ * A linha do canal, num robô de Instagram, é ESCOLHA e não informação: o mesmo bloco de mensagem
+ * responde no Direct ou embaixo do comentário, e qual dos dois é decisão de quem monta. Por isso
+ * ela usa a mesma marca de "dá pra clicar" do resto do cabeçalho — o sublinhado tracejado de
+ * `.msg-canal` — e abre um menu com as duas, cada uma com a frase do que muda.
+ */
+.msg-destino-caixa {
+  position: relative;
+  display: inline-flex;
+}
+
+.msg-destino-alvo {
+  cursor: pointer;
+}
+
+/* Alinhado à ESQUERDA, embaixo do próprio rótulo: o `.msg-menu` nasce colado à direita porque lá
+   ele pende do "⋯", que fica na quina do cartão. Aqui o alvo é a primeira coisa da linha. */
+.msg-destino-menu {
+  right: auto;
+  left: 0;
+  top: calc(100% + 6px);
+  width: 260px;
+  min-width: 0;
+  text-align: left;
+  cursor: default;
+}
+
+.msg-destino-menu button {
+  align-items: flex-start;
+  line-height: 1.35;
+}
+
+/* A escolha atual fica marcada: um menu de duas opções sem marca nenhuma obriga a fechar, ler a
+   linha e abrir de novo pra saber em qual está. */
+.msg-destino-menu button.on {
+  background: var(--surface-hover);
+  font-weight: var(--fw-semibold);
+}
+
+.msg-destino-menu button em {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: 11.5px;
+  font-style: normal;
+  font-weight: var(--fw-regular);
 }
 
 .msg-canais-menu {

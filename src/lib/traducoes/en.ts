@@ -2944,4 +2944,27 @@ export const TRADUCOES_EN: Record<string, string> = {
   "Lista interativa": "Interactive list",
   "Compatibilidade ampla": "Broad compatibility",
   "Disponibilidade conforme a integração": "Availability depends on the integration",
+
+  /* Onde o robô escreve no Instagram: Direct ou embaixo do comentário. */
+  "Onde o robô escreve": "Where the bot writes",
+  "Direct (mensagem privada)": "Direct (private message)",
+  "Comentário (resposta pública)": "Comment (public reply)",
+  "Chega só pra pessoa, na caixa de mensagens. Vale dentro das 24 horas depois de ela escrever.": "Reaches only that person, in their inbox. Valid within 24 hours after they write.",
+  "Responde embaixo do comentário, onde todo mundo vê. Só funciona quando a automação foi disparada por um comentário.": "Replies under the comment, where everyone can see. Only works when the automation was triggered by a comment.",
+  "A resposta pública só sai quando a automação foi disparada por um comentário. Num fluxo que começou por Direct, esse passo é registrado como ignorado em vez de ser publicado em outro lugar.": "The public reply only goes out when the automation was triggered by a comment. In a flow that started from a Direct message, this step is logged as skipped instead of being posted somewhere else.",
+  "Esta resposta é PÚBLICA: ela aparece embaixo do comentário, e quem abrir a publicação vê. Só sai quando a automação foi disparada por um comentário.": "This reply is PUBLIC: it appears under the comment, and anyone who opens the post can see it. It only goes out when the automation was triggered by a comment.",
+
+  /* Negrito e itálico: existe no WhatsApp, não existe no Direct. */
+  "Negrito e itálico: o Direct não tem. O texto chega exatamente como está escrito — se você usar *asteriscos*, eles chegam junto.": "Bold and italics: Direct has neither. The text arrives exactly as written — if you use *asterisks*, they arrive too.",
+  "Dá pra formatar: *negrito*, _itálico_, ~riscado~. O WhatsApp troca os sinais pela formatação na hora de mostrar.": "You can format it: *bold*, _italics_, ~strikethrough~. WhatsApp swaps the marks for the formatting when displaying the message.",
+
+  /* O gatilho que o Instagram não oferece, dito com o motivo e com a saída. */
+  "Procurando \u201ccomeçou a me seguir\u201d?": "Looking for \u201cstarted following me\u201d?",
+  "O Instagram não avisa quando alguém passa a te seguir — não existe esse aviso na API da Meta, nem jeito de saber quem foi. O que dá pra fazer: escolha um gatilho que existe (comentário, resposta de story, Direct) e, no bloco de Condição, use \u201cÉ seguidor\u201d pra tratar quem segue de um jeito e quem não segue de outro.": "Instagram does not notify you when someone starts following you — Meta's API has no such notification, and no way to know who it was. What you can do: pick a trigger that does exist (comment, story reply, Direct) and, in the Condition block, use \u201cIs a follower\u201d to treat followers one way and non-followers another.",
+
+  /* Descrições dos campos de condição do Instagram, que aparecem embaixo do nome na lista. */
+  "Quem segue a sua conta agora — inclusive quem acabou de seguir.": "Whoever follows your account right now — including someone who just followed.",
+  "A sua conta segue a pessoa. É o contrário do campo de cima.": "Your account follows that person. It is the opposite of the field above.",
+  "Dá pra mandar Direct livre? Vale por 24 horas depois da última mensagem da pessoa.": "Can you send a free-form Direct message? Valid for 24 hours after that person's last message.",
+  "Quantos seguidores a pessoa tem. Serve pra separar perfil grande de perfil pequeno.": "How many followers that person has. Useful to tell a large profile from a small one.",
 };

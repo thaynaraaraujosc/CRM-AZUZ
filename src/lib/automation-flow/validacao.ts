@@ -844,6 +844,36 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
     });
   });
 
+  /*
+   * 7.3 RESPOSTA PÚBLICA NUM FLUXO QUE NÃO COMEÇA POR COMENTÁRIO.
+   *
+   * O bloco de texto do Instagram escolhe onde escreve: Direct ou embaixo do comentário (ver
+   * `DESTINOS_INSTAGRAM`). A resposta pública precisa de um comentário pra pendurar, e quem dá
+   * esse comentário é o GATILHO. Num fluxo que começa por Direct recebido, por resposta de story
+   * ou por menção, o motor não tem onde publicar: registra "ignorado, este disparo não veio de um
+   * comentário" e segue. O passo simplesmente não acontece.
+   *
+   * Aviso, não erro, e por uma razão concreta: o mesmo fluxo pode ter DOIS gatilhos, um de
+   * comentário e um de Direct. Aí o passo funciona pra metade das execuções, o que é uma escolha
+   * legítima — e dizer "erro" impediria de publicar um fluxo correto.
+   */
+  const gatilhosDeComentario = ["comentario_instagram", "instagram_comentario_live", "instagram_resposta_comentario"];
+  const temGatilhoDeComentario = nodes.some(
+    (n) => n.category === "gatilho" && gatilhosDeComentario.includes(n.type),
+  );
+  if (!temGatilhoDeComentario) {
+    nodes
+      .filter((n) => ((n.data ?? {}) as { destino?: string }).destino === "comentario")
+      .forEach((n) => {
+        problemas.push({
+          id: proximoIdProblema(),
+          severidade: "aviso",
+          mensagem: `Bloco "${n.titulo ?? n.type}" responde EM PÚBLICO, embaixo do comentário, mas nenhum gatilho deste fluxo é de comentário: esse passo vai ser ignorado. Troque pra Direct ou acrescente o gatilho de comentário.`,
+          nodeId: n.id,
+        });
+      });
+  }
+
   // 8. Ciclo: heurística simples: DFS de detecção de ciclo; se o ciclo não
   // passar por nenhum nó "aguardar" ou "condicao_grupo", é risco real de loop
   // infinito (nada quebra o círculo nem no tempo, nem numa condição).

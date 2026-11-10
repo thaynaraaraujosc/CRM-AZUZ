@@ -89,6 +89,20 @@ export type CampoCondicaoInfo = {
    * esconder a regra que está lá seria pior do que oferecê-la.
    */
   areas?: AreaAutomacao[];
+  /**
+   * OUTROS JEITOS DE CHAMAR A MESMA COISA, pra busca da lista achar.
+   *
+   * "Dentro de condição, tá faltando a opção de começou a me seguir." Não estava faltando: é o
+   * campo "É seguidor", e a busca não o encontrava porque ela só olhava o rótulo e o identificador.
+   * Quem monta um robô não procura pelo nome que o campo tem no código, procura pela frase que tem
+   * na cabeça — e as duas raramente são iguais.
+   *
+   * Não aparecem na tela: são só termos de busca. O rótulo continua um só, pra não existirem dois
+   * nomes do mesmo campo circulando.
+   */
+  sinonimos?: string[];
+  /** Uma linha embaixo do rótulo, na lista, quando o nome não basta pra decidir. */
+  descricao?: string;
   /** Só em `tipo === "lista"`: de onde saem as opções. */
   opcoes?: OrigemDeOpcoes;
   /** Opções fixas, quando elas não dependem do workspace. */
@@ -144,9 +158,54 @@ export const CAMPOS_CONDICAO: CampoCondicaoInfo[] = [
    * que não carrega o dado: a regra responde "não existe" em vez de "falso". A diferença decide
    * pra onde o lead vai, e chutar "falso" mandaria todo mundo pelo caminho de quem não segue.
    */
-  { valor: "ig_seguidor", label: "É seguidor (segue seu perfil)", grupo: "Instagram", tipo: "booleano", areas: ["social"] },
-  { valor: "ig_voce_segue", label: "Você segue o contato", grupo: "Instagram", tipo: "booleano", areas: ["social"] },
-  { valor: "ig_janela_24h", label: "Dentro da janela de 24h", grupo: "Instagram", tipo: "booleano", areas: ["social"] },
+  {
+    valor: "ig_seguidor",
+    label: "É seguidor (segue seu perfil)",
+    grupo: "Instagram",
+    tipo: "booleano",
+    areas: ["social"],
+    /*
+     * O INSTAGRAM DIZ A RELAÇÃO, NÃO O MOMENTO EM QUE ELA MUDOU.
+     *
+     * A Meta não manda aviso de "ganhou um seguidor": não existe campo de webhook pra isso (os que
+     * existem são mensagem, comentário, comentário de live, reação, menção). O que ela devolve, no
+     * perfil de quem escreveu, é se aquela pessoa segue a conta AGORA.
+     *
+     * Então "começou a me seguir" se escreve assim: o robô acorda por um evento que existe —
+     * comentou, respondeu um story, mandou Direct — e esta condição decide o caminho. Quem acabou
+     * de seguir e quem segue desde o ano passado caem os dois no "é verdadeiro"; o que não há é
+     * como disparar no instante do clique em Seguir.
+     */
+    descricao: "Quem segue a sua conta agora — inclusive quem acabou de seguir.",
+    sinonimos: [
+      "começou a me seguir",
+      "comecou a me seguir",
+      "começou a seguir",
+      "me segue",
+      "te segue",
+      "novo seguidor",
+      "seguiu",
+      "follower",
+    ],
+  },
+  {
+    valor: "ig_voce_segue",
+    label: "Você segue o contato",
+    grupo: "Instagram",
+    tipo: "booleano",
+    areas: ["social"],
+    descricao: "A sua conta segue a pessoa. É o contrário do campo de cima.",
+    sinonimos: ["eu sigo", "sigo de volta", "seguir de volta", "seguindo"],
+  },
+  {
+    valor: "ig_janela_24h",
+    label: "Dentro da janela de 24h",
+    grupo: "Instagram",
+    tipo: "booleano",
+    areas: ["social"],
+    descricao: "Dá pra mandar Direct livre? Vale por 24 horas depois da última mensagem da pessoa.",
+    sinonimos: ["24h", "24 horas", "janela", "pode mandar direct", "prazo"],
+  },
   {
     valor: "ig_tipo_interacao",
     label: "Tipo de interação",
@@ -164,8 +223,23 @@ export const CAMPOS_CONDICAO: CampoCondicaoInfo[] = [
   { valor: "ig_post_id", label: "Post comentado (ID)", grupo: "Instagram", tipo: "texto", areas: ["social"] },
   { valor: "ig_post_link", label: "Link do post comentado", grupo: "Instagram", tipo: "texto", areas: ["social"] },
   { valor: "ig_arroba", label: "@ do contato", grupo: "Instagram", tipo: "texto", areas: ["social"] },
-  { valor: "ig_verificado", label: "Conta verificada", grupo: "Instagram", tipo: "booleano", areas: ["social"] },
-  { valor: "ig_seguidores", label: "Nº de seguidores do contato", grupo: "Instagram", tipo: "numero", areas: ["social"] },
+  {
+    valor: "ig_verificado",
+    label: "Conta verificada",
+    grupo: "Instagram",
+    tipo: "booleano",
+    areas: ["social"],
+    sinonimos: ["selo", "selo azul", "verificado", "blue check"],
+  },
+  {
+    valor: "ig_seguidores",
+    label: "Nº de seguidores do contato",
+    grupo: "Instagram",
+    tipo: "numero",
+    areas: ["social"],
+    descricao: "Quantos seguidores a pessoa tem. Serve pra separar perfil grande de perfil pequeno.",
+    sinonimos: ["seguidores", "quantidade de seguidores", "follower count", "tamanho do perfil"],
+  },
 
   /* ---------------------------------- Negócio ---------------------------------- */
   { valor: "funil", label: "Funil", grupo: "Negócio", tipo: "lista", opcoes: "funis" },
