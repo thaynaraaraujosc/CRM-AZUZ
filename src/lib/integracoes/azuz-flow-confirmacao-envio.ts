@@ -38,7 +38,9 @@ export type DependenciasDoEnvio = {
     workspaceId: string;
     conversaNome: string;
     texto: string;
-  }) => Promise<{ enviado: boolean; motivo?: string; wamid?: string | null }>;
+    /* `botoes` vem preenchido quando o envio saiu como MODELO aprovado (janela de 24h fechada):
+       o modelo leva botão, e o registro na conversa precisa mostrar o que o cliente viu. */
+  }) => Promise<{ enviado: boolean; motivo?: string; wamid?: string | null; botoes?: string[] }>;
 };
 
 const ENVIO_REAL: DependenciasDoEnvio = {
@@ -199,6 +201,10 @@ async function tratarUma(
       contatoNome: linha.conversaNome,
       texto: linha.texto ?? "",
       wamid: envio.wamid,
+      /* Fora da janela de 24h o envio sai como MODELO aprovado, e o modelo leva botão. Sem
+         repassar isso, a conversa mostrava o texto e, logo abaixo, um "CONFIRMAR" do cliente
+         vindo do nada. */
+      opcoes: envio.botoes,
       origem: "confirmacao-do-flow",
     });
     await registrarSucesso(linha.workspaceId);

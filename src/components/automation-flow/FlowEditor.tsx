@@ -1315,6 +1315,66 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     persist(nodesComResposta, edgesComResposta);
   }
 
+  /**
+   * GATILHO SEM CAMINHO ENTRA NO CAMINHO DOS OUTROS, SOZINHO.
+   *
+   * "Essa pendência não faz o menor sentido. Eu já escolhi o gatilho. Se eu adicionei esses
+   * gatilhos lá no início pra iniciar o robô, então o robô vai iniciar quando acontecer esses
+   * gatilhos."
+   *
+   * Ela tem razão, e o errado era a tela. O cartão do Social Seller faz UMA pergunta — "o que
+   * inicia essa automação?" — e lista as respostas marcadas embaixo dela. Quem marca três está
+   * dizendo "qualquer um destes começa o robô", não "montei três robôs". Cobrar que cada um fosse
+   * ligado à mão contradizia a própria pergunta do cartão.
+   *
+   * Por baixo eles continuam sendo blocos separados, com uma saída cada, e isso é de propósito: é
+   * o que permite dar uma resposta diferente pra quem comentou no feed e pra quem respondeu um
+   * story. O que muda aqui é só o PADRÃO — todos levam ao mesmo primeiro passo até alguém decidir
+   * o contrário, em vez de não levarem a lugar nenhum até alguém decidir.
+   *
+   * SÓ QUANDO HÁ UM DESTINO ÓBVIO: o primeiro passo pra onde outro gatilho já aponta. Sem isso não
+   * há o que adivinhar, e aí a pendência continua aparecendo — com razão, porque aí ninguém
+   * receberia nada mesmo.
+   *
+   * E avisa o que fez. Mexer no desenho de alguém sem dizer é pior que não mexer.
+   */
+  useEffect(() => {
+    if (!modoConstrucao || !carregado) return;
+    const gatilhos = rfNodes.filter((n) => n.data.flowNode.category === "gatilho");
+    if (gatilhos.length < 2) return;
+    const soltos = gatilhos.filter((g) => !rfEdges.some((e) => e.source === g.id));
+    if (!soltos.length) return;
+    const destino = rfEdges.find((e) => gatilhos.some((g) => g.id === e.source))?.target;
+    if (!destino) return;
+
+    const novas = soltos.map((g) => ({
+      id: novoIdAresta(),
+      source: g.id,
+      target: destino,
+      type: "smoothstep" as const,
+      markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16 },
+    }));
+    const edgesComTudo = [...rfEdges, ...novas];
+    /* Fora da renderização: gravar estado no meio dela faz o React refazer o quadro em cascata, e
+       aqui não há pressa nenhuma — isto é um acerto do desenho, não a resposta a um clique. */
+    const nomes = soltos
+      .map((g) => g.data.flowNode.titulo ?? BLOCOS_DISPONIVEIS.find((b) => b.tipo === g.data.flowNode.type)?.label ?? g.data.flowNode.type)
+      .join(", ");
+    const relogio = setTimeout(() => {
+      setRfEdges(edgesComTudo);
+      persist(rfNodes, edgesComTudo);
+      avisar(
+        soltos.length === 1
+          ? `"${nomes}" passou a levar ao mesmo primeiro passo dos outros gatilhos.`
+          : `${soltos.length} gatilhos passaram a levar ao mesmo primeiro passo: ${nomes}.`,
+      );
+    }, 0);
+    return () => clearTimeout(relogio);
+    // Roda de novo a cada mudança no desenho; não vira laço porque, depois de ligar, não sobra
+    // gatilho solto pra ligar.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rfNodes, rfEdges, modoConstrucao, carregado]);
+
   function trocarTipoDoNode(nodeId: string, tipo: FlowNodeType, data: Record<string, unknown>) {
     const bloco = BLOCOS_DISPONIVEIS.find((b) => b.tipo === tipo);
     if (!bloco) return;
@@ -1766,7 +1826,11 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
      * COBRINDO 30px do primeiro bloco. O afastamento passa a sair da largura dela mais a folga,
      * em vez de um número que vale pra um dos dois tamanhos.
      */
-    const larguraDoInicio = inicioNoFunil ? 230 : 150;
+    /* A medida segue a FRASE, não a área: a pastilha é maior quando tem a segunda linha, e agora
+       o Instagram também tem a dele ("Quando um dos gatilhos acontecer"). Preso a `inicioNoFunil`,
+       a frase nova nasceria espremida numa pastilha de 150px. */
+    const inicioTemDetalhe = !!inicioNoFunil || ehSocial;
+    const larguraDoInicio = inicioTemDetalhe ? 230 : 150;
     const posicaoPadrao = alvo
       ? { x: alvo.position.x - (larguraDoInicio + 70), y: alvo.position.y + 6 }
       : { x: 120, y: 120 };
@@ -1790,8 +1854,8 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
        * valores porque no funil ela tem uma segunda linha ("Lead entra em …") e precisa de mais
        * largura pra frase caber sem reticências.
        */
-      width: inicioNoFunil ? 230 : 150,
-      height: inicioNoFunil ? 56 : 40,
+      width: inicioTemDetalhe ? 230 : 150,
+      height: inicioTemDetalhe ? 56 : 40,
       /*
        * `measured` À MÃO, e é isto que faz o FIO aparecer.
        *
@@ -1801,7 +1865,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
        * aresta que sai dele não tinha de onde partir: o "Iniciar robô" ficava solto, sem ligação
        * com o primeiro bloco. Declarar a medida resolve sem reabrir a porta do salvamento.
        */
-      measured: { width: inicioNoFunil ? 230 : 150, height: inicioNoFunil ? 56 : 40 },
+      measured: { width: inicioTemDetalhe ? 230 : 150, height: inicioTemDetalhe ? 56 : 40 },
       draggable: modoConstrucao,
       selectable: false,
       deletable: false,
@@ -1810,7 +1874,24 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
         // início não lê nenhum campo dele, e o tipo exige que exista.
         flowNode: alvo?.data.flowNode ?? ({ id: ID_INICIO, type: "inicio", category: "gatilho" } as unknown as DomainFlowNode),
         problemas: [],
-        ...(inicioNoFunil ? { detalheInicio: `Lead entra em “${inicioNoFunil.etapaTitulo}”` } : {}),
+        /*
+         * A PASTILHA DIZ O QUE A FAZ ACONTECER, e isso deixou de ser só do funil.
+         *
+         * "Aquele botão 'Iniciar robô' não está ali de enfeite, ele faz parte do processo." É
+         * verdade que não é enfeite — ele diz ONDE o robô começa —, e é verdade que ele não é um
+         * bloco: o motor nunca o executa, ele desenha o começo no lugar onde a pessoa está
+         * olhando. O que faltava era ele dizer isso.
+         *
+         * No funil a frase sempre existiu ("Lead entra em …"), porque lá o gatilho mora na etapa e
+         * não há bloco pra apontar. No Instagram não havia frase nenhuma, e a pastilha ligada ao
+         * primeiro bloco parecia o começo em si — a ponto de alguém ligá-la a uma condição e
+         * esperar que o robô partisse dali. Agora ela diz que quem começa é o gatilho.
+         */
+        ...(inicioNoFunil
+          ? { detalheInicio: `Lead entra em “${inicioNoFunil.etapaTitulo}”` }
+          : ehSocial
+            ? { detalheInicio: "Quando um dos gatilhos acontecer" }
+            : {}),
       } as FlowRFNode["data"],
     };
     if (!alvo) return { no, aresta: null };
