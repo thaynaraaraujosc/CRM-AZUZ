@@ -2975,4 +2975,7 @@ export const TRADUCOES_EN: Record<string, string> = {
   "Nenhuma publicação escolhida ainda — vale pra todas": "No post chosen yet — it applies to all of them",
   "Nenhum story escolhido ainda — vale pra todos": "No story chosen yet — it applies to all of them",
 
+  /* Por onde a primeira mensagem vai sair, e o caminho do modelo aprovado. */
+  "Enviando por": "Sending through",
+  "Escolher modelo": "Choose a template",
 };

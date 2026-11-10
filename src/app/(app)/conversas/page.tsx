@@ -35,6 +35,7 @@ import {
   precisaEscolherNumero,
   type NumeroConectado,
 } from "@/lib/conversas/numeros-conectados";
+import { canalDeSaida } from "@/lib/conversas/canal-de-saida";
 import { iniciaisExibidas, nomeExibido } from "@/lib/conversas/exibicao";
 import { BotoesConectarWhatsApp } from "@/components/configuracoes/BotoesConectarWhatsApp";
 import { BolhaMensagem } from "@/components/conversas/BolhaMensagem";
@@ -963,6 +964,26 @@ function ConversasPageInner() {
   const [canalEscolhido, setCanalEscolhido] = useState<"whatsapp_nao_oficial" | "whatsapp_oficial">(
     "whatsapp_nao_oficial",
   );
+
+  /**
+   * POR ONDE A CONVERSA SEM DONO VAI SAIR DE VERDADE.
+   *
+   * `canalEscolhido` é a PREFERÊNCIA, e ela só faz sentido quando existem dois caminhos. Com uma
+   * conexão só, não há escolha a respeitar — há um fato. E era aí que estava o defeito: o padrão
+   * era o QR Code, fixo, então com o QR Code DESCONECTADO e o oficial de pé (o estado de quem
+   * trocou de celular) o CRM continuava achando que falaria pelo QR.
+   *
+   * O estrago não era só teórico. "Não consegui conversar com ninguém pela API oficial": como o
+   * CRM se achava no QR Code, ele escondia o caminho do modelo aprovado — que é o ÚNICO jeito de
+   * falar primeiro pelo oficial — e deixava escrever texto livre, que a Meta recusa. Ficava sem
+   * saída e sem explicação.
+   *
+   * Com os dois ligados, a preferência vale e a pessoa escolhe. Com um só, é ele.
+   */
+  const canalEfetivo = canalDeSaida(canalEscolhido, {
+    oficialConectado: metaWhatsappConectado,
+    qrConectado: naoOficialConectado,
+  });
 
 
   // Conversa de WhatsApp sem nenhum canal conectado (nem Meta, nem QR Code) some da lista. Volta a
@@ -2249,7 +2270,9 @@ function ConversasPageInner() {
     for (let i = extras.length - 1; i >= 0; i--) {
       if (extras[i].canal) return extras[i].canal === "whatsapp_nao_oficial";
     }
-    return canalEscolhido === "whatsapp_nao_oficial";
+    /* Sem histórico, vale o canal EFETIVO e não a preferência: com uma conexão só, ela é o que
+       está ligado. Ver `canalEfetivo`. */
+    return canalEfetivo === "whatsapp_nao_oficial";
   }
 
   /** A conversa ainda não tem dono: nenhuma mensagem dela passou por um canal. É só nesse caso
@@ -4880,27 +4903,67 @@ function ConversasPageInner() {
                     * Existe porque o CRM escolhia sozinho — e escolhia o oficial, que é o mais
                     * restrito: a pessoa caía na tela de modelo aprovado sem ter pedido isso.
                     */}
-                  {canaisWhats.oficial && canaisWhats.qr && aberta.canal === "WhatsApp" && conversaSemDono(aberta.nome) ? (
+                  {aberta.canal === "WhatsApp" && conversaSemDono(aberta.nome) && statusWhatsappPronto ? (
                     <div className="chat-canal-escolha">
-                      <span className="chat-canal-rotulo">{traduzir("Enviar por")}</span>
-                      <button
-                        type="button"
-                        className={`fchip${canalEscolhido === "whatsapp_nao_oficial" ? " active" : ""}`}
-                        onClick={() => setCanalEscolhido("whatsapp_nao_oficial")}
-                      >
-                        {traduzir("WhatsApp (QR Code)")}
-                      </button>
-                      <button
-                        type="button"
-                        className={`fchip${canalEscolhido === "whatsapp_oficial" ? " active" : ""}`}
-                        onClick={() => setCanalEscolhido("whatsapp_oficial")}
-                      >
-                        {traduzir("API Oficial")}
-                      </button>
-                      {canalEscolhido === "whatsapp_oficial" ? (
-                        <span className="chat-canal-aviso">
-                          {traduzir("Pelo oficial, a primeira mensagem precisa ser um modelo aprovado.")}
+                      {/* Os dois chips só com os DOIS ligados: com um só não há o que escolher, e
+                          um botão que não escolhe ensina a desconfiar dos que escolhem. */}
+                      {metaWhatsappConectado && naoOficialConectado ? (
+                        <>
+                          <span className="chat-canal-rotulo">{traduzir("Enviar por")}</span>
+                          <button
+                            type="button"
+                            className={`fchip${canalEfetivo === "whatsapp_nao_oficial" ? " active" : ""}`}
+                            onClick={() => setCanalEscolhido("whatsapp_nao_oficial")}
+                          >
+                            {traduzir("WhatsApp (QR Code)")}
+                          </button>
+                          <button
+                            type="button"
+                            className={`fchip${canalEfetivo === "whatsapp_oficial" ? " active" : ""}`}
+                            onClick={() => setCanalEscolhido("whatsapp_oficial")}
+                          >
+                            {traduzir("API Oficial")}
+                          </button>
+                        </>
+                      ) : (
+                        /* Com uma conexão só, a linha vira informação: diz por onde ESTA mensagem
+                           vai sair. "Tem que aparecer se é para API oficial" — e tem que aparecer
+                           também quando não é, senão a ausência da linha é que vira a dúvida. */
+                        <span className="chat-canal-rotulo">
+                          {traduzir("Enviando por")}:{" "}
+                          <b>
+                            {traduzir(
+                              canalEfetivo === "whatsapp_oficial" ? "API Oficial" : "WhatsApp (QR Code)",
+                            )}
+                          </b>
                         </span>
+                      )}
+
+                      {/*
+                        PELO OFICIAL, O MODELO APROVADO NÃO É UM DETALHE: É O CAMINHO.
+                        
+                        "Não consegui conversar com ninguém pela API oficial." Falar PRIMEIRO com
+                        alguém pelo oficial só acontece com um modelo que a Meta aprovou — texto
+                        livre ela recusa. O CRM sabia disso e dizia numa frase cinza, enquanto o
+                        caminho de verdade ficava escondido dentro do menu do clipe, duas camadas
+                        abaixo, com o nome de anexo.
+                        
+                        Agora a frase vem com o botão: "se for API oficial, já vai direto para
+                        modelos de mensagem".
+                      */}
+                      {canalEfetivo === "whatsapp_oficial" ? (
+                        <>
+                          <span className="chat-canal-aviso">
+                            {traduzir("Pelo oficial, a primeira mensagem precisa ser um modelo aprovado.")}
+                          </span>
+                          <button
+                            type="button"
+                            className="btn primary pequeno chat-canal-modelo"
+                            onClick={() => setTemplateAberto(true)}
+                          >
+                            {traduzir("Escolher modelo")}
+                          </button>
+                        </>
                       ) : null}
                     </div>
                   ) : null}
