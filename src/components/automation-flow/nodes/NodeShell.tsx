@@ -13,7 +13,13 @@ import { PlayerDeAudio } from "./PlayerDeAudio";
 
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
 import { resumoIndicaIncompleto, resumoNo, saidasDoNo, temEntrada } from "@/lib/automation-flow/resumo";
-import type { CondicaoRamosData, FlowNode as FlowNodeDominio, FlowNodeCategory } from "@/lib/automation-flow/types";
+import type {
+  AguardarData,
+  CondicaoRamosData,
+  FlowNode as FlowNodeDominio,
+  FlowNodeCategory,
+} from "@/lib/automation-flow/types";
+import { esperaDoBloco, palavraDaUnidade } from "@/lib/automation-flow/tempo-de-espera";
 import { useFunis } from "@/lib/funis-context";
 import type { FlowRFNode } from "../utils";
 import { useIdioma } from "@/lib/idioma-context";
@@ -175,6 +181,12 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
     }
     return null;
   })();
+
+  /* O tempo do bloco de espera, pra frase do cartão social. A leitura mora em `lib` porque o
+     dado tem dois formatos (`modo`+`valor` e `tempoMaximo`), e cada tela que a refazia à mão
+     mostrava um tempo diferente do que o motor cumpre. */
+  const esperaDoCartao = esperaDoBloco(flowNode.data as AguardarData | undefined);
+  const palavraDoCartao = palavraDaUnidade(esperaDoCartao.unidade, esperaDoCartao.valor);
 
   const canaisPossiveis = canaisDaAreaParaBloco(area ?? "comercial");
   const canalDoBloco = ((flowNode.data ?? {}) as { canal?: string }).canal;
@@ -1033,6 +1045,32 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
           onAdicionarApos={onAdicionarApos}
           aoDesligarSaida={aoDesligarSaida}
         />
+      ) : flowNode.type === "aguardar" && area === "social" ? (
+        /*
+          A PAUSA DO SOCIAL SELLER É UMA FRASE, não um painel de controle.
+          
+          No funil o bloco de espera é o follow-up: lá o cartão tem o cronômetro em campos e as
+          linhas de contagem (dias úteis, só expediente), porque um prazo de dois dias depende
+          disso. Numa automação de Instagram ele é outra coisa — a pausa entre duas mensagens, pra
+          a conversa não chegar toda de uma vez —, e ali a pergunta é uma só: quanto tempo.
+          
+          "Eu quero deixar mais simples. Eu quero que a partir do cronômetro fique igual ao do
+          Gaio, onde aparece aguardar cinco segundos." O número e a unidade se trocam no painel da
+          direita, que é onde cabe a lista de unidades sem espremer o cartão.
+          
+          Os dois caminhos continuam desenhados embaixo ("Respondeu" / "Não respondeu"): são a
+          parte que a referência NÃO tem e que ela pediu — "a pessoa respondeu antes do tempo
+          terminar... ou ela não respondeu, aí eu vou mandar outra mensagem".
+        */
+        <div className="no-espera-social">
+          <IconRelogio width={20} height={20} aria-hidden="true" />
+          <p>
+            <strong>
+              {traduzir("Aguardar {tempo}", { tempo: `${esperaDoCartao.valor} ${traduzir(palavraDoCartao)}` })}
+            </strong>{" "}
+            {traduzir("antes da próxima mensagem")}
+          </p>
+        </div>
       ) : flowNode.type === "aguardar" && aoMudarCronometro ? (
         /*
           O CRONÔMETRO EDITÁVEL NO CARTÃO, como na referência.

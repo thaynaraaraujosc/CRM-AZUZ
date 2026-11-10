@@ -596,6 +596,15 @@ export type EnviarFormularioData = {
 
 export type AguardarData = {
   modo:
+    /**
+     * SEGUNDOS, pra pausa entre duas mensagens.
+     *
+     * Não existia, e por um motivo que valia: quem acorda execução parada é uma varredura que
+     * roda de minuto em minuto, então "5 segundos" viraria até um minuto sem avisar. Agora a
+     * espera curta (até 10 segundos) é retomada na hora, em segundo plano, depois da resposta do
+     * webhook — e só por isso a unidade pôde aparecer na tela. Ver `agendarRetomadaCurta`.
+     */
+    | "segundos"
     | "minutos"
     | "horas"
     | "dias"

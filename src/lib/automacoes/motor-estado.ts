@@ -115,6 +115,14 @@ export type FimDaRodada = {
    * concorrência ligada isso passaria a ser a maioria das anotações.
    */
   naoIniciou?: boolean;
+  /**
+   * QUANDO A ESPERA TERMINA, quando a rodada parou pra esperar.
+   *
+   * Quem chamou precisa saber: uma pausa de 5 segundos não pode ficar esperando a varredura do
+   * minuto seguinte, e uma de 2 horas não tem por que ocupar memória de ninguém. Ver
+   * `agendarRetomadaCurta` em `iniciar.ts`.
+   */
+  ate?: Date;
 };
 
 /**
@@ -218,11 +226,16 @@ export async function rodarExecucao(params: {
     }
     if (resultado.tipo === "aguardar_tempo") {
       await gravador.aguardarTempo({ execucaoId: execucao.id, noId: no.id, ate: resultado.ate, evento: resultado.evento, contexto });
-      return { situacao: "aguardando_tempo", passos, detalhe: resultado.detalhe };
+      return { situacao: "aguardando_tempo", passos, detalhe: resultado.detalhe, ate: resultado.ate };
     }
     if (resultado.tipo === "aguardar_evento") {
       await gravador.aguardarEvento({ execucaoId: execucao.id, noId: no.id, evento: resultado.evento, ate: resultado.ate, contexto });
-      return { situacao: "aguardando_evento", passos, detalhe: resultado.detalhe };
+      return {
+        situacao: "aguardando_evento",
+        passos,
+        detalhe: resultado.detalhe,
+        ate: resultado.ate ?? undefined,
+      };
     }
     if (resultado.tipo === "encerrar") {
       await gravador.encerrarExecucao({ execucaoId: execucao.id, situacao: resultado.situacao });
@@ -277,6 +290,9 @@ function atualizarContato(contexto: ContextoExecucaoPersistido, mudanca: Record<
 export function calcularEspera(data: AguardarData, agora: Date): Date | null {
   const valor = data.valor ?? 0;
   let quando: Date | null = null;
+  // Segundos é a pausa entre duas mensagens, a que faz a conversa parecer digitada. Ver
+  // `agendarRetomadaCurta`: é ela que faz 5 segundos serem 5 segundos de verdade.
+  if (data.modo === "segundos") quando = new Date(agora.getTime() + valor * 1_000);
   if (data.modo === "minutos") quando = new Date(agora.getTime() + valor * 60_000);
   if (data.modo === "horas") quando = new Date(agora.getTime() + valor * 3_600_000);
   if (data.modo === "dias") {
@@ -320,9 +336,10 @@ export function calcularTempoMaximo(data: AguardarData, agora: Date): Date | nul
   return new Date(agora.getTime() + valor * fatorDaUnidade(unidade));
 }
 
-/** Milissegundos de uma unidade escrita por extenso ("minutos", "horas", "dias"). Dias é o padrão:
- * é a unidade que a interface oferece primeiro. */
+/** Milissegundos de uma unidade escrita por extenso ("segundos", "minutos", "horas", "dias").
+ * Dias é o padrão: é a unidade que a interface do funil oferece primeiro. */
 function fatorDaUnidade(unidade: string): number {
+  if (unidade.startsWith("seg")) return 1_000;
   return unidade.startsWith("min") ? 60_000 : unidade.startsWith("hor") ? 3_600_000 : 86_400_000;
 }
 

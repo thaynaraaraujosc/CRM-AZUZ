@@ -273,7 +273,9 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
   nodes.forEach((n) => {
     if (n.type !== "aguardar") return;
     const data = n.data as AguardarData;
-    const modosComValorObrigatorio: AguardarData["modo"][] = ["minutos", "horas", "dias"];
+    // Segundos entra na lista: é a pausa do Social Seller, e "aguardar 0 segundos" é um bloco
+    // que não faz nada — exatamente o que esta checagem existe pra pegar.
+    const modosComValorObrigatorio: AguardarData["modo"][] = ["segundos", "minutos", "horas", "dias"];
     if (modosComValorObrigatorio.includes(data.modo) && (!data.valor || data.valor <= 0)) {
       problemas.push({
         id: proximoIdProblema(),

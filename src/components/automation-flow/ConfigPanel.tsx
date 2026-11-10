@@ -231,7 +231,14 @@ function FormularioDoNode({
     return <CondicaoForm grupo={data.grupo} onChange={(grupo) => onUpdateNodeData(node.id, { grupo })} />;
   }
   if (node.type === "aguardar") {
-    return <AguardarForm data={node.data as AguardarData} onChange={(d) => onUpdateNodeData(node.id, d)} />;
+    return (
+      <AguardarForm
+        data={node.data as AguardarData}
+        /* No Social Seller a espera é a pausa entre duas mensagens, e o painel é só o tempo. */
+        simples={area === "social"}
+        onChange={(d) => onUpdateNodeData(node.id, d)}
+      />
+    );
   }
   if (TIPOS_TAREFA_EVENTO.has(node.type)) {
     return <TarefaEventoForm data={node.data as TarefaEventoData} onChange={(d) => onUpdateNodeData(node.id, d)} />;

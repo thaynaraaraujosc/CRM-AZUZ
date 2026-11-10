@@ -1,6 +1,7 @@
 "use client";
 
 import type { AguardarData } from "@/lib/automation-flow/types";
+import { esperaDoBloco, type UnidadeDeEspera } from "@/lib/automation-flow/tempo-de-espera";
 import { useIdioma } from "@/lib/idioma-context";
 import { Ajuda } from "@/components/ui";
 
@@ -33,11 +34,110 @@ const UNIDADES = [
   { valor: "dias", label: "dias" },
 ];
 
+/**
+ * AS UNIDADES DA PAUSA DE CONVERSA.
+ *
+ * Segundos primeiro porque é o que ela é quase sempre: a pausa entre duas mensagens, pra a
+ * conversa não chegar toda de uma vez. Dias ficou de fora — uma automação de Direct que para dois
+ * dias esbarra na janela de 24 horas do Instagram e não tem como mandar a mensagem seguinte.
+ */
+const UNIDADES_SOCIAL: { valor: UnidadeDeEspera; label: string }[] = [
+  { valor: "segundos", label: "segundos" },
+  { valor: "minutos", label: "minutos" },
+  { valor: "horas", label: "horas" },
+];
+
 /** Os três modos de duração são a mesma escolha ("um período") com unidades diferentes. */
 const DURACAO: AguardarData["modo"][] = ["minutos", "horas", "dias"];
 
-export function AguardarForm({ data, onChange }: { data: AguardarData; onChange: (novo: AguardarData) => void }) {
+export function AguardarForm({
+  data,
+  onChange,
+  simples,
+}: {
+  data: AguardarData;
+  onChange: (novo: AguardarData) => void;
+  /**
+   * O PAINEL CURTO DO SOCIAL SELLER.
+   *
+   * Lá o bloco responde uma pergunta só — quanto tempo até a próxima mensagem — e as oito opções
+   * do funil (dias úteis, fim de semana, expediente, "até a data da consulta") são de um robô de
+   * follow-up que não existe no Instagram. "Eu quero deixar mais simples."
+   */
+  simples?: boolean;
+}) {
   const { t: traduzir } = useIdioma();
+
+  if (simples) {
+    const { valor, unidade } = esperaDoBloco(data);
+    return (
+      <div className="flow-form">
+        <div className="field">
+          <label>
+            {traduzir("Aguardar")}
+            <Ajuda
+              texto={traduzir(
+                "Pausa até 10 segundos acontece na hora. Acima disso quem retoma é a varredura, que roda de minuto em minuto: uma pausa de 30 segundos pode virar até um minuto.",
+              )}
+            />
+          </label>
+          <div className="espera-simples">
+            <input
+              className="input"
+              type="number"
+              min={1}
+              value={valor}
+              aria-label={traduzir("Quanto tempo")}
+              onChange={(e) =>
+                onChange({ ...data, modo: unidade, valor: Math.max(1, Number(e.target.value) || 1) })
+              }
+            />
+            <select
+              className="input"
+              value={unidade}
+              aria-label={traduzir("Unidade de tempo")}
+              onChange={(e) => onChange({ ...data, modo: e.target.value as AguardarData["modo"], valor })}
+            >
+              {UNIDADES_SOCIAL.map((u) => (
+                <option key={u.valor} value={u.valor}>
+                  {traduzir(u.label)}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/*
+          OS DOIS CAMINHOS, e o que decide se eles existem.
+          
+          "A pessoa respondeu antes do tempo terminar... ou ela não respondeu, aí eu vou mandar
+          outra mensagem." Ligado, o bloco tem as duas saídas no quadro e o relógio para no
+          instante em que a mensagem dela chega. Desligado, ele é só uma pausa e segue sozinho.
+        */}
+        <div className="toggle-row">
+          <span className="tl">
+            {traduzir("Separar quem respondeu de quem não respondeu")}
+            <Ajuda
+              texto={traduzir(
+                "Ligado, o bloco ganha dois caminhos no quadro: \"Respondeu\", seguido na hora em que a mensagem dela chegar, e \"Não respondeu\", seguido quando o tempo acabar. Desligado, é só uma pausa antes da próxima mensagem.",
+              )}
+            />
+          </span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={!!data.interromperSeResponder}
+            aria-label={traduzir("Separar quem respondeu de quem não respondeu")}
+            className={`toggle${data.interromperSeResponder ? " on" : ""}`}
+            onClick={() => onChange({ ...data, interromperSeResponder: !data.interromperSeResponder })}
+          >
+            <span className="knob" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const ehDuracao = DURACAO.includes(data.modo);
   const escolhida = ehDuracao ? "horas" : data.modo;
   const ajuda = ESCOLHAS.find((e) => e.valor === escolhida)?.ajuda;

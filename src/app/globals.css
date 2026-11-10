@@ -28083,6 +28083,58 @@ td.trafego-col-crm:first-of-type {
   margin-top: 10px;
 }
 
+/* ---------------------------------------------------------------------------------------------
+   A PAUSA DO SOCIAL SELLER (ver `NodeShell`, bloco "aguardar" com `area === "social"`).
+
+   Uma frase dentro de uma caixa suave, com o relógio em cima: no Instagram esse bloco é a pausa
+   entre duas mensagens, e a única pergunta dele é quanto tempo. O cronômetro em campos e as linhas
+   de contagem ficam no cartão do funil, onde o bloco é o follow-up de dois dias.
+   --------------------------------------------------------------------------------------------- */
+.no-espera-social {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 12px 12px;
+  padding: 16px 14px;
+  border-radius: 12px;
+  background: var(--surface-2, #f8fafc);
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.no-espera-social p {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.no-espera-social strong {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* O número e a unidade lado a lado, no painel. `min-width: 0` porque campo em linha estoura a
+   caixa: o tamanho mínimo de um input é o conteúdo dele, e sem isso a lista de unidades sai pela
+   borda do painel. */
+.espera-simples {
+  display: flex;
+  gap: 8px;
+}
+
+.espera-simples > .input {
+  min-width: 0;
+}
+
+.espera-simples input.input {
+  flex: 0 0 96px;
+  width: 96px;
+}
+
+.espera-simples select.input {
+  flex: 1 1 auto;
+}
+
 /* =============================================================================================
    COMO O CLIENTE VÊ (ver `PreviaDaMensagem`).
 

@@ -210,7 +210,10 @@ export function saidasDoNo(node: FlowNode): SaidaNo[] {
       // existem.
       const esperandoResposta = data.modo === "ate_resposta" || data.interromperSeResponder;
       return [
-        { handleId: "ok", label: esperandoResposta ? "✓ Respondeu" : "✓ OK" },
+        // "Antes do tempo" no primeiro porque é o que ele quer dizer: a pessoa respondeu e o
+        // relógio parou. Sem isso, "Respondeu" e "Não respondeu" lidos de relance parecem duas
+        // respostas possíveis, e não uma corrida contra o cronômetro.
+        { handleId: "ok", label: esperandoResposta ? "✓ Respondeu antes do tempo" : "✓ OK" },
         { handleId: "timeout", label: esperandoResposta ? "⏱ Não respondeu" : "⏱ Tempo esgotado" },
       ];
     }

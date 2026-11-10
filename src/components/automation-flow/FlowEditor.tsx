@@ -768,7 +768,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
       type: tipo,
       category: bloco.categoria,
       position: pos,
-      data: bloco.dataPadrao() as Record<string, unknown>,
+      data: dadosIniciais(bloco, ehSocial),
     };
     const novoRF: FlowRFNode = { id: novoDomain.id, type: novoDomain.category, position: pos, data: { flowNode: novoDomain, problemas: [] } };
     const novoNodes = [...rfNodes, novoRF];
@@ -794,7 +794,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
       type: tipo,
       category: bloco.categoria,
       position: pos,
-      data: bloco.dataPadrao() as Record<string, unknown>,
+      data: dadosIniciais(bloco, ehSocial),
     };
     const novoRF: FlowRFNode = { id: novoDomain.id, type: novoDomain.category, position: pos, data: { flowNode: novoDomain, problemas: [] } };
     const deOnde = origemDaLigacao(rfNodes, ehSocial, nodeOrigemId, handleId);
@@ -2332,6 +2332,25 @@ const ID_INICIO = "__inicio__";
  * dependência de outros memos é exatamente o que o compilador do React recusa ("esta dependência
  * pode ser modificada depois"). Recalcular uma lista de ids dentro de cada memo é barato.
  */
+/**
+ * O DADO INICIAL DE UM BLOCO NOVO, com o ajuste do Social Seller.
+ *
+ * O bloco de espera nasce diferente nas duas áreas, e é de propósito. No funil ele é o follow-up:
+ * "1 hora" é o padrão certo, e o cartão oferece as opções de contagem (dias úteis, só expediente)
+ * que um prazo longo precisa. Numa automação de Instagram ele é outra coisa — a pausa entre duas
+ * mensagens, pra a conversa não chegar toda de uma vez. Lá o padrão é "5 segundos", como na
+ * referência.
+ *
+ * `interromperSeResponder` já nasce ligado no social porque é ele que desenha os dois caminhos que
+ * a pausa de conversa precisa ter: "respondeu antes do tempo" e "o tempo acabou". Sem ele o bloco
+ * tem uma saída só, e não há onde ligar a mensagem de quem não respondeu.
+ */
+function dadosIniciais(bloco: { tipo: FlowNodeType; dataPadrao: () => unknown }, ehSocial: boolean) {
+  const base = bloco.dataPadrao() as Record<string, unknown>;
+  if (!ehSocial || bloco.tipo !== "aguardar") return base;
+  return { ...base, modo: "segundos", valor: 5, interromperSeResponder: true };
+}
+
 function idsDeGatilho(nodes: FlowRFNode[], ehSocial: boolean): string[] {
   if (!ehSocial) return [];
   return nodes.filter((n) => n.data.flowNode.category === "gatilho").map((n) => n.id);

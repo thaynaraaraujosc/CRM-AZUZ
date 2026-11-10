@@ -24,6 +24,7 @@ import { podeIniciar } from "./limites";
 import { proximaAresta, rodarExecucao, saidaDaResposta, type FimDaRodada } from "./motor-estado";
 import { publicarVersao, versaoAtualPublicada, versaoPorId, type VersaoPublicada } from "./versoes";
 import { carregarExpediente } from "@/lib/expediente-servidor";
+import { emSegundoPlano } from "./segundo-plano";
 import { gatilhoDaExecucao } from "@/lib/automation-flow/gatilhos-do-fluxo";
 
 /**
@@ -35,6 +36,42 @@ import { gatilhoDaExecucao } from "@/lib/automation-flow/gatilhos-do-fluxo";
  * cada correção feita só de um lado.
  */
 
+
+/**
+ * ATÉ AQUI A ESPERA É CURTA O BASTANTE PRA SER RETOMADA NA HORA.
+ *
+ * Quem acorda execução parada é a varredura do cron, que roda de minuto em minuto. Pra uma pausa
+ * de duas horas isso é exato o suficiente; pra "aguardar 5 segundos antes da próxima mensagem" —
+ * a pausa que faz a conversa parecer digitada — não é: cinco segundos virariam até um minuto, e a
+ * tela prometeria uma precisão que o motor não tem. Era por isso que a unidade "segundos" não
+ * existia.
+ *
+ * Dez segundos é o teto de propósito. A retomada roda em segundo plano, DEPOIS da resposta do
+ * webhook (a Meta pede resposta em segundos e processamento assíncrono), e o tempo que a função
+ * fica viva depois disso não é infinito. Acima disso a varredura do minuto seguinte dá conta.
+ */
+const ESPERA_CURTA_MS = 10_000;
+
+/**
+ * Retoma na hora a espera curta, em vez de deixar pro cron.
+ *
+ * Em segundo plano por `after`, que é o que mantém o trabalho vivo depois da resposta HTTP sem
+ * atrasá-la. E reaproveita a varredura em vez de ter um caminho de retomada próprio: um segundo
+ * caminho divergiria do primeiro na correção seguinte feita só de um lado.
+ */
+function agendarRetomadaCurta(fim: FimDaRodada): FimDaRodada {
+  if (!fim.ate) return fim;
+  const faltam = fim.ate.getTime() - Date.now();
+  if (faltam > ESPERA_CURTA_MS) return fim;
+
+  emSegundoPlano("retomar espera curta", async () => {
+    // A folga é pra chegar DEPOIS do prazo: a varredura só pega execução cujo prazo já venceu, e
+    // acordar no milissegundo exato pegaria a lista vazia e deixaria a pausa pro cron de novo.
+    await new Promise((resolver) => setTimeout(resolver, Math.max(0, faltam) + 250));
+    await retomarEsperasVencidas(5);
+  });
+  return fim;
+}
 
 /**
  * O bloco de gatilho e a primeira aresta que sai dele. Onde a execução realmente começa.
@@ -180,16 +217,18 @@ export async function iniciarFluxoComEstado(params: {
     return { situacao: "aguardando_tempo", passos: 0, detalhe: "Esperando a próxima janela de funcionamento." };
   }
 
-  return rodarExecucao({
-    execucao,
-    nodes: versao.nodes,
-    edges: versao.edges,
-    acoes: acoesReais({
-      workspaceId: params.workspaceId,
-      responderComentario: params.responderComentario,
-      ocultarComentario: params.ocultarComentario,
+  return agendarRetomadaCurta(
+    await rodarExecucao({
+      execucao,
+      nodes: versao.nodes,
+      edges: versao.edges,
+      acoes: acoesReais({
+        workspaceId: params.workspaceId,
+        responderComentario: params.responderComentario,
+        ocultarComentario: params.ocultarComentario,
+      }),
     }),
-  });
+  );
 }
 
 /**
@@ -363,12 +402,14 @@ export async function retomarEsperasVencidas(limite = 50): Promise<{ retomadas: 
           await encerrarExecucao({ execucaoId: execucao.id, situacao: "concluida" });
           continue;
         }
-        await rodarExecucao({
-          execucao,
-          nodes: versao.nodes,
-          edges: versao.edges,
-          acoes: acoesDaExecucao(execucao),
-        });
+        agendarRetomadaCurta(
+          await rodarExecucao({
+            execucao,
+            nodes: versao.nodes,
+            edges: versao.edges,
+            acoes: acoesDaExecucao(execucao),
+          }),
+        );
         retomadas++;
         continue;
       }
@@ -417,12 +458,14 @@ async function continuarDeDepoisDe(params: {
   }
 
   await avancarPara(execucao.id, proximo.target, contexto);
-  return rodarExecucao({
-    execucao: { ...execucao, noAtualId: proximo.target, contexto, aguardandoNoId: null, aguardandoEvento: null, aguardandoAte: null },
-    nodes: versao.nodes,
-    edges: versao.edges,
-    acoes: acoesReais({ workspaceId: execucao.workspaceId, responderComentario: params.responderComentario }),
-  });
+  return agendarRetomadaCurta(
+    await rodarExecucao({
+      execucao: { ...execucao, noAtualId: proximo.target, contexto, aguardandoNoId: null, aguardandoEvento: null, aguardandoAte: null },
+      nodes: versao.nodes,
+      edges: versao.edges,
+      acoes: acoesReais({ workspaceId: execucao.workspaceId, responderComentario: params.responderComentario }),
+    }),
+  );
 }
 
 function acoesDaExecucao(execucao: ExecucaoAtiva): AcoesDoMotor {
