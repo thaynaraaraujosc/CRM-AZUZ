@@ -145,13 +145,30 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
       });
     });
   } else if (!gatilhoNaEtapa) {
+    /*
+     * BLOCO SOLTO É AVISO, NÃO ERRO.
+     *
+     * "Condição não precisa estar ligada a nada." Não é bem assim — uma condição decide SOBRE
+     * ALGUÉM, e esse alguém só existe depois de um evento, então um bloco que ninguém alcança
+     * nunca roda. Mas travar a publicação por causa dele é outra coisa, e está errado pelo mesmo
+     * motivo que já valia pro gatilho sem caminho: largar um bloco no quadro e ligar depois é
+     * como se monta uma automação, e o resto do robô — que está certo e pronto — ficava sem poder
+     * ir pro ar por causa de uma peça ainda solta.
+     *
+     * A diferença de tamanho entre os dois casos é real e é por isso que o aviso diz o que
+     * acontece: gatilho sem caminho faz alguém disparar e não receber nada; bloco sem entrada só
+     * não acontece. Nenhum dos dois quebra o que já funciona.
+     *
+     * O erro de verdade continua sendo erro: "o fluxo não tem nenhum gatilho" (regra 1). Esse sim
+     * é o robô que não roda.
+     */
     nodes.forEach((n) => {
       const temEntrada = (entradasPorNo.get(n.id)?.length ?? 0) > 0;
       if (!temEntrada && n.category !== "gatilho") {
         problemas.push({
           id: proximoIdProblema(),
-          severidade: "erro",
-          mensagem: `Bloco "${nomeDoBloco(n)}" não está conectado a nada antes dele.`,
+          severidade: "aviso",
+          mensagem: `Nada leva até o bloco "${nomeDoBloco(n)}", então o robô nunca passa por ele. Ligue um caminho até ele — ou tire ele do quadro, se ele não for mais usado.`,
           nodeId: n.id,
         });
       }

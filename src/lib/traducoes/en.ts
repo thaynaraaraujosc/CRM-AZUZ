@@ -2974,4 +2974,5 @@ export const TRADUCOES_EN: Record<string, string> = {
   "Só na próxima publicação": "Only on the next post",
   "Nenhuma publicação escolhida ainda — vale pra todas": "No post chosen yet — it applies to all of them",
   "Nenhum story escolhido ainda — vale pra todos": "No story chosen yet — it applies to all of them",
+
 };
