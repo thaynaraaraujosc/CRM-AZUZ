@@ -418,6 +418,24 @@ export function IconExpandir(props: Props) {
   );
 }
 
+/**
+ * A SETA DE ABRIR: um "v" simples, apontando pra baixo.
+ *
+ * Faltava, e na falta dela as gavetas, os menus e os grupos recolhíveis usavam `IconExpandir` —
+ * que é a seta de AMPLIAR, duas pontas saindo pros cantos opostos. Do lado de um "Trocar" ou de um
+ * "Opções avançadas", aquele desenho diz "isto vai abrir em tela cheia", que não é o que acontece.
+ *
+ * Sempre pra baixo: quem gira é o CSS (`.girado` pra 180°, `rotate(-90deg)` quando a seta leva pra
+ * outro lugar em vez de abrir ali). Assim o mesmo desenho serve às três direções sem três ícones.
+ */
+export function IconSetaBaixo(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  );
+}
+
 /** Ramificação: bloco de condição das automações (o caminho se divide em dois). */
 export function IconRamificacao(props: Props) {
   return (

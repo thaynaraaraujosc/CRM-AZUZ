@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 
-import { IconAlerta, IconExpandir } from "@/components/icons";
+import { IconAlerta, IconSetaBaixo } from "@/components/icons";
 import { ModalConfirmacao } from "@/components/ui";
 import { useIdioma } from "@/lib/idioma-context";
 import { lerJson } from "@/lib/ler-resposta";
@@ -319,7 +319,7 @@ export function AzuzFlow() {
         onClick={() => setAberto((v) => !v)}
       >
         <span className="config-bloco-titulo">{traduzir("AZUZ Flow")}</span>
-        <IconExpandir className={aberto ? "girado" : undefined} width={14} height={14} aria-hidden="true" />
+        <IconSetaBaixo className={aberto ? "girado" : undefined} width={14} height={14} aria-hidden="true" />
       </button>
 
       {aberto ? (

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
 import { EscolhaDeMidia, type DadosDeEscopo, type ItemDeMidia } from "./forms/EscolhaDeMidia";
-import { IconChave, IconCheck, IconClose, IconExpandir } from "@/components/icons";
+import { IconChave, IconCheck, IconClose, IconSetaBaixo } from "@/components/icons";
 import type { FlowNodeType } from "@/lib/automation-flow/types";
 import { useFecharMenuDeLinha } from "@/lib/menu-de-linha";
 import { useIdioma } from "@/lib/idioma-context";
@@ -575,7 +575,7 @@ export function GatilhosDoSocial({
               : traduzir(MODOS_DE_PALAVRA.find((m) => m.valor === modoAtual)?.label ?? "")}
           </strong>
         </span>
-        <IconExpandir
+        <IconSetaBaixo
           className={modoAberto ? "girado" : undefined}
           width={14}
           height={14}
@@ -802,7 +802,7 @@ export function GatilhosDoSocial({
                         aria-expanded={abertoAqui}
                         onClick={() => setRespostaAberta((atual) => (atual === tipo ? null : tipo))}
                       >
-                        <IconExpandir
+                        <IconSetaBaixo
                           className={abertoAqui ? "girado" : undefined}
                           width={14}
                           height={14}
@@ -899,7 +899,7 @@ export function GatilhosDoSocial({
                   onClick={() => setAvancadoAberto((v) => !v)}
                 >
                   {traduzir("Opções avançadas")}
-                  <IconExpandir className={avancadoAberto ? "girado" : undefined} width={14} height={14} aria-hidden="true" />
+                  <IconSetaBaixo className={avancadoAberto ? "girado" : undefined} width={14} height={14} aria-hidden="true" />
                 </button>
                 {avancadoAberto ? (
                   <div className="gat-lista" role="group" aria-label={traduzir("Opções avançadas")}>
@@ -1089,7 +1089,7 @@ export function GatilhosDoSocial({
                     onClick={() => setAvancadoAberto((v) => !v)}
                   >
                     {traduzir("Opções avançadas")}
-                    <IconExpandir
+                    <IconSetaBaixo
                       className={avancadoAberto ? "girado" : undefined}
                       width={14}
                       height={14}

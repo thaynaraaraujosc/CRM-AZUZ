@@ -7,7 +7,7 @@ import type { FlowNodeType } from "@/lib/automation-flow/types";
 import {
   IconConversas,
   IconDoc,
-  IconExpandir,
+  IconSetaBaixo,
   IconImage,
   IconMic,
   IconRelogio,
@@ -87,7 +87,7 @@ export function EscolhaDeConteudo({
           <span>{traduzir(atual?.descricao ?? "Formato deste bloco")}</span>
         </span>
         <span className="esc-conteudo-trocar">{traduzir("Trocar")}</span>
-        <IconExpandir className={aberta ? "girado" : undefined} width={14} height={14} aria-hidden="true" />
+        <IconSetaBaixo className={aberta ? "girado" : undefined} width={14} height={14} aria-hidden="true" />
       </button>
 
       {aberta ? (

@@ -7,7 +7,7 @@ import { Ajuda, Toggle } from "@/components/ui";
 import { GrupoRecolhivel } from "@/components/automacoes/GrupoRecolhivel";
 import { AcoesNoTopo } from "@/lib/topo-da-pagina";
 import { ProtecoesDoNumero } from "@/components/automacoes/ProtecoesDoNumero";
-import { IconExpandir } from "@/components/icons";
+import { IconSetaBaixo } from "@/components/icons";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import {
   identificadorDoFormularioDoCrm,
@@ -131,7 +131,7 @@ function LinhaDoFormulario({
           ) : null}
         </span>
 
-        <IconExpandir className="fflow-seta" width={14} height={14} aria-hidden="true" />
+        <IconSetaBaixo className="fflow-seta" width={14} height={14} aria-hidden="true" />
       </button>
 
       {aberta ? (

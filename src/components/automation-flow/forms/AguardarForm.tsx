@@ -70,33 +70,59 @@ export function AguardarForm({
 
   if (simples) {
     const { valor, unidade } = esperaDoBloco(data);
+    const trocar = (novo: Partial<{ valor: number; unidade: UnidadeDeEspera }>) =>
+      onChange({
+        ...data,
+        modo: (novo.unidade ?? unidade) as AguardarData["modo"],
+        valor: Math.max(1, Math.round(novo.valor ?? valor)),
+      });
+
     return (
       <div className="flow-form">
         <div className="field">
           <label>
-            {traduzir("Aguardar")}
+            {traduzir("Quanto tempo esperar")}
             <Ajuda
               texto={traduzir(
                 "Pausa até 10 segundos acontece na hora. Acima disso quem retoma é a varredura, que roda de minuto em minuto: uma pausa de 30 segundos pode virar até um minuto.",
               )}
             />
           </label>
+          {/*
+            O NÚMERO COM OS DOIS BOTÕES, e não a setinha do navegador.
+            
+            A seta de `input[type=number]` é desenhada pelo sistema operacional: muda de forma em
+            cada máquina, tem uns oito pixels de alvo e só aparece quando o ponteiro está em cima.
+            Dois botões de verdade são do tamanho do campo, existem no toque e se parecem com o
+            resto do CRM.
+          */}
           <div className="espera-simples">
-            <input
-              className="input"
-              type="number"
-              min={1}
-              value={valor}
-              aria-label={traduzir("Quanto tempo")}
-              onChange={(e) =>
-                onChange({ ...data, modo: unidade, valor: Math.max(1, Number(e.target.value) || 1) })
-              }
-            />
+            <div className="espera-numero">
+              <button
+                type="button"
+                aria-label={traduzir("Menos")}
+                disabled={valor <= 1}
+                onClick={() => trocar({ valor: valor - 1 })}
+              >
+                −
+              </button>
+              <input
+                className="input"
+                type="number"
+                min={1}
+                value={valor}
+                aria-label={traduzir("Quanto tempo")}
+                onChange={(e) => trocar({ valor: Number(e.target.value) || 1 })}
+              />
+              <button type="button" aria-label={traduzir("Mais")} onClick={() => trocar({ valor: valor + 1 })}>
+                +
+              </button>
+            </div>
             <select
               className="input"
               value={unidade}
               aria-label={traduzir("Unidade de tempo")}
-              onChange={(e) => onChange({ ...data, modo: e.target.value as AguardarData["modo"], valor })}
+              onChange={(e) => trocar({ unidade: e.target.value as UnidadeDeEspera })}
             >
               {UNIDADES_SOCIAL.map((u) => (
                 <option key={u.valor} value={u.valor}>
@@ -116,7 +142,7 @@ export function AguardarForm({
         */}
         <div className="toggle-row">
           <span className="tl">
-            {traduzir("Separar quem respondeu de quem não respondeu")}
+            {traduzir("Dois caminhos: respondeu e não respondeu")}
             <Ajuda
               texto={traduzir(
                 "Ligado, o bloco ganha dois caminhos no quadro: \"Respondeu\", seguido na hora em que a mensagem dela chegar, e \"Não respondeu\", seguido quando o tempo acabar. Desligado, é só uma pausa antes da próxima mensagem.",
@@ -127,7 +153,7 @@ export function AguardarForm({
             type="button"
             role="switch"
             aria-checked={!!data.interromperSeResponder}
-            aria-label={traduzir("Separar quem respondeu de quem não respondeu")}
+            aria-label={traduzir("Dois caminhos: respondeu e não respondeu")}
             className={`toggle${data.interromperSeResponder ? " on" : ""}`}
             onClick={() => onChange({ ...data, interromperSeResponder: !data.interromperSeResponder })}
           >

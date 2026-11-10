@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 
 import { Ajuda } from "@/components/ui";
-import { IconExpandir } from "@/components/icons";
+import { IconSetaBaixo } from "@/components/icons";
 
 /**
  * UM CARTÃO QUE ABRE, com a cor da origem.
@@ -58,7 +58,7 @@ export function GrupoRecolhivel({
           </span>
           {!aberto && resumo ? <span className="fgrupo-resumo">{resumo}</span> : null}
           {contagem !== undefined ? <span className="fgrupo-contagem">{contagem}</span> : null}
-          <IconExpandir className="fgrupo-seta" width={14} height={14} aria-hidden="true" />
+          <IconSetaBaixo className="fgrupo-seta" width={14} height={14} aria-hidden="true" />
         </button>
         {ajuda ? <Ajuda texto={ajuda} /> : null}
       </div>

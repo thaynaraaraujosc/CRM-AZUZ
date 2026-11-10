@@ -12142,6 +12142,42 @@ button.flow-node-warn:hover {
   border-top: none;
 }
 
+/*
+ * MAS A LINHA COM RÓTULO E CHAVE CONTINUA SENDO UMA LINHA.
+ *
+ * O empilhamento acima foi escrito pra outra forma: `<label>` com caixa de seleção e uma explicação
+ * embaixo. Numa linha de `.tl` + interruptor ele dava o resultado oposto do pretendido — o texto
+ * numa linha, a chave solta embaixo encostada no campo seguinte, sem respiro nem divisa. Aqui ela
+ * volta ao formato de sempre, com o mesmo recuo e a mesma divisa dos campos vizinhos.
+ */
+.flow-config-body .toggle-row:has(> .tl) {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-top: 1px solid var(--line-soft);
+}
+
+/* O rótulo volta a ser TEXTO CORRIDO, com o "?" no fim da última linha em vez de sozinho numa
+   linha própria: em `display: flex` o texto e a bolha são dois blocos, e um rótulo de duas linhas
+   empurrava a bolha pra uma terceira. */
+.flow-config-body .toggle-row:has(> .tl) .tl {
+  display: block;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.flow-config-body .toggle-row:has(> .tl) .tl .ajuda {
+  vertical-align: -3px;
+  margin-left: 4px;
+}
+
+/* Uma divisa só entre o campo e a linha de chave: a de baixo do campo já separa os dois. */
+.flow-config-body .field + .toggle-row:has(> .tl) {
+  border-top: none;
+}
+
 .flow-config-body .toggle-row > label {
   display: flex;
   align-items: center;
@@ -28167,13 +28203,83 @@ td.trafego-col-crm:first-of-type {
   min-width: 0;
 }
 
-.espera-simples input.input {
-  flex: 0 0 96px;
-  width: 96px;
-}
-
 .espera-simples select.input {
   flex: 1 1 auto;
+}
+
+/* O NÚMERO COM OS DOIS BOTÕES: uma caixa só, com a borda por fora dos três. Por dentro o campo
+   não tem borda nenhuma — três contornos encostados leem como três controles. */
+.espera-numero {
+  display: flex;
+  flex: 0 0 132px;
+  align-items: stretch;
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: var(--surface-elevated, #fff);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.espera-numero:focus-within {
+  border-color: var(--gray-400);
+  box-shadow: 0 0 0 3px var(--gray-100), var(--shadow-xs);
+}
+
+.espera-numero button {
+  display: grid;
+  flex: 0 0 36px;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+
+.espera-numero button:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+
+.espera-numero button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.espera-numero input.input {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  text-align: center;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.espera-numero input.input:focus,
+.espera-numero input.input:focus-visible {
+  box-shadow: none;
+  background: transparent;
+}
+
+/* A setinha nativa do campo de número sai: ela é desenhada pelo sistema, muda em cada máquina e
+   tem um alvo de oito pixels. Quem sobe e desce são os dois botões ao lado. */
+.espera-numero input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.espera-numero input[type="number"]::-webkit-outer-spin-button,
+.espera-numero input[type="number"]::-webkit-inner-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
 }
 
 /* =============================================================================================
@@ -30499,6 +30605,34 @@ td.trafego-col-crm:first-of-type {
 .flow-config select.input {
   min-height: 38px;
   border-radius: 10px;
+}
+
+/*
+ * A SETA DO SELETOR, DESENHADA AQUI.
+ *
+ * A do navegador é desenhada pelo sistema operacional: triângulo preto no Windows, lentilha azul
+ * no macOS, e nada parecido com o resto do painel. Num painel que é quase só seletor — canal,
+ * unidade de tempo, formato — é ela que faz a tela parecer um formulário de 2005.
+ *
+ * O escopo é o editor de automação de propósito, como o painel de Design fez antes: `.input` é a
+ * classe de campo do CRM inteiro, e mexer nela mudaria todas as telas de trabalho de uma vez.
+ */
+.flow-config select.input {
+  appearance: none;
+  padding-right: var(--space-6);
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5L6 8l3.5-3.5' fill='none' stroke='%235c5f6b' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--space-3) center;
+  cursor: pointer;
+}
+
+/* No escuro a seta é redesenhada E reposicionada: a regra de tema do campo usa o atalho
+   `background`, que zera `repeat` e `position` — sem repetir os dois aqui, a seta ladrilhava o
+   seletor inteiro. */
+:root[data-theme="dark"] .flow-config select.input {
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5L6 8l3.5-3.5' fill='none' stroke='%23a4adc4' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--space-3) center;
 }
 
 .flow-config textarea.input {

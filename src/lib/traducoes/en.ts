@@ -2868,7 +2868,7 @@ export const TRADUCOES_EN: Record<string, string> = {
   "hora": "hour",
   "dia": "day",
   /* "horas" e "dias" já existem lá em cima, no bloco dos gatilhos de etapa. */
-  "Separar quem respondeu de quem não respondeu": "Tell apart who replied from who did not",
+  "Dois caminhos: respondeu e não respondeu": "Two paths: replied and did not reply",
   "Ligado, o bloco ganha dois caminhos no quadro: \"Respondeu\", seguido na hora em que a mensagem dela chegar, e \"Não respondeu\", seguido quando o tempo acabar. Desligado, é só uma pausa antes da próxima mensagem.":
     "On, the block gets two paths on the canvas: \"Replied\", taken the moment their message arrives, and \"Did not reply\", taken when the time runs out. Off, it is just a pause before the next message.",
   "Pausa até 10 segundos acontece na hora. Acima disso quem retoma é a varredura, que roda de minuto em minuto: uma pausa de 30 segundos pode virar até um minuto.":
@@ -2880,4 +2880,8 @@ export const TRADUCOES_EN: Record<string, string> = {
   "Trocar": "Change",
   "Formato deste bloco": "This block's format",
   "Bloco": "Block",
+
+  "Quanto tempo esperar": "How long to wait",
+  "Menos": "Less",
+  "Mais": "More",
 };

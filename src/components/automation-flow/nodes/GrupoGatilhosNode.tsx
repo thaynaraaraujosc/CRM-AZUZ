@@ -5,7 +5,7 @@ import { Handle, Position, type NodeProps } from "@xyflow/react";
 import {
   IconAlerta,
   IconChave,
-  IconExpandir,
+  IconSetaBaixo,
   IconLixeira,
   IconRaio,
 } from "@/components/icons";
@@ -123,7 +123,7 @@ export default function GrupoGatilhosNode({ data, selected }: NodeProps<FlowRFNo
           <span>{visiveis.join(", ") || traduzir("Nenhum gatilho escolhido")}</span>
         </span>
         {restantes > 0 ? <span className="gg-mais">+{restantes}</span> : null}
-        <IconExpandir className="gg-seta" width={14} height={14} aria-hidden="true" />
+        <IconSetaBaixo className="gg-seta" width={14} height={14} aria-hidden="true" />
       </button>
 
       <button
@@ -146,7 +146,7 @@ export default function GrupoGatilhosNode({ data, selected }: NodeProps<FlowRFNo
               : traduzir("Qualquer mensagem serve")}
           </span>
         </span>
-        <IconExpandir className="gg-seta" width={14} height={14} aria-hidden="true" />
+        <IconSetaBaixo className="gg-seta" width={14} height={14} aria-hidden="true" />
       </button>
 
       {aoAdicionarGatilho ?? aoAbrirGatilhos ? (
