@@ -46,6 +46,8 @@ export async function enviarTextoPeloCanal(params: {
    * mensagem ao "entregue"/"lido" que chega depois.
    */
   wamid?: string | null;
+  /** Quando o envio saiu como MODELO aprovado: os botões que ele levou. Ver `retomada-envio`. */
+  botoes?: string[];
 }> {
   const { workspaceId, conversaNome, texto } = params;
   if (!texto.trim()) return { enviado: false, motivo: "mensagem vazia" };

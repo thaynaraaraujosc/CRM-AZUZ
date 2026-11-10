@@ -171,7 +171,16 @@ export function acoesReais(params: {
         // bolha depois pra dizer "entregue", "lido" ou "FALHOU". Sem ele, a mensagem ficava com o
         // tique de enviada pra sempre mesmo quando a entrega falhava minutos depois, e a tela
         // dizia que a automação tinha mandado enquanto o celular da pessoa nunca recebia.
-        await registrarMensagemEnviada({ workspaceId, contatoNome, texto, wamid: r.wamid, origem: "automacao" });
+        /* `r.botoes` existe quando o envio saiu como MODELO (janela fechada): o modelo leva
+           botão, e a bolha precisa mostrar o que o cliente viu. */
+        await registrarMensagemEnviada({
+          workspaceId,
+          contatoNome,
+          texto,
+          wamid: r.wamid,
+          opcoes: r.botoes,
+          origem: "automacao",
+        });
         return ok(`Mensagem enviada: "${resumir(texto)}"`);
       } catch (erro) {
         return falha("Falha ao enviar a mensagem.", mensagemDoErro(erro));

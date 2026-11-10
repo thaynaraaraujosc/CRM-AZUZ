@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { contaConectada, enviarPelaCloudApi } from "@/lib/integracoes/whatsapp-oficial";
 import { prepararEnvioDeModelo, usaReuniao, type MapeamentoVariavel } from "@/lib/campanhas/variaveis";
 import { proximaReuniaoDoContato } from "@/lib/agenda/proxima-reuniao";
+import { botoesDoTemplateLocal, rotulosDosBotoes } from "@/lib/templates/botoes-do-template";
 import { modeloDeRetomada } from "./retomada";
 
 /**
@@ -15,7 +16,18 @@ export async function enviarModeloDeRetomada(params: {
   workspaceId: string;
   conversaNome: string;
   destinatario: string;
-}): Promise<{ enviado: boolean; motivo?: string; wamid?: string | null } | null> {
+}): Promise<{
+  enviado: boolean;
+  motivo?: string;
+  wamid?: string | null;
+  /**
+   * Os botões que o modelo levou, pra bolha mostrar o que o cliente viu.
+   *
+   * Sem isto, o modelo saía COM o botão, o cliente via o botão, e o CRM registrava só o texto —
+   * e a resposta "CONFIRMAR" aparecia do nada, logo abaixo, sem nada que explicasse de onde veio.
+   */
+  botoes?: string[];
+} | null> {
   const { workspaceId, conversaNome, destinatario } = params;
   const modelo = await modeloDeRetomada(workspaceId);
   if (!modelo) return null;
@@ -45,7 +57,7 @@ export async function enviarModeloDeRetomada(params: {
         components: preparo.componentes,
       },
     });
-    return { enviado: true, wamid };
+    return { enviado: true, wamid, botoes: rotulosDosBotoes(botoesDoTemplateLocal(registro?.botoes)) };
   } catch (erro) {
     return {
       enviado: false,
