@@ -377,6 +377,12 @@ export type Funil = {
   colunas: ColunaFunil[];
   /** Atendente responsável por esse funil. Quem recebe as conversas/tarefas atribuídas a ele. */
   responsavel?: string;
+  /**
+   * De qual número de WhatsApp é este funil. Escolhido na criação e FIXO (ver o campo no schema e
+   * `funis/numero-do-funil.ts`). Ausente = funil anterior à regra, que recebe o que não tem número
+   * próprio.
+   */
+  contaCanal?: string | null;
 };
 
 /** Modelo pré-pronto usado ao criar um funil novo. */

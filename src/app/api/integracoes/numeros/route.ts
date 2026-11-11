@@ -24,7 +24,13 @@ export async function GET() {
     listarConexoesWhats(workspaceId),
     // Os funis vão junto porque a tela precisa deles pra oferecer "o funil deste número" — e uma
     // segunda chamada só pra isso seria mais uma ida ao banco por abertura de tela.
-    prisma.funil.findMany({ where: { workspaceId }, select: { id: true, nome: true }, orderBy: { nome: "asc" } }),
+    // `contaCanal` vai junto porque a tela mostra DE QUAL FUNIL é cada número — a pergunta
+    // invertida da que o funil responde. Ver `funilDoNumero`.
+    prisma.funil.findMany({
+      where: { workspaceId },
+      select: { id: true, nome: true, contaCanal: true },
+      orderBy: { nome: "asc" },
+    }),
   ]);
 
   return NextResponse.json(
@@ -79,13 +85,23 @@ export async function PATCH(request: Request) {
   let funilId = linha.metadados && typeof linha.metadados === "object"
     ? ((linha.metadados as Record<string, unknown>).funilId as string | null) ?? null
     : null;
+  /*
+   * O FUNIL NÃO É MAIS ESCOLHIDO AQUI, mas o campo continua sendo aceito — e por um motivo só:
+   * limpar.
+   *
+   * O vínculo mudou de lado (quem escolhe é o funil, na criação dele). O metadado antigo segue
+   * valendo como segunda opção em `destinoDoNumero`, pra conta já configurada não perder o destino
+   * de uma hora pra outra. Aceitar `null` deixa desfazer um vínculo antigo; aceitar um id novo
+   * reporia a direção errada, em que dois números apontam pro mesmo quadro.
+   */
   if (corpo.funilId !== undefined) {
     if (corpo.funilId === null || corpo.funilId === "") {
       funilId = null;
     } else {
-      const existe = await prisma.funil.findFirst({ where: { id: corpo.funilId, workspaceId }, select: { id: true } });
-      if (!existe) return NextResponse.json({ erro: "Esse funil não existe nesta conta." }, { status: 400 });
-      funilId = corpo.funilId;
+      return NextResponse.json(
+        { erro: "O funil de um número é escolhido ao criar o funil, não aqui." },
+        { status: 400 },
+      );
     }
   }
 

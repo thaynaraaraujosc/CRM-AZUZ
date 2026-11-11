@@ -82,6 +82,8 @@ export async function GET() {
     id: f.id,
     nome: f.nome,
     responsavel: f.responsavel ?? undefined,
+    // De qual número é este funil. A tela mostra como texto fixo: não há como trocar depois.
+    contaCanal: f.contaCanal,
     colunas: f.etapas.map((e) => ({
       id: e.id,
       titulo: e.titulo,
@@ -231,6 +233,14 @@ export async function PUT(request: Request) {
         prisma.funil.create({ data: { id: f.id, workspaceId, nome: f.nome, responsavel: f.responsavel } }),
       );
     } else if (atual.nome !== f.nome || (atual.responsavel ?? undefined) !== f.responsavel) {
+      /*
+       * `contaCanal` NÃO ENTRA AQUI, e isso é a regra virando código.
+       *
+       * "Se eu quiser mudar, eu tenho que excluir esse funil e criar outro." O número é escrito
+       * uma vez, na criação. Se ele viajasse neste PUT, uma aba com a tela antiga aberta poderia
+       * devolver o valor velho — ou nenhum — e trocar o número de um funil que já tem cards, o que
+       * mistura duas caixas de entrada num quadro só.
+       */
       operacoes.push(
         prisma.funil.update({ where: { id: f.id }, data: { nome: f.nome, responsavel: f.responsavel } }),
       );

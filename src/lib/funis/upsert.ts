@@ -123,17 +123,32 @@ export async function entrarNaPrimeiraEtapaComoNovoLead(params: {
     : null;
 
 
+  const comPrimeiraEtapa = {
+    etapas: { orderBy: { ordem: "asc" }, take: 1, include: { cards: { select: { ordem: true } } } },
+  } as const;
+
+  /*
+   * O FUNIL SEM NÚMERO É A REDE DE SEGURANÇA, e não "o primeiro da lista".
+   *
+   * Era o primeiro que o banco devolvesse. Com um funil por número ("nenhum funil pode ter mais do
+   * que um número; não pode receber mensagens de WhatsApps diferentes"), isso virou um defeito: o
+   * lead de um número sem quadro próprio caía no quadro de OUTRO número — e quem atende por aquele
+   * número liga pra quem não é dele.
+   *
+   * O funil sem número é justamente o que existe pra receber o que não tem quadro próprio. Não
+   * havendo nenhum, o lead fica SEM CARD — e isso é a escolha certa, não um descuido: o contato e
+   * a conversa continuam existindo, e no dia em que o funil daquele número for criado a
+   * reconciliação traz todo mundo pra ele ("todas as conversas que tiver lá no chat do WhatsApp
+   * daquele número vão vir para o funil que representa aquele número"). Ficar sem card é
+   * recuperável; aparecer no quadro de outra pessoa não é — ela liga pra quem não é dela, e
+   * ninguém descobre que o card estava no lugar errado.
+   */
   const funil = etapaEscolhida
     ? null
-    : await prisma.funil.findFirst({
-        where: { workspaceId, ...(params.funilId ? { id: params.funilId } : {}) },
-        include: { etapas: { orderBy: { ordem: "asc" }, take: 1, include: { cards: { select: { ordem: true } } } } },
-      }) ??
-      // O funil escolhido sumiu: volta pro primeiro do workspace em vez de perder o lead.
-      (await prisma.funil.findFirst({
-        where: { workspaceId },
-        include: { etapas: { orderBy: { ordem: "asc" }, take: 1, include: { cards: { select: { ordem: true } } } } },
-      }));
+    : (params.funilId
+        ? await prisma.funil.findFirst({ where: { workspaceId, id: params.funilId }, include: comPrimeiraEtapa })
+        : null) ??
+      (await prisma.funil.findFirst({ where: { workspaceId, contaCanal: null }, include: comPrimeiraEtapa }));
 
   const primeiraEtapa = etapaEscolhida ?? funil?.etapas[0];
   if (!primeiraEtapa) return null;

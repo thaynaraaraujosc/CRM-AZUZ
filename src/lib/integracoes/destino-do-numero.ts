@@ -1,4 +1,6 @@
+import { prisma } from "@/lib/prisma";
 import { conexoesDeConversa } from "@/lib/integracoes/conexoes-cache";
+import { normalizarContaCanal } from "@/lib/integracoes/conta-canal-normalizar";
 import { CANAL_NAO_OFICIAL, CANAL_OFICIAL, contaCanalDaConexao } from "@/lib/integracoes/conta-canal";
 
 /**
@@ -22,23 +24,31 @@ export type DestinoDoNumero = { funilId: string | null; responsavel: string | nu
 
 const SEM_DESTINO: DestinoDoNumero = { funilId: null, responsavel: null };
 
-/** `whatsapp_baileys:` é o nome antigo do canal de QR Code, ainda gravado em conversa de antes. */
-function normalizar(contaCanal: string): string {
-  return contaCanal.startsWith("whatsapp_baileys:")
-    ? `${CANAL_NAO_OFICIAL}:${contaCanal.slice("whatsapp_baileys:".length)}`
-    : contaCanal;
-}
-
 export async function destinoDoNumero(
   workspaceId: string,
   contaCanal: string | null | undefined,
 ): Promise<DestinoDoNumero> {
   if (!contaCanal) return SEM_DESTINO;
-  const alvo = normalizar(contaCanal);
+  const alvo = normalizarContaCanal(contaCanal);
 
-  // A leitura passa pelo cache de conexões (poucos segundos de memória): isto roda a cada mensagem
-  // de contato novo, e uma consulta a mais por lead, no mesmo minuto em que o webhook já faz várias
-  // chamadas à Meta, é exatamente o tipo de custo que ninguém vê e todo mundo sente.
+  /*
+   * O FUNIL É QUEM DIZ DE QUAL NÚMERO ELE É — não o contrário.
+   *
+   * O vínculo morava só nos metadados da conexão (`metadados.funilId`): o NÚMERO apontava pro
+   * funil. Nessa direção, dois números podiam apontar pro mesmo quadro, o que a regra proíbe
+   * ("nenhum funil pode ter mais do que um número; não pode receber mensagens de WhatsApps
+   * diferentes"). Agora quem manda é a coluna `Funil.contaCanal`, escrita uma vez na criação.
+   *
+   * Uma consulta por lead novo, com índice em `[workspaceId, contaCanal]`.
+   */
+  const funil = await prisma.funil.findFirst({
+    where: { workspaceId, contaCanal: alvo },
+    select: { id: true },
+  });
+
+  // O RESPONSÁVEL continua vindo da conexão: ele é de quem atende por aquele número, e não do
+  // quadro. A leitura passa pelo cache de conexões (poucos segundos de memória) porque isto roda a
+  // cada mensagem de contato novo, no mesmo minuto em que o webhook já faz várias chamadas à Meta.
   const conexoes = await conexoesDeConversa(workspaceId);
   for (const conexao of conexoes) {
     const metadados = (conexao.metadados as Record<string, unknown> | null) ?? {};
@@ -50,9 +60,17 @@ export async function destinoDoNumero(
           : null;
     if (chave !== alvo) continue;
     return {
-      funilId: (metadados.funilId as string | null) ?? null,
+      /*
+       * `metadados.funilId` fica como SEGUNDA opção, e não some ainda: é o que as contas já
+       * configuradas têm gravado, e apagá-lo numa mesma leva mandaria os leads delas pro quadro
+       * padrão sem aviso. Funil novo nasce com a coluna; funil antigo continua pelo metadado até
+       * ser recriado com número.
+       */
+      funilId: funil?.id ?? ((metadados.funilId as string | null) ?? null),
       responsavel: (metadados.responsavel as string | null) ?? null,
     };
   }
-  return SEM_DESTINO;
+
+  // Número sem conexão correspondente (desconectado, por exemplo): o funil dele ainda vale.
+  return funil ? { funilId: funil.id, responsavel: null } : SEM_DESTINO;
 }

@@ -1,93 +1,109 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  numerosDoFunil,
-  rotuloDoNumeroDoFunil,
-  valeMostrarNumeroDoFunil,
-  type NumeroComFunil,
+  PREFIXO_DO_NOME,
+  funilDoNumero,
+  nomeDoFunil,
+  numeroDoFunil,
+  numerosDisponiveis,
+  sufixoSugerido,
+  type FunilComNumero,
+  type NumeroParaFunil,
 } from "@/lib/funis/numero-do-funil";
 
-const oficial: NumeroComFunil = {
+const OFICIAL: NumeroParaFunil = {
   chave: "meta_whatsapp:143588938831846",
-  nome: "WhatsApp oficial",
+  nome: "API oficial",
   provedor: "meta_whatsapp",
   status: "conectado",
-  funilId: "funil-comercial",
 };
 
-const closer: NumeroComFunil = {
+const QR: NumeroParaFunil = {
   chave: "whatsapp_nao_oficial:5562963404 38".replace(" ", ""),
-  nome: "Lucas Chaveiro",
+  nome: "+55 (62) 9634-0438",
   provedor: "whatsapp_nao_oficial",
   status: "conectado",
-  funilId: "funil-lucas",
 };
 
-const semVinculo: NumeroComFunil = {
-  chave: "whatsapp_nao_oficial:5562999990000",
-  nome: "Vendas 2",
-  provedor: "whatsapp_nao_oficial",
-  status: "conectado",
-  funilId: null,
-};
+const SEM_CHAVE: NumeroParaFunil = { chave: "", nome: "QR Code", provedor: "whatsapp_nao_oficial", status: "aguardando_qr" };
+const CAIU: NumeroParaFunil = { ...QR, chave: "whatsapp_nao_oficial:5562999990000", nome: "Vendas 2", status: "desconectado" };
 
-describe("numerosDoFunil", () => {
-  it("devolve só os números que apontam pra este funil", () => {
-    expect(numerosDoFunil([oficial, closer, semVinculo], "funil-lucas")).toEqual([closer]);
+const FUNIL_DO_QR: FunilComNumero = { id: "f1", nome: "Funil - Emilly", contaCanal: QR.chave };
+const FUNIL_ANTIGO: FunilComNumero = { id: "f0", nome: "Funil comercial", contaCanal: null };
+
+/**
+ * "Nenhum funil pode ter mais do que um número. Não pode receber mensagens de WhatsApps
+ * diferentes." A regra dupla: um funil tem um número, e um número tem um funil.
+ */
+describe("funilDoNumero", () => {
+  it("acha o funil que já é daquele número", () => {
+    expect(funilDoNumero([FUNIL_ANTIGO, FUNIL_DO_QR], QR.chave)?.id).toBe("f1");
   });
 
-  it("funil sem número apontando pra ele devolve lista vazia", () => {
-    expect(numerosDoFunil([oficial, closer, semVinculo], "funil-novo")).toEqual([]);
+  it("número sem funil devolve nulo", () => {
+    expect(funilDoNumero([FUNIL_ANTIGO, FUNIL_DO_QR], OFICIAL.chave)).toBeNull();
   });
 
-  it("funil sem id não casa com número de funil nulo", () => {
-    // `funilId: null` quer dizer "o padrão da empresa", não "o funil de id vazio". Sem a guarda,
-    // uma tela que ainda não carregou o funil ativo mostraria todos os números soltos como se
-    // fossem dele.
-    expect(numerosDoFunil([semVinculo], "")).toEqual([]);
-  });
-
-  it("aceita mais de um número no mesmo funil", () => {
-    const outro = { ...semVinculo, nome: "Vendas 2", funilId: "funil-lucas" };
-    expect(numerosDoFunil([closer, outro], "funil-lucas")).toHaveLength(2);
-  });
-
-  it("número desconectado continua contando: o vínculo é configuração, não estado", () => {
-    const caiu = { ...closer, status: "desconectado" };
-    expect(numerosDoFunil([caiu], "funil-lucas")).toEqual([caiu]);
+  it("chave vazia não casa com funil sem número", () => {
+    // `contaCanal: null` quer dizer "funil antigo, sem número", não "funil do número vazio". Sem a
+    // guarda, uma conexão de QR Code que o CRM ainda não endereçou pareceria dona dele.
+    expect(funilDoNumero([FUNIL_ANTIGO], "")).toBeNull();
   });
 });
 
-describe("rotuloDoNumeroDoFunil", () => {
-  it("diz o nome do número quando há um", () => {
-    expect(rotuloDoNumeroDoFunil([oficial, closer], "funil-lucas")).toBe("Lucas Chaveiro");
+describe("numerosDisponiveis", () => {
+  it("tira o número que já tem funil", () => {
+    expect(numerosDisponiveis([OFICIAL, QR], [FUNIL_DO_QR]).map((n) => n.chave)).toEqual([OFICIAL.chave]);
   });
 
-  it("sem número próprio, diz que recebe de todos", () => {
-    expect(rotuloDoNumeroDoFunil([oficial, closer], "funil-novo")).toBe("Todos os números");
+  it("tira o desconectado e o que não tem chave", () => {
+    // Escolher um número que o CRM não sabe endereçar criaria um quadro que não recebe nada e não
+    // diz por quê.
+    expect(numerosDisponiveis([OFICIAL, SEM_CHAVE, CAIU], []).map((n) => n.chave)).toEqual([OFICIAL.chave]);
   });
 
-  it("com mais de um, mostra o primeiro e quantos faltam", () => {
-    const outro = { ...semVinculo, nome: "Vendas 2", funilId: "funil-lucas" };
-    expect(rotuloDoNumeroDoFunil([closer, outro], "funil-lucas")).toBe("Lucas Chaveiro +1");
+  it("com todos os números já usados, não sobra nenhum", () => {
+    const funis = [FUNIL_DO_QR, { id: "f2", nome: "Funil - oficial", contaCanal: OFICIAL.chave }];
+    expect(numerosDisponiveis([OFICIAL, QR], funis)).toEqual([]);
   });
 });
 
-describe("valeMostrarNumeroDoFunil", () => {
-  it("não mostra com um número conectado só", () => {
-    expect(valeMostrarNumeroDoFunil([oficial])).toBe(false);
+describe("numeroDoFunil", () => {
+  it("devolve o número do funil", () => {
+    expect(numeroDoFunil([OFICIAL, QR], FUNIL_DO_QR)?.nome).toBe(QR.nome);
   });
 
-  it("mostra com dois ou mais conectados", () => {
-    expect(valeMostrarNumeroDoFunil([oficial, closer])).toBe(true);
+  it("funil sem número devolve nulo", () => {
+    expect(numeroDoFunil([OFICIAL, QR], FUNIL_ANTIGO)).toBeNull();
   });
 
-  it("não conta número sem chave: ele não endereça nada", () => {
-    const semChave = { ...closer, chave: "" };
-    expect(valeMostrarNumeroDoFunil([oficial, semChave])).toBe(false);
+  it("número que já não está conectado devolve nulo em vez de rótulo inventado", () => {
+    expect(numeroDoFunil([OFICIAL], FUNIL_DO_QR)).toBeNull();
+  });
+});
+
+describe("nomeDoFunil", () => {
+  it("junta o prefixo fixo com o que a pessoa escreveu", () => {
+    expect(nomeDoFunil("Meta oficial")).toBe("Funil - Meta oficial");
+    expect(nomeDoFunil("Meta oficial").startsWith(PREFIXO_DO_NOME)).toBe(true);
   });
 
-  it("não conta número desconectado pra decidir se a etiqueta aparece", () => {
-    expect(valeMostrarNumeroDoFunil([oficial, { ...closer, status: "desconectado" }])).toBe(false);
+  it("arruma espaço sobrando", () => {
+    expect(nomeDoFunil("  Número  do  Lucas ")).toBe("Funil - Número do Lucas");
+  });
+
+  it("sufixo vazio não vira nome: 'Funil - ' sozinho não é nome de nada", () => {
+    expect(nomeDoFunil("")).toBe("");
+    expect(nomeDoFunil("   ")).toBe("");
+  });
+});
+
+describe("sufixoSugerido", () => {
+  it("sugere o nome do número escolhido", () => {
+    expect(sufixoSugerido(QR)).toBe("+55 (62) 9634-0438");
+  });
+
+  it("sem número escolhido, não sugere nada", () => {
+    expect(sufixoSugerido(null)).toBe("");
   });
 });
