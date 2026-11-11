@@ -47,7 +47,19 @@ type ConversasContextValue = {
   atualizarStatus: (id: string, status: string) => void;
   atribuirAtendente: (id: string, atendente: string | null) => void;
   atualizarFoto: (id: string, fotoUrl: string) => void;
-  criarConversaIndividual: (nome: string, contato: string, canal?: string) => Promise<ConversaReal>;
+  /**
+   * Abre uma conversa nova. `contaCanal` é POR QUAL NÚMERO ela vai falar.
+   *
+   * Sem ele a conversa nasce sem dono, e numa caixa de entrada dividida por número isso quer dizer
+   * que ela não aparece em aba nenhuma a não ser a das conversas antigas: a pessoa cria a janela e
+   * não a encontra.
+   */
+  criarConversaIndividual: (
+    nome: string,
+    contato: string,
+    canal?: string,
+    contaCanal?: string | null,
+  ) => Promise<ConversaReal>;
   /** Força buscar as conversas de novo agora, sem esperar o próximo ciclo do polling. Usado pelo
    * botão de atualizar da tela de Conversas. */
   recarregar: () => void;
@@ -199,12 +211,13 @@ export function ConversasProvider({ children }: { children: ReactNode }) {
     nome: string,
     contato: string,
     canal = "WhatsApp",
+    contaCanal?: string | null,
   ): Promise<ConversaReal> {
     esquecerVersao();
     const resposta = await fetch("/api/conversas", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nome, contato, canal }),
+      body: JSON.stringify({ nome, contato, canal, contaCanal }),
     });
     const criada = (await resposta.json()) as ConversaReal;
     setConversas((prev) => (prev.some((c) => c.id === criada.id) ? prev : [criada, ...prev]));
