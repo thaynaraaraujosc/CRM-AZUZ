@@ -1745,6 +1745,27 @@ function ConversasPageInner() {
     Record<string, { id: string; titulo: string; texto: string }[]>
   >({});
   const mensagemInputRef = useRef<HTMLTextAreaElement>(null);
+
+  /*
+   * O CAMPO CRESCE COM O TEXTO, até três linhas.
+   *
+   * Ele é um <textarea rows={1}> sem nenhum ajuste de altura, e por isso o navegador desenhava
+   * nele a alça de redimensionar — aquele triangulinho no canto. Numa cápsula arredondada a alça
+   * fica por cima do arredondamento, e, pior, ela existia porque não havia alternativa: uma
+   * mensagem de cinco linhas rolava dentro de uma linha só, e pra ler o que se acabou de escrever
+   * era preciso arrastar a alça na mão.
+   *
+   * Crescer sozinho resolve as duas coisas e é o que qualquer aplicativo de conversa faz. O teto
+   * de 120px existe pra uma mensagem longa não comer a conversa: passando dali, rola por dentro.
+   */
+  useEffect(() => {
+    const campo = mensagemInputRef.current;
+    if (!campo) return;
+    // `auto` primeiro: sem isso `scrollHeight` nunca diminui, e o campo só cresceria.
+    campo.style.height = "auto";
+    campo.style.height = `${Math.min(campo.scrollHeight, 120)}px`;
+  }, [mensagemTexto]);
+
   /** Seletor de modelo aprovado: o único caminho pra falar primeiro, ou depois das 24h. */
   const [templateAberto, setTemplateAberto] = useState(false);
   const [respondendoMensagem, setRespondendoMensagem] = useState<{
