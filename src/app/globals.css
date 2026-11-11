@@ -425,6 +425,10 @@
      tema claro e clara no escuro. Antes era branca fixa, o que sumia sobre fundo claro. */
   --grid-line: transparent;
 
+  /* A BARRA DE ROLAGEM. Ver a regra global `::-webkit-scrollbar`, mais abaixo. */
+  --barra-rolagem: rgba(0, 32, 55, 0.22);
+  --barra-rolagem-forte: rgba(0, 32, 55, 0.36);
+
   /* Escala tipográfica (item 45): nomeia os tamanhos que já estavam em uso espalhados (`.topbar h2`
      19px, `.panel-h h4` 13px, `.hint` 11px…) e preenche as lacunas (card, indicador). Contraste entre
      informação principal e auxiliar já existia via `--ink`/`--text-muted`/`--text-faint`; aqui só
@@ -487,6 +491,9 @@
   --bolha-recebida: #002037;
 
   --grid-line: rgba(255, 255, 255, 0.03);
+
+  --barra-rolagem: rgba(255, 255, 255, 0.18);
+  --barra-rolagem-forte: rgba(255, 255, 255, 0.34);
 
   --line: rgba(255, 255, 255, 0.1);
   --line-soft: rgba(255, 255, 255, 0.06);
@@ -604,6 +611,60 @@ body {
   font-family: var(--body);
   font-size: 15px;
   -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * A BARRA DE ROLAGEM, EM TODA CAIXA QUE ROLA.
+ *
+ * "Esse pau aqui do lado, eu to achando feio." E ele e feio mesmo, e nunca foi uma decisao
+ * nossa: o CRM nunca deu estilo nenhum a barra de rolagem, entao o que aparecia era o padrao do
+ * Chrome — um bastao cinza-escuro de 15px, com trilho proprio, do tom de nenhuma outra coisa na
+ * tela. Numa conversa ele fica colado na borda do painel o dia inteiro.
+ *
+ * Fina e na cor da tinta da marca, bem diluida. Continua VISIVEL de proposito: a barra tambem
+ * diz onde a pessoa esta na conversa, e sumir com ela trocaria um problema de aparencia por um
+ * de orientacao. No passar do mouse ela escurece.
+ *
+ * A borda transparente com `background-clip: content-box` e o truque que afina o bastao sem
+ * afinar a area de clique: o alvo continua tendo os 10px inteiros.
+ *
+ * As caixas que ja escondem a propria barra (abas de numero, barra de automacao) tem regra com
+ * classe, que e mais especifica, e continuam escondidas.
+ *
+ * AS DUAS FORMAS ESTAO AQUI DE PROPOSITO, e elas nao brigam: `scrollbar-width`/`scrollbar-color`
+ * sao o padrao e e o que o Chrome de hoje obedece — quando um dos dois esta declarado, ele IGNORA
+ * as regras `::-webkit-scrollbar` do mesmo elemento. As `::-webkit-` ficam como caminho pros
+ * navegadores que ainda nao implementaram o padrao. Como no caminho padrao nao existe estado de
+ * hover, a cor base ja e a definitiva: discreta, mas visivel parada.
+ */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--barra-rolagem) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--barra-rolagem);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--barra-rolagem-forte);
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 /* Navegadores aplicam fonte monoespaçada em <textarea> por padrão. Sem isso, ela
