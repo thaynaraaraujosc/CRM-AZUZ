@@ -2295,6 +2295,22 @@ function ConversasPageInner() {
   }
 
   function contatoUsaWhatsappNaoOficial(): boolean {
+    /*
+     * A ESCOLHA DA TELA GANHA DO HISTÓRICO — quando houve escolha.
+     *
+     * "Atualmente eu tenho uma conta oficial e uma QR Code." Então escolher o número não é só
+     * escolher entre dois celulares: é escolher entre duas CONEXÕES, que falam por caminhos
+     * diferentes (a Cloud API da Meta e o aparelho conectado por código). O seletor já listava as
+     * duas; o envio é que continuava decidindo só pelo histórico da conversa, e por isso escolher
+     * o oficial numa conversa que nasceu no QR Code não mudava nada.
+     *
+     * Sem escolha, nada muda: vale o histórico, que é a regra de sempre — a conversa pertence à
+     * conexão por onde ela veio.
+     */
+    const escolhido = numeroEscolhidoDaConversa();
+    if (escolhido) {
+      return escolhido.startsWith("whatsapp_nao_oficial:") || escolhido.startsWith("whatsapp_baileys:");
+    }
     return conversaUsaWhatsappNaoOficial(aberta.nome);
   }
 
@@ -4981,7 +4997,12 @@ function ConversasPageInner() {
                       ) : null}
                     </div>
                   ) : null}
-                  {aberta.canal === "WhatsApp" && conversaSemDono(aberta.nome) && statusWhatsappPronto ? (
+                  {/* Também quando a escolha do número foi explícita: aí a conversa pode já ter
+                      dono e mesmo assim a próxima mensagem sai pelo oficial, onde a primeira
+                      mensagem precisa de modelo aprovado. */}
+                  {aberta.canal === "WhatsApp" &&
+                  statusWhatsappPronto &&
+                  (conversaSemDono(aberta.nome) || numeroEscolhidoDaConversa()) ? (
                     <div className="chat-canal-escolha">
                       {/* Os dois chips só com os DOIS ligados: com um só não há o que escolher, e
                           um botão que não escolhe ensina a desconfiar dos que escolhem. */}
@@ -5029,7 +5050,7 @@ function ConversasPageInner() {
                         Agora a frase vem com o botão: "se for API oficial, já vai direto para
                         modelos de mensagem".
                       */}
-                      {canalEfetivo === "whatsapp_oficial" ? (
+                      {!contatoUsaWhatsappNaoOficial() ? (
                         <>
                           <span className="chat-canal-aviso">
                             {traduzir("Pelo oficial, a primeira mensagem precisa ser um modelo aprovado.")}
