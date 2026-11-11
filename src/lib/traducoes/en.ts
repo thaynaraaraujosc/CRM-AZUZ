@@ -3033,6 +3033,6 @@ export const TRADUCOES_EN: Record<string, string> = {
   "Tem perfil e interesse de verdade. É este que volta pro anúncio como lead qualificado.": "Right profile and real interest. This is the one that goes back to the ad as a qualified lead.",
   "Perguntou, mas não tem intenção agora. Não vira sinal pra plataforma.": "Asked, but has no intent right now. Does not become a signal for the platform.",
   "Lead errado: fora da região, fora do preço, engano.": "Wrong lead: out of area, out of budget, a mistake.",
-  "Este é o sinal que volta pro anúncio como lead qualificado.": "This is the signal that goes back to the ad as a qualified lead.",
+  "Enviado pro Meta e pro Google como lead qualificado.": "Sent to Meta and Google as a qualified lead.",
   "Bom, curioso ou ruim — a leitura de quem atendeu.": "Good, just curious or bad — the read from whoever handled it.",
 };

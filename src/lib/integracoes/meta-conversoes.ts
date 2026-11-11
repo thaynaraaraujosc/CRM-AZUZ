@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 
 import { META_GRAPH_URL } from "@/lib/integracoes/meta";
+import { eventoNaMeta } from "@/lib/rastreio/evento-na-plataforma";
 
 /**
  * Devolver pra Meta a venda que o funil fechou.
@@ -68,7 +69,13 @@ export type ConversaoMeta = {
   email?: string | null;
   telefone?: string | null;
   quando: Date;
-  valor: number;
+  /**
+   * O valor, SÓ QUANDO O EVENTO TEM UM.
+   *
+   * `null` omite `custom_data` por inteiro, e isso é diferente de mandar zero: zero AFIRMA que o
+   * evento vale nada. Um lead qualificado não tem preço. Ver `eventoCarregaValor`.
+   */
+  valor: number | null;
   /** Identificador do negócio, pra a Meta não contar duas vezes o que o pixel do site já mandou. */
   idDoNegocio: string;
 };
@@ -88,6 +95,17 @@ export async function enviarConversoesMeta(params: {
   accessToken: string;
   datasetId: string;
   conversoes: ConversaoMeta[];
+  /**
+   * O evento do CRM. Vira o `event_name` da Meta (ver `evento-na-plataforma.ts`).
+   *
+   * Era `"Purchase"` fixo, pra tudo. Enquanto só a venda ganha era devolvida, dava no mesmo; com a
+   * qualificação do lead voltando pro anúncio, mandar lead qualificado como compra ensinaria a
+   * Meta que um lead qualificado é uma venda — o leilão passa a caçar quem qualifica, e o
+   * relatório de receita enche de venda que nunca existiu.
+   *
+   * Ausente = venda, que é o que este arquivo sempre fez.
+   */
+  evento?: string;
 }): Promise<{ ok: true; recebidos: number } | { ok: false; erro: string }> {
   if (params.conversoes.length === 0) return { ok: true, recebidos: 0 };
 
@@ -104,7 +122,7 @@ export async function enviarConversoesMeta(params: {
     if (email.includes("@")) userData.em = [resumo(email)];
 
     return {
-      event_name: "Purchase",
+      event_name: eventoNaMeta(params.evento ?? "purchase"),
       // Em SEGUNDOS, não milissegundos. Em milissegundos a Meta aceita e joga o evento a
       // cinquenta mil anos no futuro, onde ele nunca casa com o clique.
       event_time: Math.floor(c.quando.getTime() / 1000),
@@ -112,7 +130,8 @@ export async function enviarConversoesMeta(params: {
       messaging_channel: "whatsapp",
       event_id: c.idDoNegocio,
       user_data: userData,
-      custom_data: { value: c.valor, currency: "BRL" },
+      // Ver `valor` em `ConversaoMeta`: ausente é ausente, nunca zero.
+      ...(c.valor == null ? {} : { custom_data: { value: c.valor, currency: "BRL" } }),
     };
   });
 

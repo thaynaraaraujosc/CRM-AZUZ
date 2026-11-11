@@ -627,8 +627,13 @@ export function DadosDoContato({
           ))}
         </div>
         {contato?.qualificacao === "bom" ? (
+          /* A frase passou a ser literal: o sinal É enviado a partir deste clique. Antes ela
+             descrevia a intenção — a marcação ficava guardada e nada saía daqui. Agora entra na
+             fila de conversões como "lead qualificado" pro Meta e pro Google (ver
+             `devolver-qualificacao.ts`), e dizer "volta pro anúncio" sem mandar seria a pior
+             versão disto: a pessoa confia que a plataforma está aprendendo. */
           <p className="hint">
-            {traduzir("Este é o sinal que volta pro anúncio como lead qualificado.")}
+            {traduzir("Enviado pro Meta e pro Google como lead qualificado.")}
           </p>
         ) : null}
       </div>

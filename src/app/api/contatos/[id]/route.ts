@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { aoAtualizarContato } from "@/lib/automacoes/gatilhos-crm";
 import { somenteCamposDeContato } from "@/lib/contatos/campos-editaveis";
+import { aoQualificarLead } from "@/lib/rastreio/devolver-qualificacao";
 
 function paraContato(linha: { etiquetas: unknown; [k: string]: unknown }): Contato {
   return {
@@ -47,6 +48,26 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/contatos/[
 
   const linha = await prisma.contato.findFirstOrThrow({ where: { id, workspaceId: sessao.user.workspaceId } });
   aoAtualizarContato({ workspaceId: sessao.user.workspaceId, contatoNome: linha.nome, antes, depois: linha });
+
+  /*
+   * MARCAR O LEAD COMO "BOM" VOLTA PRO ANÚNCIO.
+   *
+   * Aqui, e não num relógio: a qualificação acontece no mesmo dia da conversa, e é esse o ganho
+   * dela sobre a venda ganha — que demora semanas. Ver `aoQualificarLead`, que decide se vale
+   * mandar e pra quais plataformas (Meta e Google).
+   *
+   * `await` e não disparo solto: é uma escrita no próprio banco (a linha da fila), rápida, e sem
+   * esperar por ela a resposta podia chegar antes da gravação num ambiente serverless que encerra
+   * o processo ao responder. Nenhuma chamada de rede acontece aqui — quem conversa com a Meta e com
+   * o Google é a rodada da fila.
+   */
+  await aoQualificarLead({
+    workspaceId: sessao.user.workspaceId,
+    contatoId: linha.id,
+    antes: antes?.qualificacao ?? null,
+    depois: linha.qualificacao ?? null,
+  });
+
   return NextResponse.json(paraContato(linha));
 }
 

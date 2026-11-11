@@ -1,5 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
+import { eventoNoGoogle } from "@/lib/rastreio/evento-na-plataforma";
+
 /**
  * Google Ads: a segunda plataforma de anúncio da tela de Tráfego.
  *
@@ -30,9 +32,25 @@ import { createHmac, timingSafeEqual } from "node:crypto";
  * e seria incoerente repor o mesmo problema pelo outro lado. Ver `googleAdsConfigurado`.
  */
 
-/** Versão da API. Fixa de propósito: o Google descontinua versão antiga em prazo conhecido, e
- *  descobrir isso por quebra em produção é pior do que por aviso no calendário. */
-const VERSAO = "v18";
+/**
+ * Versão da API. Fixa de propósito: o Google descontinua versão antiga em prazo conhecido, e
+ * descobrir isso por quebra em produção é pior do que por aviso no calendário.
+ *
+ * E FOI EXATAMENTE ASSIM QUE SE DESCOBRIU. Ficou em `v18` e ninguém olhou o calendário: em
+ * 11/11/2026 a página de descontinuação do Google listava a v18 como ENCERRADA, com "ação imediata
+ * necessária". Ou seja, a devolução da venda ganha pro Google não funcionava mais — nem a listagem
+ * de contas, nem o estorno. Falhava inteira, numa versão que não existe mais.
+ *
+ * `v26` é a mais nova (lançada em 14/10/2026, encerramento previsto pra novembro de 2027). Os
+ * campos que este arquivo usa são os mesmos: `uploadClickConversions` com `gclid`/`gbraid`/`wbraid`,
+ * `conversionAction`, `conversionDateTime`, `conversionValue`, `currencyCode`, `userIdentifiers`,
+ * `consent` e `partialFailure`, confirmados na referência da v26.
+ *
+ * O prazo é conhecido: o Google encerra uma versão cerca de um ano depois de lançá-la. Então isto
+ * precisa subir de novo antes de novembro de 2027 — e a lição aqui não é a versão, é que um número
+ * fixo sem ninguém conferindo vira uma integração morta em silêncio.
+ */
+const VERSAO = "v26";
 
 const ESCOPO = "https://www.googleapis.com/auth/adwords";
 
@@ -374,7 +392,9 @@ export function somarLinhas(linhas: LinhaGaql[]): CampanhaGoogle[] {
 
 /** O nome da ação de conversão que o CRM cria na conta do cliente. Fixo: é por ele que a busca
  *  reencontra a ação já existente e evita criar uma segunda. */
-export const NOME_DA_CONVERSAO = "Venda · CRM AZUZ";
+/** Reexportado de `google-ads-nomes.ts`: o valor mora lá pra poder ser lido sem arrastar este
+ *  arquivo (rede, `node:crypto`) junto. Ver o comentário de lá. */
+export { NOME_DA_CONVERSAO } from "./google-ads-nomes";
 
 type RespostaDeBusca = { results?: { conversionAction?: { resourceName?: string } }[] }[];
 
@@ -392,8 +412,19 @@ type RespostaDeBusca = { results?: { conversionAction?: { resourceName?: string 
 export async function garantirAcaoDeConversao(params: {
   accessToken: string;
   customerId: string;
+  /**
+   * O evento do CRM. UMA AÇÃO POR EVENTO, cada uma com a categoria que descreve o que aconteceu.
+   *
+   * Era uma ação só, de categoria `PURCHASE`, pra tudo. Enquanto só a venda ganha era devolvida,
+   * dava no mesmo; com a qualificação do lead voltando pro anúncio, usar a mesma ação ensinaria o
+   * Google que lead qualificado é venda. Ver `evento-na-plataforma.ts`.
+   *
+   * Ausente = venda, que é o que este arquivo sempre fez.
+   */
+  evento?: string;
 }): Promise<{ ok: true; resourceName: string } | { ok: false; erro: string }> {
   const customerId = params.customerId.replace(/\D/g, "");
+  const acao = eventoNoGoogle(params.evento ?? "purchase");
 
   try {
     const busca = await fetch(
@@ -403,7 +434,7 @@ export async function garantirAcaoDeConversao(params: {
         headers: cabecalhos(params.accessToken),
         body: JSON.stringify({
           query: `SELECT conversion_action.resource_name FROM conversion_action
-                  WHERE conversion_action.name = '${NOME_DA_CONVERSAO.replace(/'/g, "\\'")}'
+                  WHERE conversion_action.name = '${acao.nome.replace(/'/g, "\\'")}'
                     AND conversion_action.status != 'REMOVED'`,
         }),
       },
@@ -425,11 +456,14 @@ export async function garantirAcaoDeConversao(params: {
           operations: [
             {
               create: {
-                name: NOME_DA_CONVERSAO,
+                name: acao.nome,
                 // UPLOAD_CLICKS é o tipo que aceita conversão enviada por API a partir de um
                 // gclid. Os outros tipos são medidos pelo próprio Google e recusam upload.
                 type: "UPLOAD_CLICKS",
-                category: "PURCHASE",
+                // A categoria vem do evento: `QUALIFIED_LEAD` pro lead que o time qualificou,
+                // `SUBMIT_LEAD_FORM` pro lead cru, `PURCHASE` só pra venda. Ver
+                // `evento-na-plataforma.ts`, onde está a fonte de cada escolha.
+                category: acao.categoria,
                 status: "ENABLED",
                 // Cada venda vale o que o funil registrou, não um valor fixo. `alwaysUseDefaultValue`
                 // ligado faria toda venda valer o mesmo, e o algoritmo perderia justamente a
@@ -466,7 +500,15 @@ export type ConversaoParaEnviar = {
   tipoDoClique: string | null;
   /** Quando a venda foi fechada. */
   quando: Date;
-  valor: number;
+  /**
+   * O valor, SÓ QUANDO O EVENTO TEM UM.
+   *
+   * `null` omite valor e moeda da requisição, e isso é diferente de mandar zero: zero AFIRMA que a
+   * conversão vale nada, e a conta de retorno da campanha passa a dividir receita por um número de
+   * conversões que inclui as de valor zero. Um lead qualificado não tem preço. Ver
+   * `eventoCarregaValor`.
+   */
+  valor: number | null;
   /**
    * E-mail e telefone embaralhados. É o que permite o Google reencontrar a pessoa quando o código
    * do clique não chegou — o caso que cresce a cada ano com as restrições de privacidade.
@@ -526,8 +568,8 @@ export async function enviarConversoes(params: {
       ...campoDoClique,
       conversionAction: params.acaoDeConversao,
       conversionDateTime: dataParaGoogle(c.quando),
-      conversionValue: c.valor,
-      currencyCode: "BRL",
+      // Ver `valor` no tipo: ausente é ausente, nunca zero.
+      ...(c.valor == null ? {} : { conversionValue: c.valor, currencyCode: "BRL" }),
       ...(c.identificadores?.length ? { userIdentifiers: c.identificadores } : {}),
       ...(c.idDoNegocio ? { orderId: c.idDoNegocio } : {}),
       ...(c.consentimento

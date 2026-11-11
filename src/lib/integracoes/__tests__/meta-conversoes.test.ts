@@ -24,10 +24,14 @@ describe("enviarConversoesMeta", () => {
     globalThis.fetch = original;
   });
 
-  async function mandarUm(extra: Partial<Parameters<typeof enviarConversoesMeta>[0]["conversoes"][number]> = {}) {
+  async function mandarUm(
+    extra: Partial<Parameters<typeof enviarConversoesMeta>[0]["conversoes"][number]> = {},
+    evento?: string,
+  ) {
     await enviarConversoesMeta({
       accessToken: "t",
       datasetId: "999",
+      evento,
       conversoes: [
         {
           ctwaClid: "CLID",
@@ -90,5 +94,55 @@ describe("enviarConversoesMeta", () => {
     const r = await enviarConversoesMeta({ accessToken: "t", datasetId: "1", conversoes: [] });
     expect(r).toEqual({ ok: true, recebidos: 0 });
     expect(enviado).toBeNull();
+  });
+});
+
+/**
+ * O NOME DO EVENTO ERA FIXO: `Purchase`, pra tudo.
+ *
+ * Enquanto só a venda ganha era devolvida, dava no mesmo. Com a qualificação do lead voltando pro
+ * anúncio ("meta e google"), mandar lead qualificado como compra ensinaria a Meta que um lead
+ * qualificado é uma venda: o leilão passa a caçar quem qualifica, e o relatório de receita enche de
+ * venda que nunca existiu.
+ */
+describe("enviarConversoesMeta: o nome do evento e o valor", () => {
+  const original = globalThis.fetch;
+  let enviado: { data: Record<string, unknown>[] } | null = null;
+
+  beforeEach(() => {
+    enviado = null;
+    globalThis.fetch = (async (_url: string, init?: { body?: string }) => {
+      enviado = JSON.parse(init?.body ?? "{}");
+      return { ok: true, status: 200, json: async () => ({ events_received: 1 }) };
+    }) as unknown as typeof fetch;
+  });
+  afterEach(() => {
+    globalThis.fetch = original;
+  });
+
+  async function mandar(evento: string | undefined, valor: number | null) {
+    await enviarConversoesMeta({
+      accessToken: "t",
+      datasetId: "999",
+      evento,
+      conversoes: [{ ctwaClid: "CLID", quando: new Date("2026-11-11T12:00:00Z"), valor, idDoNegocio: "x" }],
+    });
+    return enviado!.data[0] as Record<string, unknown>;
+  }
+
+  it("sem evento informado, continua sendo venda", async () => {
+    // É o caminho da devolução de venda ganha, que não passa evento: o comportamento dele não muda.
+    expect((await mandar(undefined, 3200)).event_name).toBe("Purchase");
+  });
+
+  it("lead qualificado vai com nome próprio, e carrega valor nenhum", async () => {
+    const e = await mandar("lead_qualified", null);
+    expect(e.event_name).toBe("QualifiedLead");
+    // `custom_data` ausente, e não `value: 0`: zero afirmaria que o lead vale nada.
+    expect(e.custom_data).toBeUndefined();
+  });
+
+  it("venda continua levando valor e moeda", async () => {
+    expect((await mandar("purchase", 3200)).custom_data).toEqual({ value: 3200, currency: "BRL" });
   });
 });
