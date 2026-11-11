@@ -512,6 +512,27 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     dataPadrao: () => ({ canal: "Instagram" }),
   },
 
+  {
+    tipo: "instagram_novo_seguidor",
+    categoria: "gatilho",
+    grupo: "instagram",
+    label: "Começou a te seguir",
+    /*
+     * A DESCRIÇÃO DIZ O LIMITE, porque sem ele este gatilho vira uma promessa que a Meta não
+     * cumpre.
+     *
+     * O Instagram não avisa no instante do Seguir — não existe esse evento na API. O que ele
+     * devolve é a RELAÇÃO, no perfil de quem interage. Então o robô percebe a mudança no primeiro
+     * contato depois do Seguir, e é isso que a frase precisa dizer antes de alguém montar um fluxo
+     * em volta dela.
+     */
+    descricao:
+      "Dispara quando alguém que não te seguia aparece te seguindo. O Instagram não avisa na hora do Seguir, então o robô percebe no primeiro contato dela depois disso (comentário, resposta de story ou Direct).",
+    icone: "Instagram",
+    corClasse: corDaCategoria("gatilho"),
+    dataPadrao: () => ({ canal: "Instagram" }),
+  },
+
   // ------------------------------------------------------------- condicao --
   {
     tipo: "condicao_grupo",

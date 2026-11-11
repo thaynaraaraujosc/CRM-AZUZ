@@ -83,6 +83,8 @@ export async function dispararAutomacoesDeEventoInstagram(params: {
   instagramUserId?: string;
   /** Como responder ao comentário que disparou, quando o fluxo pedir isso. */
   responderComentario?: (texto: string) => Promise<void>;
+  /** Resposta privada ao comentário: o Direct de quem nunca escreveu. Vale uma vez. */
+  responderNoDirect?: (texto: string) => Promise<string | undefined>;
 }): Promise<void> {
   await dispararAutomacoes({ ...params, canal: "Instagram" });
 }
@@ -143,6 +145,8 @@ async function dispararAutomacoes(params: {
   chaveEvento?: string;
   instagramUserId?: string;
   responderComentario?: (texto: string) => Promise<void>;
+  /** Resposta privada ao comentário: o Direct de quem nunca escreveu. Vale uma vez. */
+  responderNoDirect?: (texto: string) => Promise<string | undefined>;
 }): Promise<void> {
   const { workspaceId, contatoNome, canal, textoRecebido } = params;
 
@@ -332,6 +336,7 @@ async function dispararAutomacoes(params: {
         contatoId: contatoNoBanco?.id ?? null,
         contato,
         responderComentario: params.responderComentario,
+        responderNoDirect: params.responderNoDirect,
       }).catch((erro) => {
         console.error(`[automacao] fluxo ${linha.id} falhou no motor com estado:`, erro);
         return null;

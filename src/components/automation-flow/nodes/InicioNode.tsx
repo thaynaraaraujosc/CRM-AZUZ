@@ -24,13 +24,20 @@ import { useIdioma } from "@/lib/idioma-context";
  */
 export default function InicioNode({ data }: NodeProps<FlowRFNode>) {
   const { t: traduzir } = useIdioma();
-  const { detalheInicio: detalhe, aoEscolherGatilho } = data as {
-    detalheInicio?: string;
-    aoEscolherGatilho?: () => void;
-  };
+  /*
+   * A PASTILHA NÃO CLICA, E ISSO É DECISÃO DELA.
+   *
+   * Cheguei a transformá-la em botão quando faltava gatilho: clicando, abria a gaveta. "Não é pra
+   * clicar e fazer alguma coisa. Ele está ali pra dizer que a partir dali iniciou o gatilho. É pra
+   * manter do jeito que estava, onde eu posso mover pra onde eu quiser."
+   *
+   * E faz sentido: virando botão, ela deixava de ser arrastável — o clique engolia o arrasto — e
+   * perdia justamente o que ela é, uma peça do desenho que a pessoa põe onde quiser.
+   */
+  const detalhe = (data as { detalheInicio?: string }).detalheInicio;
 
-  const miolo = (
-    <>
+  return (
+    <div className="no-inicio">
       <span className="no-inicio-marca" aria-hidden="true">
         ▶
       </span>
@@ -38,32 +45,6 @@ export default function InicioNode({ data }: NodeProps<FlowRFNode>) {
         <strong>{traduzir("Iniciar robô")}</strong>
         {detalhe ? <span>{detalhe}</span> : null}
       </span>
-    </>
-  );
-
-  /*
-   * SEM GATILHO, A PASTILHA É O CAMINHO PRA ESCOLHER UM.
-   *
-   * "Por que ainda está pedindo pra adicionar um gatilho, sendo que eu já falei aqui?" — e a tela
-   * ajudava a achar que já estava dito: a pastilha desenha uma linha até o primeiro bloco mesmo
-   * quando não existe gatilho nenhum, e linha desenhada parece ligação feita.
-   *
-   * Ela continua sendo um desenho (o motor nunca a executa). O que muda é que, faltando o gatilho,
-   * ela PARA de afirmar que algo acontece e passa a oferecer o que falta: um clique abre a gaveta
-   * de gatilhos. É o único lugar da tela onde a pergunta "o que inicia isso?" aparece sozinha.
-   */
-  if (aoEscolherGatilho) {
-    return (
-      <button type="button" className="no-inicio no-inicio-vazio nodrag" onClick={aoEscolherGatilho}>
-        {miolo}
-        <Handle type="source" position={Position.Right} isConnectable={false} />
-      </button>
-    );
-  }
-
-  return (
-    <div className="no-inicio">
-      {miolo}
       {/* Só saída: nada entra aqui, porque este é o começo. */}
       <Handle type="source" position={Position.Right} isConnectable={false} />
     </div>

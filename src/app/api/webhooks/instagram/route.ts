@@ -33,6 +33,7 @@ import {
   buscarPerfilNasConversas,
 } from "@/lib/integracoes/instagram-login";
 import { criteriosDeEcoDoCrm } from "@/lib/social/eco-do-direct";
+import { virouSeguidor } from "@/lib/social/novo-seguidor";
 import { motivoDaFalha, prazoDe, PRAZO_DOWNLOAD_MS } from "@/lib/integracoes/prazo";
 
 /**
@@ -720,6 +721,22 @@ export async function POST(request: Request) {
            * esse número é enfeite, e quem paga pela tentativa é quem está esperando a mensagem
            * aparecer na tela.
            */
+          /*
+           * "COMEÇOU A TE SEGUIR" NASCE AQUI, e esta é a única hora em que dá pra saber.
+           *
+           * O Instagram não avisa quando alguém aperta Seguir: não existe esse campo de webhook, e
+           * não existe endereço que diga QUEM passou a seguir — a API devolve só o total. O que ela
+           * devolve é a relação, no perfil de quem interage, e é isso que acabou de chegar em
+           * `extras.segueVoce`.
+           *
+           * Então o gatilho é uma TRANSIÇÃO: o CRM conhecia esta pessoa como não-seguidora e ela
+           * aparece seguindo. Quem nunca foi consultado antes não dispara nada — ver `virouSeguidor`,
+           * que é onde essa decisão mora e tem teste.
+           *
+           * A comparação é feita ANTES da gravação, de propósito: depois dela o "antes" já virou o
+           * "agora" e a transição some.
+           */
+          const eraSeguidor = contato.igSegueVoce;
           await prisma.contato
             .update({
               where: { id: contato.id },
@@ -736,6 +753,25 @@ export async function POST(request: Request) {
               },
             })
             .catch(() => {});
+
+          if (extras && virouSeguidor(eraSeguidor, extras.segueVoce)) {
+            /*
+             * A CHAVE LEVA O DIA, e não só a pessoa.
+             *
+             * Webhook reenviado pela Meta não pode mandar as boas-vindas duas vezes. Mas quem
+             * deixa de seguir e volta meses depois é um seguidor novo outra vez, e uma chave só
+             * com o id trancaria a segunda vez pra sempre.
+             */
+            const hoje = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
+            await dispararAutomacoesDeEventoInstagram({
+              workspaceId: integracaoDaConta.workspaceId,
+              contatoNome: chaveContato,
+              tipoGatilho: "instagram_novo_seguidor",
+              textoRecebido: "",
+              chaveEvento: `novo_seguidor:${remetenteId}:${hoje}`,
+              instagramUserId: remetenteId,
+            });
+          }
         }
 
         if (contato?.id && fotoUrl) {

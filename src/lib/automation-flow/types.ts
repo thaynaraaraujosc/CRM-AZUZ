@@ -27,6 +27,7 @@ export type FlowNodeType =
   | "instagram_publicacao_compartilhada"
   | "instagram_story_respondido"
   | "instagram_mencao_story"
+  | "instagram_novo_seguidor"
   | "instagram_reacao_recebida"
   | "instagram_resposta_comentario"
   | "instagram_comentario_live"

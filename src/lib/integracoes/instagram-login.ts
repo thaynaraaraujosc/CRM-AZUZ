@@ -157,6 +157,52 @@ export async function enviarDirectInstagram(
 }
 
 /**
+ * A RESPOSTA PRIVADA A UM COMENTÁRIO: o único jeito de falar no Direct com quem nunca te escreveu.
+ *
+ * O buraco que isto fecha. Um comentário cria o contato no CRM, mas NÃO abre conversa — e o
+ * Instagram só aceita Direct livre dentro de 24 horas depois de a PESSOA escrever. Quem só comentou
+ * nunca escreveu. Então "comentou → recebe no Direct", que é o robô inteiro do Social Seller, só
+ * funcionava pra quem já tinha conversa aberta: justamente quem menos precisa dele.
+ *
+ * A Meta tem o caminho certo pra isso, e ele é outro endereço de destinatário: em vez de
+ * `recipient: { id }` vai `recipient: { comment_id }`. A mensagem chega no Direct da pessoa
+ * amarrada ao comentário dela, e a partir daí a conversa existe e as 24 horas começam a contar —
+ * ou seja, do segundo passo em diante o fluxo volta a ser o de sempre.
+ *
+ * AS REGRAS, QUE SÃO ESTREITAS:
+ * - UMA por comentário. A segunda tentativa a Meta recusa; não é uma falha a repetir.
+ * - Dentro de 7 dias do comentário, contados da hora em que ele foi feito — não de quando o
+ *   webhook chegou. Uma fila atrasada perde a janela.
+ * - Em comentário de LIVE, só enquanto a transmissão está no ar.
+ * - Precisa de `instagram_business_manage_messages`, que é a mesma permissão do Direct comum.
+ *
+ * Confirmei o formato na documentação de desenvolvedores e em implementações públicas; a página
+ * oficial da Meta não abre da rede desta sessão, então o que vale como prova final é o primeiro
+ * envio real. Um erro aqui vira motivo em português na execução, não exceção perdida no log.
+ */
+export async function enviarRespostaPrivadaDeComentario(
+  accessToken: string,
+  comentarioId: string,
+  texto: string,
+): Promise<string | undefined> {
+  const resposta = await fetch(`https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/me/messages`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${accessToken}`, "content-type": "application/json" },
+    body: JSON.stringify({
+      recipient: { comment_id: comentarioId },
+      message: { text: texto },
+    }),
+  });
+  const dados = (await resposta.json()) as { message_id?: string } & ErroGraph;
+  if (!resposta.ok) {
+    throw new Error(
+      dados.error_message ?? dados.error?.message ?? `Falha na resposta privada (HTTP ${resposta.status})`,
+    );
+  }
+  return dados.message_id;
+}
+
+/**
  * Manda um direct com respostas rápidas. Os "botões" do Instagram.
  *
  * Diferente do WhatsApp, aqui não existe botão que fica na mensagem: a resposta rápida some depois

@@ -68,6 +68,7 @@ export function EscolhaDeMidia({
   erro,
   dados,
   onChange,
+  somenteGrade,
 }: {
   tipo: "post" | "story";
   itens: ItemDeMidia[];
@@ -75,6 +76,14 @@ export function EscolhaDeMidia({
   erro: string | null;
   dados: DadosDeEscopo;
   onChange: (novo: DadosDeEscopo) => void;
+  /**
+   * SÓ A GRADE, sem as três opções em cartão.
+   *
+   * No painel de gatilhos quem escolhe o escopo é um seletor na linha "Onde vale" — um clique, as
+   * opções embaixo. Repetir os mesmos três cartões logo abaixo dele seria perguntar duas vezes a
+   * mesma coisa, com dois jeitos diferentes de responder, na mesma tela.
+   */
+  somenteGrade?: boolean;
 }) {
   const { t: traduzir } = useIdioma();
   const [busca, setBusca] = useState("");
@@ -100,18 +109,20 @@ export function EscolhaDeMidia({
   }
 
   return (
-    <div className="esc-escopo">
+    <div className={`esc-escopo${somenteGrade ? " esc-so-grade" : ""}`}>
       <div className={`esc-cartao${escopo === "especifico" ? " on" : ""}`}>
-        <button
-          type="button"
-          className="esc-opcao"
-          role="radio"
-          aria-checked={escopo === "especifico"}
-          onClick={() => onChange({ ...dados, escopo: "especifico" })}
-        >
-          <span className="esc-radio" aria-hidden="true" />
-          <strong>{traduzir(rotuloEspecifico)}</strong>
-        </button>
+        {somenteGrade ? null : (
+          <button
+            type="button"
+            className="esc-opcao"
+            role="radio"
+            aria-checked={escopo === "especifico"}
+            onClick={() => onChange({ ...dados, escopo: "especifico" })}
+          >
+            <span className="esc-radio" aria-hidden="true" />
+            <strong>{traduzir(rotuloEspecifico)}</strong>
+          </button>
+        )}
 
         {escopo === "especifico" ? (
           <div className="esc-corpo">
@@ -208,7 +219,7 @@ export function EscolhaDeMidia({
         ) : null}
       </div>
 
-      <div className={`esc-cartao${escopo === "qualquer" ? " on" : ""}`}>
+      <div className={`esc-cartao${escopo === "qualquer" ? " on" : ""}`} hidden={somenteGrade}>
         <button
           type="button"
           className="esc-opcao"
@@ -221,7 +232,7 @@ export function EscolhaDeMidia({
         </button>
       </div>
 
-      {ehPost ? (
+      {ehPost && !somenteGrade ? (
         <div className={`esc-cartao${escopo === "proxima" ? " on" : ""}`}>
           <button
             type="button"
