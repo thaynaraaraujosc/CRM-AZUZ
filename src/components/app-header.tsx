@@ -11,6 +11,7 @@ import { useContatos } from "@/lib/contatos-context";
 import { useEquipe } from "@/lib/equipe-context";
 import { useNotificacoes } from "@/lib/notificacoes-context";
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
+import { MarcaDoTopo } from "@/components/marca-do-topo";
 import { IconBell, IconSearch } from "@/components/icons";
 import { navEntries } from "@/components/sidebar";
 import { SeletorIdioma } from "@/components/seletor-idioma";
@@ -200,6 +201,17 @@ export function AppHeader() {
 
   return (
     <header className={`app-header${naTelaInicio ? " app-header-transparente" : ""}`}>
+      {/*
+        A MARCA, SÓ NO CELULAR.
+        
+        No computador ela mora no topo do menu lateral. No celular o menu lateral não existe (quem
+        navega é o rodapé), e sem isto o CRM abria sem nenhuma marca na tela — qualquer aplicativo
+        se identifica no canto superior esquerdo, e o nosso deixava de se identificar justamente
+        onde o espaço é menor e a dúvida "onde eu estou" é maior.
+      */}
+      <span className="app-header-marca">
+        <MarcaDoTopo mostrarNome={false} />
+      </span>
       <GlobalSearch />
       {/*
         O ESPAÇO QUE A PÁGINA OCUPA NESTA BARRA.

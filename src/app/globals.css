@@ -7145,85 +7145,26 @@ button.camp-row:hover {
     overflow: hidden;
   }
 
-  /* As duas formas de escrever o menu estao aqui porque a recolhida precisa ser alcancada na
-     especificidade. Sem a segunda linha, o menu volta aos 68px e tudo o que vem abaixo e inutil. */
+  /*
+   * O MENU LATERAL NAO EXISTE NO CELULAR.
+   *
+   * A primeira tentativa foi deitar ele numa faixa horizontal no alto. Funcionava de layout e nao
+   * de uso: onze icones de 20px lado a lado, sem rotulo, numa fila que rola — ninguem acha nada
+   * ali, e o polegar nao alcanca o topo de um telefone de 6 polegadas. "Dessa forma que esta
+   * atualmente, nao faz nenhum sentido."
+   *
+   * Quem navega aqui e o `<RodapeCelular />`: quatro atalhos grandes embaixo e o menu inteiro
+   * atras do "Mais". A regra da recolhida tambem some, senao ela reaparece com os 68px dela.
+   */
   .sidebar,
   .sidebar.recolhida:not(.sobreposta) {
-    width: 100%;
-    height: auto;
-    flex: 0 0 auto;
-    flex-direction: row;
-    align-items: center;
-    gap: var(--space-2);
-    padding: var(--space-2) var(--space-3);
-    border-right: none;
-    border-bottom: 1px solid var(--line);
-    overflow: hidden;
-    transition: none;
-  }
-
-  .sb-brand,
-  .sidebar.recolhida:not(.sobreposta) .sb-brand {
-    flex: 0 0 auto;
-    padding: 0;
-    margin: 0;
-  }
-
-  /* Recolher uma barra horizontal nao quer dizer nada. */
-  .sb-recolher {
     display: none;
   }
 
-  .sidebar .dropdown-anchor {
-    flex: 0 0 auto;
-  }
-
-  .sb-workspace {
-    flex: 0 0 auto;
-    max-width: 120px;
-    margin: 0;
-  }
-
-  /* SO OS ICONES ROLAM. A marca e a conta ficam ancoradas nas pontas; quem passa de largura e a
-     fila de icones, e ela rola sozinha sem levar o resto junto. */
-  .nav {
-    flex: 1 1 auto;
-    min-width: 0;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    align-items: center;
-    gap: var(--space-1);
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-width: none;
-  }
-
-  .nav::-webkit-scrollbar {
-    display: none;
-  }
-
-  .nav-item {
-    flex: 0 0 auto;
-  }
-
-  /* A lista de funis vira parte da mesma fila, em vez de um bloco empilhado no meio dela. */
-  .nav-sublist {
-    flex-direction: row;
-    align-items: center;
-    margin: 0;
-    padding: 0;
-    border: none;
-  }
-
-  .sb-foot {
-    flex: 0 0 auto;
-    margin: 0 0 0 auto;
-    padding: 0;
-    border: none;
-  }
-
-  .sb-foot-info {
-    max-width: 120px;
+  /* A faixa que o rodape ocupa sai da altura util da casca, em vez de ficar POR CIMA do conteudo:
+     assim o fim de uma lista longa para acima do rodape em vez de embaixo dele. */
+  .shell {
+    padding-bottom: calc(62px + env(safe-area-inset-bottom, 0px));
   }
 
   .main {
@@ -33921,4 +33862,307 @@ td.trafego-col-crm:first-of-type {
 
 .wa-numero-aba-alvo {
   box-shadow: inset 2px 0 0 0 var(--ouro);
+}
+
+/* ==========================================================================
+   O RODAPÉ DO CELULAR, E A FOLHA DO MENU
+
+   "Coloca aquele menu lateral no rodapé, igual o do Flow: um rodapé com quatro aplicativos que a
+   gente mais usa, e no cantinho o menu. Quando clica, abre a janela completa."
+
+   Duas peças. O rodapé é navegação permanente: quatro alvos grandes com nome, na parte da tela
+   onde o polegar já está. A folha é o resto do menu, e só aparece quando pedida.
+
+   Vive fora do `@media` porque o componente já decide sozinho se existe (`useTelaEstreita`): se a
+   regra também dependesse da largura, as duas condições poderiam discordar — e discordariam na
+   faixa em que uma troca e a outra não.
+   ========================================================================== */
+
+/* A marca no cabeçalho só existe na largura em que o menu lateral não existe. */
+.app-header-marca {
+  display: none;
+}
+
+@media (max-width: 820px) {
+  .app-header-marca {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+  }
+
+  /*
+   * O CABECALHO EM UMA LINHA: marca, busca e os controles.
+   *
+   * A busca tem 200px fixos, feitos pra uma barra de 1400px. Em 440 ela nao cabia junto do resto
+   * e o cabecalho virava tres andares. Agora ela estica e encolhe com o que sobra.
+   *
+   * As acoes da PAGINA (o espaco onde cada tela publica os botoes dela) vao pra segunda linha em
+   * vez de sumirem: esconder era mais simples e tirava da pessoa o botao principal da tela em que
+   * ela esta. Vazio, esse espaco nao ocupa altura nenhuma.
+   */
+  .app-header {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .app-header > .dropdown-anchor {
+    flex: 1 1 120px;
+    min-width: 0;
+  }
+
+  .app-header .search {
+    width: 100%;
+  }
+
+  .app-header-right {
+    order: 2;
+  }
+
+  .app-header-acoes {
+    order: 3;
+    flex: 1 1 100%;
+  }
+}
+
+.rodape-celular {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 150;
+  display: flex;
+  align-items: stretch;
+  background: var(--surface-elevated);
+  border-top: 1px solid var(--line);
+  /* A faixa do iPhone (a barrinha de gestos) come o fim da tela; sem isto os rótulos ficam
+     embaixo dela. */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-shadow: 0 -2px 12px rgba(0, 32, 55, 0.06);
+}
+
+.rodape-item {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 7px 2px 8px;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-family: var(--body);
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* A pastilha atrás do ícone é o que marca onde a pessoa está — a cor do rótulo sozinha é fina
+   demais pra se ver de relance num aparelho na mão. */
+.rodape-icone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 28px;
+  border-radius: 999px;
+  transition: background-color var(--transition-fast);
+}
+
+.rodape-rotulo {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rodape-item.on {
+  color: var(--navy-marca);
+}
+
+.rodape-item.on .rodape-icone {
+  background: var(--conversa-topo);
+}
+
+:root[data-theme="dark"] .rodape-item.on {
+  color: var(--ouro);
+}
+
+/* ---------------- A folha ---------------- */
+
+.folha-fundo {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(0, 32, 55, 0.38);
+}
+
+.folha {
+  width: 100%;
+  max-height: 88dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-elevated);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  padding: var(--space-2) var(--space-4) calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
+  box-shadow: var(--shadow-lg);
+  animation: folha-sobe var(--transition-base);
+}
+
+@keyframes folha-sobe {
+  from {
+    transform: translateY(16px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .folha {
+    animation: none;
+  }
+}
+
+/* O risquinho do topo: ninguém precisa dele pra funcionar, e é ele que diz "isto é uma folha que
+   sobe", antes de qualquer texto ser lido. */
+.folha-pegador {
+  align-self: center;
+  width: 38px;
+  height: 4px;
+  margin-bottom: var(--space-3);
+  border-radius: 999px;
+  background: var(--line-strong);
+}
+
+.folha-topo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-bottom: var(--space-3);
+}
+
+.folha-titulo {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 17px;
+  font-weight: var(--fw-bold);
+  color: var(--ink);
+}
+
+.folha-sub {
+  margin: 2px 0 0;
+  font-size: 12px;
+  letter-spacing: var(--track-wide);
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.folha-lista {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-1) 0;
+}
+
+.folha-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 11px var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: var(--fw-medium);
+  text-decoration: none;
+}
+
+.folha-item-icone {
+  display: flex;
+  flex: 0 0 auto;
+  color: var(--text-muted);
+}
+
+.folha-item.on {
+  background: var(--conversa-topo);
+  color: var(--navy-marca);
+  font-weight: var(--fw-semibold);
+}
+
+.folha-item.on .folha-item-icone {
+  color: var(--navy-marca);
+}
+
+.folha-sublista {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 2px 0 2px calc(var(--space-3) + 18px + var(--space-3));
+}
+
+.folha-subitem {
+  padding: 8px var(--space-3);
+  border-radius: var(--radius-md);
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-family: var(--body);
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.folha-subitem.on {
+  background: var(--navy-raised);
+  color: var(--ink);
+  font-weight: var(--fw-semibold);
+}
+
+.folha-pe {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+  margin-top: var(--space-2);
+  border-top: 1px solid var(--line-soft);
+}
+
+.folha-usuario {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.folha-usuario-nome {
+  margin: 0;
+  font-size: 14px;
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
+}
+
+.folha-usuario-sub {
+  margin: 1px 0 0;
+  font-size: 12px;
+  color: var(--text-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.folha-tema {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: 14px;
+  color: var(--text-muted);
 }
