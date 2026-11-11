@@ -105,3 +105,40 @@ describe("maiúscula nunca conta, em modo nenhum", () => {
     });
   }
 });
+
+/**
+ * "SÓ QUANDO VIER SEM NENHUM TEXTO."
+ *
+ * O caso que deu origem a isto é o encaminhamento no Direct: a pessoa manda o reel e não escreve
+ * nada, esperando que você entenda a pergunta. "Esse gatilho tem que ativar só com o
+ * encaminhamento."
+ *
+ * Não é um modo de comparação, é a exigência da ausência — e por isso precisa ser conferido ANTES
+ * da regra "sem palavra configurada, qualquer texto dispara", que de outro modo devolveria `true`
+ * pra mensagem com texto e o modo não faria nada.
+ */
+describe("modo sem_texto", () => {
+  const config = { modoPalavra: "sem_texto" as const, palavras: [] };
+
+  it("dispara quando não veio texto nenhum", () => {
+    expect(textoCasaComPalavras("", config)).toBe(true);
+  });
+
+  it("espaço em branco conta como sem texto", () => {
+    expect(textoCasaComPalavras("   ", config)).toBe(true);
+    expect(textoCasaComPalavras("\n\t ", config)).toBe(true);
+  });
+
+  it("NÃO dispara quando a pessoa escreveu junto", () => {
+    expect(textoCasaComPalavras("quanto custa?", config)).toBe(false);
+    expect(textoCasaComPalavras("oi", config)).toBe(false);
+  });
+
+  it("não é afetado por palavra gravada de antes", () => {
+    // A gaveta limpa a lista ao escolher este modo, mas fluxo gravado antes pode ter palavra
+    // sobrando. Ela não pode ressuscitar o filtro: o modo escolhido é o que manda.
+    const comSobra = { modoPalavra: "sem_texto" as const, palavras: ["quero"] };
+    expect(textoCasaComPalavras("", comSobra)).toBe(true);
+    expect(textoCasaComPalavras("quero", comSobra)).toBe(false);
+  });
+});
