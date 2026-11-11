@@ -1345,10 +1345,20 @@ table {
   padding: var(--space-5) var(--space-6) var(--space-6);
   background: var(--navy);
 }
-/* Cabecalho branco sobre o piso cinza, com divisa propria — o mesmo desenho do Flow. */
+/*
+ * O CABECALHO NAO TEM MAIS FIO EMBAIXO.
+ *
+ * "Ta vendo essa linha que separa os botoes de conectar do chat do WhatsApp? Tira isso aqui
+ * tambem."
+ *
+ * Ele existia quando o piso era cinza: cabecalho branco sobre cinza precisava de divisa pra nao
+ * ficar boiando. Com o piso branco, o fio virou a UNICA coisa separando duas areas que ja nao
+ * eram diferentes — e um risco de 1px atravessando a tela inteira e a definicao do "tracado" que
+ * a gente vem tirando faz tres entregas. O que separa agora e o painel de baixo, que tem a
+ * propria borda e o proprio arredondamento.
+ */
 .topbar {
   background: #fff;
-  border-bottom: 1px solid var(--line);
 }
 
 /* ---------------- Primitivos ---------------- */
@@ -2929,6 +2939,39 @@ table.tbl tbody tr:hover td {
  * A margem negativa anula a folga da `.content` e os 12px de `padding-inline` devolvem o minimo
  * pra primeira e a ultima etapa nao encostarem. Saldo: 16px a mais de quadro de cada lado.
  */
+/*
+ * A ETAPA VAI ATE A BORDA DE BAIXO, SEMPRE.
+ *
+ * "Eu quero esse dourado indo ate o final da borda inferior. Nao quero que ele acompanhe a
+ * quantidade de card, quero que ele fique ate a borda, fixo."
+ *
+ * A etapa media pelo conteudo: duas etapas vazias e uma com dois cartoes davam um quadro de
+ * 310px de altura com 600px de branco embaixo — e, pior, a area pra SOLTAR um cartao numa etapa
+ * vazia era aquele retanguinho curto, nao a coluna. Com a altura presa na janela, cada etapa e
+ * uma faixa inteira: da pra largar o cartao em qualquer ponto dela.
+ *
+ * A altura vem da `.content`, que ja tem altura definida (e filha flex do `.main`, que tem
+ * `100vh`), e nao de um `calc(100vh - 190px)` chutado: numero magico erra quando o cabecalho
+ * muda de altura, e ai sobra faixa ou sobra rolagem.
+ */
+.content-funil {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Painel de filtro, nova etapa, editor de automacao: tamanho proprio. Sem isto, como filhos de um
+   flex em coluna, eles esticariam junto com o quadro. */
+.content-funil > *:not(.kanban) {
+  flex: 0 0 auto;
+}
+
+.content-funil > .kanban {
+  flex: 1;
+  /* `min-height: 0` e o que permite o quadro ENCOLHER abaixo do conteudo dele. Sem isso o padrao
+     do flex (`auto`) segura a altura do conteudo e a pagina volta a rolar. */
+  min-height: 0;
+}
+
 .kanban {
   display: flex;
   /* UM ESPACINHO, nao os 12px de antes nem o zero da primeira tentativa. Com a etapa tendo cor
@@ -2969,6 +3012,10 @@ table.tbl tbody tr:hover td {
   background: var(--ouro-soft);
   border-radius: var(--radius-lg);
   padding: var(--space-3) var(--space-3);
+  /* Coluna flex: o cabecalho da etapa fica em cima e a lista de cartoes come todo o resto da
+     altura — e e ela que rola, nao a pagina. */
+  display: flex;
+  flex-direction: column;
 }
 
 /* O cartao sobre fundo branco precisa de um degrau a mais de sombra: o `--shadow-xs` foi
@@ -3020,8 +3067,11 @@ table.tbl tbody tr:hover td {
  * resultado que se pediu. Em tela pequena o teto encolhe junto, sozinho.
  */
 .kcol-cards {
-  max-height: calc(100vh - 330px);
-  min-height: 120px;
+  /* A lista ocupa o que sobra da etapa. Era `max-height: calc(100vh - 330px)`, um teto chutado que
+     fazia sentido quando a etapa media pelo conteudo; agora a etapa tem altura propria e o teto
+     dela E a altura da etapa. */
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   /* Espaço pra barra de rolagem não cobrir a borda direita dos cartões. */
@@ -5067,17 +5117,20 @@ table.tbl tbody tr:hover td {
 }
 
 .wa-info {
+  /* Largura FIXA: a barra de arrastar saiu (ver conversas/page.tsx). `min`/`max` existiam so pros
+     limites do arraste e agora nao limitam nada. */
+  flex: 0 0 320px;
   width: 320px;
-  min-width: 260px;
-  max-width: 70vw;
-  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   margin: var(--space-3) var(--space-3) var(--space-3) 0;
   border: 1px solid var(--line);
   border-radius: var(--radius-xl);
-  background: var(--navy-raised);
+  /* Branca, igual ao painel da lista do outro lado. Era cinza, e na tela de hoje ela virava a
+     unica area cinza que sobrou — lida como se estivesse desligada. Branco, azul, branco: a
+     conversa e a superficie colorida e as duas fichas sao papel. */
+  background: var(--lista-fundo);
   font-family: var(--display);
 }
 
@@ -5085,35 +5138,6 @@ table.tbl tbody tr:hover td {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-}
-
-.wa-resizer {
-  flex: 0 0 auto;
-  width: 10px;
-  margin: var(--space-3) 0;
-  border-radius: var(--radius-sm);
-  cursor: col-resize;
-  background: transparent;
-}
-
-.wa-resizer::after {
-  content: "";
-  display: block;
-  width: 3px;
-  height: 100%;
-  margin: 0 auto;
-  border-radius: var(--radius-sm);
-  background: var(--line);
-}
-
-.wa-resizer:hover::after,
-.wa-resizer:active::after {
-  background: var(--blue);
-}
-
-.wa-resizer:hover,
-.wa-resizer:active {
-  background: var(--blue-soft-2);
 }
 
 .wa-conv-titulo-btn {
@@ -13230,12 +13254,18 @@ button.flow-node-warn:hover {
  * Vale pros DOIS painéis — o da tela do WhatsApp e o que abre pelo card do funil —, que usam as
  * mesmas classes. Ver `DadosDoContato`.
  */
+/*
+ * AS CINCO ABAS CABEM, EM DUAS LINHAS.
+ *
+ * Elas rolavam na horizontal com a barra de rolagem escondida, e com a ficha em 320px isso
+ * significava que "Historico" e "Resumo" simplesmente nao existiam pra quem usa: ficavam fora da
+ * vista, sem nada indicando que dava pra arrastar. Dobrando a linha, as cinco aparecem.
+ */
 .wa-info-tabs {
   display: flex;
-  gap: 4px;
+  flex-wrap: wrap;
+  gap: 3px;
   flex: 0 0 auto;
-  overflow-x: auto;
-  scrollbar-width: none;
   margin: var(--space-3) var(--space-3) 0;
   padding: 6px;
   border-radius: 12px;
@@ -13243,21 +13273,17 @@ button.flow-node-warn:hover {
   border: 1px solid var(--line-soft);
 }
 
-.wa-info-tabs::-webkit-scrollbar {
-  display: none;
-}
-
 .wa-info-tab {
   position: relative;
   flex: 0 0 auto;
   white-space: nowrap;
-  min-height: 36px;
-  padding: 7px 12px;
+  min-height: 32px;
+  padding: 6px 9px;
   border: none;
   border-radius: var(--radius-2);
   background: transparent;
   color: var(--text-muted);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: var(--fw-semibold);
   cursor: pointer;
 }
@@ -32529,7 +32555,10 @@ td.trafego-col-crm:first-of-type {
   padding: 8px 6px;
   margin: 0 -6px;
   border: 0;
-  border-bottom: 1px solid var(--line-soft);
+  /* SEM O FIO EMBAIXO DE CADA CAMPO. Treze campos davam treze riscos numa coluna de 320px, e o
+     que se via de longe era o pente, nao os dados. O que organiza a ficha e o alinhamento do
+     rotulo com o valor, que a grade acima ja garante; o realce do hover continua dizendo que a
+     linha e clicavel. */
   border-radius: 6px;
   background: transparent;
   font: inherit;
@@ -32545,10 +32574,6 @@ td.trafego-col-crm:first-of-type {
    lembra quem atende de perguntar o aniversário — escondido, o campo não existe pra ninguém. */
 .ficha-linha.vazia .ficha-valor {
   color: var(--text-faint);
-}
-
-.ficha-linha:last-child {
-  border-bottom: 0;
 }
 
 .ficha-rotulo {
