@@ -257,6 +257,42 @@ export async function PUT(request: Request) {
     });
   }
 
+  /*
+   * A POSIÇÃO DO CARD DENTRO DA COLUNA NÃO É GRAVADA AQUI. É O SERVIDOR QUE A MANTÉM.
+   *
+   * Era a origem do "O banco demorou demais pra responder. Parte do funil pode não ter sido salva"
+   * que aparecia em QUALQUER alteração do funil, e não só numa grande.
+   *
+   * Quem move um card grava por `/api/funis/mover`, que põe o card no topo da etapa de destino
+   * dando a ele `menor ordem - 1` — número negativo, de propósito, pra não renumerar a coluna
+   * inteira a cada arraste. Só que esta rota recalculava `ordem` como o ÍNDICE do card no array que
+   * o navegador manda. Aí os dois números discordavam: no banco o card movido tinha -1 e os outros
+   * 0, 1, 2…; no payload ele tinha 0 e os outros 1, 2, 3…. A comparação marcava TODOS os cards da
+   * coluna como alterados, e um movimento virava trinta e duas instruções. Com o pool de três
+   * conexões do Railway, era a transação que estourava o prazo (P2028).
+   *
+   * E não era só o arraste: a divergência ficava gravada. A alteração seguinte — fechar um negócio,
+   * renomear uma etapa, criar um card — remandava o quadro inteiro e repetia a mesma enxurrada,
+   * mesmo sem ninguém ter arrastado nada. É exatamente o que a Thaynara relatou: todas as vezes
+   * que mexia no funil, o aviso de demora aparecia.
+   *
+   * Pior: a renumeração sobrescrevia o trabalho de `/api/funis/reordenar-por-atividade`. Uma aba
+   * com a tela antiga aberta devolvia a ordem velha e desfazia a reorganização por atividade que o
+   * servidor tinha acabado de fazer.
+   *
+   * A ordem dentro da coluna passa a ter um dono só: o servidor, em `/api/funis/mover`, em
+   * `funis/upsert.ts` (lead novo entra no topo) e na reordenação por atividade. O `GET` lê por
+   * `ordem` crescente, então o array que chega aqui JÁ reflete a posição gravada — recalculá-lo
+   * pelo índice não acrescentava informação nenhuma, só escrita. A tela não tem arrastar-para-
+   * reordenar dentro da mesma coluna (`moverCard` desiste quando origem e destino são a mesma), o
+   * que significa que nenhuma intenção da pessoa se perde com isto.
+   *
+   * CARD NOVO continua levando `ordem` (logo abaixo): ele não existe no banco e precisa de uma
+   * posição. O índice serve, porque `mover` só cria números MENORES que os existentes — o maior
+   * `ordem` da coluna nunca passa de `quantidade - 1`, e o card novo entra com `quantidade`, ou
+   * seja, no fim da coluna, que é onde `criarNegocio` o coloca na tela.
+   */
+
   // Cards novos vão todos numa instrução só (`createMany`), em vez de uma por card. É o caso do
   // "Trazer conversas", que pode criar dezenas de uma vez.
   const cardsParaCriar: Prisma.NegocioCardCreateManyInput[] = [];
@@ -288,7 +324,6 @@ export async function PUT(request: Request) {
 
         const mudou =
           atual.etapaId !== c.id ||
-          atual.ordem !== ordemCard ||
           atual.nome !== card.nome ||
           atual.valor !== card.valor ||
           atual.origem !== card.origem ||
@@ -306,7 +341,6 @@ export async function PUT(request: Request) {
             where: { id: card.id },
             data: {
               etapaId: c.id,
-              ordem: ordemCard,
               nome: card.nome,
               valor: card.valor,
               origem: card.origem,
