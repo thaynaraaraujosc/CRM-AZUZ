@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Topbar } from "@/components/ui";
 import { BolhaMensagem } from "@/components/conversas/BolhaMensagem";
+import { useTelaEstreita } from "@/lib/tela-estreita";
 import type { ConvMensagem } from "@/lib/data";
 import { IconEnviar, IconSearch } from "@/components/icons";
 import type { ConversaInstagram } from "@/app/api/instagram/conversas/route";
@@ -114,6 +115,42 @@ export default function InstagramConversasPage() {
   const [texto, setTexto] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+
+  /*
+   * NO CELULAR, UMA JANELA DE CADA VEZ.
+   *
+   * "Deixa na tela toda aparecendo todas as conversas, e quando eu clico na conversa vai abrir a
+   * janela da conversa. Nao precisa ficar tudo aberto ao mesmo tempo na mesma janela."
+   *
+   * As tres colunas desta tela (lista, conversa, perfil) foram desenhadas pra 1400px. Em 440px
+   * elas nao encolhem: a conversa ficava com uns 110px e o texto quebrava numa palavra por linha.
+   * Agora cada uma ocupa a tela inteira e a pagina desliza entre elas com encaixe.
+   *
+   * O PERFIL so entra quando pedido — "informacoes de perfil, poe um botao, nao precisa ficar
+   * aparecendo". No computador ele continua sempre visivel, porque la a terceira coluna nao tira
+   * espaco de ninguem.
+   */
+  const estreita = useTelaEstreita();
+  const [perfilAberto, setPerfilAberto] = useState(false);
+  const telaRef = useRef<HTMLDivElement>(null);
+
+  function irPara(seletor: string) {
+    const tela = telaRef.current;
+    if (!tela) return;
+    const alvo = tela.querySelector(seletor);
+    if (alvo instanceof HTMLElement) {
+      tela.scrollTo({ left: alvo.offsetLeft - tela.offsetLeft, behavior: "smooth" });
+    }
+  }
+
+  /* Abrir a conversa e, no celular, ir ate ela. A rolagem acontece no clique e nao num efeito
+     sobre `aberta`: tocar na conversa que ja esta aberta nao muda o estado, e sem isso o toque
+     nao levaria a lugar nenhum. */
+  function abrirConversa(nome: string) {
+    setAberta(nome);
+    setPerfilAberto(false);
+    if (estreita) requestAnimationFrame(() => irPara(".ig-conversa"));
+  }
 
   /*
    * As versões que o servidor já confirmou, mandadas de volta em `If-None-Match` na batida
@@ -401,7 +438,7 @@ export default function InstagramConversasPage() {
     <>
       <Topbar title="Instagram" />
 
-      <div className="content ig-layout">
+      <div className="content ig-layout" ref={telaRef}>
         <aside className="ig-lista">
           <div className="ig-busca">
             <IconSearch width={14} height={14} aria-hidden="true" />
@@ -426,7 +463,7 @@ export default function InstagramConversasPage() {
                   key={c.nome}
                   type="button"
                   className={`ig-item${aberta === c.nome ? " on" : ""}`}
-                  onClick={() => setAberta(c.nome)}
+                  onClick={() => abrirConversa(c.nome)}
                 >
                   <Avatar nome={c.exibicao} fotoUrl={c.fotoUrl} />
                   <span className="ig-item-texto">
@@ -454,6 +491,20 @@ export default function InstagramConversasPage() {
                   <strong>{atual.exibicao}</strong>
                   {atual.username ? <span>@{atual.username.replace(/^@/, "")}</span> : null}
                 </div>
+                {/* So no celular: no computador o perfil ja esta ali do lado, e um botao pra
+                    mostrar o que esta visivel e ruido. */}
+                {estreita ? (
+                  <button
+                    type="button"
+                    className="btn ghost ig-perfil-botao"
+                    onClick={() => {
+                      setPerfilAberto(true);
+                      requestAnimationFrame(() => irPara(".ig-perfil"));
+                    }}
+                  >
+                    {traduzir("Perfil")}
+                  </button>
+                ) : null}
               </header>
 
               <div className="ig-mensagens">
@@ -505,7 +556,20 @@ export default function InstagramConversasPage() {
           )}
         </section>
 
+        {!estreita || perfilAberto ? (
         <aside className="ig-perfil">
+          {estreita ? (
+            <button
+              type="button"
+              className="btn ghost ig-perfil-voltar"
+              onClick={() => {
+                irPara(".ig-conversa");
+                setPerfilAberto(false);
+              }}
+            >
+              ← {traduzir("Voltar para a conversa")}
+            </button>
+          ) : null}
           {!atual ? (
             <p className="hint ig-vazio">{traduzir("Nenhum contato aberto.")}</p>
           ) : (
@@ -535,6 +599,7 @@ export default function InstagramConversasPage() {
             </>
           )}
         </aside>
+        ) : null}
       </div>
     </>
   );
