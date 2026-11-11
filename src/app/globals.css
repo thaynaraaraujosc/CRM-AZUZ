@@ -33179,6 +33179,30 @@ td.trafego-col-crm:first-of-type {
   border-bottom: 1px solid var(--line);
 }
 
+/*
+ * OS BOTÕES DE MARCAR/DESMARCAR SÃO DOURADOS. "Coloca dourado para combinar com a marca."
+ *
+ * E o texto sobre eles é NAVY, nunca branco: é a regra da identidade, e ela vem de medição —
+ * navy sobre dourado dá 7,3:1, branco sobre dourado dá 2,3:1, que é reprovado. Ver o comentário
+ * da paleta no topo desta folha.
+ */
+.perm-acoes .btn {
+  background: var(--ouro);
+  border-color: var(--ouro);
+  color: var(--navy-marca);
+  font-weight: var(--fw-semibold, 600);
+}
+
+.perm-acoes .btn:hover {
+  background: var(--ouro-hover);
+  border-color: var(--ouro-hover);
+}
+
+.perm-acoes .btn:active {
+  background: var(--ouro-active);
+  border-color: var(--ouro-active);
+}
+
 .perm-modulo + .perm-modulo {
   margin-top: 2px;
 }
@@ -33189,7 +33213,13 @@ td.trafego-col-crm:first-of-type {
   justify-content: space-between;
   gap: var(--space-3);
   padding: 10px 17px;
-  background: var(--navy);
+  /*
+   * `--navy-marca`, NÃO `--navy`. Eu usei o token errado e a faixa saiu invisível: `--navy` é o
+   * PISO do conteúdo, que no tema claro é quase branco (#f6f7f9) — então o nome do módulo, escrito
+   * em branco, sumia dentro dela. `--navy-marca` é o azul escuro da marca (#002037) e é o mesmo
+   * nos dois temas, que é o que a faixa precisa ser pra separar de verdade.
+   */
+  background: var(--navy-marca);
   color: #fff;
   /* O cabeçalho acompanha a rolagem: numa lista de onze módulos, quem rola até o fim das
      permissões do WhatsApp já não vê de qual módulo está falando. */
@@ -33258,4 +33288,41 @@ td.trafego-col-crm:first-of-type {
   color: var(--text-muted);
   font-size: 12px;
   margin-left: 6px;
+}
+
+
+/* ============================================================================================
+   O CARTÃO DE DADOS DO CONVITE
+
+   "De dados, não precisa colocar essas linhas separando, e esse retângulo dos dados pode deixar
+   ele azul claro, para ficar destacado."
+
+   As linhas entre os campos vêm de `.field`, que é a base de formulário do CRM inteiro — por isso
+   a regra é escopada neste cartão, e não uma mudança global: em telas com vinte campos a linha é
+   o que separa um do outro.
+
+   O fundo usa `--blue-soft`, o azul rebaixado da identidade, e não uma cor nova.
+   ============================================================================================ */
+.card-dados {
+  background: var(--blue-soft);
+  border-color: var(--blue-soft-2);
+}
+
+.card-dados .field {
+  border-bottom: none;
+  padding-bottom: 2px;
+}
+
+.card-dados .field:last-child {
+  padding-bottom: var(--space-4);
+}
+
+/* O input mantém a superfície elevada, que é a do `.input` do CRM: sobre o azul claro ele é o que
+   diz "aqui se escreve", e usar o token (em vez de branco fixo) o mantém certo no tema escuro. */
+.card-dados .input {
+  background: var(--surface-elevated);
+}
+
+.card-dados .panel-h {
+  border-bottom: none;
 }

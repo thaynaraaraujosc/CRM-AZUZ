@@ -88,7 +88,9 @@ export function ConvidarForm() {
 
   return (
     <div className="grid rep-grid">
-      <div className="card">
+      {/* `card-dados`: fundo azul claro e sem as linhas entre os campos. Ver a folha de estilo —
+          a regra é escopada aqui porque a linha de `.field` é a base de formulário do CRM inteiro. */}
+      <div className="card card-dados">
         <div className="panel-h">
           <h4>{traduzir("Dados")}</h4>
         </div>

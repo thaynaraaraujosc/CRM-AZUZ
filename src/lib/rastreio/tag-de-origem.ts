@@ -142,3 +142,96 @@ export function tagDeOrigemDoLead(origem: OrigemParaTag): TagDeOrigem | null {
 
   return null;
 }
+
+/**
+ * A PRÉVIA DO CRIATIVO: o que a pessoa viu antes de mandar mensagem.
+ *
+ * "Tem como aparecer na barra superior o criativo em miniatura, o nome do criativo pelo qual essa
+ * pessoa veio? Ela viu o criativo e mandou mensagem direta, aí aparece aqui o criativo que ela
+ * veio. Se ela veio pelo formulário, aparece 'veio através do formulário tal'. Se ela veio pelo
+ * Instagram, clicou lá no link da bio."
+ *
+ * TEM COMO, E O DADO JÁ ESTAVA NO BANCO. Quando alguém clica num anúncio de Click-to-WhatsApp, a
+ * Meta manda junto da primeira mensagem um bloco `referral` com o título do anúncio, o corpo, a
+ * imagem, a miniatura e o link de origem. O CRM guarda esse bloco inteiro em `OrigemDoLead.bruto`
+ * desde que o rastreio existe — e nunca o leu de volta. Não é preciso chamar a API da Meta nem
+ * configurar nada: é leitura do que já está gravado.
+ *
+ * Por isso esta função lê `bruto` e não colunas: os campos do criativo nunca ganharam coluna
+ * própria, e criá-las agora não traria de volta o que já passou — enquanto o JSON tem tudo, dos
+ * leads de antes inclusive.
+ */
+export type PreviaDaOrigem = {
+  /** A etiqueta curta, a mesma da lista de conversas. */
+  rotulo: string;
+  pago: boolean;
+  /** O título do anúncio, o nome do formulário — o que identifica a peça. */
+  titulo?: string;
+  /** A linha de baixo: campanha, conjunto, o texto do anúncio. */
+  detalhe?: string;
+  /** A miniatura do criativo, quando a Meta mandou uma. */
+  miniatura?: string;
+  /** Pra onde a peça levava. Abre em aba nova. */
+  link?: string;
+};
+
+/** O `referral` da Meta, como ele chega. Ver a referência da Cloud API. */
+type ReferralDaMeta = {
+  headline?: unknown;
+  body?: unknown;
+  source_url?: unknown;
+  source_type?: unknown;
+  image_url?: unknown;
+  video_url?: unknown;
+  thumbnail_url?: unknown;
+};
+
+function comoTexto(valor: unknown): string | undefined {
+  return typeof valor === "string" && valor.trim() ? valor.trim() : undefined;
+}
+
+/** Um endereço http(s) e nada mais: `javascript:` e `data:` vindos de JSON não viram link nem src. */
+function comoEndereco(valor: unknown): string | undefined {
+  const texto = comoTexto(valor);
+  if (!texto) return undefined;
+  return /^https?:\/\//i.test(texto) ? texto : undefined;
+}
+
+export function previaDaOrigem(
+  origem: (OrigemParaTag & { bruto?: unknown }) | null | undefined,
+  /** O nome do formulário do CRM, quando a origem aponta pra um. Vem de `Formulario`. */
+  nomeDoFormulario?: string | null,
+): PreviaDaOrigem | null {
+  const tag = tagDeOrigemDoLead(origem);
+  if (!tag || !origem) return null;
+
+  const ref = (origem.bruto && typeof origem.bruto === "object" ? origem.bruto : {}) as ReferralDaMeta;
+
+  /*
+   * O TÍTULO É O DO ANÚNCIO, e o `headline` é o campo que a Meta usa pra ele. `anuncioNome` é onde
+   * o CRM já guarda esse mesmo texto — os dois são lidos porque o `bruto` só existe pra quem veio
+   * por Click-to-WhatsApp, e a coluna existe também pra quem veio por link rastreado.
+   */
+  const titulo =
+    comoTexto(ref.headline) ?? limpo(origem.anuncioNome) ?? (nomeDoFormulario?.trim() || undefined);
+
+  /*
+   * A MINIATURA, na ordem do que mostra melhor. `thumbnail_url` é a versão pequena que a Meta
+   * gera; `image_url` é o criativo em tamanho cheio e serve quando não há miniatura. Vídeo não tem
+   * imagem própria aqui — a Meta manda a miniatura dele no mesmo campo.
+   */
+  const miniatura = comoEndereco(ref.thumbnail_url) ?? comoEndereco(ref.image_url);
+
+  const detalhe = [limpo(origem.campanhaNome) || limpo(origem.utmCampaign), comoTexto(ref.body)]
+    .filter(Boolean)
+    .join(" · ");
+
+  return {
+    rotulo: tag.rotulo,
+    pago: tag.pago,
+    ...(titulo ? { titulo } : {}),
+    ...(detalhe ? { detalhe } : {}),
+    ...(miniatura ? { miniatura } : {}),
+    ...(comoEndereco(ref.source_url) ? { link: comoEndereco(ref.source_url)! } : {}),
+  };
+}
