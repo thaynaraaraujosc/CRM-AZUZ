@@ -8613,6 +8613,17 @@ button.camp-row:hover {
   flex: none;
 }
 
+/* O seletor de por qual número a mensagem sai. Estreito: ele é um detalhe da linha, não o assunto
+   dela — o assunto é a mensagem, logo abaixo. */
+.chat-numero-saida {
+  flex: 0 1 auto;
+  width: auto;
+  max-width: 260px;
+  height: 28px;
+  padding: 0 26px 0 8px;
+  font-size: 12.5px;
+}
+
 .chat-canal-rotulo b {
   font-weight: var(--fw-semibold);
   color: var(--ink);
