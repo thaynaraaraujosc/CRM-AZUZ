@@ -3,6 +3,7 @@ import { avaliarGrupoCondicoes } from "@/lib/automation-flow/avaliacao";
 import { iniciarFluxoComEstado } from "@/lib/automacoes/iniciar";
 import { rastreioParaCondicoes } from "@/lib/rastreio/para-condicoes";
 import { enfileirarConversao } from "@/lib/rastreio/fila-de-conversoes";
+import { identificadoresDoLead } from "@/lib/rastreio/identificadores-do-lead";
 import type { PlataformaDeConversao } from "@/lib/rastreio/eventos-de-conversao";
 import type { GrupoCondicoes } from "@/lib/automation-flow/types";
 import {
@@ -141,16 +142,7 @@ async function executarAcaoDireta(params: {
         valor: Number.isFinite(valor) ? valor : null,
         moeda: dados.conversaoMoeda?.trim() || "BRL",
         resultadoId: negocio?.id ?? null,
-        identificadores: {
-          gclid: origem?.tipoDoClique?.startsWith("g") || origem?.tipoDoClique === "wbraid" ? origem?.cliqueId : null,
-          fbclid: origem?.tipoDoClique === "fbclid" ? origem?.cliqueId : null,
-          ctwaClid: origem?.tipoDoClique === "ctwa_clid" ? origem?.cliqueId : null,
-          ttclid: origem?.ttclid ?? null,
-          igSid: origem?.igSid ?? null,
-          gclientid: origem?.gclientid ?? null,
-          email: contato.email,
-          telefone: contato.whatsapp,
-        },
+        identificadores: identificadoresDoLead(origem, contato),
       });
 
       if (resultado.enfileirado) return { ok: true, detalhe: "Conversão na fila." };

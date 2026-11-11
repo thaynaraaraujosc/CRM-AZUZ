@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@/generated/prisma/client";
 import { contaDoWorkspace } from "@/lib/integracoes/google-ads-conta";
 import { enviarConversoes, garantirAcaoDeConversao } from "@/lib/integracoes/google-ads";
+import { eventoCarregaValor } from "@/lib/rastreio/evento-na-plataforma";
 import { decriptar } from "@/lib/integracoes/crypto";
 import { identificadoresDoContato } from "@/lib/rastreio/identificadores";
 import { enviarConversoesMeta, resolverDataset } from "@/lib/integracoes/meta-conversoes";
@@ -90,7 +91,14 @@ async function enviarUma(prisma: PrismaClient, linha: LinhaDaFila): Promise<Resu
     return { ok: false, erro: "O contato desta conversão não existe mais.", definitivo: true };
   }
   const origem = contato.origemDoLead;
-  const valor = linha.valor ? Number(linha.valor) : 0;
+  /*
+   * VALOR SÓ NO EVENTO QUE TEM VALOR, e `null` nos outros — não zero.
+   *
+   * Era `: 0`, então "lead qualificado" sairia afirmando que vale zero reais. As duas plataformas
+   * leem isso como dado, e a conta de retorno da campanha passa a dividir receita por um número de
+   * conversões que inclui as de valor zero. Ver `eventoCarregaValor`.
+   */
+  const valor = eventoCarregaValor(linha.evento) ? (linha.valor ? Number(linha.valor) : 0) : null;
 
   if (linha.plataforma === "meta") {
     const integracao = await prisma.integracao.findUnique({
@@ -110,6 +118,8 @@ async function enviarUma(prisma: PrismaClient, linha: LinhaDaFila): Promise<Resu
     const envio = await enviarConversoesMeta({
       accessToken,
       datasetId: dataset.dataset.id,
+      // O evento do CRM traduzido pro nome da Meta. Ver `evento-na-plataforma.ts`.
+      evento: linha.evento,
       conversoes: [
         {
           ctwaClid: origem?.cliqueId ?? null,
@@ -133,7 +143,9 @@ async function enviarUma(prisma: PrismaClient, linha: LinhaDaFila): Promise<Resu
     if (!conta) {
       return { ok: false, erro: "Google Ads não está conectado neste workspace.", definitivo: true };
     }
-    const acao = await garantirAcaoDeConversao(conta);
+    // Uma ação de conversão POR EVENTO, com a categoria que descreve o que aconteceu
+    // (`QUALIFIED_LEAD` pro lead qualificado, `PURCHASE` só pra venda).
+    const acao = await garantirAcaoDeConversao({ ...conta, evento: linha.evento });
     if (!acao.ok) return { ok: false, erro: acao.erro };
     const envio = await enviarConversoes({
       accessToken: conta.accessToken,

@@ -4,6 +4,7 @@ import type { Contato } from "@/lib/data";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { somenteCamposDeContato } from "@/lib/contatos/campos-editaveis";
+import { aoQualificarLead } from "@/lib/rastreio/devolver-qualificacao";
 import { aoAtualizarContato } from "@/lib/automacoes/gatilhos-crm";
 import { encontrarContatoPorTelefone, upsertContato } from "@/lib/contatos/upsert";
 
@@ -68,6 +69,12 @@ export async function POST(request: Request) {
     // Este caminho escreve direto, sem passar por `upsertContato`: então o disparo precisa estar
     // aqui também, senão uma edição que cai na mesclagem por telefone não acionaria nada.
     aoAtualizarContato({ workspaceId, contatoNome: linha.nome, antes: duplicataPorTelefone, depois: linha });
+    await aoQualificarLead({
+      workspaceId,
+      contatoId: linha.id,
+      antes: duplicataPorTelefone.qualificacao ?? null,
+      depois: linha.qualificacao ?? null,
+    });
     return NextResponse.json({ ...paraContato(linha), mesclado: true });
   }
 
@@ -90,5 +97,25 @@ export async function POST(request: Request) {
     dados: { ...dados, salvoEm: (jaExistePorNome?.salvoEm ?? new Date()).toISOString() },
     origemPadrao,
   });
+
+  /*
+   * MARCAR O LEAD COMO "BOM" VOLTA PRO ANÚNCIO.
+   *
+   * É POR AQUI que a marcação passa: o chip de qualificação no painel do contato chama
+   * `salvarDadosContato`, que grava por esta rota (upsert pelo nome) — não pelo `PATCH /[id]`. O
+   * gancho está nos três caminhos COM SESSÃO desta rota e do PATCH, e não dentro de
+   * `upsertContato`, porque aquela função também atende a rota pública do formulário e os
+   * webhooks: ali um "bom" vindo de fora viraria sinal de anúncio sem ninguém da equipe ter
+   * olhado o lead.
+   *
+   * Ver `aoQualificarLead`, que decide se vale mandar e pra quais plataformas (Meta e Google).
+   */
+  await aoQualificarLead({
+    workspaceId,
+    contatoId: linha.id,
+    antes: jaExistePorNome?.qualificacao ?? null,
+    depois: linha.qualificacao ?? null,
+  });
+
   return NextResponse.json(paraContato(linha), { status: jaExistePorNome ? 200 : 201 });
 }
