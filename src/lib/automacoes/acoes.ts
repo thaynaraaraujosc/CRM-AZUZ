@@ -806,12 +806,29 @@ export function acoesReais(params: {
         });
         if (!etapa) return falha(`A etapa "${etapaTitulo}" não existe mais nesse funil.`);
 
-        const card = await prisma.negocioCard.findFirst({ where: { workspaceId, nome: contatoNome }, select: { id: true } });
+        /*
+         * O CARD DESTE FUNIL PRIMEIRO, e só depois o de qualquer funil.
+         *
+         * Desde que a mesma pessoa pode estar em mais de um funil (um por número que fala com ela),
+         * "o card dela" deixou de ser pergunta única. Procurando no workspace inteiro, uma
+         * automação de "mover pra etapa X do funil do Lucas" podia arrancar o card do funil
+         * comercial e levá-lo pro do Lucas — esvaziando um quadro pra encher o outro, sem ninguém
+         * pedir.
+         *
+         * A busca ampla continua como segunda opção, porque mover é mover: quem só tem card noutro
+         * funil é movido pra cá, que é o que esta ação sempre fez.
+         */
+        const card =
+          (await prisma.negocioCard.findFirst({
+            where: { workspaceId, nome: contatoNome, etapa: { funilId } },
+            select: { id: true },
+          })) ??
+          (await prisma.negocioCard.findFirst({ where: { workspaceId, nome: contatoNome }, select: { id: true } }));
         if (card) {
           await prisma.negocioCard.update({ where: { id: card.id }, data: { etapaId: etapa.id, ordem: 0 } });
           return ok(`Movido para "${etapaTitulo}".`);
         }
-        const idNovo = idDoCard(workspaceId, contatoNome);
+        const idNovo = idDoCard(workspaceId, contatoNome, funilId);
         try {
           await prisma.negocioCard.create({
             data: {

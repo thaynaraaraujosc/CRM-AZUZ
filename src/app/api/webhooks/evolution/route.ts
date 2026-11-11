@@ -15,7 +15,7 @@ import { idDaConexao } from "@/lib/integracoes/conexoes-whatsapp";
 import { destinoDoNumero } from "@/lib/integracoes/destino-do-numero";
 import { baixarFotoDePerfil, precisaBaixarFoto } from "@/lib/integracoes/foto-de-perfil";
 import { criarContatoPeloWhatsAppSeNaoExistir } from "@/lib/contatos/upsert";
-import { entrarNaPrimeiraEtapaComoNovoLead, subirCardParaOTopo } from "@/lib/funis/upsert";
+import { entrarNaPrimeiraEtapaComoNovoLead, entrarNoFunilDoNumero, subirCardParaOTopo } from "@/lib/funis/upsert";
 import { dispararAutomacoesDeMensagemRecebida } from "@/lib/automation-flow/disparar-no-servidor";
 import { resolverPessoaDoTelefone } from "@/lib/conversas/identidade";
 import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
@@ -698,6 +698,18 @@ export async function processarMensagemRecebida(
     // Contato que já tinha card: a ETAPA não se mexe, mas o card sobe pro topo da coluna. Quem
     // acabou de falar precisa estar visível sem rolar a coluna inteira.
     await subirCardParaOTopo(workspaceId, chaveContato);
+
+    // E se for a PRIMEIRA vez que essa pessoa fala por ESTE número, ela entra no funil dele: quem
+    // atende neste quadro não tem como adivinhar que ela chegou. Ver `entrarNoFunilDoNumero`, que
+    // é quem decide — aqui nunca se cria card pro funil padrão.
+    await entrarNoFunilDoNumero({
+      workspaceId,
+      contatoNome: chaveContato,
+      ehGrupo,
+      origem: "WhatsApp",
+      contaCanal,
+      funilId: destino.funilId,
+    });
   }
 
 

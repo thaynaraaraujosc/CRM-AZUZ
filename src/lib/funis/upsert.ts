@@ -4,23 +4,56 @@ import { ehChaveDuplicada } from "@/lib/prisma-erros";
 import { idDeCardSemChave, idDoCard } from "./id-do-card";
 
 /**
- * O negócio daquele contato, achado pelo nome NORMALIZADO.
+ * OS negócios daquele contato, achados pelo nome NORMALIZADO.
  *
  * O banco compara texto com texto, e o mesmo contato chega com o nome escrito de jeitos diferentes
  * conforme o caminho: espaço sobrando no fim, maiúsculas do nome de perfil, espaço duplo no meio.
  * Buscar por igualdade exata fazia o CRM não achar o card que já existia (e criar outro) e não
  * achar o card pra subir pro topo quando chegava mensagem.
  *
- * Faz uma busca ampla por igualdade exata primeiro, que é a barata e resolve o caso comum, e só
- * cai pra varredura normalizada quando ela não acha nada. A varredura é limitada ao workspace.
+ * Devolve LISTA, e não um card: desde que a mesma pessoa pode estar em mais de um funil (um por
+ * número que fala com ela), "o card dela" não existe mais como pergunta. Quem precisa de um só
+ * precisa dizer de qual funil — é o que faz `cardDoContatoNoFunil`.
+ *
+ * Sempre varre, e não só quando a igualdade exata falha: parar no primeiro acerto deixaria de fora
+ * o card gravado com outra grafia do mesmo nome, que é justamente o caso que a normalização existe
+ * pra cobrir. A varredura é limitada ao workspace.
  */
-async function cardDoContato(workspaceId: string, contatoNome: string) {
-  const exato = await prisma.negocioCard.findFirst({ where: { workspaceId, nome: contatoNome } });
+async function cardsDoContato(workspaceId: string, contatoNome: string) {
+  const exatos = await prisma.negocioCard.findMany({ where: { workspaceId, nome: contatoNome } });
+  const chave = chaveDeContato(contatoNome);
+  if (!chave) return exatos;
+
+  // A varredura normalizada acha as outras grafias ("Thais " com espaço, "LUCAS" em maiúsculas) e
+  // os cards já encontrados pela igualdade exata; o `Set` de ids evita devolver alguém duas vezes.
+  const jaAchados = new Set(exatos.map((c) => c.id));
+  const candidatos = await prisma.negocioCard.findMany({ where: { workspaceId } });
+  return exatos.concat(
+    candidatos.filter((c) => !jaAchados.has(c.id) && chaveDeContato(c.nome) === chave),
+  );
+}
+
+/**
+ * O MESMO, MAS DENTRO DE UM FUNIL SÓ. É a pergunta certa pra decidir se um lead entra.
+ *
+ * "Por mais que eu esteja conversando com essa pessoa por 2 WhatsApp, ela tem que estar nos 2
+ * funis e não só em 1." A conferência era do workspace inteiro: card em QUALQUER funil respondia
+ * "já tem" e o lead não entrava no funil do outro número. Com dois números — a API oficial no
+ * principal e o celular do closer no QR Code — isso quer dizer que o segundo funil nunca recebia
+ * ninguém que já tivesse falado pelo primeiro.
+ *
+ * A pergunta do workspace inteiro continua existindo (`cardDoContato`), porque ela é a certa pra
+ * quem quer MOVER o card da pessoa; ela só não é a certa pra quem quer saber se falta criar um.
+ */
+async function cardDoContatoNoFunil(workspaceId: string, contatoNome: string, funilId: string) {
+  const exato = await prisma.negocioCard.findFirst({
+    where: { workspaceId, nome: contatoNome, etapa: { funilId } },
+  });
   if (exato) return exato;
 
   const chave = chaveDeContato(contatoNome);
   if (!chave) return null;
-  const candidatos = await prisma.negocioCard.findMany({ where: { workspaceId } });
+  const candidatos = await prisma.negocioCard.findMany({ where: { workspaceId, etapa: { funilId } } });
   return candidatos.find((c) => chaveDeContato(c.nome) === chave) ?? null;
 }
 
@@ -73,13 +106,6 @@ export async function entrarNaPrimeiraEtapaComoNovoLead(params: {
   });
   if (conversa?.arquivada) return null;
 
-  // Comparação pelo nome NORMALIZADO, não por texto exato. O mesmo contato chega com o nome
-  // escrito de jeitos diferentes conforme o caminho ("Thais " com espaço, "LUCAS ARANTES" em
-  // maiúsculas), e comparar cru fazia a mesma pessoa ganhar um segundo card a cada variação. Foi
-  // assim que a conta real chegou a 69 negócios no funil pra 35 conversas.
-  const jaTemCard = await cardDoContato(workspaceId, contatoNome);
-  if (jaTemCard) return jaTemCard;
-
   // "Primeiro funil do workspace": mesma convenção já usada em outras telas (trafego/page.tsx,
   // funilAtivoId inicial em funis-context.tsx): o primeiro da lista, não um campo "principal"
   // dedicado (que não existe no schema). Workspace sem nenhum funil/etapa ainda: não há onde
@@ -96,6 +122,7 @@ export async function entrarNaPrimeiraEtapaComoNovoLead(params: {
       })
     : null;
 
+
   const funil = etapaEscolhida
     ? null
     : await prisma.funil.findFirst({
@@ -111,6 +138,27 @@ export async function entrarNaPrimeiraEtapaComoNovoLead(params: {
   const primeiraEtapa = etapaEscolhida ?? funil?.etapas[0];
   if (!primeiraEtapa) return null;
 
+  /*
+   * A CONFERÊNCIA DE CARD EXISTENTE VEM DEPOIS DE SABER O FUNIL DE DESTINO, e por isso ela mudou
+   * de lugar: antes era a primeira coisa que a função fazia, do workspace inteiro.
+   *
+   * "Por mais que eu esteja conversando com essa pessoa por 2 WhatsApp, ela tem que estar nos 2
+   * funis e não só em 1." Com a pergunta ampla, um card em qualquer funil respondia "já tem" e o
+   * lead não entrava no funil do outro número — foi por isso que a Cássia, chamada pela API
+   * oficial, nunca apareceu no funil do Lucas.
+   *
+   * Dentro do MESMO funil nada mudou: quem já tem card não ganha outro e não muda de etapa, que
+   * continua sendo decisão de quem atende. Comparação pelo nome NORMALIZADO, não por texto exato:
+   * o mesmo contato chega escrito de jeitos diferentes conforme o caminho ("Thais " com espaço,
+   * "LUCAS ARANTES" em maiúsculas), e comparar cru fazia a mesma pessoa ganhar um segundo card a
+   * cada variação. Foi assim que a conta real chegou a 69 negócios pra 35 conversas.
+   */
+  const funilDestino = etapaEscolhida?.funilId ?? funil?.id;
+  if (!funilDestino) return null;
+
+  const jaTemCard = await cardDoContatoNoFunil(workspaceId, contatoNome, funilDestino);
+  if (jaTemCard) return jaTemCard;
+
   // Lead novo entra no TOPO da coluna, não no fim. Como a listagem ordena por `ordem` crescente,
   // isso é uma ordem MENOR que a de todo mundo. Entrando no fim, quem acabou de mandar mensagem
   // caía embaixo de dezenas de cards antigos e a pessoa que atende só via o lead novo rolando a
@@ -121,7 +169,7 @@ export async function entrarNaPrimeiraEtapaComoNovoLead(params: {
   // 0..n na próxima vez que a tela salvar, mantendo a posição.
   const menorOrdem = primeiraEtapa.cards.reduce((min, c) => Math.min(min, c.ordem), 0);
 
-  const id = idDoCard(workspaceId, contatoNome);
+  const id = idDoCard(workspaceId, contatoNome, funilDestino);
   try {
     return await prisma.negocioCard.create({
       data: {
@@ -144,11 +192,82 @@ export async function entrarNaPrimeiraEtapaComoNovoLead(params: {
     if (!ehChaveDuplicada(erro)) throw erro;
     const doConcorrente = id
       ? await prisma.negocioCard.findUnique({ where: { id } })
-      : await cardDoContato(workspaceId, contatoNome);
+      : await cardDoContatoNoFunil(workspaceId, contatoNome, funilDestino);
     // Sem o card da vencedora não há o que devolver: aí o erro é de verdade e sobe.
     if (!doConcorrente) throw erro;
     return doConcorrente;
   }
+}
+
+/**
+ * ELA JÁ É CLIENTE, MAS É A PRIMEIRA VEZ QUE FALA POR ESTE NÚMERO: entra no funil deste número.
+ *
+ * "Eu chamei o número da Cássia pelo WhatsApp da versão oficial. Só que ela não foi pro funil do
+ * Lucas." E: "por mais que eu esteja conversando com essa pessoa por 2 WhatsApp, ela tem que estar
+ * nos 2 funis e não só em 1."
+ *
+ * `entrarNaPrimeiraEtapaComoNovoLead` só era chamado pra contato que ACABOU de nascer, e isso está
+ * certo pro funil padrão: mensagem nova de quem já é cliente não pode criar negócio nem mover
+ * ninguém de etapa. Mas quando a empresa tem dois números e cada um tem o seu quadro, a primeira
+ * mensagem de alguém POR UM NÚMERO NOVO é um lead novo PARA AQUELE NÚMERO, mesmo que a pessoa já
+ * exista no CRM há meses. Quem atende naquele número não tem como adivinhar que ela chegou.
+ *
+ * DUAS GUARDAS, e as duas importam:
+ *
+ * 1. SÓ COM FUNIL PRÓPRIO CONFIGURADO (`funilId`). Sem ele o número manda pro funil padrão, e
+ *    criar card lá seria justamente o "mensagem nova ressuscita negócio" que não pode acontecer.
+ * 2. SÓ NA PRIMEIRA MENSAGEM POR ESTE NÚMERO. É o que separa "chegou alguém aqui" de "mais uma
+ *    mensagem de quem já estava". Sem isso, um card que a pessoa tirou do quadro de propósito
+ *    voltaria na próxima mensagem — e tirar do funil é um gesto deliberado, com confirmação.
+ *
+ * A contagem inclui a mensagem que acabou de ser gravada (os dois webhooks gravam antes de chegar
+ * aqui): `1` quer dizer que não havia nenhuma antes desta.
+ */
+export async function entrarNoFunilDoNumero(params: {
+  workspaceId: string;
+  contatoNome: string;
+  ehGrupo?: boolean;
+  origem: string;
+  contaCanal?: string | null;
+  /** O funil deste número. Sem ele não há nada a fazer: ver a guarda 1 acima. */
+  funilId?: string | null;
+}) {
+  const { workspaceId, contatoNome, contaCanal, funilId } = params;
+  if (params.ehGrupo || !funilId || !contaCanal) return null;
+
+  const quantas = await prisma.mensagemExtra.count({
+    where: {
+      workspaceId,
+      contato: contatoNome,
+      // `whatsapp_baileys:` é o nome ANTIGO do canal de QR Code, ainda gravado em mensagem de
+      // antes da renomeação. Sem os dois, a conta daria zero num número que conversa há meses e o
+      // card entraria como se fosse a primeira vez.
+      contaCanal: { in: [contaCanal, equivalenteAntigo(contaCanal)].filter((c): c is string => !!c) },
+    },
+  });
+  if (quantas > 1) return null;
+
+  return entrarNaPrimeiraEtapaComoNovoLead({
+    workspaceId,
+    contatoNome,
+    ehGrupo: params.ehGrupo,
+    origem: params.origem,
+    contaCanal,
+    funilId,
+  });
+}
+
+/** A grafia antiga do mesmo `contaCanal`, quando existe. `null` quando não há equivalente. */
+function equivalenteAntigo(contaCanal: string): string | null {
+  const PREFIXO_NOVO = "whatsapp_nao_oficial:";
+  const PREFIXO_ANTIGO = "whatsapp_baileys:";
+  if (contaCanal.startsWith(PREFIXO_NOVO)) {
+    return `${PREFIXO_ANTIGO}${contaCanal.slice(PREFIXO_NOVO.length)}`;
+  }
+  if (contaCanal.startsWith(PREFIXO_ANTIGO)) {
+    return `${PREFIXO_NOVO}${contaCanal.slice(PREFIXO_ANTIGO.length)}`;
+  }
+  return null;
 }
 
 /**
@@ -167,18 +286,29 @@ export async function entrarNaPrimeiraEtapaComoNovoLead(params: {
  */
 export async function subirCardParaOTopo(workspaceId: string, contatoNome: string) {
   try {
-    const card = await cardDoContato(workspaceId, contatoNome);
-    if (!card) return;
+    /*
+     * TODOS OS CARDS DA PESSOA, não só o primeiro encontrado.
+     *
+     * Desde que a mesma pessoa pode estar em mais de um funil — um por número que fala com ela —,
+     * pegar "o card dela" devolvia um e deixava o outro parado no meio da coluna. Quem acabou de
+     * mandar mensagem precisa aparecer primeiro em todo quadro onde ela está: o quadro é a caixa de
+     * entrada de quem atende por aquele número, e não é o número dele que decide se a mensagem
+     * chegou.
+     */
+    const cards = await cardsDoContato(workspaceId, contatoNome);
+    if (!cards.length) return;
 
-    const menor = await prisma.negocioCard.aggregate({
-      where: { etapaId: card.etapaId },
-      _min: { ordem: true },
-    });
-    const menorOrdem = menor._min.ordem ?? 0;
-    // Já está no topo: não escreve à toa (o webhook roda a cada mensagem recebida).
-    if (card.ordem <= menorOrdem) return;
+    for (const card of cards) {
+      const menor = await prisma.negocioCard.aggregate({
+        where: { etapaId: card.etapaId },
+        _min: { ordem: true },
+      });
+      const menorOrdem = menor._min.ordem ?? 0;
+      // Já está no topo: não escreve à toa (o webhook roda a cada mensagem recebida).
+      if (card.ordem <= menorOrdem) continue;
 
-    await prisma.negocioCard.update({ where: { id: card.id }, data: { ordem: menorOrdem - 1 } });
+      await prisma.negocioCard.update({ where: { id: card.id }, data: { ordem: menorOrdem - 1 } });
+    }
   } catch (erro) {
     console.error("[funil] falha ao subir o card pro topo:", erro);
   }

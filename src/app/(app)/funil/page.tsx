@@ -14,6 +14,7 @@ import { useContatos } from "@/lib/contatos-context";
 import { rotuloDaQualificacao } from "@/lib/contatos/qualificacao";
 import { formatarTelefoneParaExibicao } from "@/lib/telefone";
 import { nomeExibido } from "@/lib/conversas/exibicao";
+import { NumeroDoFunil } from "@/components/funil/NumeroDoFunil";
 import { chaveDeContato } from "@/lib/contatos/chave-nome";
 import { useConversas } from "@/lib/conversas-context";
 import { rotuloDeAtividade } from "@/lib/funis/atividade";
@@ -680,6 +681,12 @@ function FunilPageInner() {
             >
               {modoAutomatizar ? traduzir("Ver negócios") : traduzir("Automatizar")}
             </button>
+            {/* DE QUAL NÚMERO SÃO OS LEADS DESTE FUNIL. Fica aqui, e não só em Configurações →
+                WhatsApp, porque é aqui que a pergunta aparece: "criei um funil com o nome do Lucas
+                Chaveiro, é o funil do número 26; por que esse número lá não está os contatos que eu
+                estou conversando?". O componente se esconde sozinho com menos de dois números
+                conectados. */}
+            {funilAtivo ? <NumeroDoFunil funilId={funilAtivo.id} funilNome={funilAtivo.nome} /> : null}
             {funilAtivo ? (
               <div className="dropdown-anchor">
                 <button

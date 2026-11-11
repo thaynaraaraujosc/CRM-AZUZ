@@ -508,18 +508,32 @@ export async function dispararGatilhosDoLead(params: {
   // que esse disparo sai.
   if (quando === "saiu") return;
 
-  const card = await prisma.negocioCard.findFirst({
+  /*
+   * TODAS AS ETAPAS EM QUE O LEAD ESTÁ, e não a primeira que o banco devolver.
+   *
+   * Era `findFirst`, e dava no mesmo enquanto havia um card por pessoa. Agora a mesma pessoa pode
+   * estar em dois funis de propósito — um por número que fala com ela —, e pegar um card só faria
+   * os gatilhos de etapa de UM dos quadros rodarem e os do outro nunca. Automação que existe na
+   * tela e nunca acontece é o pior defeito possível aqui: parece que está funcionando e só não deu
+   * a hora.
+   *
+   * `Set` porque dois cards podem estar na MESMA etapa (duas grafias do nome ainda não juntadas), e
+   * aí o gatilho dispararia duas vezes pela mesma pessoa.
+   */
+  const cards = await prisma.negocioCard.findMany({
     where: { workspaceId: params.workspaceId, nome: params.contatoNome },
     select: { etapaId: true },
     orderBy: { ordem: "asc" },
   });
-  if (!card) return;
+  if (!cards.length) return;
 
-  await dispararGatilhosDaEtapa({
-    workspaceId: params.workspaceId,
-    etapaId: card.etapaId,
-    contatoNome: params.contatoNome,
-    evento: quando,
-    agora: params.agora,
-  });
+  for (const etapaId of new Set(cards.map((c) => c.etapaId))) {
+    await dispararGatilhosDaEtapa({
+      workspaceId: params.workspaceId,
+      etapaId,
+      contatoNome: params.contatoNome,
+      evento: quando,
+      agora: params.agora,
+    });
+  }
 }

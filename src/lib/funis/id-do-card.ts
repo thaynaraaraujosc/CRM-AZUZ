@@ -27,16 +27,37 @@ import { slugId } from "@/lib/ids";
 /** Cabe no `varchar(191)` que o Prisma usa pra `String @id`, com folga pro prefixo. */
 const LIMITE_DO_ID = 180;
 
-export function idDoCard(workspaceId: string, contatoNome: string): string | null {
+/**
+ * O FUNIL ENTRA NA CHAVE, e isso é o que deixa a mesma pessoa estar em dois funis.
+ *
+ * "Por mais que eu esteja conversando com essa pessoa por 2 WhatsApp, ela tem que estar nos 2
+ * funis e não só em 1."
+ *
+ * Sem o funil na chave, o id era um por pessoa por empresa: o segundo funil batia na chave
+ * primária do card do primeiro e a pessoa ficava de fora. Com ele, a garantia muda de "um card por
+ * pessoa" pra "um card por pessoa POR FUNIL" — que é a regra certa, e continua sendo o banco quem
+ * a impõe, não uma sequência de passos que nunca pode ser atômica em código.
+ *
+ * CARD ANTIGO NÃO É MIGRADO. Ele conserva o id de antes (`card-<empresa>-<pessoa>`), e continua
+ * sendo achado pelo NOME dentro do funil dele, que é como todos os caminhos procuram card existente
+ * antes de criar. O que o id novo garante é a corrida entre duas criações: as duas resolvem o mesmo
+ * funil, as duas calculam a mesma chave, e o banco recusa a segunda.
+ */
+export function idDoCard(workspaceId: string, contatoNome: string, funilId: string): string | null {
   const chave = slugId(contatoNome);
   // Nome sem letra nem número (só emoji, só pontuação): não há chave estável a deduzir, e inventar
   // uma faria pessoas diferentes dividirem o mesmo card.
   if (!chave) return null;
 
+  // Funil sem id dedutível não tem como entrar na chave, e deduzir sem ele faria o card do funil A
+  // bloquear o do funil B — o defeito que esta assinatura existe pra corrigir.
+  const doFunil = slugId(funilId);
+  if (!doFunil) return null;
+
   // O prefixo `card-` existe pra o id novo nunca topar com um id antigo nem com um id de contato
   // (que é `${workspaceId}-${slug}`, a mesma string). Formatos que não se cruzam deixam a migração
   // ser nenhuma: card antigo continua com o id antigo, e é achado pelo nome como sempre.
-  const id = `card-${workspaceId}-${chave}`;
+  const id = `card-${workspaceId}-${doFunil}-${chave}`;
 
   // Cortar faria dois nomes longos virarem o mesmo id, e aí duas pessoas dividiriam um card — pior
   // do que o problema que esta função resolve. Sem id dedutível, quem chama usa o id único de

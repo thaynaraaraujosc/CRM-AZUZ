@@ -573,13 +573,17 @@ async function moverCardDeEtapa(
   const etapa = await prisma.funilEtapa.findFirst({ where: { funilId, titulo: etapaTitulo } });
   if (!etapa) return;
 
-  const card = await prisma.negocioCard.findFirst({ where: { workspaceId, nome: contatoNome } });
+  // O card DESTE funil primeiro, e só depois o de qualquer funil: ver o mesmo comentário em
+  // `acoes.ts` (`moverEtapa`). A mesma pessoa pode estar em mais de um funil de propósito.
+  const card =
+    (await prisma.negocioCard.findFirst({ where: { workspaceId, nome: contatoNome, etapa: { funilId } } })) ??
+    (await prisma.negocioCard.findFirst({ where: { workspaceId, nome: contatoNome } }));
   if (card) {
     await prisma.negocioCard.update({ where: { id: card.id }, data: { etapaId: etapa.id } });
     return;
   }
 
-  const id = idDoCard(workspaceId, contatoNome);
+  const id = idDoCard(workspaceId, contatoNome, funilId);
   try {
     await prisma.negocioCard.create({
       data: {

@@ -11,7 +11,7 @@ import { CANAL_OFICIAL, contaCanalDaConexao } from "@/lib/integracoes/conta-cana
 import { criarContatoPeloWhatsAppSeNaoExistir } from "@/lib/contatos/upsert";
 import { destinoDoNumero } from "@/lib/integracoes/destino-do-numero";
 import { aplicarOrigemPelaMensagem, aplicarOrigemPelaReferenciaDaMeta } from "@/lib/rastreio/aplicar";
-import { entrarNaPrimeiraEtapaComoNovoLead, subirCardParaOTopo } from "@/lib/funis/upsert";
+import { entrarNaPrimeiraEtapaComoNovoLead, entrarNoFunilDoNumero, subirCardParaOTopo } from "@/lib/funis/upsert";
 import { dispararAutomacoesDeMensagemRecebida } from "@/lib/automation-flow/disparar-no-servidor";
 import { registrarRespostaDeCampanha } from "@/lib/campanhas/resposta";
 import type { ConvMensagem } from "@/lib/data";
@@ -599,6 +599,17 @@ export async function POST(request: Request) {
           // Contato que já tinha card: a ETAPA não se mexe, mas o card sobe pro topo da coluna.
           // Quem acabou de falar precisa estar visível sem rolar a coluna inteira.
           await subirCardParaOTopo(integracao.workspaceId, chaveContato);
+
+          // E se for a PRIMEIRA vez que essa pessoa fala por ESTE número, ela entra no funil dele.
+          // É o caso da Cássia: cliente antiga, chamada pela primeira vez pela API oficial, que
+          // nunca aparecia no quadro daquele número. Ver `entrarNoFunilDoNumero`.
+          await entrarNoFunilDoNumero({
+            workspaceId: integracao.workspaceId,
+            contatoNome: chaveContato,
+            origem: "WhatsApp",
+            contaCanal: contaCanalDaConexao(CANAL_OFICIAL, phoneNumberId),
+            funilId: destino.funilId,
+          });
         }
 
         await dispararAutomacoesDeMensagemRecebida({

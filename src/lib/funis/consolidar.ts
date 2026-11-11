@@ -127,11 +127,27 @@ export async function planejarJuncaoDeCards(workspaceId: string): Promise<CardPa
     include: { etapa: { select: { titulo: true, ordem: true, funilId: true } } },
   });
 
+  /*
+   * O GRUPO É POR PESSOA **E POR FUNIL**, não por pessoa só.
+   *
+   * A frase acima — "quando a mesma pessoa tem mais de um negócio no mesmo funil" — era a intenção
+   * desde o começo, mas o agrupamento era pelo nome no workspace inteiro. Enquanto havia um card
+   * por pessoa dava no mesmo. Agora não dá: a mesma pessoa pode estar em dois funis de propósito,
+   * um por número que fala com ela ("por mais que eu esteja conversando com essa pessoa por 2
+   * WhatsApp, ela tem que estar nos 2 funis e não só em 1"), e juntar por nome APAGARIA o card do
+   * segundo número — justamente o arranjo que a pessoa acabou de montar, e sem volta.
+   *
+   * Duplicado de verdade é duas linhas da mesma pessoa no MESMO quadro, que é o que a grafia
+   * diferente do nome produzia.
+   */
   const grupos = new Map<string, typeof cards>();
   for (const card of cards) {
     const chave = chaveDeContato(card.nome);
     if (!chave) continue;
-    grupos.set(chave, [...(grupos.get(chave) ?? []), card]);
+    // `card.etapa?.funilId` pode faltar em card com etapa apagada: `sem-funil` os mantém juntos
+    // entre si e separados de quem tem funil, que é o tratamento honesto pra um estado inválido.
+    const doGrupo = `${chave}|${card.etapa?.funilId ?? "sem-funil"}`;
+    grupos.set(doGrupo, [...(grupos.get(doGrupo) ?? []), card]);
   }
 
   const plano: CardParaJuntar[] = [];
