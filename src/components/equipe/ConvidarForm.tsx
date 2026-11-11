@@ -3,18 +3,27 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { PermissoesPorModulo } from "@/components/equipe/PermissoesPorModulo";
+import { MARCA_DE_VERSAO } from "@/lib/configuracoes/permissoes";
+import { cpfValido, digitosDoCpf, formatarCpf } from "@/lib/equipe/cpf";
 import { useEquipe } from "@/lib/equipe-context";
-import { FUNCOES_PADRAO, PERMISSOES_POR_MODULO } from "@/lib/configuracoes/permissoes";
-import { RadioList, Toggle } from "@/components/ui";
 import { useIdioma } from "@/lib/idioma-context";
 
-const OPCAO_PERSONALIZADO = "Papel personalizado";
-
 /**
- * Formulário de convite: nasce em branco (item 1 do pedido: nada pré-preenchido, é uma conta
- * nova). Nome/e-mail são digitados de verdade; o papel escolhe uma função padrão (com as
- * permissões dela já marcadas, mas editáveis) ou "personalizado" (começa zerado, você monta do
- * zero). `convidarMembro` já persiste na API de verdade (ver `equipe-context.tsx`).
+ * CONVIDAR ALGUÉM PRA EQUIPE: os dados da pessoa, o nome do papel, e o que ela pode.
+ *
+ * A TELA ANTERIOR PEDIA PRA ESCOLHER UM PAPEL NUMA LISTA de seis — Administrador, Gestor,
+ * Vendedor, Atendente, Gestor de tráfego, Visualizador —, cada um com "N permissões pré-marcadas",
+ * e um sétimo item "personalizado" que era o único que deixava escrever o nome. "Não precisa ficar
+ * mostrando esses nomes de papéis aqui. Coloca só o papel, eu escolho o nome, pronto."
+ *
+ * Os papéis prontos eram um palpite sobre como a empresa se organiza, e ele estava quase sempre
+ * errado: ninguém usava "Visualizador", e quem queria "Closer" ou "Financeiro" tinha que passar
+ * pelo item de baixo. Agora o papel é um campo de texto e as permissões são a resposta de verdade
+ * — que é o que a tela da direita sempre foi.
+ *
+ * `convidarMembro` persiste na API (ver `equipe-context.tsx`), que confere papel, e-mail e CPF
+ * de novo: a tela é o navegador.
  */
 export function ConvidarForm() {
   const { t: traduzir } = useIdioma();
@@ -23,42 +32,32 @@ export function ConvidarForm() {
 
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
-  const [funcaoSelecionada, setFuncaoSelecionada] = useState(OPCAO_PERSONALIZADO);
-  const [nomePapelCustom, setNomePapelCustom] = useState("");
-  const [permissoes, setPermissoes] = useState<string[]>([]);
+  const [cpf, setCpf] = useState("");
+  const [papel, setPapel] = useState("");
+  /*
+   * Começa com a MARCA DE VERSÃO e nada mais: ninguém nasce podendo. Sem a marca, um convite novo
+   * sem nenhuma permissão seria lido como "é de antes dos módulos novos" e abriria quatro deles.
+   */
+  const [permissoes, setPermissoes] = useState<string[]>([MARCA_DE_VERSAO]);
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
-  const opcoesPapel = [
-    ...FUNCOES_PADRAO.map((f) => ({ nome: f.nome, descricao: `${f.permissoesPadrao.length} permissões pré-marcadas` })),
-    {
-      nome: OPCAO_PERSONALIZADO,
-      descricao: "Você escolhe o nome e cada permissão, do zero",
-      boxed: true,
-    },
-  ];
-
-  function selecionarFuncao(nomeSelecionado: string) {
-    setFuncaoSelecionada(nomeSelecionado);
-    const padrao = FUNCOES_PADRAO.find((f) => f.nome === nomeSelecionado);
-    setPermissoes(padrao ? [...padrao.permissoesPadrao] : []);
-  }
-
-  function alternarPermissao(id: string, ligado: boolean) {
-    setPermissoes((atual) => (ligado ? [...new Set([...atual, id])] : atual.filter((p) => p !== id)));
-  }
-
-  const ehPersonalizado = funcaoSelecionada === OPCAO_PERSONALIZADO;
-  const nomePapelFinal = ehPersonalizado ? nomePapelCustom.trim() : funcaoSelecionada;
+  /** As permissões de verdade: a marca de versão não é uma delas, é só o carimbo. */
+  const quantasPermissoes = permissoes.filter((p) => p !== MARCA_DE_VERSAO).length;
+  const cpfEstaErrado = cpf.trim().length > 0 && !cpfValido(cpf);
 
   async function enviarConvite() {
     setErro(null);
     if (!nome.trim() || !email.trim()) {
-      setErro("Preenche nome e e-mail.");
+      setErro(traduzir("Preenche nome e e-mail."));
       return;
     }
-    if (ehPersonalizado && !nomePapelCustom.trim()) {
-      setErro("Dá um nome pro papel personalizado.");
+    if (!papel.trim()) {
+      setErro(traduzir("Dá um nome pro papel dessa pessoa."));
+      return;
+    }
+    if (cpfEstaErrado) {
+      setErro(traduzir("Esse CPF não existe. Confere os números."));
       return;
     }
 
@@ -67,10 +66,18 @@ export function ConvidarForm() {
       convidarMembro({
         nome: nome.trim(),
         email: email.trim(),
-        papel: nomePapelFinal,
-        papelTipo: nomePapelFinal === "Administrador" ? "admin" : ehPersonalizado ? "custom" : "padrao",
-        papelNota: ehPersonalizado ? "· personalizado" : undefined,
-        enxerga: permissoes.length === 0 ? traduzir("Nenhum módulo do CRM") : `${permissoes.length} permissões`,
+        cpf: digitosDoCpf(cpf),
+        papel: papel.trim(),
+        /*
+         * `admin` continua sendo pelo NOME, e isso é herança que vale manter: é o que dá à pessoa
+         * as telas de administração. Qualquer outro nome é papel personalizado — que agora é a
+         * regra, não a exceção.
+         */
+        papelTipo: papel.trim().toLowerCase() === "administrador" ? "admin" : "custom",
+        enxerga:
+          quantasPermissoes === 0
+            ? traduzir("Nenhum módulo do CRM")
+            : `${quantasPermissoes} ${traduzir("permissões")}`,
         permissoes,
       });
       router.push("/equipe");
@@ -87,7 +94,13 @@ export function ConvidarForm() {
         </div>
         <div className="field">
           <label>{traduzir("Nome")}</label>
-          <input className="input" style={{ width: "100%" }} value={nome} onChange={(e) => setNome(e.target.value)} placeholder={traduzir("Nome completo")} />
+          <input
+            className="input"
+            style={{ width: "100%" }}
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+            placeholder={traduzir("Nome completo")}
+          />
         </div>
         <div className="field">
           <label>{traduzir("E-mail (vai ser o login dele)")}</label>
@@ -101,49 +114,61 @@ export function ConvidarForm() {
           />
         </div>
         <div className="field">
-          <label>{traduzir("Papel")}</label>
-          <RadioList options={opcoesPapel} initial={OPCAO_PERSONALIZADO} bare onChange={selecionarFuncao} />
-          {ehPersonalizado ? (
-            <input
-              className="input mt14"
-              style={{ width: "100%" }}
-              value={nomePapelCustom}
-              onChange={(e) => setNomePapelCustom(e.target.value)}
-              placeholder={traduzir("Ex.: Estoquista, Financeiro…")}
-            />
+          <label>{traduzir("CPF")}</label>
+          <input
+            className="input"
+            style={{ width: "100%" }}
+            inputMode="numeric"
+            value={cpf}
+            /* A máscara é posta ao SAIR do campo, não a cada tecla: formatar enquanto se digita faz
+               o cursor pular quando a pessoa volta pra corrigir um número no meio. */
+            onChange={(e) => setCpf(e.target.value)}
+            onBlur={() => setCpf((atual) => formatarCpf(atual) || atual)}
+            placeholder="000.000.000-00"
+          />
+          {cpfEstaErrado ? (
+            <p className="hint" style={{ color: "var(--danger)", marginTop: 6 }}>
+              {traduzir("Esse CPF não existe. Confere os números.")}
+            </p>
           ) : null}
+        </div>
+        <div className="field">
+          <label>{traduzir("Papel")}</label>
+          <input
+            className="input"
+            style={{ width: "100%" }}
+            value={papel}
+            onChange={(e) => setPapel(e.target.value)}
+            placeholder={traduzir("Ex.: Closer, Financeiro, Social media…")}
+          />
+          <p className="hint" style={{ marginTop: 6 }}>
+            {traduzir("É só o nome do cargo. Quem decide o que essa pessoa pode é a lista ao lado.")}
+          </p>
         </div>
       </div>
 
       <div className="card">
         <div className="panel-h">
-          <h4>Permissões de {nomePapelFinal || "…"}, módulo por módulo</h4>
+          <h4>
+            {papel.trim()
+              ? `${traduzir("O que")} ${papel.trim()} ${traduzir("pode fazer")}`
+              : traduzir("O que essa pessoa pode fazer")}
+          </h4>
         </div>
-        {PERMISSOES_POR_MODULO.map((grupo) => (
-          <div key={grupo.modulo}>
-            <p className="hint" style={{ padding: "10px 17px 2px", fontWeight: 700, color: "var(--text-muted)" }}>
-              {grupo.modulo}
-            </p>
-            {grupo.permissoes.map((permissao) => (
-              <div className="toggle-row" key={permissao.id}>
-                <span className="tl">{permissao.label}</span>
-                <Toggle
-                  key={`${permissao.id}-${funcaoSelecionada}`}
-                  defaultOn={permissoes.includes(permissao.id)}
-                  label={permissao.label}
-                  onToggle={(ligado) => alternarPermissao(permissao.id, ligado)}
-                />
-              </div>
-            ))}
-          </div>
-        ))}
-        <p className="hint" style={{ padding: "10px 17px" }}>{traduzir("Sem a permissão &quot;Visualizar&quot; de um módulo, esse módulo fica totalmente bloqueado pra essa pessoa. Ela nem consegue abrir a tela.")}</p>
+
+        <PermissoesPorModulo selecionadas={permissoes} onChange={setPermissoes} />
+
+        <p className="hint" style={{ padding: "10px 17px" }}>
+          {traduzir(
+            'Sem a permissão "Visualizar" de um módulo, esse módulo fica totalmente bloqueado: a pessoa nem consegue abrir a tela.',
+          )}
+        </p>
 
         {erro ? <p style={{ color: "var(--danger)", padding: "0 17px 10px", fontSize: 13.5 }}>{erro}</p> : null}
 
         <div className="section-foot">
-          <button type="button" className="btn primary block" onClick={enviarConvite} disabled={enviando}>
-            {enviando ? "Enviando…" : `Enviar convite${nomePapelFinal ? ` pro ${nomePapelFinal}` : ""}`}
+          <button type="button" className="btn primary block" onClick={() => void enviarConvite()} disabled={enviando}>
+            {enviando ? traduzir("Enviando…") : traduzir("Enviar convite")}
           </button>
         </div>
       </div>

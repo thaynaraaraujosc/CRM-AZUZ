@@ -1172,6 +1172,8 @@ export type Membro = {
   initials: string;
   nome: string;
   email: string;
+  /** O CPF da pessoa, só os dígitos. Ver o campo no schema: não é o documento da empresa. */
+  cpf?: string | null;
   senha: string | null;
   papel: string;
   papelTipo: "admin" | "padrao" | "custom";

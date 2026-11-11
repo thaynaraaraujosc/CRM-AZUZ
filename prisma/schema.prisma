@@ -738,6 +738,17 @@ model Membro {
   /// ferramenta, e a coluna nasce vazia pras contas que já existem.
   telefone String?
 
+  /// O CPF DA PESSOA, pedido no convite.
+  ///
+  /// Não é o documento da empresa (`Workspace.documento`, que é o da cobrança): é o de quem vai
+  /// usar o CRM, e serve pra identificar a pessoa certa numa equipe com homônimos e pra contrato
+  /// de quem atende.
+  ///
+  /// Guardado só com os dígitos, pra "123.456.789-09" e "12345678909" não virarem duas pessoas.
+  /// Opcional: a coluna nasce vazia pra quem já está na equipe, e ninguém é desligado do CRM por
+  /// não ter preenchido um campo que não existia.
+  cpf String?
+
   /// A SENHA QUE O SUPER-ADMIN ENTREGOU, guardada de forma recuperável — e só essa.
   ///
   /// POR QUE EXISTE. Conta de cortesia é entregue pronta: a Azuz cria, define a senha e passa pra
