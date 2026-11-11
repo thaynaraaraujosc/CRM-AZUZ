@@ -878,6 +878,19 @@ model Funil {
   /// não são criados.
   contaCanal String?
 
+  /// A ORDEM DOS FUNIS, escolhida arrastando.
+  ///
+  /// "Eu quero que o funil azul seja o primeiro, porque eu quero que lá no chat também ele seja as
+  /// primeiras respostas." A ordem não é só do menu: como cada funil é de um número, ela também
+  /// decide a ordem das abas de número na caixa de entrada — o primeiro funil é o número que abre.
+  ///
+  /// Sem coluna, a lista saía na ordem que o banco devolvia, que é a de inserção e não muda com
+  /// nada que a pessoa faça.
+  ///
+  /// Começa em 0 pra todo mundo; o desempate é o id, que é estável. Assim a lista não embaralha
+  /// sozinha antes de alguém arrastar o primeiro.
+  ordem Int @default(0)
+
   etapas FunilEtapa[]
 
   @@index([workspaceId])

@@ -33326,3 +33326,17 @@ td.trafego-col-crm:first-of-type {
 .card-dados .panel-h {
   border-bottom: none;
 }
+
+/* Arrastar o funil no menu lateral. A marca de onde vai cair é um filete dourado no topo do item
+   sob o cursor: numa lista curta e estreita, sem ela o arrasto é adivinhação. */
+.nav-subitem[draggable="true"] {
+  cursor: grab;
+}
+
+.nav-subitem-arrastando {
+  opacity: 0.45;
+}
+
+.nav-subitem-alvo {
+  box-shadow: inset 0 2px 0 0 var(--ouro);
+}

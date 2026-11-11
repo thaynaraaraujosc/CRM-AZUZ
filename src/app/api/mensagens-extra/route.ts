@@ -93,6 +93,27 @@ export async function GET(request: Request) {
   //
   // Apagamento não aparece num delta. Por isso a resposta leva a contagem TOTAL: a tela compara
   // com o que ela conhece e, se não bater, pede a lista inteira (ver `mensagens-extra-context`).
+  /*
+   * UMA CONVERSA SÓ, pedida pelo nome.
+   *
+   * "Não chegou as mensagens no funil dos clientes que já tem mensagem com a gente lá no chat.
+   * Não faz nenhum sentido eu abrir e não ter nenhuma mensagem."
+   *
+   * A tela carrega as mensagens em BLOCO: as 3.000 mais recentes do workspace inteiro, uma vez, e
+   * daí em diante só o que muda. Isso é o certo pra caixa de entrada, onde se lê o que é recente.
+   * Mas quem abre um card do funil de alguém que parou de escrever há tempos está pedindo uma
+   * conversa que pode estar inteira FORA dessas 3.000 — e a tela, sem nada a mostrar, dizia
+   * "nenhuma mensagem ainda", que é a frase de quem nunca falou com a pessoa.
+   *
+   * Com `?contato=`, a janela da conversa pede o histórico DELA quando não tem nada em mãos. É uma
+   * consulta por índice (`[workspaceId, contato]`), pontual, e só acontece quando falta.
+   */
+  const deUmContato = new URL(request.url).searchParams.get("contato");
+  if (deUmContato) {
+    const daConversa = await mensagensDeUmContato(sessao.user.workspaceId, deUmContato, where);
+    return NextResponse.json(daConversa, { headers: { "cache-control": "no-store" } });
+  }
+
   const desdeMs = Number(new URL(request.url).searchParams.get("desde"));
   const parcial = Number.isFinite(desdeMs) && desdeMs > 0;
   const desde = parcial ? new Date(desdeMs) : null;
@@ -202,4 +223,47 @@ export async function PUT(request: Request) {
   if (operacoes.length) await prisma.$transaction(operacoes);
 
   return NextResponse.json({ ok: true });
+}
+
+/** Quantas mensagens de UMA conversa a janela carrega de uma vez. */
+const LIMITE_DE_UMA_CONVERSA = 500;
+
+/**
+ * As mensagens de uma conversa, pelo nome dela — e, não achando nada, PELO TELEFONE.
+ *
+ * O segundo caminho existe pelo mesmo motivo que o funil passou a procurar a conversa pelo
+ * telefone: o CRM casa mensagem com conversa pelo NOME, e os dois saem de sincronia sozinhos
+ * quando a conversa é batizada depois de já ter histórico. Nesse caso as mensagens continuam
+ * gravadas sob o nome antigo — que é o telefone — e procurar só pelo nome novo não acha nada.
+ *
+ * Devolve no mesmo formato da lista inteira (`{ [nome]: mensagens }`), com a chave sendo o nome
+ * PEDIDO: é por ele que a tela guarda, e devolver a chave antiga faria a janela continuar vazia.
+ */
+async function mensagensDeUmContato(
+  workspaceId: string,
+  nome: string,
+  filtro: Record<string, unknown>,
+): Promise<Record<string, ConvMensagem[]>> {
+  const buscar = (contato: string) =>
+    prisma.mensagemExtra.findMany({
+      where: { ...filtro, contato },
+      orderBy: { criadoEm: "desc" },
+      take: LIMITE_DE_UMA_CONVERSA,
+    });
+
+  let linhas = await buscar(nome);
+
+  if (!linhas.length) {
+    const conversa = await prisma.conversa.findUnique({
+      where: { workspaceId_nome: { workspaceId, nome } },
+      select: { contato: true, ehGrupo: true },
+    });
+    const antigo = conversa?.contato;
+    // Grupo fica de fora: lá `contato` é o JID do grupo, e as mensagens sempre estiveram sob o
+    // nome do grupo — procurar pelo JID não acharia nada e custaria uma consulta à toa.
+    if (antigo && !conversa?.ehGrupo && antigo !== nome) linhas = await buscar(antigo);
+  }
+
+  linhas.reverse();
+  return { [nome]: linhas.map((linha) => paraMensagem(linha)) };
 }

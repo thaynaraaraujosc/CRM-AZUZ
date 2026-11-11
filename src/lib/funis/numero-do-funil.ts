@@ -96,3 +96,39 @@ export function nomeDoFunil(sufixo: string): string {
 export function sufixoSugerido(numero: NumeroParaFunil | null | undefined): string {
   return numero?.nome?.trim() ?? "";
 }
+
+/**
+ * OS NÚMEROS NA ORDEM DOS FUNIS.
+ *
+ * "Eu quero que o funil azul seja o primeiro, porque eu quero que lá no chat também ele seja as
+ * primeiras respostas. (…) O funil pode ser de acordo com a ordem do funil: se eu arrasto o funil
+ * da Azuz para cima, ele fica como primeiro, e aí lá no chat do WhatsApp também ele fica como
+ * primeiro."
+ *
+ * A caixa de entrada abria no primeiro número da lista, e essa lista vinha na ordem em que as
+ * conexões foram criadas — que não quer dizer nada pra quem atende. Como cada funil é de um
+ * número, a ordem que ela arrasta no menu passa a ser a mesma dos dois lados: uma decisão, dois
+ * lugares.
+ *
+ * Número sem funil vai pro fim, na ordem que já tinha entre eles: ele não participa da decisão, e
+ * inventar uma posição pra ele embaralharia o que ela arrumou.
+ */
+export function numerosNaOrdemDosFunis<T extends NumeroParaFunil>(
+  numeros: T[],
+  funis: FunilComNumero[],
+): T[] {
+  const posicao = new Map<string, number>();
+  funis.forEach((f, i) => {
+    if (f.contaCanal) posicao.set(f.contaCanal, i);
+  });
+
+  return [...numeros]
+    .map((n, i) => ({ n, i, pos: posicao.get(n.chave) }))
+    .sort((a, b) => {
+      if (a.pos === b.pos) return a.i - b.i;
+      if (a.pos === undefined) return 1;
+      if (b.pos === undefined) return -1;
+      return a.pos - b.pos;
+    })
+    .map((x) => x.n);
+}
