@@ -22,6 +22,7 @@ import {
   type StatusMensagem,
 } from "@/lib/data";
 import { rotuloDoDiaEmBrasilia } from "@/lib/conversas/hora-da-mensagem";
+import { useTelaEstreita } from "@/lib/tela-estreita";
 import { ehLinkDeMidia } from "@/lib/conversas/midia-mensagem";
 import {
   conexaoDaConversa,
@@ -1744,6 +1745,31 @@ function ConversasPageInner() {
     Record<string, { id: string; titulo: string; texto: string }[]>
   >({});
   const mensagemInputRef = useRef<HTMLTextAreaElement>(null);
+
+  /*
+   * NO CELULAR, ESCOLHER UMA CONVERSA LEVA A TELA ATE ELA.
+   *
+   * Nessa largura a lista e a conversa nao cabem lado a lado, entao cada uma ocupa a tela inteira
+   * e a caixa desliza entre as duas (ver `.wa-content` no media query de 820px). So que tocar
+   * numa conversa deixava a pessoa parada na lista, olhando pra lista: a conversa abria fora da
+   * vista, e o toque parecia nao ter feito nada.
+   *
+   * Voltar pra lista e deslizar pro lado, que e o gesto que a propria rolagem ja oferece.
+   *
+   * Em tela larga nao faz nada: as duas ja estao visiveis, e empurrar a rolagem ali seria mexer
+   * numa caixa que nao rola.
+   */
+  const telaEstreita = useTelaEstreita();
+  const caixaRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const caixa = caixaRef.current;
+    if (!caixa || !selectedId) return;
+    if (window.innerWidth > 820) return;
+    const conversa = caixa.querySelector(".wa-main");
+    if (conversa instanceof HTMLElement) {
+      caixa.scrollTo({ left: conversa.offsetLeft - caixa.offsetLeft, behavior: "smooth" });
+    }
+  }, [selectedId]);
 
   /*
    * O CAMPO CRESCE COM O TEXTO, até três linhas.
@@ -4486,7 +4512,7 @@ function ConversasPageInner() {
         }
       />
 
-      <div className="content wa-content wa-whatsapp">
+      <div className="content wa-content wa-whatsapp" ref={caixaRef}>
         <aside className="wa-list">
           <div className="wa-list-head">
             <span>{traduzir("Conversas")}</span>
@@ -5640,7 +5666,13 @@ function ConversasPageInner() {
                     ref={mensagemInputRef}
                     className="box chat-input-campo"
                     rows={1}
-                    placeholder={traduzir("Digite uma mensagem... (/ para respostas rápidas, // para automações)")}
+                    /* A dica das barras e de teclado, e no celular nao ha teclado de barra nem
+                       espaco pra frase: ali ela so era cortada no meio. */
+                    placeholder={
+                      telaEstreita
+                        ? traduzir("Digite uma mensagem...")
+                        : traduzir("Digite uma mensagem... (/ para respostas rápidas, // para automações)")
+                    }
                     value={mensagemTexto}
                     onChange={(e) => {
                       setMensagemTexto(e.target.value);
