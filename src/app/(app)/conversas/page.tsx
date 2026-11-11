@@ -38,7 +38,7 @@ import {
   type NumeroConectado,
 } from "@/lib/conversas/numeros-conectados";
 import { canalDeSaida } from "@/lib/conversas/canal-de-saida";
-import { iniciaisExibidas, nomeExibido } from "@/lib/conversas/exibicao";
+import { iniciaisExibidas, nomeAindaEhIdCru, nomeExibido } from "@/lib/conversas/exibicao";
 import { BotoesConectarWhatsApp } from "@/components/configuracoes/BotoesConectarWhatsApp";
 import { BolhaMensagem } from "@/components/conversas/BolhaMensagem";
 import { traduzirRotuloDoSistema } from "@/lib/conversas/rotulos-do-sistema";
@@ -657,6 +657,46 @@ function ConversasPageInner() {
     }
   }
 
+  /**
+   * BUSCA O NOME DAS CONVERSAS QUE JÁ ESTÃO COMO NÚMERO.
+   *
+   * O batismo automático acontece quando a mensagem chega, então ele conserta o futuro: quem já
+   * está no CRM como "5511973935384" só muda quando aquela pessoa escrever de novo. Este botão é o
+   * passado — ele lê o nome no histórico que o aparelho ainda guarda (só no QR Code; a API oficial
+   * não tem de onde consultar).
+   *
+   * Em lotes, e repetindo enquanto sobrar: é uma chamada por conversa, e um lote que estoura no
+   * meio sem dizer o que já fez é pior que três lotes que andam.
+   */
+  async function buscarNomesQueFaltam() {
+    if (batizando) return;
+    setBatizando(true);
+    let total = 0;
+    try {
+      for (let rodada = 0; rodada < 20; rodada += 1) {
+        const r = await fetch("/api/conversas/batizar-numeros", { method: "POST" });
+        const dados = (await r.json().catch(() => ({}))) as {
+          batizadas?: number;
+          restam?: number;
+          erro?: string;
+        };
+        if (!r.ok) throw new Error(dados.erro);
+        total += dados.batizadas ?? 0;
+        if (!dados.restam) break;
+      }
+      await recarregarConversas();
+      avisarAutomacao(
+        total
+          ? `${total} ${total === 1 ? "conversa ganhou nome" : "conversas ganharam nome"}.`
+          : "Nenhum nome novo: o WhatsApp não guardou o nome dessas pessoas.",
+      );
+    } catch (erro) {
+      avisarAutomacao(erro instanceof Error && erro.message ? erro.message : "Não deu pra buscar os nomes.");
+    } finally {
+      setBatizando(false);
+    }
+  }
+
   function avisarAutomacao(texto: string) {
     const id = `toast-${proximoToastId.current++}`;
     setToasts((prev) => [...prev, { id, texto }]);
@@ -946,6 +986,8 @@ function ConversasPageInner() {
   const [numerosConectados, setNumerosConectados] = useState<NumeroConectado[]>([]);
   /** Qual aba de número está com o campo de nome aberto. Duplo clique abre; Enter ou sair grava. */
   const [renomeando, setRenomeando] = useState<string | null>(null);
+  /** Rodando a busca de nomes das conversas que ainda se chamam pelo número. */
+  const [batizando, setBatizando] = useState(false);
   useEffect(() => {
     // OS DOIS CANAIS. A rota de QR Code só sabia dos celulares; quem tem a API oficial no número
     // principal e um vendedor no QR tem dois números recebendo, e o filtro precisa dos dois.
@@ -1012,6 +1054,13 @@ function ConversasPageInner() {
    * então quem não tem histórico antigo nunca a vê.
    */
   const temConversaSemNumero = conversas.some((c) => c.canal === "WhatsApp" && !c.contaCanal);
+
+  /* Quantas conversas ainda se chamam pelo número. É o que decide se vale oferecer a busca de
+     nomes: zero, e a linha não existe — recurso que some quando não tem o que fazer não cobra
+     espaço de quem já está em dia. */
+  const conversasAindaComNumero = conversas.filter(
+    (c) => c.canal === "WhatsApp" && !c.ehGrupo && nomeAindaEhIdCru(c.nome),
+  ).length;
 
   const canaisDisponiveis = Array.from(new Set(conversas.map((c) => c.origem)));
 
@@ -4339,6 +4388,29 @@ function ConversasPageInner() {
                   <span className="wa-numero-aba-canal">{traduzir("antigas")}</span>
                 </button>
               ) : null}
+            </div>
+          ) : null}
+          {/*
+            OS NÚMEROS QUE AINDA NÃO TÊM NOME.
+            
+            "Só vai aparecer agora o nome em números que chegar na mensagem nova? Os que estão lá
+            não mudou." Não mudavam mesmo: o batismo acontece quando a mensagem chega. Esta linha
+            é o passado — ela lê o nome no histórico que o aparelho ainda guarda.
+            
+            Só aparece quando há o que buscar, e some sozinha quando acaba.
+          */}
+          {conversasAindaComNumero > 0 ? (
+            <div className="wa-sem-nome">
+              <span>
+                {conversasAindaComNumero === 1
+                  ? traduzir("1 conversa está com o número no lugar do nome.")
+                  : traduzir("{n} conversas estão com o número no lugar do nome.", {
+                      n: String(conversasAindaComNumero),
+                    })}
+              </span>
+              <button type="button" onClick={buscarNomesQueFaltam} disabled={batizando}>
+                {batizando ? traduzir("Buscando…") : traduzir("Buscar nomes")}
+              </button>
             </div>
           ) : null}
           <FloatingDropdown

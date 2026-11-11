@@ -3005,4 +3005,12 @@ export const TRADUCOES_EN: Record<string, string> = {
   "dois cliques pra renomear": "double-click to rename",
   "Não deu pra renomear o número.": "Could not rename the number.",
   "Enviar por qual número?": "Send from which number?",
+
+  /* As conversas que ainda se chamam pelo número. */
+  "1 conversa está com o número no lugar do nome.": "1 conversation has the number instead of a name.",
+  "{n} conversas estão com o número no lugar do nome.": "{n} conversations have the number instead of a name.",
+  "Buscar nomes": "Find names",
+  "Buscando…": "Searching…",
+  "Não deu pra buscar os nomes.": "Could not fetch the names.",
+  "Nenhum nome novo: o WhatsApp não guardou o nome dessas pessoas.": "No new names: WhatsApp did not keep a name for these people.",
 };
