@@ -6,6 +6,7 @@ import { ImpersonandoBanner } from "@/components/impersonando-banner";
 import { MainShell } from "@/components/main-shell";
 import { NotificacoesPonte } from "@/components/notificacoes-ponte";
 import { Sidebar } from "@/components/sidebar";
+import { RodapeCelular } from "@/components/rodape-celular";
 import { TopoDaPaginaProvider } from "@/lib/topo-da-pagina";
 import { SessionProvider } from "@/components/session-provider";
 import { AutomationFlowProvider } from "@/lib/automation-flow-context";
@@ -64,6 +65,9 @@ export default async function AppLayout({
                                       <AppHeader />
                                       {children}
                                     </MainShell>
+                                    {/* So aparece em tela de celular; no computador devolve
+                                        `null` e quem navega continua sendo a `<Sidebar />`. */}
+                                    <RodapeCelular />
                                   </div>
                                   </TopoDaPaginaProvider>
                                 </ConfiguracoesProvider>
