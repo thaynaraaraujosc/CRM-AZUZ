@@ -25001,6 +25001,51 @@ table.tbl .name-cell .r {
   }
 }
 
+/* O botão do perfil vai pra ponta direita do cabeçalho da conversa. */
+.ig-perfil-botao {
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+.ig-perfil-voltar {
+  align-self: flex-start;
+  margin: var(--space-3) var(--space-3) 0;
+}
+
+/*
+ * NO CELULAR, UMA JANELA DE CADA VEZ.
+ *
+ * "Deixa na tela toda aparecendo todas as conversas, e quando eu clico na conversa vai abrir a
+ * janela da conversa. Nao precisa ficar tudo aberto ao mesmo tempo na mesma janela."
+ *
+ * As tres colunas desta tela foram desenhadas pra 1400px e, em 440px, nao encolhem: a conversa
+ * ficava com uns 110px e o texto quebrava numa palavra por linha. A grade vira uma fila que
+ * desliza, cada painel com a largura da tela e encaixe.
+ *
+ * O perfil nao entra nessa fila sozinho — ele so e montado quando o botao "Perfil" pede (ver
+ * instagram/page.tsx). Aqui o CSS cuida so da largura; quem decide se ele existe e o componente,
+ * porque "nao precisa ficar aparecendo" e sobre EXISTIR, nao sobre estar fora da vista.
+ */
+@media (max-width: 820px) {
+  .ig-layout {
+    display: flex;
+    gap: var(--space-2);
+    height: auto;
+    min-height: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+  }
+
+  .ig-lista,
+  .ig-conversa,
+  .ig-perfil {
+    flex: 0 0 100%;
+    grid-column: auto;
+    scroll-snap-align: center;
+  }
+}
+
 /* ============================================================ */
 /* Painel de super-admin: espaçamento e ritmo                   */
 /* ============================================================ */

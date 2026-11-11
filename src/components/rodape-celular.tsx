@@ -18,17 +18,18 @@ import { useTelaEstreita } from "@/lib/tela-estreita";
  * OS QUATRO DO RODAPÉ.
  *
  * "Você vai fazer um rodapé com quatro aplicativos que a gente mais usa: WhatsApp, Instagram,
- * automação e social seller. E aí no cantinho você coloca menu."
+ * automação e social seller. E aí no cantinho você coloca menu." E, vendo funcionando: "no lugar
+ * do Instagram aqui embaixo, deixa o funil. Acho que a gente vai usar mais o funil."
  *
  * A escolha é dela e é de uso, não de arquitetura: são os quatro módulos onde o dia inteiro
- * acontece. Funil, contatos, relatórios e o resto continuam existindo — moram atrás do "Mais",
- * que abre o menu completo.
+ * acontece. O Instagram não sumiu — ele, os contatos, os relatórios e o resto moram atrás do
+ * "Mais", que abre o menu completo.
  *
  * É uma lista de endereços, e não de itens copiados: o rótulo e o ícone vêm do `navEntries`, o
  * mesmo que desenha o menu do computador. Renomear "WhatsApp" lá renomeia aqui, e um endereço que
  * deixe de existir quebra o build em vez de virar um botão morto no rodapé.
  */
-const ATALHOS = ["/conversas", "/instagram", "/automacoes", "/social-seller"] as const;
+const ATALHOS = ["/conversas", "/funil", "/automacoes", "/social-seller"] as const;
 
 /**
  * O RODAPÉ DO CELULAR, e por que ele existe.
