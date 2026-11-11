@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
-import { gatilhoTemTexto } from "@/lib/automation-flow/gatilhos-do-fluxo";
 import {
   gatilhoTemAlcance,
   gravarAlcance,
@@ -42,7 +41,6 @@ const PRINCIPAIS: FlowNodeType[] = [
   "comentario_instagram",
   "instagram_story_respondido",
   "instagram_direct_recebido",
-  "instagram_novo_seguidor",
   "instagram_comentario_live",
   "instagram_mencao_story",
 ];
@@ -62,8 +60,6 @@ const COMO_FUNCIONA: Partial<Record<FlowNodeType, string>> = {
   instagram_publicacao_compartilhada: "Encaminham uma publicação pra você no Direct → a automação responde.",
   instagram_reacao_recebida: "Reagem com emoji a uma mensagem sua → a automação segue dali.",
   instagram_resposta_comentario: "Respondem a um comentário na sua publicação → a automação entra na conversa.",
-  instagram_novo_seguidor:
-    "Alguém que não te seguia aparece te seguindo → a automação dá as boas-vindas no Direct. O Instagram não avisa na hora do Seguir: o robô percebe no primeiro contato da pessoa depois disso.",
 };
 
 /**
@@ -86,18 +82,6 @@ const ALCANCE: Partial<Record<FlowNodeType, { titulo: string; pergunta: string }
   },
 };
 
-/**
- * O QUE AQUELE GATILHO NÃO FAZ, dito na própria linha da lista.
- *
- * Curto de propósito: é uma linha embaixo do nome, não um parágrafo. O detalhe inteiro continua na
- * descrição do bloco e no "Como funciona cada gatilho?"; o que vem pra cá é a parte que muda a
- * decisão de marcar ou não.
- */
-const RESSALVA: Partial<Record<FlowNodeType, string>> = {
-  instagram_novo_seguidor:
-    "O Instagram não avisa na hora do Seguir: o robô percebe no primeiro comentário, resposta de story ou Direct da pessoa.",
-};
-
 export type EscolhaDeGatilho = { tipo: FlowNodeType; data: Record<string, unknown> };
 
 /**
@@ -114,7 +98,6 @@ function perguntaDaResposta(marcados: FlowNodeType[]): string {
     instagram_story_respondido: "Responda quem responder seu story",
     instagram_mencao_story: "Responda quem mencionar você num story",
     instagram_direct_recebido: "Responda quem mandar mensagem no Direct",
-    instagram_novo_seguidor: "Responda quem começar a te seguir",
   };
   for (const tipo of marcados) {
     const frase = porGatilho[tipo];
@@ -270,26 +253,12 @@ export function GatilhosDoSocial({
    * A primeira é sempre as palavras-chave, porque elas valem pra todos os gatilhos. Depois vem
    * uma etapa por gatilho que tenha uma pergunta de alcance, na ordem em que foram marcados.
    */
-  /*
-   * A PALAVRA-CHAVE SÓ FAZ SENTIDO ONDE EXISTE TEXTO.
-   *
-   * "Se começou a seguir, não precisa ter palavra-chave, certo? Porque a única coisa que a pessoa
-   * fez foi me seguir. Ela não comentou nada." Com só esse gatilho marcado, a etapa de palavras é
-   * uma pergunta sem resposta possível — e pior, uma pergunta que, respondida, não filtraria nada
-   * (o motor ignora a palavra onde não há texto, ver `gatilhoTemTexto`).
-   */
-  const algumGatilhoTemTexto = marcados.some((t) => gatilhoTemTexto(t));
-
   const etapas: { chave: string; tipo?: FlowNodeType; titulo: string; pergunta: string }[] = [
-    ...(algumGatilhoTemTexto
-      ? [
-          {
-            chave: "palavras",
-            titulo: "Palavras-chave",
-            pergunta: "Quais palavras ou frases ativam a automação?",
-          },
-        ]
-      : []),
+    {
+      chave: "palavras",
+      titulo: "Palavras-chave",
+      pergunta: "Quais palavras ou frases ativam a automação?",
+    },
     ...marcados
       .filter((t) => ALCANCE[t])
       .map((t) => ({ chave: t, tipo: t, titulo: ALCANCE[t]!.titulo, pergunta: ALCANCE[t]!.pergunta })),
@@ -563,18 +532,6 @@ export function GatilhosDoSocial({
         <span className="gat-marca gat-marca-caixa" aria-hidden="true" />
         <span className="gat-textos">
           <strong>{traduzir(bloco.label)}</strong>
-          {/*
-            A RESSALVA FICA NA LINHA, e não só no `title`.
-            
-            "Agora que eu vi que se a pessoa começar a me seguir, ela não recebe mensagem
-            automática." A limitação estava escrita na descrição do bloco e no "Como funciona cada
-            gatilho?" — os dois a um clique de distância de quem está marcando a caixa. Quem marca
-            não vai atrás da letra miúda: a letra miúda é que tem que estar onde se marca.
-            
-            Só nos gatilhos que têm ressalva: pôr uma linha embaixo de todos faria a lista virar
-            parágrafo e a ressalva de verdade sumir no meio.
-          */}
-          {RESSALVA[bloco.tipo] ? <em className="gat-ressalva">{traduzir(RESSALVA[bloco.tipo]!)}</em> : null}
         </span>
       </button>
     );
@@ -1036,13 +993,8 @@ export function GatilhosDoSocial({
               {traduzir("Adicionar gatilho")} <span aria-hidden="true">+</span>
             </button>
 
-            {/* Mesma razão da etapa: sem gatilho que traga texto, não há o que a palavra filtre. */}
-            {algumGatilhoTemTexto ? (
-              <>
-                <p className="pg-secao pg-secao-palavra">{traduzir("Palavra-chave")}</p>
-                {blocoDaPalavra}
-              </>
-            ) : null}
+            <p className="pg-secao pg-secao-palavra">{traduzir("Palavra-chave")}</p>
+            {blocoDaPalavra}
           </div>
         ) : !etapaAtual ? (
           <>
@@ -1078,6 +1030,28 @@ export function GatilhosDoSocial({
               </>
             ) : null}
 
+            {/*
+              O GATILHO QUE NÃO EXISTE, dito com o motivo e com o caminho que funciona.
+              
+              Ele chegou a existir, por pedido, e saiu por pedido também: "agora que eu vi que se a
+              pessoa começar a me seguir, ela não recebe mensagem automática — tira esse gatilho da
+              lista então". Estava certo tirar: ele só percebia o Seguir no primeiro contato da
+              pessoa depois disso, e prometia pela presença na lista o que a frase embaixo negava.
+              
+              A AUSÊNCIA FICA EXPLICADA, porque a pergunta volta. São DOIS muros, e é o segundo que
+              decide: a Meta não avisa quem passou a seguir (não há webhook nem lista de
+              seguidores), e a API não deixa INICIAR conversa — Direct frio pra quem nunca escreveu
+              é recusado. Saber quem seguiu não resolveria nada.
+              
+              Por isso o texto termina no caminho que existe, e que o CRM agora cumpre inteiro:
+              chamada pra comentar, comentário, resposta privada, Direct aberto.
+            */}
+            <p className="gat-ausente">
+              <strong>{traduzir("Procurando \u201ccomeçou a me seguir\u201d?")}</strong>
+              {traduzir(
+                "O Instagram não avisa quem passou a te seguir, e a API não deixa começar conversa com quem nunca te escreveu — nem a Meta oferece isso nas ferramentas dela. O caminho que funciona é pedir um comentário: \u201ccomenta AZUZ que eu te mando\u201d. Aí o CRM responde no Direct, e a conversa abre.",
+              )}
+            </p>
           </>
         ) : (
           <div className="gat-etapa" key={etapaAtual.chave}>
@@ -1086,11 +1060,7 @@ export function GatilhosDoSocial({
             {etapaAtual.chave === "palavras" ? (
               <>
                 <p className="gat-nota">
-                  {marcados.some((t) => !gatilhoTemTexto(t))
-                    ? traduzir(
-                        "As palavras-chave valem para os gatilhos que trazem texto (comentário, resposta de story, Direct). Em “Começou a te seguir” não há texto nenhum pra comparar, então ele dispara de qualquer jeito.",
-                      )
-                    : traduzir("As palavras-chave valem para todos os gatilhos desta automação.")}
+                  {traduzir("As palavras-chave valem para todos os gatilhos desta automação.")}
                 </p>
 
                 {blocoDaPalavra}
