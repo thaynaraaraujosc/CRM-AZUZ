@@ -86,6 +86,18 @@ const ALCANCE: Partial<Record<FlowNodeType, { titulo: string; pergunta: string }
   },
 };
 
+/**
+ * O QUE AQUELE GATILHO NÃO FAZ, dito na própria linha da lista.
+ *
+ * Curto de propósito: é uma linha embaixo do nome, não um parágrafo. O detalhe inteiro continua na
+ * descrição do bloco e no "Como funciona cada gatilho?"; o que vem pra cá é a parte que muda a
+ * decisão de marcar ou não.
+ */
+const RESSALVA: Partial<Record<FlowNodeType, string>> = {
+  instagram_novo_seguidor:
+    "O Instagram não avisa na hora do Seguir: o robô percebe no primeiro comentário, resposta de story ou Direct da pessoa.",
+};
+
 export type EscolhaDeGatilho = { tipo: FlowNodeType; data: Record<string, unknown> };
 
 /**
@@ -551,6 +563,18 @@ export function GatilhosDoSocial({
         <span className="gat-marca gat-marca-caixa" aria-hidden="true" />
         <span className="gat-textos">
           <strong>{traduzir(bloco.label)}</strong>
+          {/*
+            A RESSALVA FICA NA LINHA, e não só no `title`.
+            
+            "Agora que eu vi que se a pessoa começar a me seguir, ela não recebe mensagem
+            automática." A limitação estava escrita na descrição do bloco e no "Como funciona cada
+            gatilho?" — os dois a um clique de distância de quem está marcando a caixa. Quem marca
+            não vai atrás da letra miúda: a letra miúda é que tem que estar onde se marca.
+            
+            Só nos gatilhos que têm ressalva: pôr uma linha embaixo de todos faria a lista virar
+            parágrafo e a ressalva de verdade sumir no meio.
+          */}
+          {RESSALVA[bloco.tipo] ? <em className="gat-ressalva">{traduzir(RESSALVA[bloco.tipo]!)}</em> : null}
         </span>
       </button>
     );
