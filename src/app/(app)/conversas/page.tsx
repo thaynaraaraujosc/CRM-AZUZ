@@ -943,7 +943,6 @@ function ConversasPageInner() {
     fotoUrl?: string;
   } | null>(null);
   const [salvandoContato, setSalvandoContato] = useState(false);
-  const [infoWidth, setInfoWidth] = useState(320);
   const [sincronizando, setSincronizando] = useState(false);
 
   useFecharAoClicarFora(midiasRef, midiasAberto, () => setMidiasAberto(false));
@@ -4160,23 +4159,6 @@ function ConversasPageInner() {
     }
     function soltar() {
       emailArrasteRef.current = null;
-      window.removeEventListener("mousemove", mover);
-      window.removeEventListener("mouseup", soltar);
-    }
-    window.addEventListener("mousemove", mover);
-    window.addEventListener("mouseup", soltar);
-  }
-
-  function iniciarRedimensionarInfo(e: React.MouseEvent) {
-    e.preventDefault();
-    const startX = e.clientX;
-    const startWidth = infoWidth;
-    function mover(ev: MouseEvent) {
-      const delta = startX - ev.clientX;
-      const novo = Math.min(680, Math.max(260, startWidth + delta));
-      setInfoWidth(novo);
-    }
-    function soltar() {
       window.removeEventListener("mousemove", mover);
       window.removeEventListener("mouseup", soltar);
     }
@@ -8227,13 +8209,23 @@ function ConversasPageInner() {
         </section>
 
         {infoAberto ? (
-        <>
-        <div
-          className="wa-resizer"
-          onMouseDown={iniciarRedimensionarInfo}
-          title={traduzir("Arraste pra redimensionar")}
-        />
-        <aside className="wa-info" style={{ width: infoWidth }}>
+        /*
+         * A FICHA DO CONTATO TEM LARGURA FIXA, e nao ha mais barra pra arrastar.
+         *
+         * "Esse pau aqui que tem de puxar pro lado, eu to achando feio. Deixa essa parte fixa, o
+         * tamanho dela."
+         *
+         * Ela tem razao em mais de um sentido. A barra era um risco cinza de 3px grudado na borda
+         * da conversa, sem nada dizendo o que era — quem nao soubesse que dava pra arrastar via
+         * so um traco solto no meio da tela. E o que ela controlava nao vale o preco: a largura
+         * ficava na memoria da aba, entao nem era uma preferencia que a pessoa guardava; a cada
+         * abertura voltava pros mesmos 320px.
+         *
+         * 320px e a largura em que "Canal preferido" e "Melhor horario" cabem numa linha, que e
+         * o que define o tamanho util desta ficha. Quem precisa de mais espaco fecha a ficha na
+         * engrenagem e a conversa ocupa a tela inteira, que e o gesto que ja existia.
+         */
+        <aside className="wa-info">
           <div className="wa-info-tabs" role="tablist" aria-label={traduzir("Painel do contato")}>
             {(
               [
@@ -8586,7 +8578,6 @@ function ConversasPageInner() {
           ) : null}
         </div>
         </aside>
-        </>
         ) : null}
       </div>
 

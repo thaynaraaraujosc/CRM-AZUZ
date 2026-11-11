@@ -908,7 +908,10 @@ function FunilPageInner() {
         }
       />
 
-      <div className="content">
+      {/* `content-funil`: o quadro ocupa a altura que sobra da janela. Ver `.content-funil` no
+          globals.css — e o que faz a etapa ir ate a borda de baixo em vez de parar na altura do
+          ultimo cartao. */}
+      <div className="content content-funil">
         {novaEtapaAberta ? (
           <section className="open-conv mb14">
             <div className="open-conv-h">
