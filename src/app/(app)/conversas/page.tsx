@@ -991,6 +991,8 @@ function ConversasPageInner() {
    * ela é sobre ESTA mensagem, não um modo que fica ligado.
    */
   const [escolhaDeNumero, setEscolhaDeNumero] = useState<{ conversa: string; chave: string } | null>(null);
+  /** A linha de "enviar pelo número" foi pedida no menu do "+". Fechada por padrão: ver o comentário dela. */
+  const [seletorDeNumeroAberto, setSeletorDeNumeroAberto] = useState(false);
 
   const canalEfetivo = canalDeSaida(canalEscolhido, {
     oficialConectado: metaWhatsappConectado,
@@ -4950,10 +4952,20 @@ function ConversasPageInner() {
                     * restrito: a pessoa caía na tela de modelo aprovado sem ter pedido isso.
                     */}
                   {/*
-                    POR QUAL NÚMERO ESTA MENSAGEM SAI.
+                    POR QUAL NÚMERO ESTA MENSAGEM SAI — SÓ QUANDO PEDIDA.
                     
-                    Aparece só com mais de um número conectado — com um só não há o que escolher — e
-                    aparece INCLUSIVE na conversa que já tem dono, que é o ponto: "mesmo já tendo
+                    "Não precisa ficar em todos os chats isso aqui." Ela nasceu como uma faixa fixa
+                    em cima do campo de escrever, e faixa fixa cobra de todo mundo o preço de um
+                    recurso que quase ninguém usa: responder pelo número da conversa é o normal, e
+                    trocar é a exceção. Uma linha permanente pra exceção empurra a conversa pra
+                    baixo em cem atendimentos pra servir um.
+                    
+                    Agora ela mora no menu do "+", junto das outras coisas que se faz de vez em
+                    quando, e só aparece aqui depois de aberta — ou enquanto houver uma escolha em
+                    vigor, que aí ela não é opção, é estado: a próxima mensagem vai sair de outro
+                    número e isso não pode ficar invisível.
+                    
+                    Vale INCLUSIVE na conversa que já tem dono, que é o ponto: "mesmo já tendo
                     falado com o contato por outro número".
                     
                     O padrão continua sendo o número da conversa, e trocar é uma escolha explícita
@@ -4961,7 +4973,9 @@ function ConversasPageInner() {
                     conversa nova no aparelho dele. Por isso a linha diz isso quando a escolha sai
                     do padrão, em vez de deixar a descoberta pro cliente.
                   */}
-                  {variosNumeros && aberta.canal === "WhatsApp" ? (
+                  {variosNumeros &&
+                  aberta.canal === "WhatsApp" &&
+                  (seletorDeNumeroAberto || numeroEscolhidoDaConversa()) ? (
                     <div className="chat-canal-escolha">
                       <label className="chat-canal-rotulo" htmlFor="numero-de-saida">
                         {traduzir("Enviar pelo número")}
@@ -4970,9 +4984,15 @@ function ConversasPageInner() {
                         id="numero-de-saida"
                         className="input chat-numero-saida"
                         value={numeroEscolhidoDaConversa() ?? ""}
-                        onChange={(e) =>
-                          setEscolhaDeNumero(e.target.value ? { conversa: aberta.nome, chave: e.target.value } : null)
-                        }
+                        onChange={(e) => {
+                          setEscolhaDeNumero(
+                            e.target.value ? { conversa: aberta.nome, chave: e.target.value } : null,
+                          );
+                          /* Voltando pro número da conversa, a linha não tem mais o que dizer:
+                             ela some junto, em vez de ficar ocupando espaço pra informar o
+                             comportamento padrão. */
+                          if (!e.target.value) setSeletorDeNumeroAberto(false);
+                        }}
                       >
                         <option value="">
                           {nomeDoNumeroDaConversa(nomesDosNumeros, aberta.contaCanal)
@@ -5332,6 +5352,30 @@ function ConversasPageInner() {
                         </span>
                         <span className="wa-anexo-label">{traduzir("Localização")}</span>
                       </button>
+                      {/*
+                        TROCAR O NÚMERO DE SAÍDA mora aqui, e não numa faixa fixa.
+                        
+                        "Não precisa ficar em todos os chats isso aqui." É uma ação de vez em
+                        quando — a closer que assume o lead da vendedora —, e o menu do "+" é onde
+                        moram as coisas de vez em quando. Só com mais de um número conectado: com
+                        um só, seria um item que não escolhe nada.
+                      */}
+                      {variosNumeros && aberta.canal === "WhatsApp" ? (
+                        <button
+                          type="button"
+                          role="menuitem"
+                          className="wa-anexo-item"
+                          onClick={() => {
+                            setAnexoAberto(false);
+                            setSeletorDeNumeroAberto(true);
+                          }}
+                        >
+                          <span className="wa-anexo-icone wa-anexo-icone-contato">
+                            <IconTelefone width={19} height={19} />
+                          </span>
+                          <span className="wa-anexo-label">{traduzir("Enviar por outro número")}</span>
+                        </button>
+                      ) : null}
                       {/* Só no WhatsApp oficial: é o único canal com a regra das 24h e com modelo
                           aprovado. No QR Code e no Direct isso não existe. */}
                       {aberta.canal === "WhatsApp" && !conversaUsaWhatsappNaoOficial(aberta.nome) ? (
