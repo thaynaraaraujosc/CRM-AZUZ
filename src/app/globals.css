@@ -14569,6 +14569,41 @@ button.flow-node-warn:hover {
   opacity: 1;
 }
 
+/*
+ * OS BOTOES DA FAIXA DE ESCREVER SAO BRANCOS, COMO A CAPSULA.
+ *
+ * "O lugar onde ele vai digitar ta meio quebrado." Estava: a faixa ficou azul e os botoes
+ * continuaram pintados de `--blue-soft-2` e `--navy-raised-2`, dois quase-brancos escolhidos
+ * quando o fundo era branco. Sobre o azul eles sumiam — sobrava a capsula no meio e duas manchas
+ * sem forma nas pontas, que e exatamente a sensacao de quebrado.
+ *
+ * Brancos com a mesma borda da capsula, os tres viram uma linha de controles so. O microfone
+ * gravando (vermelho) e o enviar ativo (marinho) ficam de fora: esses dizem estado, e estado tem
+ * cor propria.
+ */
+.chat-input .chat-attach-btn,
+.chat-input .chat-mais-btn,
+.chat-input .chat-emoji-btn,
+.chat-input .chat-mic-btn:not(.chat-send-btn):not(.active),
+.chat-input .chat-send-btn:disabled {
+  background: var(--surface-elevated);
+  border: 1px solid var(--line);
+  color: var(--blue);
+  box-shadow: var(--shadow-xs);
+}
+
+.chat-input .chat-send-btn:disabled {
+  color: var(--text-faint);
+}
+
+.chat-input .chat-attach-btn:hover,
+.chat-input .chat-mais-btn:hover,
+.chat-input .chat-emoji-btn:hover,
+.chat-input .chat-mic-btn:not(.chat-send-btn):not(.active):hover {
+  background: var(--blue-soft);
+  border-color: var(--line-strong);
+}
+
 .audio-waveform {
   flex: 1 1 auto;
   min-width: 0;
@@ -17597,8 +17632,21 @@ button.flow-node-warn:hover {
   flex-direction: column;
   width: min(760px, calc(100vw - 48px));
   height: min(660px, calc(100vh - 120px));
-  padding: var(--space-4) var(--space-5) var(--space-4);
+  /*
+   * SEM ACOLCHOADO. "Essa parte de baixo, deixa tudo azul, nao precisa ter esse corte branco."
+   *
+   * O corte era este padding: a area de mensagens era um retangulo azul com cantos proprios
+   * flutuando numa folha branca, e entre o fim dele e o campo de escrever sobrava uma faixa
+   * branca com um fio em cima. Tres divisas (canto, faixa, fio) pra dizer uma coisa so.
+   *
+   * Agora o cabecalho e o unico branco e a conversa vai de borda a borda ate o fim do popup,
+   * campo de escrever incluido — que e o desenho de qualquer aplicativo de conversa. Quem tinha
+   * folga por este padding passou a ter a sua propria.
+   */
+  padding: 0;
   border-radius: var(--radius-xl);
+  /* Pros cantos de baixo cortarem o azul, agora que ele encosta na borda. */
+  overflow: hidden;
   /* Fundo SÓLIDO: com uma variável inexistente aqui o painel ficava translúcido e o funil
      aparecia por trás do texto, impossível de ler. */
   background: var(--navy);
@@ -17704,18 +17752,16 @@ button.flow-node-warn:hover {
   }
 }
 
+/* O rodape E a conversa, continuando: mesma cor, sem fio e sem faixa branca entre os dois. */
 .painel-conversa-rodape {
-  padding-top: 10px;
-  border-top: 1px solid var(--line);
+  padding: 0 var(--space-3);
+  border-top: none;
+  background: var(--conversa-fundo);
 }
 
-/* Uma divisa so: o rodape do popup ja tem a dele, e o fio que `.chat-input` passou a desenhar
-   (pra caixa de entrada, onde nao ha rodape) virava um risco duplo a 10px de distancia. */
 .painel-conversa-rodape .chat-input {
   border-top: none;
-  padding-left: 0;
-  padding-right: 0;
-  padding-bottom: 0;
+  padding: var(--space-2) 0 var(--space-3);
 }
 
 .painel-conversa-mais {
@@ -18128,7 +18174,7 @@ button.flow-node-warn:hover {
   flex-direction: column;
   gap: var(--space-2);
   padding: var(--space-3);
-  margin-bottom: 8px;
+  margin: 0 var(--space-3) 8px;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: var(--radius-lg);
   background: rgba(0, 0, 0, 0.03);
@@ -18160,7 +18206,7 @@ button.flow-node-warn:hover {
 
 /* Erro do envio: uma faixa discreta acima do composer, não um parágrafo com símbolo colado. */
 .painel-conversa-erro {
-  margin: 0 0 var(--space-2);
+  margin: 0 var(--space-3) var(--space-2);
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   border: 1px solid rgba(214, 69, 69, 0.28);
@@ -18860,8 +18906,8 @@ table.tbl .name-cell .r {
   /* O MESMO azul da caixa de entrada: "o chat do funil deve ser identico ao chat do WhatsApp".
      Duas telas que mostram a mesma conversa nao podem ter fundo diferente. */
   background: var(--conversa-fundo);
-  border-radius: var(--radius-lg);
-  padding: var(--space-4) var(--space-3);
+  border-radius: 0;
+  padding: var(--space-3) var(--space-4);
   /*
    * A ALTURA INTEIRA do corpo do popup, e não os 300px de `.chat-body`.
    *
@@ -18897,10 +18943,11 @@ table.tbl .name-cell .r {
 }
 
 /* Sem a linha embaixo do cabeçalho: a área de mensagens logo abaixo já tem superfície própria, e
-   as duas coisas juntas viravam duas separações para o mesmo corte. */
+   as duas coisas juntas viravam duas separações para o mesmo corte.
+   A folga e dele agora, e nao do popup — ver o `padding: 0` la em cima. */
 .painel-conversa-topo {
   border-bottom: none;
-  padding-bottom: 10px;
+  padding: var(--space-4) var(--space-4) 10px;
 }
 
 /* ==========================================================================

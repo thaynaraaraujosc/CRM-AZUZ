@@ -85,7 +85,27 @@ export function PainelConversa({
    */
   const [previa, setPrevia] = useState<{ arquivo: File; dataUrl: string; tipo: "image" | "file" } | null>(null);
   const [legendaPrevia, setLegendaPrevia] = useState("");
-  const [dadosAberto, setDadosAberto] = useState(false);
+  /*
+   * A FICHA ABRE JUNTO COM A CONVERSA.
+   *
+   * "Quando eu abro o popup do cliente, tem que abrir fixo junto com ele a barra. Um nao fica sem
+   * o outro."
+   *
+   * Comecava fechada, e isso punha um clique na engrenagem em TODA conversa que ela abre — pra
+   * ver quem e a pessoa, em que etapa esta e o que ja foi conversado, que e a razao de abrir o
+   * cartao do funil. A informacao que se quer sempre nao pode custar um clique sempre.
+   *
+   * A largura decide: as duas janelas lado a lado pedem 1140px (760 da conversa + 36 de folga +
+   * 320 da ficha + 24 da borda). Abaixo disso a ficha se sobrepoe a conversa — abrir junto ali
+   * seria TAPAR a conversa com a ficha, que e o contrario do pedido. Entao em tela estreita ela
+   * continua comecando fechada, a um clique de distancia.
+   *
+   * Lido uma vez so, na criacao do estado: o popup so existe depois de um clique, nunca e
+   * renderizado no servidor, entao nao ha hidratacao pra divergir.
+   */
+  const [dadosAberto, setDadosAberto] = useState(
+    () => typeof window !== "undefined" && window.innerWidth >= 1180,
+  );
   const [aba, setAba] = useState<"contato" | "negociacao" | "atividades" | "historico">("contato");
   const [linhaDoTempo, setLinhaDoTempo] = useState<
     { id: string; tipo: string; canal: string; descricao: string; criadoEm: string }[]
