@@ -4,10 +4,25 @@ type Card = { id: string; etapaId: string; ordem: number; workspaceId: string; n
 
 let cards: Card[] = [];
 let conversasArquivadas = new Set<string>();
+/** Quantas mensagens já existem por `contato|contaCanal`. Ver `entrarNoFunilDoNumero`. */
+let mensagensPorNumero = new Map<string, number>();
 
 function duplicada() {
   return Object.assign(new Error("Unique constraint failed on the constraint: PRIMARY"), { code: "P2002" });
 }
+
+/**
+ * A QUAL FUNIL CADA ETAPA PERTENCE. O dublê precisa saber, porque a regra agora é por funil.
+ *
+ * `etapa-1` é a primeira etapa do funil padrão (onde o lead novo entra). `etapa-9` é outra etapa
+ * do MESMO funil, usada pelo card legado. `etapa-do-outro` é de um segundo funil — o do outro
+ * número — e é ela que prova que um card lá não bloqueia a entrada aqui.
+ */
+const FUNIL_DA_ETAPA: Record<string, string> = {
+  "etapa-1": "funil-1",
+  "etapa-9": "funil-1",
+  "etapa-do-outro": "funil-2",
+};
 
 /**
  * Um banco de mentira que impõe a CHAVE PRIMÁRIA e cede o controle em cada `await`.
@@ -16,9 +31,19 @@ function duplicada() {
  * dois cards e o teste passaria com o defeito no lugar. E ceder o controle porque é assim que a
  * corrida acontece de verdade — entre o "tem card?" e o `create` existe um `await`, e é nessa
  * fresta que a outra chamada entra. `Promise.all` com funções `async` reproduz exatamente isso.
+ *
+ * O filtro `etapa: { funilId }` é RESPEITADO de propósito. Ignorá-lo faria o dublê responder "essa
+ * pessoa já tem card" pra card de qualquer funil, que é exatamente o defeito que esta leva de
+ * mudanças corrige: a Cássia, chamada pela API oficial, nunca entrava no funil do Lucas porque já
+ * tinha card no funil comercial.
  */
 vi.mock("@/lib/prisma", () => {
-  const etapa = { id: "etapa-1", ordem: 0 };
+  const etapa = { id: "etapa-1", funilId: "funil-1", ordem: 0 };
+  type Onde = { workspaceId: string; nome?: string; etapa?: { funilId: string } };
+  const casa = (c: Card, where: Onde) =>
+    c.workspaceId === where.workspaceId &&
+    (!where.nome || c.nome === where.nome) &&
+    (!where.etapa || FUNIL_DA_ETAPA[c.etapaId] === where.etapa.funilId);
   return {
     prisma: {
       conversa: {
@@ -34,11 +59,16 @@ vi.mock("@/lib/prisma", () => {
           etapas: [{ ...etapa, cards: cards.filter((c) => c.etapaId === etapa.id) }],
         }),
       },
+      mensagemExtra: {
+        count: async ({ where }: { where: { contato: string; contaCanal: { in: string[] } } }) =>
+          where.contaCanal.in.reduce(
+            (total, conta) => total + (mensagensPorNumero.get(`${where.contato}|${conta}`) ?? 0),
+            0,
+          ),
+      },
       negocioCard: {
-        findFirst: async ({ where }: { where: { workspaceId: string; nome?: string } }) =>
-          cards.find((c) => c.workspaceId === where.workspaceId && (!where.nome || c.nome === where.nome)) ?? null,
-        findMany: async ({ where }: { where: { workspaceId: string } }) =>
-          cards.filter((c) => c.workspaceId === where.workspaceId),
+        findFirst: async ({ where }: { where: Onde }) => cards.find((c) => casa(c, where)) ?? null,
+        findMany: async ({ where }: { where: Onde }) => cards.filter((c) => casa(c, where)),
         findUnique: async ({ where }: { where: { id: string } }) => cards.find((c) => c.id === where.id) ?? null,
         create: async ({ data }: { data: Card }) => {
           if (cards.some((c) => c.id === data.id)) throw duplicada();
@@ -50,7 +80,7 @@ vi.mock("@/lib/prisma", () => {
   };
 });
 
-const { entrarNaPrimeiraEtapaComoNovoLead } = await import("../upsert");
+const { entrarNaPrimeiraEtapaComoNovoLead, entrarNoFunilDoNumero } = await import("../upsert");
 
 function entrar(contatoNome: string, origem = "Formulário") {
   return entrarNaPrimeiraEtapaComoNovoLead({ workspaceId: "w1", contatoNome, origem });
@@ -59,6 +89,7 @@ function entrar(contatoNome: string, origem = "Formulário") {
 beforeEach(() => {
   cards = [];
   conversasArquivadas = new Set();
+  mensagensPorNumero = new Map();
 });
 
 /**
@@ -99,9 +130,10 @@ describe("card duplicado com chamadas simultâneas", () => {
     expect(cards).toHaveLength(3);
   });
 
-  it("o id do card não depende do milissegundo", async () => {
+  it("o id do card não depende do milissegundo, e carrega o funil", async () => {
+    // O funil entra na chave porque a garantia é "um card por pessoa POR FUNIL": ver `idDoCard`.
     await entrar("Ana Souza");
-    expect(cards[0].id).toBe("card-w1-ana-souza");
+    expect(cards[0].id).toBe("card-w1-funil-1-ana-souza");
   });
 
   it("nome sem letra nem número ainda entra, com id único", async () => {
@@ -118,7 +150,10 @@ describe("card duplicado com chamadas simultâneas", () => {
     expect(cards).toHaveLength(0);
   });
 
-  it("quem já tem card não ganha outro nem muda de etapa", async () => {
+  it("quem já tem card NO MESMO FUNIL não ganha outro nem muda de etapa", async () => {
+    // `etapa-9` é do `funil-1`, o mesmo em que o lead novo entraria. Dentro de um funil a regra não
+    // mudou: mover de etapa continua sendo decisão de quem atende, nunca efeito de mais uma
+    // mensagem. Vale pro card legado, que tem id do formato antigo e é achado pelo nome.
     cards = [{ id: "legado-123", etapaId: "etapa-9", ordem: 5, workspaceId: "w1", nome: "Ana Souza", origem: "Manual" }];
     const r = await entrar("Ana Souza");
     expect(r?.id).toBe("legado-123");
@@ -136,5 +171,169 @@ describe("card duplicado com chamadas simultâneas", () => {
     };
     await expect(entrar("Ana Souza")).rejects.toThrow("banco fora do ar");
     prisma.negocioCard.create = original;
+  });
+});
+
+/**
+ * A MESMA PESSOA EM DOIS FUNIS, um por número que fala com ela.
+ *
+ * "Eu chamei o número da Cássia pelo WhatsApp da versão oficial. Só que ela não foi pro funil do
+ * Lucas. (…) Por mais que eu esteja conversando com essa pessoa por 2 WhatsApp, ela tem que estar
+ * nos 2 funis e não só em 1."
+ *
+ * A conferência de "já tem card?" era do workspace inteiro: card em QUALQUER funil respondia "já
+ * tem" e o lead não entrava no funil do outro número. Com a API oficial no número principal e o
+ * celular do closer no QR Code, isso quer dizer que o segundo funil nunca recebia ninguém que já
+ * tivesse falado pelo primeiro.
+ */
+describe("a mesma pessoa em mais de um funil", () => {
+  it("card no OUTRO funil não bloqueia a entrada neste", async () => {
+    cards = [
+      { id: "card-w1-funil-2-ana-souza", etapaId: "etapa-do-outro", ordem: 0, workspaceId: "w1", nome: "Ana Souza", origem: "WhatsApp" },
+    ];
+    const r = await entrar("Ana Souza");
+    expect(cards).toHaveLength(2);
+    expect(r?.etapaId).toBe("etapa-1");
+    // Os dois cards coexistem porque o funil entra na chave primária.
+    expect(cards.map((c) => c.id).sort()).toEqual([
+      "card-w1-funil-1-ana-souza",
+      "card-w1-funil-2-ana-souza",
+    ]);
+  });
+
+  it("card legado no outro funil também não bloqueia", async () => {
+    // Card de antes de o funil entrar no id: é achado pelo NOME dentro do funil dele, e o funil
+    // dele não é este.
+    cards = [
+      { id: "legado-123", etapaId: "etapa-do-outro", ordem: 0, workspaceId: "w1", nome: "Ana Souza", origem: "Manual" },
+    ];
+    await entrar("Ana Souza");
+    expect(cards).toHaveLength(2);
+  });
+
+  it("entrar duas vezes no mesmo funil continua criando um card só", async () => {
+    await entrar("Ana Souza");
+    await entrar("Ana Souza");
+    expect(cards).toHaveLength(1);
+  });
+});
+
+/**
+ * CLIENTE ANTIGA, NÚMERO NOVO: entra no funil daquele número, e só na primeira vez.
+ *
+ * O caso da Cássia: cliente de meses, chamada pela primeira vez pela API oficial, que nunca
+ * aparecia no quadro daquele número porque "já tinha card".
+ *
+ * As duas guardas estão aqui, e cada uma protege de um estrago diferente: sem funil próprio nada
+ * acontece (senão mensagem nova criaria negócio no quadro padrão), e a partir da segunda mensagem
+ * nada acontece (senão um card tirado do quadro de propósito voltaria sozinho).
+ */
+describe("entrarNoFunilDoNumero", () => {
+  const OFICIAL = "meta_whatsapp:143588938831846";
+
+  function porEsteNumero(contato: string, quantas: number, conta = OFICIAL) {
+    mensagensPorNumero.set(`${contato}|${conta}`, quantas);
+  }
+
+  it("primeira mensagem por este número entra no funil dele", async () => {
+    porEsteNumero("Cassia", 1);
+    const r = await entrarNoFunilDoNumero({
+      workspaceId: "w1",
+      contatoNome: "Cassia",
+      origem: "WhatsApp",
+      contaCanal: OFICIAL,
+      funilId: "funil-1",
+    });
+    expect(r).not.toBeNull();
+    expect(cards).toHaveLength(1);
+  });
+
+  it("segunda mensagem por este número não cria nada", async () => {
+    porEsteNumero("Cassia", 2);
+    expect(
+      await entrarNoFunilDoNumero({
+        workspaceId: "w1",
+        contatoNome: "Cassia",
+        origem: "WhatsApp",
+        contaCanal: OFICIAL,
+        funilId: "funil-1",
+      }),
+    ).toBeNull();
+    expect(cards).toHaveLength(0);
+  });
+
+  it("card tirado do quadro de propósito não volta na mensagem seguinte", async () => {
+    // É o motivo da guarda da contagem. A pessoa apaga o negócio (gesto deliberado, com
+    // confirmação) e segue conversando: o quadro tem que continuar sem ele.
+    porEsteNumero("Cassia", 7);
+    await entrarNoFunilDoNumero({
+      workspaceId: "w1",
+      contatoNome: "Cassia",
+      origem: "WhatsApp",
+      contaCanal: OFICIAL,
+      funilId: "funil-1",
+    });
+    expect(cards).toHaveLength(0);
+  });
+
+  it("sem funil próprio, não cria nada nem no quadro padrão", async () => {
+    porEsteNumero("Cassia", 1);
+    expect(
+      await entrarNoFunilDoNumero({
+        workspaceId: "w1",
+        contatoNome: "Cassia",
+        origem: "WhatsApp",
+        contaCanal: OFICIAL,
+        funilId: null,
+      }),
+    ).toBeNull();
+    expect(cards).toHaveLength(0);
+  });
+
+  it("grupo nunca entra", async () => {
+    porEsteNumero("Grupo da obra", 1);
+    expect(
+      await entrarNoFunilDoNumero({
+        workspaceId: "w1",
+        contatoNome: "Grupo da obra",
+        ehGrupo: true,
+        origem: "WhatsApp",
+        contaCanal: OFICIAL,
+        funilId: "funil-1",
+      }),
+    ).toBeNull();
+    expect(cards).toHaveLength(0);
+  });
+
+  it("conta a grafia antiga do QR Code junto com a nova", async () => {
+    // `whatsapp_baileys:` é o nome antigo do canal, ainda gravado em mensagem de antes da
+    // renomeação. Sem somar as duas, um número que conversa há meses daria zero e o card entraria
+    // como se fosse a primeira vez.
+    porEsteNumero("Cassia", 40, "whatsapp_baileys:556296340438");
+    expect(
+      await entrarNoFunilDoNumero({
+        workspaceId: "w1",
+        contatoNome: "Cassia",
+        origem: "WhatsApp",
+        contaCanal: "whatsapp_nao_oficial:556296340438",
+        funilId: "funil-1",
+      }),
+    ).toBeNull();
+    expect(cards).toHaveLength(0);
+  });
+
+  it("não ganha um segundo card se já estiver nesse funil", async () => {
+    porEsteNumero("Cassia", 1);
+    cards = [
+      { id: "ja-existe", etapaId: "etapa-9", ordem: 0, workspaceId: "w1", nome: "Cassia", origem: "Manual" },
+    ];
+    await entrarNoFunilDoNumero({
+      workspaceId: "w1",
+      contatoNome: "Cassia",
+      origem: "WhatsApp",
+      contaCanal: OFICIAL,
+      funilId: "funil-1",
+    });
+    expect(cards).toHaveLength(1);
   });
 });

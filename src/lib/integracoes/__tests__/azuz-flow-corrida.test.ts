@@ -92,7 +92,7 @@ function bancoDeMentira() {
       temCardNoFunil: async (contatoNome) =>
         [...cards.values()].some((c) => chaveDeContato(c.nome) === chaveDeContato(contatoNome)),
       entrarNoFunil: async ({ contatoNome }) => {
-        const id = idDoCard("w1", contatoNome) ?? idDeCardSemChave("w1");
+        const id = idDoCard("w1", contatoNome, "funil-1") ?? idDeCardSemChave("w1");
         try {
           if (cards.has(id)) throw duplicada();
           cards.set(id, { nome: contatoNome });
