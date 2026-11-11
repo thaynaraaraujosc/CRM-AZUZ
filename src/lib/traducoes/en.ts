@@ -2991,4 +2991,9 @@ export const TRADUCOES_EN: Record<string, string> = {
   /* O seletor de onde o gatilho vale. */
   "Publicação específica": "Specific post",
   "Onde este gatilho vale": "Where this trigger applies",
+
+  /* Por qual número a mensagem sai, na conversa. */
+  "Enviar pelo número": "Send from number",
+  "O desta conversa": "This conversation's",
+  "Pro cliente, esta mensagem chega de outro número — numa conversa nova, sem o histórico desta.": "For the customer, this message arrives from a different number — in a new conversation, without this history.",
 };

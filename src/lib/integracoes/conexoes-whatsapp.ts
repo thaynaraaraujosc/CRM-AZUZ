@@ -191,3 +191,40 @@ export async function slotPadraoDeEnvio(workspaceId: string): Promise<number | n
 export function idDaConexao(workspaceId: string, slot: number): string {
   return slot <= 1 ? `${workspaceId}-${CANAL_NAO_OFICIAL}` : `${workspaceId}-${CANAL_NAO_OFICIAL}-${slot}`;
 }
+
+/**
+ * O SLOT DO NÚMERO QUE QUEM ATENDE ESCOLHEU.
+ *
+ * Mudança de política, e ela foi pedida: "preciso da opção de escolher aqui o número que eu vou
+ * mandar mensagem, mesmo já tendo falado com o contato por outro número."
+ *
+ * Até aqui a regra era que a conversa manda — ela pertence ao número que a recebeu, e responder por
+ * outro faz o remetente trocar no meio do papo do lado do cliente. Isso continua sendo o PADRÃO, e
+ * continua certo pro dia a dia: ninguém escolhe sem querer. O que passa a existir é a escolha
+ * explícita, feita na tela, mensagem a mensagem.
+ *
+ * O preço está nas mãos de quem escolhe, e é por isso que a escolha é explícita: pro cliente, a
+ * mensagem chega de OUTRO número — uma conversa nova no aparelho dele, sem o histórico anterior.
+ * Às vezes é exatamente o que se quer (a closer assume o lead da vendedora); às vezes não.
+ *
+ * Número desligado não vira envio: devolve motivo, como `slotDeEnvio`. Escolher um número que caiu
+ * é o tipo de coisa que acontece — a tela foi carregada antes de ele cair.
+ */
+export async function slotEscolhidoParaEnvio(
+  workspaceId: string,
+  escolhido: string | null | undefined,
+): Promise<{ slot: number | null; motivo?: string }> {
+  const chave = (escolhido ?? "").trim();
+  if (!chave) return { slot: null, motivo: "nenhum número escolhido" };
+
+  const ligadas = await conexoesLigadas(workspaceId);
+  if (!ligadas.length) return { slot: null, motivo: "nenhum número de WhatsApp conectado" };
+
+  /* A chave vem da tela no mesmo formato do `contaCanal` da conversa, então a resolução é a mesma —
+     e é de propósito: dois jeitos de apontar pro mesmo número é como eles passam a discordar. */
+  const slot = slotDaConversa(ligadas, chave);
+  if (slot === null) {
+    return { slot: null, motivo: "o número escolhido não está conectado agora." };
+  }
+  return { slot };
+}

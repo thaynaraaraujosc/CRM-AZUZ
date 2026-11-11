@@ -980,6 +980,18 @@ function ConversasPageInner() {
    *
    * Com os dois ligados, a preferência vale e a pessoa escolhe. Com um só, é ele.
    */
+  /**
+   * O NÚMERO ESCOLHIDO PRA ESTA MENSAGEM, quando quem atende escolheu um.
+   *
+   * "Preciso da opção de escolher aqui o número que eu vou mandar mensagem, mesmo já tendo falado
+   * com o contato por outro número." É o caso da closer que assume o lead que a vendedora abriu.
+   *
+   * `null` é o padrão e quer dizer "pelo número da conversa" — a regra de sempre, que continua
+   * valendo pra quem não mexer em nada. A escolha vale por conversa e some ao trocar de conversa:
+   * ela é sobre ESTA mensagem, não um modo que fica ligado.
+   */
+  const [escolhaDeNumero, setEscolhaDeNumero] = useState<{ conversa: string; chave: string } | null>(null);
+
   const canalEfetivo = canalDeSaida(canalEscolhido, {
     oficialConectado: metaWhatsappConectado,
     qrConectado: naoOficialConectado,
@@ -2299,6 +2311,21 @@ function ConversasPageInner() {
    * se conhece quando a Meta responde. Sem esse id, não havia como voltar e marcar a bolha certa,
    * e era essa lacuna que a simulação de entrega escondia.
    */
+  /**
+   * O NÚMERO ESCOLHIDO PRA ESTA CONVERSA, ou `null` quando vale o padrão.
+   *
+   * A escolha carrega o NOME da conversa junto, em vez de ser zerada por um efeito ao trocar de
+   * conversa. Dois motivos: efeito que grava estado no meio da renderização faz o React refazer o
+   * quadro em cascata, e — o que pesa mais — um efeito que zera "depois" deixa uma janela em que a
+   * conversa já é outra e a escolha ainda é a antiga. Nessa janela, uma mensagem sairia do número
+   * escolhido pro lead anterior. É o jeito mais silencioso de mandar do número errado.
+   *
+   * Comparando aqui, a escolha simplesmente não vale pra outra conversa. Não há janela.
+   */
+  function numeroEscolhidoDaConversa(): string | null {
+    return escolhaDeNumero && escolhaDeNumero.conversa === aberta.nome ? escolhaDeNumero.chave : null;
+  }
+
   function despacharTexto(texto: string, respondendoMid?: string, idLocal?: string) {
     const viaBaileys = contatoUsaWhatsappNaoOficial();
     // Erro fica registrado como mensagem de sistema DENTRO da conversa (não só um toast que some
@@ -2321,6 +2348,9 @@ function ConversasPageInner() {
           texto,
           // Por qual número conectado esta resposta sai. Ver a rota de envio.
           conversa: aberta.nome,
+          /* Só vai quando houve escolha explícita na tela. Sem ela, o servidor usa o número que
+             recebeu a conversa, como sempre fez. */
+          ...(numeroEscolhidoDaConversa() ? { conexao: numeroEscolhidoDaConversa() } : {}),
         }),
       })
         .then(async (r) => {
@@ -4903,6 +4933,54 @@ function ConversasPageInner() {
                     * Existe porque o CRM escolhia sozinho — e escolhia o oficial, que é o mais
                     * restrito: a pessoa caía na tela de modelo aprovado sem ter pedido isso.
                     */}
+                  {/*
+                    POR QUAL NÚMERO ESTA MENSAGEM SAI.
+                    
+                    Aparece só com mais de um número conectado — com um só não há o que escolher — e
+                    aparece INCLUSIVE na conversa que já tem dono, que é o ponto: "mesmo já tendo
+                    falado com o contato por outro número".
+                    
+                    O padrão continua sendo o número da conversa, e trocar é uma escolha explícita
+                    com um preço explícito: pro cliente a mensagem chega de outro número, numa
+                    conversa nova no aparelho dele. Por isso a linha diz isso quando a escolha sai
+                    do padrão, em vez de deixar a descoberta pro cliente.
+                  */}
+                  {variosNumeros && aberta.canal === "WhatsApp" ? (
+                    <div className="chat-canal-escolha">
+                      <label className="chat-canal-rotulo" htmlFor="numero-de-saida">
+                        {traduzir("Enviar pelo número")}
+                      </label>
+                      <select
+                        id="numero-de-saida"
+                        className="input chat-numero-saida"
+                        value={numeroEscolhidoDaConversa() ?? ""}
+                        onChange={(e) =>
+                          setEscolhaDeNumero(e.target.value ? { conversa: aberta.nome, chave: e.target.value } : null)
+                        }
+                      >
+                        <option value="">
+                          {nomeDoNumeroDaConversa(nomesDosNumeros, aberta.contaCanal)
+                            ? `${traduzir("O desta conversa")} · ${nomeDoNumeroDaConversa(nomesDosNumeros, aberta.contaCanal)}`
+                            : traduzir("O desta conversa")}
+                        </option>
+                        {numerosConectados
+                          .filter((n) => n.status === "conectado" && n.chave)
+                          .map((n) => (
+                            <option key={n.chave} value={n.chave}>
+                              {n.nome}
+                              {n.numeroLegivel && n.numeroLegivel !== n.nome ? ` · ${n.numeroLegivel}` : ""}
+                            </option>
+                          ))}
+                      </select>
+                      {numeroEscolhidoDaConversa() ? (
+                        <span className="chat-canal-aviso">
+                          {traduzir(
+                            "Pro cliente, esta mensagem chega de outro número — numa conversa nova, sem o histórico desta.",
+                          )}
+                        </span>
+                      ) : null}
+                    </div>
+                  ) : null}
                   {aberta.canal === "WhatsApp" && conversaSemDono(aberta.nome) && statusWhatsappPronto ? (
                     <div className="chat-canal-escolha">
                       {/* Os dois chips só com os DOIS ligados: com um só não há o que escolher, e
