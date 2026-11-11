@@ -2418,6 +2418,31 @@ function ConversasPageInner() {
     return canalEfetivo === "whatsapp_nao_oficial";
   }
 
+  /**
+   * PRA QUAL NÚMERO ESTA MENSAGEM VAI, pelo canal que vai levá-la.
+   *
+   * "Eu peguei esse número no contato, selecionei pra mandar pela API oficial, e na hora que
+   * enviou mandou pra um número antigo."
+   *
+   * O endereço saía de `aberta.contato` — o destinatário gravado na CONVERSA. Ele é o endereço
+   * certo pro canal que criou aquela thread, e nem sempre é um telefone: no QR Code pode ser um
+   * identificador do WhatsApp (o LID, aqueles quinze dígitos que não são número de ninguém) ou um
+   * número gravado antes de o contato trocar de telefone. Mandar isso pela Cloud API é mandar pro
+   * lugar errado — e quando é um número velho que ainda existe, a mensagem CHEGA, na pessoa errada.
+   *
+   * Então o endereço passa a depender do canal:
+   * - OFICIAL: vale o telefone do CONTATO, que é o que ela escolheu na ficha. É o número que ela
+   *   está vendo na tela quando aperta enviar.
+   * - QR CODE: vale o da conversa, porque ali o endereço da thread é o que o aparelho entende —
+   *   inclusive grupo, que não tem contato nenhum atrás.
+   */
+  function destinatarioDoEnvio(viaBaileys: boolean): string {
+    const daConversa = aberta.contato ?? "";
+    const doContato = contatoDaConversa?.whatsapp ?? "";
+    if (viaBaileys) return daConversa || doContato;
+    return doContato || daConversa;
+  }
+
   /** A conversa ainda não tem dono: nenhuma mensagem dela passou por um canal. É só nesse caso
    *  que dá pra escolher — depois da primeira, quem manda é o histórico. */
   function conversaSemDono(nomeContato: string): boolean {
@@ -2505,7 +2530,7 @@ function ConversasPageInner() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          destinatario: contatoDaConversa?.whatsapp ?? aberta.contato,
+          destinatario: destinatarioDoEnvio(true),
           texto,
           // Por qual número conectado esta resposta sai. Ver a rota de envio.
           conversa: aberta.nome,
@@ -2529,7 +2554,7 @@ function ConversasPageInner() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          destinatario: aberta.contato ?? contatoDaConversa?.whatsapp,
+          destinatario: destinatarioDoEnvio(false),
           texto,
           // Sem `contatoNome` o servidor NÃO conseguia conferir a janela de 24h. A checagem existia
           // e nunca rodava. Fora da janela, o CRM tentava mandar mensagem livre e recebia um erro
@@ -4148,7 +4173,10 @@ function ConversasPageInner() {
           essa regra nem esse recurso. */}
       {templateAberto && aberta.canal === "WhatsApp" && (aberta.contato || contatoDaConversa?.whatsapp) ? (
         <EnviarTemplateWhatsApp
-          destinatario={aberta.contato ?? contatoDaConversa?.whatsapp ?? ""}
+          /* Modelo aprovado só existe no oficial, então o endereço é o do CONTATO: ver
+             `destinatarioDoEnvio`. Era o da conversa, e foi assim que um modelo saiu pra um
+             número antigo guardado na thread. */
+          destinatario={destinatarioDoEnvio(false)}
           contatoNome={aberta.nome}
           aoFechar={() => setTemplateAberto(false)}
           aoEnviar={(texto, wamid) =>
