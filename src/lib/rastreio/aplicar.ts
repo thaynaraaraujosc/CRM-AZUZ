@@ -292,8 +292,18 @@ export async function aplicarOrigemPelaReferenciaDaMeta(
       tipoDoClique: clique ? "ctwa_clid" : "",
       anuncioId: anuncioId ?? undefined,
       anuncioNome: texto(ref?.headline) ?? undefined,
-      // "ig" ou "fb": de qual superfície da Meta veio o clique. Vem no próprio `referral`.
-      metaSource: texto(ref?.source_type) ?? undefined,
+      /*
+       * `metaSource` NÃO RECEBE MAIS O `source_type`, e isso é correção.
+       *
+       * O campo quer dizer de qual superfície da Meta veio o clique ("ig" ou "fb"). O
+       * `source_type` do referral é outra coisa: a documentação da Meta diz que ele vale "ad" ou
+       * "post" — se foi um anúncio ou uma publicação orgânica. Gravar um no outro enchia a coluna
+       * de "ad" e fazia qualquer leitura por superfície responder errado.
+       *
+       * O valor não se perde: o referral inteiro continua em `bruto`, que é de onde a prévia do
+       * criativo o lê. O que saiu foi a coluna errada.
+       */
+      metaSource: undefined,
       bruto: (ref ?? {}) as Record<string, string>,
     };
 
@@ -347,6 +357,13 @@ export async function aplicarOrigemPelaUrl(
     marcas: Record<string, string> | null | undefined;
     /** O endereço da página, só pra registro. */
     paginaEntrada?: string;
+    /**
+     * Qual formulário do CRM. É o que deixa a conversa dizer "veio através do formulário tal".
+     *
+     * Só o id: o nome vive em `Formulario` e muda quando a empresa renomeia; copiá-lo aqui faria a
+     * conversa mostrar o nome velho pra sempre.
+     */
+    formularioId?: string | null;
   },
 ): Promise<ResultadoDaAtribuicao> {
   if (!params.marcas || Object.keys(params.marcas).length === 0) {
@@ -380,6 +397,19 @@ export async function aplicarOrigemPelaUrl(
     });
 
     if (jaTem) {
+      /*
+       * O PRIMEIRO TOQUE NÃO É SOBRESCRITO — mas o formulário em branco é preenchido.
+       *
+       * Quem já tem origem veio de outro lugar primeiro, e trocar isso é o erro clássico de
+       * atribuição. O id do formulário é outra coisa: é por onde a pessoa se cadastrou, e sem ele
+       * a conversa não consegue dizer "veio através do formulário tal". Só preenche quando está
+       * vazio, nunca troca um por outro.
+       */
+      if (params.formularioId && !jaTem.formularioId) {
+        await cliente.origemDoLead
+          .update({ where: { contatoId: params.contatoId }, data: { formularioId: params.formularioId } })
+          .catch((erro) => console.error("[rastreio] falha ao guardar o formulário na origem:", erro));
+      }
       await registrarUltimoToque(cliente, params.contatoId, origem, "formulario");
       return { atribuido: false, motivo: "ja-tem-origem" };
     }
@@ -390,6 +420,7 @@ export async function aplicarOrigemPelaUrl(
         workspaceId: params.workspaceId,
         contatoId: params.contatoId,
         ...colunasDaOrigem(origem, "formulario", consentimento),
+        formularioId: params.formularioId ?? null,
       } as Prisma.OrigemDoLeadUncheckedCreateInput,
     });
     await registrarUltimoToque(cliente, params.contatoId, origem, "formulario");

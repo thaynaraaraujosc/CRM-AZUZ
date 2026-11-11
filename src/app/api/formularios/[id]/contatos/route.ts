@@ -129,6 +129,9 @@ export async function POST(request: Request, ctx: RouteContext<"/api/formularios
     // que faz o script valer pra quem não usa a tela do CRM — que é quem mais precisa dele.
     marcas: marcasDaUrl ?? marcasEntreOsDados(dados),
     paginaEntrada: paginaEntrada ?? texto(dados.landing_page),
+    // Por qual formulário ela entrou. É o que deixa a conversa dizer "veio através do formulário
+    // tal" em vez de só "veio de um formulário".
+    formularioId: id,
   });
 
   return NextResponse.json(paraContato(linha), { status: existente ? 200 : 201 });

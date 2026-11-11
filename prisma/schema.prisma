@@ -250,6 +250,17 @@ model OrigemDoLead {
   /// mudanças de etapa, e não pelo clique.
   leadgenId String?
 
+  /// O FORMULÁRIO DO CRM em que a pessoa se cadastrou, quando foi por um.
+  ///
+  /// Diferente de `leadgenId`, que é o formulário instantâneo DA META: este é um formulário feito
+  /// aqui, com nome escolhido pela empresa. Guardado pra a conversa poder dizer por qual deles a
+  /// pessoa entrou — "veio através do formulário tal" —, que é a pergunta que se faz ao abrir a
+  /// conversa de alguém que você não lembra de onde veio.
+  ///
+  /// Só o id: o nome vive em `Formulario` e muda quando a empresa renomeia. Copiá-lo aqui faria a
+  /// conversa mostrar o nome velho pra sempre.
+  formularioId String?
+
   /// O ÚLTIMO TOQUE, inteiro, como ele chegou.
   ///
   /// O resto desta linha é o PRIMEIRO toque e nunca é sobrescrito: é ele que explica como a pessoa
