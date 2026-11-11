@@ -3013,4 +3013,15 @@ export const TRADUCOES_EN: Record<string, string> = {
   "Buscando…": "Searching…",
   "Não deu pra buscar os nomes.": "Could not fetch the names.",
   "Nenhum nome novo: o WhatsApp não guardou o nome dessas pessoas.": "No new names: WhatsApp did not keep a name for these people.",
+
+  /* Qualificação do lead: a leitura de quem atendeu, que fecha o laço com o anúncio. */
+  "Qualificação do lead": "Lead quality",
+  "Bom": "Good",
+  "Curioso": "Just curious",
+  "Ruim": "Bad",
+  "Tem perfil e interesse de verdade. É este que volta pro anúncio como lead qualificado.": "Right profile and real interest. This is the one that goes back to the ad as a qualified lead.",
+  "Perguntou, mas não tem intenção agora. Não vira sinal pra plataforma.": "Asked, but has no intent right now. Does not become a signal for the platform.",
+  "Lead errado: fora da região, fora do preço, engano.": "Wrong lead: out of area, out of budget, a mistake.",
+  "Este é o sinal que volta pro anúncio como lead qualificado.": "This is the signal that goes back to the ad as a qualified lead.",
+  "Bom, curioso ou ruim — a leitura de quem atendeu.": "Good, just curious or bad — the read from whoever handled it.",
 };

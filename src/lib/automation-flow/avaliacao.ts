@@ -79,6 +79,10 @@ function valorDoCampo(campo: string, contato: ContextoExecucao["contato"]): stri
   switch (campo) {
     case "origem":
       return contato.origem;
+    /* A leitura humana do lead. Ausente quando ninguém qualificou ainda — e ausência aqui é
+       ausência, não "ruim": a regra responde "não existe" e quem monta decide o caminho. */
+    case "qualificacao":
+      return texto(contato.qualificacao);
     case "etapa":
       return contato.etapaTitulo ?? (typeof contato.etapa === "string" ? contato.etapa : undefined);
     case "funil":

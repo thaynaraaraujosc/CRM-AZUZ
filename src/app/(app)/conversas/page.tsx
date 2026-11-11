@@ -38,7 +38,6 @@ import {
   type NumeroConectado,
 } from "@/lib/conversas/numeros-conectados";
 import { canalDeSaida } from "@/lib/conversas/canal-de-saida";
-import { CANAL_NAO_OFICIAL, CANAL_OFICIAL } from "@/lib/integracoes/conta-canal";
 import { iniciaisExibidas, nomeAindaEhIdCru, nomeExibido } from "@/lib/conversas/exibicao";
 import { BotoesConectarWhatsApp } from "@/components/configuracoes/BotoesConectarWhatsApp";
 import { BolhaMensagem } from "@/components/conversas/BolhaMensagem";
@@ -175,6 +174,20 @@ const TAMANHO_MAX_DOCUMENTO = 32 * 1024 * 1024;
  * porque ele precisa conviver com as chaves de número reais sem se confundir com "nenhuma aba".
  */
 const SEM_NUMERO = "__sem_numero__";
+
+/*
+ * OS DOIS NOMES DE CANAL, escritos aqui e não importados de `conta-canal`.
+ *
+ * Aquele módulo é de SERVIDOR: ele puxa o cache de conexões, que puxa o Prisma, que puxa `node:*`.
+ * Importá-lo nesta página — que é client component — quebrava o build inteiro com "the chunking
+ * context does not support external modules (request: node:module)", e o erro aparecia longe da
+ * causa, como falha ao gerar o chunk da página.
+ *
+ * Duas constantes de texto não valem arrastar o servidor pra dentro do navegador. Elas são o valor
+ * gravado em `MensagemExtra.canal` e não mudam sem migração de dados.
+ */
+const CANAL_NAO_OFICIAL = "whatsapp_nao_oficial";
+const CANAL_OFICIAL = "meta_whatsapp";
 
 function formatarTamanho(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
