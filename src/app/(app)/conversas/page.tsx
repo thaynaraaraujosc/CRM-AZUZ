@@ -38,7 +38,10 @@ import {
   type NumeroConectado,
 } from "@/lib/conversas/numeros-conectados";
 import { canalDeSaida } from "@/lib/conversas/canal-de-saida";
-import { iniciaisExibidas, nomeAindaEhIdCru, nomeExibido } from "@/lib/conversas/exibicao";
+import { iniciaisExibidas, nomeExibido } from "@/lib/conversas/exibicao";
+import { valeBuscarNome } from "@/lib/conversas/nome-do-historico";
+import type { TagDeOrigem } from "@/lib/rastreio/tag-de-origem";
+import { chaveDeContato } from "@/lib/contatos/chave-nome";
 import { BotoesConectarWhatsApp } from "@/components/configuracoes/BotoesConectarWhatsApp";
 import { BolhaMensagem } from "@/components/conversas/BolhaMensagem";
 import { traduzirRotuloDoSistema } from "@/lib/conversas/rotulos-do-sistema";
@@ -702,7 +705,7 @@ function ConversasPageInner() {
       avisarAutomacao(
         total
           ? `${total} ${total === 1 ? "conversa ganhou nome" : "conversas ganharam nome"}.`
-          : "Nenhum nome novo: o WhatsApp não guardou o nome dessas pessoas.",
+          : "O WhatsApp não guardou o nome dessas pessoas. A próxima mensagem delas traz o nome, e aí a conversa é renomeada sozinha.",
       );
     } catch (erro) {
       avisarAutomacao(erro instanceof Error && erro.message ? erro.message : "Não deu pra buscar os nomes.");
@@ -1069,12 +1072,45 @@ function ConversasPageInner() {
    */
   const temConversaSemNumero = conversas.some((c) => c.canal === "WhatsApp" && !c.contaCanal);
 
-  /* Quantas conversas ainda se chamam pelo número. É o que decide se vale oferecer a busca de
-     nomes: zero, e a linha não existe — recurso que some quando não tem o que fazer não cobra
-     espaço de quem já está em dia. */
-  const conversasAindaComNumero = conversas.filter(
-    (c) => c.canal === "WhatsApp" && !c.ehGrupo && nomeAindaEhIdCru(c.nome),
-  ).length;
+  /*
+   * Quantas conversas ainda se chamam pelo número E NUNCA FORAM PROCURADAS.
+   *
+   * "Cliquei uma vez, cliquei duas, buscou — tem que sair daí, porque fica aparecendo bug." A
+   * conta era de toda conversa chamada pelo número, e tem gente cujo nome o WhatsApp não guardou
+   * em mensagem nenhuma: a busca rodava, não achava nada, e o aviso voltava igual. Um botão que
+   * não resolve e não some é um defeito.
+   *
+   * `nomeBuscadoEm` é o carimbo de "já procuramos esta". Quem ainda batiza as que sobraram é a
+   * mensagem seguinte: ela chega com o nome de perfil e a conversa é renomeada sozinha.
+   */
+  const conversasAindaComNumero = conversas.filter(valeBuscarNome).length;
+
+  /*
+   * DE ONDE VEIO CADA LEAD. Lido uma vez, por rota própria.
+   *
+   * "Preciso saber se o lead que entrou no meu chat veio de onde — do Instagram? do anúncio? (…)
+   * Preciso que apareça uma tag." O CRM já guardava tudo (é o que alimenta a devolução de conversão
+   * pro Google e pra Meta) e não mostrava em lugar nenhum da lista: a linha exibia `Conversa.origem`,
+   * que o webhook grava como "Direto" pra todo mundo.
+   *
+   * Chave pelo nome NORMALIZADO, que é como conversa, contato e card se encontram no CRM inteiro.
+   */
+  const [origemPorContato, setOrigemPorContato] = useState<Record<string, TagDeOrigem>>({});
+
+  useEffect(() => {
+    let vivo = true;
+    fetch("/api/rastreio/origem-dos-leads")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((dados: { porContato?: Record<string, TagDeOrigem> } | null) => {
+        // Falhar aqui não pode roubar a tela de quem veio atender: sem a etiqueta, a lista
+        // continua inteira e funcionando.
+        if (vivo && dados?.porContato) setOrigemPorContato(dados.porContato);
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, []);
 
   const canaisDisponiveis = Array.from(new Set(conversas.map((c) => c.origem)));
 
@@ -4558,7 +4594,9 @@ function ConversasPageInner() {
             não mudou." Não mudavam mesmo: o batismo acontece quando a mensagem chega. Esta linha
             é o passado — ela lê o nome no histórico que o aparelho ainda guarda.
             
-            Só aparece quando há o que buscar, e some sozinha quando acaba.
+            SOME DEPOIS DE PROCURAR, ache ou não ache. Antes ela contava toda conversa chamada pelo
+            número, e as que o WhatsApp nunca guardou o nome voltavam a aparecer a cada clique. O
+            texto diz o que acontece com elas a partir daí, pra o sumiço não parecer desistência.
           */}
           {conversasAindaComNumero > 0 ? (
             <div className="wa-sem-nome">
@@ -4569,7 +4607,7 @@ function ConversasPageInner() {
                       n: String(conversasAindaComNumero),
                     })}
               </span>
-              <button type="button" onClick={buscarNomesQueFaltam} disabled={batizando}>
+              <button type="button" onClick={() => void buscarNomesQueFaltam()} disabled={batizando}>
                 {batizando ? traduzir("Buscando…") : traduzir("Buscar nomes")}
               </button>
             </div>
@@ -4816,9 +4854,43 @@ function ConversasPageInner() {
                         {ROTULO_CONEXAO[conexaoDaConversa(c.contaCanal)!]}
                       </span>
                     ) : null}
-                    <span className={`tag ${classeOrigem(c.origem as Parameters<typeof classeOrigem>[0])}`}>
-                      {traduzir(c.origem)}
-                    </span>
+                    {/*
+                      DE ONDE VEIO O LEAD.
+                      
+                      A etiqueta do RASTREIO ganha de `Conversa.origem` quando existe: a segunda é
+                      gravada como "Direto" pra todo mundo pelo webhook, e um campo que diz a mesma
+                      coisa em toda linha não informa nada. Quando não há rastreio, "Direto" volta
+                      a aparecer — ele continua sendo a verdade disponível.
+                      
+                      `classeOrigem` dá a cor pelas mesmas palavras que o CRM já usa ("Meta Ads",
+                      "Instagram"), então a etiqueta nova nasce com a cor certa sem paleta nova.
+                    */}
+                    {(() => {
+                      const daOrigem = origemPorContato[chaveDeContato(c.nome)];
+                      if (!daOrigem) {
+                        return (
+                          <span className={`tag ${classeOrigem(c.origem as Parameters<typeof classeOrigem>[0])}`}>
+                            {traduzir(c.origem)}
+                          </span>
+                        );
+                      }
+                      return (
+                        <span
+                          className={`tag ${classeOrigem(daOrigem.rotulo as Parameters<typeof classeOrigem>[0])}`}
+                          title={
+                            daOrigem.detalhe
+                              ? `${traduzir("De onde veio este lead")}: ${daOrigem.rotulo} · ${daOrigem.detalhe}`
+                              : `${traduzir("De onde veio este lead")}: ${daOrigem.rotulo}`
+                          }
+                        >
+                          {/* O ponto marca tráfego PAGO. É a leitura de relance que ela pediu —
+                              "veio direto do tráfego pago?" — sem gastar a largura da etiqueta com
+                              mais uma palavra numa linha que já tem três. */}
+                          {daOrigem.pago ? "• " : ""}
+                          {traduzir(daOrigem.rotulo)}
+                        </span>
+                      );
+                    })()}
                     {!c.ehGrupo && etapaAtualDoContato(c.nome) ? (
                       <span className="tag wa-etapa-funil-tag" title={traduzir("Etapa atual no funil")}>
                         {traduzir(etapaAtualDoContato(c.nome)!)}

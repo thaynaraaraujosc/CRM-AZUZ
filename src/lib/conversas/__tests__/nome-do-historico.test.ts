@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { nomeDePerfilNoHistorico } from "../nome-do-historico";
+import { nomeDePerfilNoHistorico, valeBuscarNome } from "../nome-do-historico";
 
 /**
  * O NOME QUE FICOU NO HISTÓRICO, pra batizar as conversas que já estão lá como número.
@@ -55,5 +55,40 @@ describe("nomeDePerfilNoHistorico", () => {
   it("sem carimbo, ainda serve", () => {
     expect(nomeDePerfilNoHistorico([recebida("Cassia", undefined)])).toBe("Cassia");
     expect(nomeDePerfilNoHistorico([recebida("Cassia", "1731000000")])).toBe("Cassia");
+  });
+});
+
+/**
+ * O AVISO QUE NÃO SAÍA DA TELA.
+ *
+ * "Cliquei uma vez, cliquei duas, buscou — tem que sair daí, porque fica aparecendo bug." A conta
+ * era de toda conversa ainda chamada pelo número, e tem gente cujo nome o WhatsApp não guardou em
+ * mensagem nenhuma: a busca rodava, não achava nada, e o aviso voltava igual.
+ */
+describe("valeBuscarNome", () => {
+  const base = { nome: "5511973935384", canal: "WhatsApp", ehGrupo: false, nomeBuscadoEm: null };
+
+  it("vale pra conversa de WhatsApp ainda chamada pelo número", () => {
+    expect(valeBuscarNome(base)).toBe(true);
+  });
+
+  it("NÃO vale depois de já ter procurado, mesmo sem ter achado nome", () => {
+    expect(valeBuscarNome({ ...base, nomeBuscadoEm: "2026-11-11T12:00:00.000Z" })).toBe(false);
+  });
+
+  it("não vale pra quem já tem nome", () => {
+    expect(valeBuscarNome({ ...base, nome: "Taís Dias" })).toBe(false);
+  });
+
+  it("grupo não entra: o nome dele é do grupo, não de uma pessoa", () => {
+    expect(valeBuscarNome({ ...base, ehGrupo: true })).toBe(false);
+  });
+
+  it("Instagram não entra: lá o identificador é o id da thread e não há aparelho pra consultar", () => {
+    expect(valeBuscarNome({ ...base, nome: "3984605438508218", canal: "Instagram" })).toBe(false);
+  });
+
+  it("aceita o carimbo como Date, que é como ele chega do banco", () => {
+    expect(valeBuscarNome({ ...base, nomeBuscadoEm: new Date() })).toBe(false);
   });
 });

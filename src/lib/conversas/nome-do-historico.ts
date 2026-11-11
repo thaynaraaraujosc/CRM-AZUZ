@@ -1,3 +1,5 @@
+import { nomeAindaEhIdCru } from "./exibicao";
+
 /**
  * O NOME DE PERFIL ESCONDIDO NO HISTÓRICO.
  *
@@ -52,4 +54,31 @@ export function nomeDePerfilNoHistorico(mensagens: unknown[]): string | null {
   }
 
   return melhor?.nome ?? null;
+}
+
+/**
+ * VALE OFERECER A BUSCA DE NOME PRA ESTA CONVERSA?
+ *
+ * "Cliquei uma vez, cliquei duas, buscou — tem que sair daí, porque fica aparecendo bug."
+ *
+ * O aviso contava toda conversa ainda chamada pelo número, e tem gente cujo nome o WhatsApp não
+ * guardou em mensagem nenhuma: a busca rodava, não achava nada, e o aviso voltava igual. Um botão
+ * que não resolve e não some é um defeito, não um lembrete.
+ *
+ * `nomeBuscadoEm` é o carimbo de "já procuramos esta". Procurado é procurado — mesmo sem nome, ela
+ * sai da conta. O que ainda batiza as que sobraram é a MENSAGEM SEGUINTE: quando ela chega com o
+ * nome de perfil, a conversa é renomeada sozinha (ver `batizarSeAindaForNumero`).
+ *
+ * Grupo nunca entra: o nome dele é o nome do grupo, não o de uma pessoa. Instagram também não — lá
+ * o identificador é o id da thread, e não há histórico de aparelho pra consultar.
+ */
+export function valeBuscarNome(conversa: {
+  nome: string;
+  canal: string;
+  ehGrupo?: boolean;
+  nomeBuscadoEm?: string | Date | null;
+}): boolean {
+  if (conversa.canal !== "WhatsApp" || conversa.ehGrupo) return false;
+  if (conversa.nomeBuscadoEm) return false;
+  return nomeAindaEhIdCru(conversa.nome);
 }

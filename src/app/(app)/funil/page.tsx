@@ -26,6 +26,7 @@ import {
   type NumeroParaFunil,
 } from "@/lib/funis/numero-do-funil";
 import { canalDoNumero } from "@/lib/conversas/numeros-conectados";
+import type { TagDeOrigem } from "@/lib/rastreio/tag-de-origem";
 import { VAZIO, ehVazio } from "@/lib/vazio";
 import { useEquipe } from "@/lib/equipe-context";
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
@@ -247,6 +248,29 @@ function FunilPageInner() {
    * conectado" durante o carregamento.
    */
   const [numerosDeWhats, setNumerosDeWhats] = useState<NumeroParaFunil[] | null>(null);
+
+  /*
+   * DE ONDE VEIO CADA LEAD. A mesma rota e a mesma etiqueta da caixa de entrada.
+   *
+   * "Preciso saber se o lead que entrou no meu chat e no meu funil veio de onde." O cartão mostrava
+   * `card.origem` — o canal de chegada —, que não responde se veio de anúncio.
+   */
+  const [origemPorContato, setOrigemPorContato] = useState<Record<string, TagDeOrigem>>({});
+
+  useEffect(() => {
+    let vivo = true;
+    fetch("/api/rastreio/origem-dos-leads")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((dados: { porContato?: Record<string, TagDeOrigem> } | null) => {
+        // Falhar aqui não pode roubar o quadro de quem veio trabalhar: sem a etiqueta, o cartão
+        // continua inteiro, com o canal de chegada como antes.
+        if (vivo && dados?.porContato) setOrigemPorContato(dados.porContato);
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, []);
 
   /*
    * Busca e DEVOLVE, em vez de gravar no estado: assim o efeito grava num callback e não no corpo,
@@ -1429,9 +1453,34 @@ function FunilPageInner() {
                           </span>
                         ) : null}
                         <span className="lr2">
-                          <span className={`tag ${classeOrigem(card.origem)}`}>
-                            {card.origem}
-                          </span>
+                          {/*
+                            DE ONDE VEIO O LEAD, no cartão — a mesma etiqueta da caixa de entrada.
+                            
+                            "Eu preciso saber se o lead que entrou no meu chat E NO MEU FUNIL veio
+                            de onde." `card.origem` é o canal por onde ele chegou ("WhatsApp",
+                            "Formulário"), e isso não responde se veio de anúncio: o rastreio
+                            responde, e é ele que ganha quando existe.
+                          */}
+                          {(() => {
+                            const daOrigem = origemPorContato[chaveDeContato(card.nome)];
+                            if (!daOrigem) {
+                              return <span className={`tag ${classeOrigem(card.origem)}`}>{card.origem}</span>;
+                            }
+                            return (
+                              <span
+                                className={`tag ${classeOrigem(daOrigem.rotulo)}`}
+                                title={
+                                  daOrigem.detalhe
+                                    ? `${traduzir("De onde veio este lead")}: ${daOrigem.rotulo} · ${daOrigem.detalhe}`
+                                    : `${traduzir("De onde veio este lead")}: ${daOrigem.rotulo}`
+                                }
+                              >
+                                {/* O ponto marca tráfego pago, igual na caixa de entrada. */}
+                                {daOrigem.pago ? "• " : ""}
+                                {traduzir(daOrigem.rotulo)}
+                              </span>
+                            );
+                          })()}
                           {/*
                             A LEITURA DE QUEM ATENDEU, no cartão.
                             
