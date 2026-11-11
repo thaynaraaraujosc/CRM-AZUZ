@@ -6,6 +6,7 @@ import {
   nomeDoFunil,
   numeroDoFunil,
   numerosDisponiveis,
+  numerosNaOrdemDosFunis,
   sufixoSugerido,
   type FunilComNumero,
   type NumeroParaFunil,
@@ -105,5 +106,39 @@ describe("sufixoSugerido", () => {
 
   it("sem número escolhido, não sugere nada", () => {
     expect(sufixoSugerido(null)).toBe("");
+  });
+});
+
+describe("numerosNaOrdemDosFunis", () => {
+  const funis: FunilComNumero[] = [
+    { id: "f-qr", nome: "Funil - Azuz", contaCanal: QR.chave },
+    { id: "f-oficial", nome: "Funil - oficial", contaCanal: OFICIAL.chave },
+  ];
+
+  it("põe os números na ordem dos funis", () => {
+    // Na lista de conexões o oficial vem primeiro; na ordem dos funis, o QR.
+    expect(numerosNaOrdemDosFunis([OFICIAL, QR], funis).map((n) => n.chave)).toEqual([
+      QR.chave,
+      OFICIAL.chave,
+    ]);
+  });
+
+  it("número sem funil vai pro fim, na ordem que já tinha", () => {
+    const outro = { ...CAIU, chave: "whatsapp_nao_oficial:5562911110000", nome: "Vendas 3" };
+    const r = numerosNaOrdemDosFunis([OFICIAL, CAIU, outro, QR], funis);
+    expect(r.map((n) => n.nome)).toEqual([QR.nome, OFICIAL.nome, CAIU.nome, outro.nome]);
+  });
+
+  it("sem funil nenhum, a ordem não muda", () => {
+    expect(numerosNaOrdemDosFunis([OFICIAL, QR], []).map((n) => n.chave)).toEqual([
+      OFICIAL.chave,
+      QR.chave,
+    ]);
+  });
+
+  it("não altera a lista recebida", () => {
+    const lista = [OFICIAL, QR];
+    numerosNaOrdemDosFunis(lista, funis);
+    expect(lista.map((n) => n.chave)).toEqual([OFICIAL.chave, QR.chave]);
   });
 });

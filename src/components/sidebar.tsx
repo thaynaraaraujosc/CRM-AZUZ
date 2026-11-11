@@ -197,7 +197,33 @@ export function Sidebar() {
     role: sessao?.user?.role ?? "",
     email: sessao?.user?.email ?? "",
   };
-  const { funis, funilAtivoId, setFunilAtivoId } = useFunis();
+  const { funis, funilAtivoId, setFunilAtivoId, reordenarFunis } = useFunis();
+  /*
+   * ARRASTAR O FUNIL NO MENU. "Eu quero que o funil azul seja o primeiro, porque eu quero que lá
+   * no chat também ele seja as primeiras respostas. Não consegui arrastar."
+   *
+   * Não dava mesmo: a lista era de links e nada mais. O arrasto é o nativo do HTML (`draggable`),
+   * sem biblioteca — são três ou quatro itens numa barra estreita, e um gesto de uma linha não
+   * justifica o peso de um motor de arrastar.
+   *
+   * `arrastando` é o id do que está na mão; `alvo` é sobre qual item ele está passando. O segundo
+   * existe pra desenhar a marca de onde vai cair: sem ela, arrastar numa lista curta é adivinhar.
+   */
+  const [funilArrastando, setFunilArrastando] = useState<string | null>(null);
+  const [funilAlvo, setFunilAlvo] = useState<string | null>(null);
+
+  function soltarFunil(idAlvo: string) {
+    const de = funilArrastando;
+    setFunilArrastando(null);
+    setFunilAlvo(null);
+    if (!de || de === idAlvo) return;
+    const ids = funis.map((f) => f.id);
+    const origem = ids.indexOf(de);
+    const destino = ids.indexOf(idAlvo);
+    if (origem < 0 || destino < 0) return;
+    ids.splice(destino, 0, ids.splice(origem, 1)[0]);
+    void reordenarFunis(ids);
+  }
   const { membros: equipe } = useEquipe();
   const [contaAberta, setContaAberta] = useState(false);
   const [contaAnchorRect, setContaAnchorRect] = useState<AnchorRect | null>(null);
@@ -507,8 +533,33 @@ export function Sidebar() {
                       <Link
                         key={f.id}
                         href="/funil"
-                        className={`nav-subitem${subAtivo ? " active" : ""}`}
+                        className={`nav-subitem${subAtivo ? " active" : ""}${
+                          funilAlvo === f.id && funilArrastando !== f.id ? " nav-subitem-alvo" : ""
+                        }${funilArrastando === f.id ? " nav-subitem-arrastando" : ""}`}
+                        draggable
                         onClick={() => setFunilAtivoId(f.id)}
+                        onDragStart={(e) => {
+                          setFunilArrastando(f.id);
+                          // Sem isto o navegador arrasta o LINK: o Chrome cria uma sombra com o
+                          // endereço e, ao soltar fora, tenta navegar pra ele.
+                          e.dataTransfer.effectAllowed = "move";
+                          e.dataTransfer.setData("text/plain", f.id);
+                        }}
+                        onDragOver={(e) => {
+                          // `preventDefault` é o que AUTORIZA o soltar. Sem ele o navegador recusa
+                          // a área inteira e o cursor fica com o sinal de proibido o tempo todo.
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = "move";
+                          if (funilAlvo !== f.id) setFunilAlvo(f.id);
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          soltarFunil(f.id);
+                        }}
+                        onDragEnd={() => {
+                          setFunilArrastando(null);
+                          setFunilAlvo(null);
+                        }}
                       >
                         {f.nome}
                       </Link>

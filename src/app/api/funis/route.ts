@@ -90,6 +90,9 @@ export async function GET() {
       workspaceId: sessao.user.workspaceId,
       ...(funisPermitidos ? { id: { in: funisPermitidos } } : {}),
     },
+    // A ordem é a que a pessoa arrastou. O id desempata porque ele é estável: sem ele, dois funis
+    // com a mesma `ordem` trocariam de lugar entre carregamentos, sem ninguém ter mexido.
+    orderBy: [{ ordem: "asc" }, { id: "asc" }],
     include: {
       etapas: {
         orderBy: { ordem: "asc" },

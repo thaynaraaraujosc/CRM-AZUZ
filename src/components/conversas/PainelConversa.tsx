@@ -106,6 +106,40 @@ export function PainelConversa({
     .flatMap((f) => f.colunas.flatMap((c) => c.cards))
     .find((c) => c.nome === contatoNome);
 
+  /*
+   * O HISTÓRICO DESTA CONVERSA, QUANDO ELE NÃO ESTÁ EM MÃOS.
+   *
+   * "Não chegou as mensagens no funil dos clientes que já tem mensagem com a gente lá no chat. Não
+   * faz nenhum sentido eu abrir e não ter nenhuma mensagem."
+   *
+   * A tela carrega as mensagens em bloco — as 3.000 mais recentes do workspace inteiro — e isso é
+   * o certo pra caixa de entrada, onde se lê o que é recente. Mas quem abre um card do funil de
+   * alguém que parou de escrever há tempos pede uma conversa que pode estar inteira fora dessas
+   * 3.000, e a janela dizia "nenhuma mensagem ainda": a frase de quem nunca falou com a pessoa.
+   *
+   * Então: sem nada em mãos, pergunta por esta conversa. Uma vez por abertura, por índice, e só
+   * quando falta — conversa que já está no bloco não paga consulta nenhuma. A rota ainda tenta
+   * pelo telefone quando o nome não acha nada, que é o caso da conversa batizada depois de já ter
+   * histórico (ver `mensagensDeUmContato`).
+   */
+  const buscadasRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!contatoNome || mensagens.length > 0 || buscadasRef.current.has(contatoNome)) return;
+    buscadasRef.current.add(contatoNome);
+    let cancelado = false;
+    fetch(`/api/mensagens-extra?contato=${encodeURIComponent(contatoNome)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((dados: Record<string, typeof mensagens> | null) => {
+        const daConversa = dados?.[contatoNome];
+        if (cancelado || !daConversa?.length) return;
+        setMensagensExtraPorContato((atual) => ({ ...atual, [contatoNome]: daConversa }));
+      })
+      .catch((erro) => console.error("Falha ao carregar o histórico desta conversa:", erro));
+    return () => {
+      cancelado = true;
+    };
+  }, [contatoNome, mensagens.length, setMensagensExtraPorContato]);
+
   // Busca só quando a aba Histórico está aberta: a linha do tempo cresce com o tempo e não faz
   // sentido pagar essa consulta em toda conversa aberta, sendo que a maioria nunca abre essa aba.
   useEffect(() => {

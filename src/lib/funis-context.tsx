@@ -59,6 +59,15 @@ type FunisContextValue = {
    * Era o pior dos dois mundos: o card já estava salvo, e o erro na tela dizia o contrário.
    */
   aplicarSemGravar: (atualizador: SetStateAction<Funil[]>) => void;
+  /**
+   * A ORDEM DOS FUNIS, arrastada no menu lateral.
+   *
+   * Muda a tela na hora e grava por rota própria — a ordem é uma escrita de uma coluna por funil,
+   * e pendurá-la no PUT do quadro inteiro traria de volta a transação grande que estourava o
+   * prazo. Falhando, relê do banco: melhor a lista voltar ao que está gravado do que seguir
+   * mostrando uma ordem que não existe.
+   */
+  reordenarFunis: (ids: string[]) => Promise<void>;
   /** Cria um funil gravando no banco antes de aparecer na tela. */
   criarFunilPersistido: (funil: Funil) => Promise<{ ok: boolean; erro?: string }>;
   /** Cria uma etapa gravando no banco antes de aparecer na tela. */
@@ -176,6 +185,29 @@ export function FunisProvider({ children }: { children: ReactNode }) {
         esperandoRef.current = null;
         if (esperando) persistirFunis(esperando);
       });
+  }
+
+  /** Ver `reordenarFunis` no tipo do contexto. */
+  async function reordenarFunis(ids: string[]) {
+    // `aplicarSemGravar` e não `setFunis`: quem grava é a rota de ordem, e acordar o sync geral
+    // devolveria o quadro inteiro num PUT por causa de uma reordenação de menu.
+    aplicarSemGravar((prev) => {
+      const porId = new Map(prev.map((f) => [f.id, f]));
+      const naOrdem = ids.flatMap((id) => porId.get(id) ?? []);
+      // Funil que não veio na lista (criado noutra aba, por exemplo) vai pro fim em vez de sumir.
+      return [...naOrdem, ...prev.filter((f) => !ids.includes(f.id))];
+    });
+
+    const r = await fetch("/api/funis/ordem", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids }),
+    }).catch(() => null);
+
+    if (!r?.ok) {
+      setErroSincronizacao("Não deu pra salvar a ordem dos funis.");
+      await recarregar();
+    }
   }
 
   /** Ver `aplicarSemGravar` no tipo do contexto: muda a tela sem agendar o PUT do quadro inteiro. */
@@ -491,6 +523,7 @@ export function FunisProvider({ children }: { children: ReactNode }) {
         salvarAparenciaDaEtapa,
         recarregar,
         aplicarSemGravar,
+        reordenarFunis,
         erroSincronizacao,
         limparErroSincronizacao: () => setErroSincronizacao(null),
       }}

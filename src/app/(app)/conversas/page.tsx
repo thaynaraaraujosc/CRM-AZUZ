@@ -64,6 +64,7 @@ import {
 } from "@/lib/biblioteca-documentos-context";
 import { HOJE_ISO } from "@/lib/hoje";
 import { useFunis } from "@/lib/funis-context";
+import { numerosNaOrdemDosFunis } from "@/lib/funis/numero-do-funil";
 import { useIdioma } from "@/lib/idioma-context";
 import { useMensagensExtra } from "@/lib/mensagens-extra-context";
 import { criarResolvedorDeMencao, filtrarParticipantes, inserirMencao, mencaoEmDigitacao } from "@/lib/conversas/mencoes";
@@ -1055,7 +1056,19 @@ function ConversasPageInner() {
    * antes de o CRM gravar de qual conexão cada uma veio. Elas existem e precisam continuar
    * aparecendo.
    */
-  const numerosParaAba = numerosConectados.filter((n) => n.status === "conectado" && n.chave);
+  /*
+   * AS ABAS SEGUEM A ORDEM DOS FUNIS. "Se eu arrasto o funil da Azuz para cima, ele fica como
+   * primeiro, e aí lá no chat do WhatsApp também ele fica como primeiro."
+   *
+   * A lista vinha na ordem em que as conexões foram criadas, que não quer dizer nada pra quem
+   * atende — e como a primeira aba é a que abre, era ela que decidia qual caixa de entrada a
+   * pessoa via ao entrar. Agora quem decide é a ordem que ela arrastou no menu: uma decisão, dois
+   * lugares. Ver `numerosNaOrdemDosFunis`.
+   */
+  const numerosParaAba = numerosNaOrdemDosFunis(
+    numerosConectados.filter((n) => n.status === "conectado" && n.chave),
+    funis,
+  );
   const numeroAtivo = !variosNumeros
     ? "Todos"
     : numerosParaAba.some((n) => n.chave === numeroTopFiltro) || numeroTopFiltro === SEM_NUMERO
