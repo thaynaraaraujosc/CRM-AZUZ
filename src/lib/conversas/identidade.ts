@@ -1,4 +1,6 @@
 import { prisma } from "@/lib/prisma";
+import { nomeAindaEhIdCru } from "./exibicao";
+import { renomearConversa } from "./renomear";
 import { encontrarContatoPorTelefone } from "@/lib/contatos/upsert";
 import { normalizarTelefoneParaComparacao } from "@/lib/telefone";
 
@@ -43,13 +45,20 @@ export async function resolverPessoaDoTelefone(params: {
 
   // 1. Contato já cadastrado com esse número: a resposta mais confiável que existe.
   const contatoExistente = await encontrarContatoPorTelefone(workspaceId, telefone);
-  if (contatoExistente) return { nome: contatoExistente.nome, contatoExistente };
+  if (contatoExistente) {
+    const batizado = await batizarSeAindaForNumero(workspaceId, contatoExistente.nome, telefone, nomeDoPerfil);
+    if (batizado) return { nome: batizado, contatoExistente: { ...contatoExistente, nome: batizado } };
+    return { nome: contatoExistente.nome, contatoExistente };
+  }
 
   // 2. Thread que já existe pra esse número, mesmo sem Contato. Mantém a continuidade de quem
   //    começou a conversar antes de virar contato, inclusive quando a conversa foi criada com o
   //    número cru como nome.
   const porTelefone = await encontrarConversaPorTelefone(workspaceId, telefone);
-  if (porTelefone) return { nome: porTelefone, contatoExistente: null };
+  if (porTelefone) {
+    const batizado = await batizarSeAindaForNumero(workspaceId, porTelefone, telefone, nomeDoPerfil);
+    return { nome: batizado ?? porTelefone, contatoExistente: null };
+  }
 
   // 3. Nome de perfil, e só se ele estiver livre. Ocupado por outro número, cair nele fundiria as
   //    duas pessoas de forma irreversível: vale muito mais mostrar o número.
@@ -99,4 +108,44 @@ async function nomeJaPertenceAOutroNumero(workspaceId: string, nome: string, tel
     return Boolean(normalizado) && normalizado !== alvo;
   };
   return outro(conversa?.contato) || outro(contato?.whatsapp);
+}
+
+/**
+ * O NÚMERO VIRA NOME NA PRIMEIRA VEZ QUE O NOME CHEGA.
+ *
+ * "Tem como, quando alguém me enviar a mensagem, puxar o nome que a pessoa salvou no WhatsApp dela
+ * em vez do número?" Puxa — e já puxava, só que uma vez só: na CRIAÇÃO. Quem chegou numa mensagem
+ * que não trouxe o nome de perfil (acontece, e acontece bastante na primeira) nascia com o telefone
+ * no lugar do nome e ficava assim pra sempre, mesmo que a segunda, a terceira e a décima mensagem
+ * trouxessem o nome. Era um funil cheio de "5511973935384" com o nome disponível a cada mensagem e
+ * ninguém escrevendo.
+ *
+ * Trocar um telefone por um nome é seguro de um jeito que trocar um NOME por outro não é: o
+ * telefone no campo de nome não é informação, é a ausência dela. Por isso só acontece aqui, e só
+ * nessa direção — `nomeAindaEhIdCru` é a mesma guarda que a tela de renomear usa.
+ *
+ * A troca move tudo que é casado por nome (mensagens, card do funil, contato) numa transação só,
+ * porque é assim que o CRM liga essas tabelas. Falhando — corrida com outra mensagem da mesma
+ * pessoa, nome que acabou de ser ocupado — o nome velho continua valendo: perder o batismo é um
+ * incômodo, perder a mensagem seria o defeito.
+ */
+async function batizarSeAindaForNumero(
+  workspaceId: string,
+  nomeAtual: string,
+  telefone: string,
+  nomeDoPerfil: string | null | undefined,
+): Promise<string | null> {
+  const novo = nomeDoPerfil?.trim().replace(/\s+/g, " ");
+  if (!novo || novo.length < 2 || novo.length > 80) return null;
+  if (!nomeAindaEhIdCru(nomeAtual)) return null;
+  // Nome de perfil que também é só dígitos não batiza nada: trocaria um número por outro.
+  if (nomeAindaEhIdCru(novo)) return null;
+  if (await nomeJaPertenceAOutroNumero(workspaceId, novo, telefone)) return null;
+
+  try {
+    await renomearConversa(workspaceId, nomeAtual, novo);
+    return novo;
+  } catch {
+    return null;
+  }
 }
