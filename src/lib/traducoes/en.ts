@@ -2996,4 +2996,7 @@ export const TRADUCOES_EN: Record<string, string> = {
   "Enviar pelo número": "Send from number",
   "O desta conversa": "This conversation's",
   "Pro cliente, esta mensagem chega de outro número — numa conversa nova, sem o histórico desta.": "For the customer, this message arrives from a different number — in a new conversation, without this history.",
+
+  /* A palavra-chave e o gatilho que não tem texto. */
+  "As palavras-chave valem para os gatilhos que trazem texto (comentário, resposta de story, Direct). Em “Começou a te seguir” não há texto nenhum pra comparar, então ele dispara de qualquer jeito.": "Keywords apply to the triggers that carry text (comment, story reply, Direct). “Started following you” carries no text to compare, so it fires regardless.",
 };

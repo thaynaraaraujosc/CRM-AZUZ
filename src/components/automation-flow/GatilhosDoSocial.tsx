@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
+import { gatilhoTemTexto } from "@/lib/automation-flow/gatilhos-do-fluxo";
 import {
   gatilhoTemAlcance,
   gravarAlcance,
@@ -257,12 +258,26 @@ export function GatilhosDoSocial({
    * A primeira é sempre as palavras-chave, porque elas valem pra todos os gatilhos. Depois vem
    * uma etapa por gatilho que tenha uma pergunta de alcance, na ordem em que foram marcados.
    */
+  /*
+   * A PALAVRA-CHAVE SÓ FAZ SENTIDO ONDE EXISTE TEXTO.
+   *
+   * "Se começou a seguir, não precisa ter palavra-chave, certo? Porque a única coisa que a pessoa
+   * fez foi me seguir. Ela não comentou nada." Com só esse gatilho marcado, a etapa de palavras é
+   * uma pergunta sem resposta possível — e pior, uma pergunta que, respondida, não filtraria nada
+   * (o motor ignora a palavra onde não há texto, ver `gatilhoTemTexto`).
+   */
+  const algumGatilhoTemTexto = marcados.some((t) => gatilhoTemTexto(t));
+
   const etapas: { chave: string; tipo?: FlowNodeType; titulo: string; pergunta: string }[] = [
-    {
-      chave: "palavras",
-      titulo: "Palavras-chave",
-      pergunta: "Quais palavras ou frases ativam a automação?",
-    },
+    ...(algumGatilhoTemTexto
+      ? [
+          {
+            chave: "palavras",
+            titulo: "Palavras-chave",
+            pergunta: "Quais palavras ou frases ativam a automação?",
+          },
+        ]
+      : []),
     ...marcados
       .filter((t) => ALCANCE[t])
       .map((t) => ({ chave: t, tipo: t, titulo: ALCANCE[t]!.titulo, pergunta: ALCANCE[t]!.pergunta })),
@@ -997,8 +1012,13 @@ export function GatilhosDoSocial({
               {traduzir("Adicionar gatilho")} <span aria-hidden="true">+</span>
             </button>
 
-            <p className="pg-secao pg-secao-palavra">{traduzir("Palavra-chave")}</p>
-            {blocoDaPalavra}
+            {/* Mesma razão da etapa: sem gatilho que traga texto, não há o que a palavra filtre. */}
+            {algumGatilhoTemTexto ? (
+              <>
+                <p className="pg-secao pg-secao-palavra">{traduzir("Palavra-chave")}</p>
+                {blocoDaPalavra}
+              </>
+            ) : null}
           </div>
         ) : !etapaAtual ? (
           <>
@@ -1042,7 +1062,11 @@ export function GatilhosDoSocial({
             {etapaAtual.chave === "palavras" ? (
               <>
                 <p className="gat-nota">
-                  {traduzir("As palavras-chave valem para todos os gatilhos desta automação.")}
+                  {marcados.some((t) => !gatilhoTemTexto(t))
+                    ? traduzir(
+                        "As palavras-chave valem para os gatilhos que trazem texto (comentário, resposta de story, Direct). Em “Começou a te seguir” não há texto nenhum pra comparar, então ele dispara de qualquer jeito.",
+                      )
+                    : traduzir("As palavras-chave valem para todos os gatilhos desta automação.")}
                 </p>
 
                 {blocoDaPalavra}
