@@ -2978,4 +2978,8 @@ export const TRADUCOES_EN: Record<string, string> = {
   /* Por onde a primeira mensagem vai sair, e o caminho do modelo aprovado. */
   "Enviando por": "Sending through",
   "Escolher modelo": "Choose a template",
+
+  /* A pastilha de início quando ainda falta o gatilho. */
+  "Falta escolher o gatilho — clique aqui": "Pick the trigger — click here",
+  "Quando um dos gatilhos acontecer": "When one of the triggers happens",
 };

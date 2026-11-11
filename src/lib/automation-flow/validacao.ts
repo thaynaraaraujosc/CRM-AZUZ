@@ -162,9 +162,27 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
      * O erro de verdade continua sendo erro: "o fluxo não tem nenhum gatilho" (regra 1). Esse sim
      * é o robô que não roda.
      */
+    /*
+     * O COMEÇO DO DESENHO NÃO É UM BLOCO SOLTO — e dizer que é foi uma contradição na cara dela.
+     *
+     * Sem bloco de gatilho, o editor desenha a pastilha "Iniciar robô" ligada ao primeiro bloco do
+     * quadro (ver `idDoPrimeiroBloco` no `FlowEditor`). A tela mostrava a linha chegando no bloco e,
+     * em cima dele, uma pendência dizendo que nada chegava até ele. As duas coisas ao mesmo tempo,
+     * no mesmo lugar: "por que ainda está pedindo pra adicionar um gatilho, sendo que eu já falei
+     * aqui?".
+     *
+     * O problema de verdade é um só, e ele já está dito na regra 1 — o fluxo não tem gatilho, então
+     * nada vai dispará-lo. Repetir isso como "bloco solto" no primeiro bloco manda procurar a
+     * solução no lugar errado: ela ia tentar ligar um fio até ali, e fio nenhum resolve a falta de
+     * gatilho.
+     *
+     * Os DEMAIS blocos sem entrada continuam sendo apontados: um segundo pedaço de fluxo largado no
+     * canto é outra coisa, e essa continua precisando de caminho.
+     */
+    const comecoDoDesenho = gatilhos.length === 0 ? raizes[0]?.id : undefined;
     nodes.forEach((n) => {
       const temEntrada = (entradasPorNo.get(n.id)?.length ?? 0) > 0;
-      if (!temEntrada && n.category !== "gatilho") {
+      if (!temEntrada && n.category !== "gatilho" && n.id !== comecoDoDesenho) {
         problemas.push({
           id: proximoIdProblema(),
           severidade: "aviso",

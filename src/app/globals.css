@@ -23241,6 +23241,32 @@ table.tbl .name-cell .r {
   cursor: grabbing;
 }
 
+/*
+ * A PASTILHA SEM GATILHO: o começo que ainda não começa.
+ *
+ * Verde é a cor de "está de pé", e ela estava verde mesmo num robô que nunca vai disparar. Aqui
+ * ela veste a cor de pendência e o contorno tracejado — a mesma linguagem do que está por fazer no
+ * resto do quadro — e vira botão de verdade: o clique abre a gaveta de gatilhos.
+ *
+ * `text-align: left` e `font: inherit` porque é um `<button>`: sem eles o navegador centraliza o
+ * texto e troca a fonte, e a pastilha deixa de parecer a mesma peça.
+ */
+.no-inicio-vazio {
+  border-style: dashed;
+  border-color: var(--warning, #d97706);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.no-inicio-vazio .no-inicio-marca {
+  color: var(--warning, #d97706);
+}
+
+.no-inicio-vazio:hover {
+  background: var(--surface-hover);
+}
+
 .no-inicio-marca {
   color: var(--success);
   font-size: 12px;
