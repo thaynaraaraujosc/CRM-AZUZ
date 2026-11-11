@@ -7120,43 +7120,132 @@ button.camp-row:hover {
   }
 }
 
+/* ==========================================================================
+   NO CELULAR, O MENU E UMA BARRA EM CIMA.
+
+   "A parte responsiva esta muito disfuncional." Estava, e o defeito era de uma linha: o menu
+   recolhido declara `width: 68px` com tres classes de especificidade
+   (`.sidebar.recolhida:not(.sobreposta)`), e a regra de celular pedia `width: 100%` com uma so.
+   Resultado medido num iPhone de 440px: um retangulo escuro de 68 x 444, encostado no canto,
+   com meia tela branca do lado e o conteudo comecando so na metade de baixo do aparelho.
+
+   O desenho novo nao tenta espremer o menu vertical numa tela estreita — ele vira outra coisa:
+   uma barra horizontal de 52px no alto, com a marca na esquerda, os icones rolando no meio e a
+   conta na direita. E o que todo aplicativo faz nessa largura, e devolve a tela inteira pro
+   trabalho.
+   ========================================================================== */
 @media (max-width: 820px) {
+  /* A casca continua sendo uma tela so, com rolagem por dentro: e o que mantem a barra sempre
+     visivel. `dvh` e nao `vh` porque no celular a barra de endereco do navegador entra e sai, e
+     `vh` conta com ela escondida — com `vh` o rodape da conversa fica embaixo dela. */
   .shell {
     flex-direction: column;
-    height: auto;
-    min-height: 100vh;
-    overflow: visible;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
   }
 
-  .sidebar {
+  /* As duas formas de escrever o menu estao aqui porque a recolhida precisa ser alcancada na
+     especificidade. Sem a segunda linha, o menu volta aos 68px e tudo o que vem abaixo e inutil. */
+  .sidebar,
+  .sidebar.recolhida:not(.sobreposta) {
     width: 100%;
+    height: auto;
+    flex: 0 0 auto;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
     border-right: none;
     border-bottom: 1px solid var(--line);
+    overflow: hidden;
+    transition: none;
   }
 
+  .sb-brand,
+  .sidebar.recolhida:not(.sobreposta) .sb-brand {
+    flex: 0 0 auto;
+    padding: 0;
+    margin: 0;
+  }
+
+  /* Recolher uma barra horizontal nao quer dizer nada. */
+  .sb-recolher {
+    display: none;
+  }
+
+  .sidebar .dropdown-anchor {
+    flex: 0 0 auto;
+  }
+
+  .sb-workspace {
+    flex: 0 0 auto;
+    max-width: 120px;
+    margin: 0;
+  }
+
+  /* SO OS ICONES ROLAM. A marca e a conta ficam ancoradas nas pontas; quem passa de largura e a
+     fila de icones, e ela rola sozinha sem levar o resto junto. */
   .nav {
+    flex: 1 1 auto;
+    min-width: 0;
     flex-direction: row;
-    flex-wrap: wrap;
-    gap: var(--space-2);
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: var(--space-1);
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+  }
+
+  .nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav-item {
+    flex: 0 0 auto;
+  }
+
+  /* A lista de funis vira parte da mesma fila, em vez de um bloco empilhado no meio dela. */
+  .nav-sublist {
+    flex-direction: row;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+    border: none;
   }
 
   .sb-foot {
-    margin-top: 14px;
+    flex: 0 0 auto;
+    margin: 0 0 0 auto;
+    padding: 0;
+    border: none;
+  }
+
+  .sb-foot-info {
+    max-width: 120px;
+  }
+
+  .main {
+    flex: 1;
+    min-height: 0;
   }
 
   .content {
-    overflow: visible;
-    padding: var(--space-5) var(--space-4) var(--space-6);
+    overflow: auto;
+    padding: var(--space-4) var(--space-4) var(--space-5);
   }
 
   .topbar {
     flex-direction: column;
-    align-items: flex-start;
-    padding: var(--space-4) var(--space-4);
+    align-items: stretch;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
   }
 
   .top-actions {
     justify-content: flex-start;
+    flex-wrap: wrap;
   }
 
   .kpi4,
@@ -7164,10 +7253,49 @@ button.camp-row:hover {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  /* A folga da `.content` encolhe nesta largura; a sangria do quadro tem que encolher junto, senao
-     ele vaza 12px pra fora da tela de cada lado. */
+  /*
+   * O FUNIL VIRA UMA ETAPA POR TELA, com arrasto lateral.
+   *
+   * Em 440px, etapa de 232px mostrava uma inteira e um pedaco da seguinte — e o pedaco da
+   * seguinte e o que faz ninguem perceber que da pra deslizar. Com 86% da largura, a etapa do
+   * lado aparece so como uma beirada, que e o convite certo, e o encaixe (`scroll-snap`) para
+   * sempre numa etapa inteira em vez de no meio de duas.
+   */
   .kanban {
     margin-inline: calc(var(--space-4) * -1);
+    padding-inline: var(--space-3);
+    scroll-snap-type: x mandatory;
+  }
+
+  .kanban > div {
+    flex: 0 0 86%;
+    min-width: 0;
+    scroll-snap-align: center;
+  }
+
+  /*
+   * A CAIXA DE ENTRADA: UM PAINEL POR TELA.
+   *
+   * Em 440px, a lista de 320px deixava 80px pra conversa — as mensagens quebravam em tres
+   * palavras por linha. Nao da pra encolher tres paineis feitos pra 1400px; o que cabe numa tela
+   * de celular e um de cada vez.
+   *
+   * Lista, conversa e ficha passam a ter a largura da tela e a caixa desliza entre elas com
+   * encaixe. Tocar numa conversa leva a tela ate ela (ver o efeito em conversas/page.tsx);
+   * voltar e deslizar pro lado.
+   */
+  .wa-content {
+    scroll-snap-type: x mandatory;
+    overflow-x: auto;
+  }
+
+  .wa-list,
+  .wa-main,
+  .wa-info {
+    flex: 0 0 calc(100% - var(--space-4));
+    width: auto;
+    margin: var(--space-2);
+    scroll-snap-align: center;
   }
 }
 
