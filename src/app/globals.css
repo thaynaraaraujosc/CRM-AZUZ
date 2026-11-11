@@ -33043,3 +33043,42 @@ td.trafego-col-crm:first-of-type {
   font-size: 11.5px;
   color: var(--text-muted);
 }
+
+/* ---------------- Conversas que ainda se chamam pelo número ----------------
+ *
+ * Uma linha discreta, acima da lista, que só existe enquanto houver o que buscar. Não é aviso de
+ * erro — é uma oferta: o nome está no histórico do aparelho e dá pra trazer.
+ */
+.wa-sem-nome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 var(--space-3) var(--space-2);
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: var(--surface-hover);
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.wa-sem-nome button {
+  flex: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ss-azul, #2563eb);
+  font: inherit;
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+}
+
+.wa-sem-nome button:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.wa-sem-nome button:disabled {
+  color: var(--text-muted);
+  cursor: default;
+}
