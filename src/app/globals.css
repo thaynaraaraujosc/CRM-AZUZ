@@ -3295,6 +3295,33 @@ table.tbl tbody tr:hover td {
   color: var(--ink);
 }
 
+/*
+ * DUAS LINHAS NA ABA: o nome em cima, o canal embaixo.
+ *
+ * O canal ("API oficial", "QR Code") não é enfeite — são regras diferentes do lado de quem
+ * atende. Mas também não disputa com o nome: metade do tamanho, peso normal, cor fraca.
+ */
+.wa-numero-aba-nome {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wa-numero-aba-canal {
+  display: block;
+  font-size: 10px;
+  font-weight: var(--fw-regular);
+  letter-spacing: 0.02em;
+  opacity: 0.75;
+}
+
+/* O campo de nomear ocupa o lugar exato da aba, pra fileira não pular ao abrir. */
+.wa-numero-nome {
+  min-width: 120px;
+  color: var(--ink);
+  cursor: text;
+}
+
 /* A aba escolhida é a única pintada: numa fileira de três, o que se procura é qual está ligada. */
 .wa-numero-aba.on {
   border-color: transparent;
@@ -32959,4 +32986,60 @@ td.trafego-col-crm:first-of-type {
 .wa-resultado-opcao:first-child:hover {
   background: var(--acao-hover);
   border-color: var(--acao-hover);
+}
+
+/* ---------------- "Enviar WhatsApp" com escolha de número (ficha do contato) ----------------
+ *
+ * A pergunta "por qual número?" acontece ANTES de abrir a conversa, que é a hora em que ela ainda
+ * é decisão. Depois do chat aberto, trocar já é correção.
+ */
+.ct-enviar-caixa {
+  position: relative;
+  display: inline-flex;
+}
+
+.ct-enviar-menu {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 240px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-elevated);
+  box-shadow: 0 12px 30px rgba(16, 24, 40, 0.18);
+  text-align: left;
+}
+
+.ct-enviar-titulo {
+  margin: 4px 8px 6px;
+  font-size: 11.5px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+}
+
+.ct-enviar-item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.ct-enviar-item:hover {
+  background: var(--surface-hover);
+}
+
+.ct-enviar-item strong {
+  font-size: 13px;
+  font-weight: var(--fw-semibold);
+}
+
+.ct-enviar-item span {
+  font-size: 11.5px;
+  color: var(--text-muted);
 }
