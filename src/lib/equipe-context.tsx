@@ -14,6 +14,8 @@ import { slugId } from "@/lib/ids";
 type NovoMembro = {
   nome: string;
   email: string;
+  /** Só os dígitos. Opcional: ninguém fica de fora da equipe por não ter preenchido. */
+  cpf?: string;
   papel: string;
   papelTipo: Membro["papelTipo"];
   papelNota?: string;
@@ -79,6 +81,7 @@ export function EquipeProvider({ children }: { children: ReactNode }) {
       initials: iniciais(dados.nome),
       nome: dados.nome,
       email: dados.email,
+      cpf: dados.cpf ?? null,
       senha: null,
       papel: dados.papel,
       papelTipo: dados.papelTipo,

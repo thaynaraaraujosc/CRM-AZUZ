@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { POLITICAS, contarChamada, ipDeQuemChamou } from "@/lib/seguranca/limite-de-uso";
 
 import { prisma } from "@/lib/prisma";
+import { permissoesEfetivas } from "@/lib/configuracoes/permissoes";
 import { verificarTokenImpersonar } from "@/lib/admin/impersonar";
 import { auditar } from "@/lib/seguranca/auditoria";
 
@@ -109,7 +110,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           initials: membro.initials,
           papelTipo: membro.papelTipo,
           role: membro.papel,
-          permissoes: Array.isArray(membro.permissoes) ? (membro.permissoes as string[]) : [],
+          /*
+           * `permissoesEfetivas` e não a lista crua: Instagram, Equipe, Social Seller e AZUZ IA
+           * ganharam permissão própria depois que já havia gente usando o CRM, e quem foi
+           * convidado antes não tem nenhum id desses módulos. Bloquear por eles tiraria, de um dia
+           * pro outro, acesso que ninguém nunca negou — não é uma regra nova sendo aplicada, é uma
+           * pergunta que nunca foi feita sendo respondida com "não". Ver `MARCA_DE_VERSAO`.
+           */
+          permissoes: permissoesEfetivas(
+            Array.isArray(membro.permissoes) ? (membro.permissoes as string[]) : [],
+          ),
           // Super-admin da plataforma (não confundir com `papelTipo: "admin"`, que é só admin do
           // próprio workspace): decidido por e-mail via env var em vez de coluna no banco, porque
           // é uma conta só (a da Azuz), não um papel que qualquer workspace atribui a alguém.
@@ -147,7 +157,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           initials: membro.initials,
           papelTipo: membro.papelTipo,
           role: membro.papel,
-          permissoes: Array.isArray(membro.permissoes) ? (membro.permissoes as string[]) : [],
+          /*
+           * `permissoesEfetivas` e não a lista crua: Instagram, Equipe, Social Seller e AZUZ IA
+           * ganharam permissão própria depois que já havia gente usando o CRM, e quem foi
+           * convidado antes não tem nenhum id desses módulos. Bloquear por eles tiraria, de um dia
+           * pro outro, acesso que ninguém nunca negou — não é uma regra nova sendo aplicada, é uma
+           * pergunta que nunca foi feita sendo respondida com "não". Ver `MARCA_DE_VERSAO`.
+           */
+          permissoes: permissoesEfetivas(
+            Array.isArray(membro.permissoes) ? (membro.permissoes as string[]) : [],
+          ),
           superAdmin: ehSuperAdmin(membro.email),
           impersonadoPorId: verificado.superAdminId ?? undefined,
         };

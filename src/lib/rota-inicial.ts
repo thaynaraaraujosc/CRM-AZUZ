@@ -26,9 +26,14 @@ export const ROTAS_RESTRITAS: { rota: string; permissao: string }[] = [
   { rota: "/conversas", permissao: "wa_visualizar" },
   { rota: "/funil", permissao: "funil_visualizar" },
   { rota: "/contatos", permissao: "contatos_visualizar" },
+  // Os módulos que ganharam permissão própria depois. Entram na lista de destinos pelo mesmo
+  // motivo das outras: quem só pode Instagram precisa ter pra onde ir.
+  { rota: "/instagram", permissao: "insta_visualizar" },
+  { rota: "/social-seller", permissao: "social_visualizar" },
   { rota: "/automacoes", permissao: "auto_visualizar" },
   { rota: "/formularios", permissao: "form_visualizar" },
   { rota: "/relatorios", permissao: "rel_visualizar" },
+  { rota: "/equipe", permissao: "equipe_visualizar" },
   { rota: "/configuracoes", permissao: "config_visualizar" },
 ];
 

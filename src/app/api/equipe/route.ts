@@ -4,6 +4,7 @@ import type { Membro } from "@/lib/data";
 import { prisma } from "@/lib/prisma";
 import { slugId } from "@/lib/ids";
 import { enviarEmailContandoFalha, templateConvite } from "@/lib/email";
+import { cpfValido, digitosDoCpf } from "@/lib/equipe/cpf";
 import { exigirAdmin, exigirSessao } from "@/lib/seguranca/sessao";
 import { auditar } from "@/lib/seguranca/auditoria";
 import { VALIDADE_CONVITE_MS, gerarTokenConvite, hashDoToken } from "@/lib/equipe/convite";
@@ -22,6 +23,7 @@ const CAMPOS_PUBLICOS = {
   initials: true,
   nome: true,
   email: true,
+  cpf: true,
   papel: true,
   papelTipo: true,
   papelNota: true,
@@ -73,10 +75,21 @@ export async function POST(request: Request) {
 
   const dados = (await request.json()) as Pick<
     Membro,
-    "nome" | "email" | "papel" | "papelTipo" | "papelNota" | "enxerga" | "permissoes"
+    "nome" | "email" | "cpf" | "papel" | "papelTipo" | "papelNota" | "enxerga" | "permissoes"
   >;
   if (!dados.nome || !dados.email) {
     return NextResponse.json({ erro: "Campos obrigatórios: nome, email" }, { status: 400 });
+  }
+  /*
+   * O CPF É CONFERIDO AQUI TAMBÉM, não só no formulário.
+   *
+   * A tela já avisa enquanto a pessoa digita, mas a tela é o navegador. Um documento inválido
+   * gravado aqui só aparece meses depois, na hora de emitir um contrato — e aí não há como saber
+   * qual era o certo. Vazio continua passando: o campo é opcional.
+   */
+  const cpf = digitosDoCpf(dados.cpf);
+  if (!cpfValido(cpf)) {
+    return NextResponse.json({ erro: "CPF inválido." }, { status: 400 });
   }
   const email = String(dados.email).trim().toLowerCase();
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
@@ -137,6 +150,7 @@ export async function POST(request: Request) {
       initials,
       nome: dados.nome,
       email,
+      cpf: cpf || null,
       senha: null,
       papel: dados.papel,
       papelTipo: dados.papelTipo,

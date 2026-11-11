@@ -4,6 +4,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { normalizarTelefoneParaComparacao } from "@/lib/telefone";
 import { nomeLivreParaConversa } from "@/lib/conversas/nome-por-numero";
+import { ESCOPOS, escopoPermitido } from "@/lib/configuracoes/permissoes";
+import { grafiasDoContaCanal } from "@/lib/integracoes/conta-canal-normalizar";
 import { numerosDeWhatsApp } from "@/lib/integracoes/numeros-de-whatsapp";
 import { contasCanalVisiveis, filtroContaCanal, provedoresConectados } from "@/lib/integracoes/conta-canal";
 import { cabecalhosComEtag, clienteJaTem, montarEtag, naoModificado } from "@/lib/conversas/assinatura";
@@ -51,6 +53,9 @@ export async function GET(request: Request) {
   ]);
   const etag = montarEtag([
     sessao.user.workspaceId,
+    // O RECORTE ENTRA NA ASSINATURA: duas pessoas da mesma empresa com recortes diferentes veem
+    // listas diferentes, e uma assinatura igual pras duas é um `304` devolvendo a lista da outra.
+    (escopoPermitido(sessao.user.permissoes, ESCOPOS.numerosDeWhatsApp) ?? ["todos"]).join(","),
     [...visiveis.contas, ...visiveis.prefixosSemIdentificador].join(","),
     provedores.join(","),
     resumoConversas._count._all,
@@ -60,8 +65,28 @@ export async function GET(request: Request) {
   ]);
   if (clienteJaTem(request, etag)) return naoModificado(etag);
 
+  /*
+   * O RECORTE DE NÚMEROS DESTA PESSOA, aplicado no servidor.
+   *
+   * "Quais dos WhatsApp ele pode ver? Porque às vezes eu quero colocar um número aqui dentro do
+   * meu CRM e quero que esse funcionário veja apenas o funil dele."
+   *
+   * Aqui e não na tela: esconder no navegador é esconder de quem olha, não de quem pede — a lista
+   * inteira chegaria a quem abrisse as ferramentas do navegador, com nome e telefone de cliente.
+   *
+   * As DUAS GRAFIAS do canal de QR Code entram: `whatsapp_baileys:` é o nome antigo e continua
+   * gravado em conversa de antes da renomeação. Sem as duas, metade da caixa de entrada daquele
+   * número sumiria pra quem tem o recorte.
+   *
+   * Nada marcado = vê todos, que é o comportamento de sempre.
+   */
+  const numerosPermitidos = escopoPermitido(sessao.user.permissoes, ESCOPOS.numerosDeWhatsApp);
+  const recorte = numerosPermitidos
+    ? { contaCanal: { in: numerosPermitidos.flatMap((n) => grafiasDoContaCanal(n)) } }
+    : {};
+
   const linhas = await prisma.conversa.findMany({
-    where,
+    where: { ...where, ...recorte },
     orderBy: { atualizadoEm: "desc" },
     // A foto do contato ligado entra como reserva da foto da conversa. Ver abaixo.
     include: { contatoVinculado: { select: { fotoUrl: true } } },

@@ -4,6 +4,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import type { Funil } from "@/lib/data";
 import { auth } from "@/lib/auth";
 import { lerDicas } from "@/lib/funil/etapa-aparencia";
+import { ESCOPOS, escopoPermitido } from "@/lib/configuracoes/permissoes";
 import { montarFunilPadrao } from "@/lib/funil/funil-padrao";
 import { dispararGatilhosDaEtapa } from "@/lib/funil/gatilhos-etapa";
 import { emSegundoPlano } from "@/lib/automacoes/segundo-plano";
@@ -68,8 +69,27 @@ export async function GET() {
    * (mesmo vazio de etapas) impede que isto rode.
    */
   await garantirFunilPadrao(sessao.user.workspaceId);
+
+  /*
+   * O RECORTE DE FUNIS DESTA PESSOA, aplicado no servidor.
+   *
+   * "Às vezes eu quero que esse funcionário veja apenas o funil dele. Eu não quero que ele veja os
+   * outros funis, porque ele pode cometer algum erro."
+   *
+   * Aqui e não na tela: esconder no navegador é esconder de quem olha, não de quem pede. A mesma
+   * rota responde ao `fetch` de qualquer um que esteja logado, e um quadro que não devia ser visto
+   * chegaria inteiro — com nome de cliente, valor e telefone — a quem abrisse as ferramentas do
+   * navegador.
+   *
+   * Nada marcado = vê todos, que é o comportamento de sempre.
+   */
+  const funisPermitidos = escopoPermitido(sessao.user.permissoes, ESCOPOS.funis);
+
   const linhas = await prisma.funil.findMany({
-    where: { workspaceId: sessao.user.workspaceId },
+    where: {
+      workspaceId: sessao.user.workspaceId,
+      ...(funisPermitidos ? { id: { in: funisPermitidos } } : {}),
+    },
     include: {
       etapas: {
         orderBy: { ordem: "asc" },

@@ -33159,3 +33159,103 @@ td.trafego-col-crm:first-of-type {
   background: color-mix(in srgb, var(--danger) 15%, transparent);
   color: var(--danger);
 }
+
+/* ============================================================================================
+   PERMISSÕES, MÓDULO POR MÓDULO (tela de convite)
+
+   "Cada módulo você pode fazer tipo um azul mais escuro para separar, para a gente saber."
+
+   A lista era corrida: o nome do módulo saía como um texto cinza miúdo entre as linhas, do mesmo
+   tamanho das permissões, e onze módulos viravam cinquenta linhas iguais. A faixa não é enfeite —
+   é o que permite ler "o que ele pode no WhatsApp" sem contar linhas.
+
+   A faixa usa `--navy`, que é a superfície escura que o CRM já usa no cabeçalho dos painéis: azul
+   mais escuro, da identidade, e não uma cor nova inventada pra esta tela.
+   ============================================================================================ */
+.perm-acoes {
+  display: flex;
+  gap: var(--space-2);
+  padding: 12px 17px;
+  border-bottom: 1px solid var(--line);
+}
+
+.perm-modulo + .perm-modulo {
+  margin-top: 2px;
+}
+
+.perm-modulo-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 10px 17px;
+  background: var(--navy);
+  color: #fff;
+  /* O cabeçalho acompanha a rolagem: numa lista de onze módulos, quem rola até o fim das
+     permissões do WhatsApp já não vê de qual módulo está falando. */
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.perm-modulo-h strong {
+  display: block;
+  font-size: 13.5px;
+  letter-spacing: 0.01em;
+}
+
+.perm-modulo-h span {
+  display: block;
+  font-size: 12px;
+  /* Branco com opacidade, e não um cinza fixo: assim a frase segue legível nos dois temas, já que
+     a faixa é escura nos dois. */
+  color: rgb(255 255 255 / 0.62);
+  margin-top: 1px;
+}
+
+.perm-modulo-tudo {
+  flex: none;
+  border: 1px solid rgb(255 255 255 / 0.28);
+  background: transparent;
+  color: #fff;
+  border-radius: var(--radius-sm, 6px);
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.perm-modulo-tudo:hover {
+  background: rgb(255 255 255 / 0.12);
+}
+
+/* O RECORTE: "de quais?". Recuado e com fundo próprio, porque ele responde outra pergunta — não é
+   mais uma permissão, é o alcance das que estão acima. */
+.perm-escopo {
+  padding: 10px 17px 14px;
+  background: var(--surface-hover, rgb(0 0 0 / 0.02));
+  border-top: 1px dashed var(--line);
+}
+
+.perm-escopo-t {
+  margin: 0 0 8px;
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--text-secondary);
+}
+
+.perm-escopo-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 5px 0;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+.perm-escopo-item em {
+  font-style: normal;
+  color: var(--text-muted);
+  font-size: 12px;
+  margin-left: 6px;
+}

@@ -29,6 +29,17 @@ const ROTA_PERMISSAO: Record<string, string> = {
   "/motivos-perda": "rel_visualizar",
   "/crm-live": "rel_visualizar",
   "/inteligencia-comercial": "rel_visualizar",
+  /*
+   * OS MÓDULOS QUE GANHARAM PERMISSÃO DEPOIS.
+   *
+   * Entram aqui com segurança por causa de `permissoesEfetivas` (ver `permissoes.ts`): quem foi
+   * convidado antes destes ids existirem não tem nenhum deles gravado, e sem aquela regra passaria
+   * a ser barrado de um dia pro outro — numa tela que ninguém nunca lhe negou.
+   */
+  "/instagram": "insta_visualizar",
+  "/equipe": "equipe_visualizar",
+  "/social-seller": "social_visualizar",
+  "/azuz-ia": "ia_visualizar",
 };
 
 export default async function proxy(request: NextRequest) {
