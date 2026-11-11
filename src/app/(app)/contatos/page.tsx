@@ -1,6 +1,13 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
+
+import {
+  canalDoNumero,
+  etiquetaDoNumero,
+  precisaEscolherNumero,
+  type NumeroConectado,
+} from "@/lib/conversas/numeros-conectados";
 import { useSearchParams } from "next/navigation";
 
 import { classeOrigem, filtrosContatos, type Canal } from "@/lib/data";
@@ -146,6 +153,31 @@ function ContatosPageInner() {
   const { mensagensExtraPorContato } = useMensagensExtra();
   const { funis } = useFunis();
   const [selecionado, setSelecionado] = useState<string | null>(null);
+  /*
+   * OS NÚMEROS DE WHATSAPP DA EMPRESA, pro botão "Enviar WhatsApp" saber se há o que escolher.
+   *
+   * "Às vezes eu tenho vários números de QR Code instalado, então é pra eu escolher." Com um
+   * número só, a pergunta não existe e o botão continua levando direto pra conversa — perguntar
+   * "por qual dos um?" é um clique a mais pra ninguém.
+   */
+  const [numerosConectados, setNumerosConectados] = useState<NumeroConectado[]>([]);
+  /** De qual contato o seletor de número está aberto. */
+  const [escolhendoNumero, setEscolhendoNumero] = useState<string | null>(null);
+
+  useEffect(() => {
+    let vivo = true;
+    fetch("/api/integracoes/numeros")
+      .then((r) => (r.ok ? r.json() : { numeros: [] }))
+      .then((dados: { numeros?: NumeroConectado[] }) => {
+        if (vivo) setNumerosConectados(dados.numeros ?? []);
+      })
+      .catch(() => {
+        /* Sem a lista, o botão volta a levar direto pra conversa: é o comportamento de sempre. */
+      });
+    return () => {
+      vivo = false;
+    };
+  }, []);
   const [novoContatoAberto, setNovoContatoAberto] = useState(
     () => searchParams.get("novoContato") === "1",
   );
@@ -524,13 +556,55 @@ function ContatosPageInner() {
               </div>
               <div className="filters-row" style={{ margin: "0 0 0 auto" }}>
                 {contato.whatsapp ? (
-                  <a
-                    href={`/conversas?contato=${encodeURIComponent(contato.nome)}`}
-                    className="btn primary"
-                    style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-                  >
-                    <IconWhatsApp width={14} height={14} /> {traduzir("Enviar WhatsApp")}
-                  </a>
+                  /*
+                    POR QUAL NÚMERO, ANTES DE ABRIR A CONVERSA.
+                    
+                    "Na hora que eu clico em enviar mensagem, antes de me levar pro chat, é pra ele
+                    abrir: por onde que é pra mandar essa mensagem?" É a hora certa de perguntar —
+                    depois de aberto o chat, a escolha já está feita por quem recebeu a conversa, e
+                    trocar vira correção em vez de decisão.
+                    
+                    Com UM número conectado, nada disso aparece: o botão leva direto, como sempre.
+                    Perguntar "por qual dos um?" é um clique a mais pra ninguém.
+                  */
+                  <div className="ct-enviar-caixa" data-menu-de-linha="">
+                    <button
+                      type="button"
+                      className="btn primary"
+                      style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+                      aria-expanded={escolhendoNumero === contato.nome}
+                      onClick={() => {
+                        if (!precisaEscolherNumero(numerosConectados)) {
+                          window.location.href = `/conversas?contato=${encodeURIComponent(contato.nome)}`;
+                          return;
+                        }
+                        setEscolhendoNumero((atual) => (atual === contato.nome ? null : contato.nome));
+                      }}
+                    >
+                      <IconWhatsApp width={14} height={14} /> {traduzir("Enviar WhatsApp")}
+                    </button>
+                    {escolhendoNumero === contato.nome ? (
+                      <div className="ct-enviar-menu" role="menu">
+                        <p className="ct-enviar-titulo">{traduzir("Enviar por qual número?")}</p>
+                        {numerosConectados
+                          .filter((n) => n.status === "conectado" && n.chave)
+                          .map((n) => (
+                            <a
+                              key={n.chave}
+                              role="menuitem"
+                              className="ct-enviar-item"
+                              href={`/conversas?contato=${encodeURIComponent(contato.nome)}&numero=${encodeURIComponent(n.chave)}`}
+                            >
+                              <strong>{n.apelido?.trim() || n.numeroLegivel || n.nome}</strong>
+                              <span>
+                                {traduzir(canalDoNumero(n.provedor))}
+                                {n.apelido?.trim() && n.numeroLegivel ? ` · ${n.numeroLegivel}` : ""}
+                              </span>
+                            </a>
+                          ))}
+                      </div>
+                    ) : null}
+                  </div>
                 ) : null}
                 {!editandoContato ? (
                   <button type="button" className="btn ghost" onClick={abrirEdicao}>

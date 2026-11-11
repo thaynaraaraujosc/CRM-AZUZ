@@ -29,7 +29,9 @@ import {
   ROTULO_CONEXAO,
 } from "@/lib/conversas/conexao-da-conversa";
 import {
+  canalDoNumero,
   conversaDoNumero,
+  mapaDeEtiquetas,
   mapaDeNumeros,
   nomeDoNumeroDaConversa,
   precisaEscolherNumero,
@@ -164,6 +166,14 @@ const FORMATOS_VIDEO = ["video/mp4", "video/webm", "video/quicktime", "video/3gp
 const TAMANHO_MAX_VIDEO = 64 * 1024 * 1024;
 const DURACAO_MAX_VIDEO_SEG = 180;
 const TAMANHO_MAX_DOCUMENTO = 32 * 1024 * 1024;
+
+/**
+ * A aba das conversas que não dizem de qual número vieram.
+ *
+ * São as antigas, de antes de o CRM gravar a conexão em cada conversa. Valor próprio, e não `""`,
+ * porque ele precisa conviver com as chaves de número reais sem se confundir com "nenhuma aba".
+ */
+const SEM_NUMERO = "__sem_numero__";
 
 function formatarTamanho(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
@@ -614,6 +624,39 @@ function ConversasPageInner() {
   const [toasts, setToasts] = useState<{ id: string; texto: string }[]>([]);
   const proximoToastId = useRef(0);
 
+  /**
+   * NOMEAR UM NÚMERO, da própria aba.
+   *
+   * "Eu posso clicar e aí eu posso nomear esse número pra facilitar." O nome já existia nas
+   * configurações; o que faltava era poder dá-lo onde ele se usa — a caixa de entrada é onde a
+   * falta de nome incomoda, não a tela de conexões.
+   *
+   * A lista local é atualizada na hora e a gravação vai atrás: esperar a resposta pra trocar o
+   * rótulo faz a aba piscar o nome velho por meio segundo. Se o servidor recusar (só
+   * administrador pode), o nome volta e o motivo aparece — em vez de ficar na tela um nome que
+   * não existe no banco.
+   */
+  async function salvarApelido(numero: NumeroConectado, valor: string) {
+    setRenomeando(null);
+    const apelido = valor.trim().slice(0, 60);
+    if (apelido === (numero.apelido ?? "")) return;
+    const antes = numerosConectados;
+    setNumerosConectados((lista) =>
+      lista.map((n) => (n.chave === numero.chave ? { ...n, apelido: apelido || null } : n)),
+    );
+    try {
+      const r = await fetch("/api/integracoes/numeros", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ provedor: numero.provedor, slot: numero.slot, apelido: apelido || null }),
+      });
+      if (!r.ok) throw new Error(((await r.json().catch(() => ({}))) as { erro?: string }).erro);
+    } catch (erro) {
+      setNumerosConectados(antes);
+      avisarAutomacao(erro instanceof Error && erro.message ? erro.message : "Não deu pra renomear o número.");
+    }
+  }
+
   function avisarAutomacao(texto: string) {
     const id = `toast-${proximoToastId.current++}`;
     setToasts((prev) => [...prev, { id, texto }]);
@@ -901,6 +944,8 @@ function ConversasPageInner() {
    * da conta, e ficar perguntando de poucos em poucos segundos seria consulta sem ninguém olhando.
    */
   const [numerosConectados, setNumerosConectados] = useState<NumeroConectado[]>([]);
+  /** Qual aba de número está com o campo de nome aberto. Duplo clique abre; Enter ou sair grava. */
+  const [renomeando, setRenomeando] = useState<string | null>(null);
   useEffect(() => {
     // OS DOIS CANAIS. A rota de QR Code só sabia dos celulares; quem tem a API oficial no número
     // principal e um vendedor no QR tem dois números recebendo, e o filtro precisa dos dois.
@@ -934,6 +979,39 @@ function ConversasPageInner() {
      o filtro. Com um só, as duas coisas somem: repetiriam a mesma informação em toda linha. */
   const variosNumeros = precisaEscolherNumero(numerosConectados);
   const nomesDosNumeros = mapaDeNumeros(numerosConectados);
+  /* A linha da conversa leva a ETIQUETA (o apelido, ou o canal), e não o número: ver
+     `etiquetaDoNumero`. O número cru ali se lê como o telefone do contato. */
+  const etiquetasDosNumeros = mapaDeEtiquetas(numerosConectados);
+
+  /*
+   * QUAL ABA DE NÚMERO ESTÁ VALENDO.
+   *
+   * Sem "Todos", a lista é sempre a de UM número — e aí a escolha precisa de um padrão que exista:
+   * o primeiro conectado. `numeroTopFiltro` guarda o que foi clicado; esta conta é quem decide o
+   * que vale, pra não haver estado apontando pra uma aba que sumiu (um número desconectado, por
+   * exemplo).
+   *
+   * COM UM NÚMERO SÓ, as abas não aparecem e aqui vale "Todos". Não é detalhe: filtrar por um
+   * número numa conta que tem um faria sumir toda conversa SEM marca de número — as antigas, de
+   * antes de o CRM gravar de qual conexão cada uma veio. Elas existem e precisam continuar
+   * aparecendo.
+   */
+  const numerosParaAba = numerosConectados.filter((n) => n.status === "conectado" && n.chave);
+  const numeroAtivo = !variosNumeros
+    ? "Todos"
+    : numerosParaAba.some((n) => n.chave === numeroTopFiltro) || numeroTopFiltro === SEM_NUMERO
+      ? numeroTopFiltro
+      : (numerosParaAba[0]?.chave ?? "Todos");
+
+  /*
+   * AS CONVERSAS SEM MARCA DE NÚMERO ganham aba só quando existem.
+   *
+   * São as antigas, de antes de o CRM gravar de qual conexão cada conversa veio. Com "Todos" elas
+   * apareciam junto de tudo; sem "Todos", sumiriam da tela inteira — dado vivo escondido por uma
+   * mudança de filtro é a pior forma de perder conversa. A aba só aparece quando há o que mostrar,
+   * então quem não tem histórico antigo nunca a vê.
+   */
+  const temConversaSemNumero = conversas.some((c) => c.canal === "WhatsApp" && !c.contaCanal);
 
   const canaisDisponiveis = Array.from(new Set(conversas.map((c) => c.origem)));
 
@@ -1071,7 +1149,9 @@ function ConversasPageInner() {
         return false;
       if (canalTopFiltro !== "Todos" && c.origem !== canalTopFiltro) return false;
       // Por qual NÚMERO a conversa fala. Ver `numeros-conectados.ts`.
-      if (!conversaDoNumero(c.contaCanal, numeroTopFiltro)) return false;
+      if (numeroAtivo === SEM_NUMERO) {
+        if (c.contaCanal) return false;
+      } else if (!conversaDoNumero(c.contaCanal, numeroAtivo)) return false;
       if (!buscaConversa.trim()) return true;
       const termo = buscaConversa.trim().toLowerCase();
       return c.nome.toLowerCase().includes(termo);
@@ -2341,7 +2421,21 @@ function ConversasPageInner() {
    * Comparando aqui, a escolha simplesmente não vale pra outra conversa. Não há janela.
    */
   function numeroEscolhidoDaConversa(): string | null {
-    return escolhaDeNumero && escolhaDeNumero.conversa === aberta.nome ? escolhaDeNumero.chave : null;
+    if (escolhaDeNumero && escolhaDeNumero.conversa === aberta.nome) return escolhaDeNumero.chave;
+    /*
+     * O NÚMERO ESCOLHIDO NA FICHA DO CONTATO chega pela URL.
+     *
+     * "Lá dentro da página de contatos, naquela pop-up, ao invés de me mandar direto pro chat, ele
+     * vai me dar um botão seletor." A escolha é feita lá e precisa atravessar a navegação — e a
+     * URL é o único lugar que atravessa, porque a tela de conversas é outra página.
+     *
+     * Só vale pro contato que veio no mesmo link: sem a conferência, o número escolhido pra um
+     * lead ficaria valendo pra qualquer conversa aberta depois, que é o jeito mais silencioso de
+     * mandar do número errado.
+     */
+    const daUrl = searchParams.get("numero");
+    if (daUrl && searchParams.get("contato") === aberta.nome) return daUrl;
+    return null;
   }
 
   function despacharTexto(texto: string, respondendoMid?: string, idLocal?: string) {
@@ -4182,32 +4276,69 @@ function ConversasPageInner() {
             */}
           {variosNumeros ? (
             <div className="wa-numeros-abas" role="tablist" aria-label={traduzir("Número de WhatsApp")}>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={numeroTopFiltro === "Todos"}
-                className={`wa-numero-aba${numeroTopFiltro === "Todos" ? " on" : ""}`}
-                onClick={() => setNumeroTopFiltro("Todos")}
-              >
-                {traduzir("Todos")}
-              </button>
+              {/*
+                SEM "TODOS", E CADA ABA DIZ O CANAL.
+                
+                "Tira a opção todos, deixa só os números, porque eu só vou saber se eu clicar no
+                número." Com "Todos" marcado, a lista mistura as duas caixas e a coluna da
+                conversa precisa repetir de quem ela é em toda linha. Escolhendo um número, a
+                lista passa a ser uma caixa de entrada só — que é como se atende.
+                
+                O canal embaixo do nome ("API oficial", "QR Code") não é detalhe técnico: são
+                regras diferentes do lado de quem atende — o oficial tem janela de 24 horas e
+                modelo aprovado, o QR Code não tem nenhum dos dois.
+                
+                E o nome se edita aqui: um duplo clique abre o campo. Nomear o número é o que faz
+                a lista parar de falar em telefone e passar a falar em "Vendas", "Closer".
+              */}
               {numerosConectados
                 .filter((n) => n.status === "conectado" && n.chave)
-                .map((n) => (
-                  <button
-                    type="button"
-                    role="tab"
-                    key={n.chave}
-                    aria-selected={numeroTopFiltro === n.chave}
-                    className={`wa-numero-aba${numeroTopFiltro === n.chave ? " on" : ""}`}
-                    // O telefone no `title`: o nome cabe na aba, o número nem sempre — e é o
-                    // número que tira a dúvida quando dois apelidos se parecem.
-                    title={n.numeroLegivel || n.nome}
-                    onClick={() => setNumeroTopFiltro(n.chave)}
-                  >
-                    {n.nome}
-                  </button>
-                ))}
+                .map((n) =>
+                  renomeando === n.chave ? (
+                    <input
+                      key={n.chave}
+                      className="wa-numero-aba wa-numero-nome"
+                      autoFocus
+                      defaultValue={n.apelido ?? ""}
+                      placeholder={n.numeroLegivel || traduzir("Nome deste número")}
+                      aria-label={traduzir("Nome deste número")}
+                      onBlur={(e) => salvarApelido(n, e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                        if (e.key === "Escape") setRenomeando(null);
+                      }}
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      role="tab"
+                      key={n.chave}
+                      aria-selected={numeroAtivo === n.chave}
+                      className={`wa-numero-aba${numeroAtivo === n.chave ? " on" : ""}`}
+                      // O telefone no `title`: o nome cabe na aba, o número nem sempre — e é o
+                      // número que tira a dúvida quando dois apelidos se parecem.
+                      title={`${n.numeroLegivel || n.nome} — ${traduzir("dois cliques pra renomear")}`}
+                      onClick={() => setNumeroTopFiltro(n.chave)}
+                      onDoubleClick={() => setRenomeando(n.chave)}
+                    >
+                      <span className="wa-numero-aba-nome">{n.apelido?.trim() || n.numeroLegivel || n.nome}</span>
+                      <span className="wa-numero-aba-canal">{traduzir(canalDoNumero(n.provedor))}</span>
+                    </button>
+                  ),
+                )}
+              {temConversaSemNumero ? (
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={numeroAtivo === SEM_NUMERO}
+                  className={`wa-numero-aba${numeroAtivo === SEM_NUMERO ? " on" : ""}`}
+                  title={traduzir("Conversas de antes de o CRM guardar de qual número elas vieram.")}
+                  onClick={() => setNumeroTopFiltro(SEM_NUMERO)}
+                >
+                  <span className="wa-numero-aba-nome">{traduzir("Sem número")}</span>
+                  <span className="wa-numero-aba-canal">{traduzir("antigas")}</span>
+                </button>
+              ) : null}
             </div>
           ) : null}
           <FloatingDropdown
@@ -4435,14 +4566,14 @@ function ConversasPageInner() {
                     </span>
                     {/* Por qual conexão esta conversa fala. Só aparece quando as DUAS estão em uso
                         na lista: com uma só, a etiqueta repetiria a mesma coisa em toda linha. */}
-                    {variosNumeros && nomeDoNumeroDaConversa(nomesDosNumeros, c.contaCanal) ? (
+                    {variosNumeros && nomeDoNumeroDaConversa(etiquetasDosNumeros, c.contaCanal) ? (
                       /* Com vários números, o que importa é QUAL deles — "WhatsApp QR Code" seria
                          a mesma etiqueta nos dois. O nome ganha do tipo de conexão. */
                       <span
                         className="tag wa-conexao-tag"
                         title={traduzir("A resposta sai por este mesmo número")}
                       >
-                        {nomeDoNumeroDaConversa(nomesDosNumeros, c.contaCanal)}
+                        {nomeDoNumeroDaConversa(etiquetasDosNumeros, c.contaCanal)}
                       </span>
                     ) : distinguirConexao && conexaoDaConversa(c.contaCanal) ? (
                       <span

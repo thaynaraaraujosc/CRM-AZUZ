@@ -20,9 +20,44 @@ export type NumeroConectado = {
   provedor: string;
   slot: number;
   nome: string;
+  /** O nome que a empresa deu a este número. `null` = nunca nomeado. */
+  apelido: string | null;
   numeroLegivel: string;
   status: string;
 };
+
+/**
+ * POR QUAL CANAL ESTE NÚMERO FALA, em duas palavras.
+ *
+ * "Se for oficial, aparecer API oficial; se for QR Code, aparecer QR Code." Não é detalhe técnico:
+ * os dois canais têm regras diferentes do lado de quem atende — o oficial tem janela de 24 horas e
+ * modelo aprovado, o QR Code não tem nenhum dos dois. Saber por qual deles a conversa corre muda o
+ * que dá pra fazer nela.
+ */
+export function canalDoNumero(provedor: string): string {
+  return provedor === "meta_whatsapp" ? "API oficial" : "QR Code";
+}
+
+/**
+ * A ETIQUETA DE UMA CONVERSA: o nome que a empresa deu ao número, ou o canal dele.
+ *
+ * O número cru saía na linha da conversa, e ali ele confunde: a linha é sobre o CONTATO, e um
+ * telefone escrito nela se lê como o telefone da pessoa. "No lugar de colocar o número que eu
+ * estou respondendo, pra pessoa não confundir achando que é o número da pessoa, coloca se é QR
+ * Code ou se é API oficial. Ou nomeia com o nome que eu nomear."
+ *
+ * Então: o apelido quando existe — é o que ela escolheu —, e o canal quando não existe. O número
+ * sai de cena; quem quiser vê-lo tem a aba lá em cima, que é onde se escolhe de qual número falar.
+ */
+export function etiquetaDoNumero(numero: Pick<NumeroConectado, "apelido" | "provedor">): string {
+  const apelido = numero.apelido?.trim();
+  return apelido || canalDoNumero(numero.provedor);
+}
+
+/** De `contaCanal` pra etiqueta da conversa. Mesmo papel de `mapaDeNumeros`, outro rótulo. */
+export function mapaDeEtiquetas(numeros: NumeroConectado[]): Map<string, string> {
+  return new Map(numeros.filter((n) => n.chave).map((n) => [n.chave, etiquetaDoNumero(n)]));
+}
 
 /** De `contaCanal` pro nome que aparece na tela. */
 export function mapaDeNumeros(numeros: NumeroConectado[]): Map<string, string> {
