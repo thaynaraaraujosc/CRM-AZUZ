@@ -1814,6 +1814,12 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
    */
   const posicaoDoInicio = posicaoInicioArrastada ?? fluxo?.configuracoes?.posicaoInicio ?? { x: 120, y: 120 };
 
+  /** O quadro tem algum bloco de gatilho? É o que separa "vai disparar" de "nunca vai disparar". */
+  const temGatilhoNoQuadro = useMemo(
+    () => rfNodes.some((n) => n.data.flowNode.category === "gatilho"),
+    [rfNodes],
+  );
+
   const inicioDesenhado = useMemo(() => {
     const alvo = rfNodes.find((n) => n.id === idDoPrimeiroBloco);
     if (!alvo && !modoConstrucao) return null;
@@ -1887,10 +1893,32 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
          * primeiro bloco parecia o começo em si — a ponto de alguém ligá-la a uma condição e
          * esperar que o robô partisse dali. Agora ela diz que quem começa é o gatilho.
          */
+        /*
+         * A FRASE DIZ O ESTADO, e não uma promessa.
+         *
+         * "Quando um dos gatilhos acontecer" só é verdade quando existe gatilho. Sem nenhum, a
+         * pastilha afirmava uma coisa que não ia acontecer — e com a linha desenhada até o
+         * primeiro bloco, a tela inteira passava a impressão de robô montado: "por que ainda está
+         * pedindo pra adicionar um gatilho, sendo que eu já falei aqui?".
+         *
+         * Faltando o gatilho ela diz que falta, e o clique leva direto pra gaveta. Ver `InicioNode`.
+         */
         ...(inicioNoFunil
           ? { detalheInicio: `Lead entra em “${inicioNoFunil.etapaTitulo}”` }
           : ehSocial
-            ? { detalheInicio: "Quando um dos gatilhos acontecer" }
+            ? temGatilhoNoQuadro
+              ? { detalheInicio: "Quando um dos gatilhos acontecer" }
+              : {
+                  detalheInicio: "Falta escolher o gatilho — clique aqui",
+                  ...(modoConstrucao
+                    ? {
+                        aoEscolherGatilho: () => {
+                          setEtapaDaGaveta("lista");
+                          setEscolherGatilhoAberto(true);
+                        },
+                      }
+                    : {}),
+                }
             : {}),
       } as FlowRFNode["data"],
     };
@@ -1909,6 +1937,8 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     rfNodes,
     idDoPrimeiroBloco,
     inicioNoFunil,
+    ehSocial,
+    temGatilhoNoQuadro,
     modoConstrucao,
     posicaoDoInicio,
     posicaoInicioArrastada,
@@ -2270,10 +2300,31 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                  de novo o que já está escrito no primeiro bloco. */
               respostasIniciais={(() => {
                 const mapa: Partial<Record<FlowNodeType, string[]>> = {};
-                for (const g of rfNodes.filter((n) => n.data.flowNode.category === "gatilho")) {
+                const gatilhosDoQuadro = rfNodes.filter((n) => n.data.flowNode.category === "gatilho");
+                for (const g of gatilhosDoQuadro) {
                   const alvoId = rfEdges.find((e) => e.source === g.id)?.target;
                   const alvo = alvoId ? rfNodes.find((n) => n.id === alvoId) : undefined;
                   if (!alvo || alvo.data.flowNode.category !== "mensagem") continue;
+                  /*
+                   * MENSAGEM COMPARTILHADA NÃO PREENCHE O CAMPO DE NENHUM DELES.
+                   *
+                   * "Quando eu coloquei o texto que é pra mandar no Direct, ele está preenchendo o
+                   * comentário da live com o mesmo texto. Se deixar vazio, é pra ficar vazio."
+                   *
+                   * O campo da gaveta é "a resposta DESTE gatilho". Quando os três apontam pro
+                   * mesmo bloco — que é o padrão desde que gatilho solto entra no caminho dos
+                   * outros —, aquele texto não é a resposta de nenhum deles em particular: é a
+                   * mensagem única do robô. Escrevê-lo nos três campos afirma o contrário.
+                   *
+                   * E não era só feio. Salvar a gaveta com os campos preenchidos DESGRUDA cada
+                   * gatilho da mensagem compartilhada e cria uma cópia pra cada um (ver
+                   * `aplicarGatilhos`): um robô de uma mensagem viraria três, sem ninguém pedir.
+                   */
+                  const compartilhada =
+                    rfEdges.filter(
+                      (e) => e.target === alvo.id && gatilhosDoQuadro.some((x) => x.id === e.source),
+                    ).length > 1;
+                  if (compartilhada) continue;
                   const d = (alvo.data.flowNode.data ?? {}) as {
                     texto?: string;
                     variacoes?: string[];

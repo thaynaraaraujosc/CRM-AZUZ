@@ -24,10 +24,13 @@ import { useIdioma } from "@/lib/idioma-context";
  */
 export default function InicioNode({ data }: NodeProps<FlowRFNode>) {
   const { t: traduzir } = useIdioma();
-  const detalhe = (data as { detalheInicio?: string }).detalheInicio;
+  const { detalheInicio: detalhe, aoEscolherGatilho } = data as {
+    detalheInicio?: string;
+    aoEscolherGatilho?: () => void;
+  };
 
-  return (
-    <div className="no-inicio">
+  const miolo = (
+    <>
       <span className="no-inicio-marca" aria-hidden="true">
         ▶
       </span>
@@ -35,6 +38,32 @@ export default function InicioNode({ data }: NodeProps<FlowRFNode>) {
         <strong>{traduzir("Iniciar robô")}</strong>
         {detalhe ? <span>{detalhe}</span> : null}
       </span>
+    </>
+  );
+
+  /*
+   * SEM GATILHO, A PASTILHA É O CAMINHO PRA ESCOLHER UM.
+   *
+   * "Por que ainda está pedindo pra adicionar um gatilho, sendo que eu já falei aqui?" — e a tela
+   * ajudava a achar que já estava dito: a pastilha desenha uma linha até o primeiro bloco mesmo
+   * quando não existe gatilho nenhum, e linha desenhada parece ligação feita.
+   *
+   * Ela continua sendo um desenho (o motor nunca a executa). O que muda é que, faltando o gatilho,
+   * ela PARA de afirmar que algo acontece e passa a oferecer o que falta: um clique abre a gaveta
+   * de gatilhos. É o único lugar da tela onde a pergunta "o que inicia isso?" aparece sozinha.
+   */
+  if (aoEscolherGatilho) {
+    return (
+      <button type="button" className="no-inicio no-inicio-vazio nodrag" onClick={aoEscolherGatilho}>
+        {miolo}
+        <Handle type="source" position={Position.Right} isConnectable={false} />
+      </button>
+    );
+  }
+
+  return (
+    <div className="no-inicio">
+      {miolo}
       {/* Só saída: nada entra aqui, porque este é o começo. */}
       <Handle type="source" position={Position.Right} isConnectable={false} />
     </div>

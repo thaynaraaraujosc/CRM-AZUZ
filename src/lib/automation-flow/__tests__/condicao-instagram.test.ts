@@ -321,4 +321,27 @@ describe("bloco sem nada antes dele", () => {
       problemas.some((p) => p.severidade === "erro" && p.mensagem.includes("não tem nenhum gatilho")),
     ).toBe(true);
   });
+
+  /*
+   * O COMEÇO DO DESENHO NÃO LEVA A PENDÊNCIA DE BLOCO SOLTO.
+   *
+   * Sem bloco de gatilho, o editor desenha a pastilha "Iniciar robô" ligada ao primeiro bloco. A
+   * tela mostrava a linha chegando nele e, em cima dele, uma pendência dizendo que nada chegava —
+   * as duas coisas ao mesmo tempo, no mesmo lugar. O problema de verdade é um só, e é o erro de
+   * cima: o fluxo não tem gatilho.
+   */
+  it("o primeiro bloco de um fluxo sem gatilho não é acusado de solto", () => {
+    const problemas = validarFluxo(fluxo([condicaoSolta]));
+    expect(problemas.some((p) => p.mensagem.includes("Nada leva até"))).toBe(false);
+  });
+
+  /* O SEGUNDO pedaço largado no canto continua sendo apontado: isso é outra coisa, e continua
+     precisando de caminho. */
+  it("um segundo bloco solto continua sendo apontado", () => {
+    const outraSolta = { ...condicaoSolta, id: "c8", titulo: "OUTRA CONDICAO" };
+    const problemas = validarFluxo(fluxo([condicaoSolta, outraSolta]));
+    const soltos = problemas.filter((p) => p.mensagem.includes("Nada leva até"));
+    expect(soltos).toHaveLength(1);
+    expect(soltos[0]?.mensagem).toContain("OUTRA CONDICAO");
+  });
 });
