@@ -534,6 +534,21 @@ model Conversa {
   // `contaCanalDaConexao`).
   contaCanal String?
 
+  /// QUANDO O CRM JÁ PROCUROU O NOME DESTA PESSOA NO HISTÓRICO DO APARELHO.
+  ///
+  /// "Cliquei uma vez, cliquei duas, buscou — tem que sair daí, porque fica aparecendo bug." O
+  /// aviso de "conversas estão com o número no lugar do nome" contava toda conversa ainda chamada
+  /// pelo número, e tem gente cujo nome o WhatsApp simplesmente não guardou: a busca rodava, não
+  /// achava nada, e o aviso voltava igual. Um botão que não resolve e não some é um defeito.
+  ///
+  /// Com este carimbo, procurado é procurado: a conversa sai da conta do aviso mesmo sem nome, e o
+  /// botão para de oferecer um trabalho que já foi feito. O que ainda batiza essas é a mensagem
+  /// seguinte — quando ela chega com nome de perfil, a conversa é renomeada sozinha (ver
+  /// `batizarSeAindaForNumero`).
+  ///
+  /// Null = nunca procurado.
+  nomeBuscadoEm DateTime?
+
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 

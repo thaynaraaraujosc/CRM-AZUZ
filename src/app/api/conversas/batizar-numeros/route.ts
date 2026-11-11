@@ -47,12 +47,28 @@ export async function POST() {
    * está escrita — duplicá-la como expressão de SQL é como as duas passam a discordar.
    */
   const candidatas = await prisma.conversa.findMany({
-    where: { workspaceId, ehGrupo: false, canal: "WhatsApp", contato: { not: null } },
-    select: { nome: true, contato: true, contaCanal: true },
+    /*
+     * PROCURADO É PROCURADO. `nomeBuscadoEm` nulo = nunca procuramos esta.
+     *
+     * "Cliquei uma vez, cliquei duas, buscou — tem que sair daí." Tem gente cujo nome o WhatsApp
+     * não guardou em mensagem nenhuma, e sem esta condição a rodada seguinte pedia o histórico dos
+     * mesmos chats de novo, pra chegar na mesma resposta: uma chamada à Evolution por conversa,
+     * toda vez, pra nada. Quem ainda vai batizar essas é a mensagem seguinte.
+     */
+    where: { workspaceId, ehGrupo: false, canal: "WhatsApp", contato: { not: null }, nomeBuscadoEm: null },
+    select: { id: true, nome: true, contato: true, contaCanal: true },
   });
 
   const alvos = candidatas.filter((c) => nomeAindaEhIdCru(c.nome));
   const doLote = alvos.slice(0, POR_RODADA);
+
+  /*
+   * O CARIMBO VALE PARA TODAS AS DO LOTE, inclusive as que não ganharam nome — são justamente
+   * essas que o aviso repetia pra sempre. Fica de fora só a conversa de um número que não está
+   * ligado agora: ali não houve busca nenhuma, e marcar como procurada seria mentir sobre um
+   * trabalho que a reconexão ainda pode fazer.
+   */
+  const procuradas: string[] = [];
 
   let batizadas = 0;
   let semNome = 0;
@@ -64,6 +80,7 @@ export async function POST() {
       semNome += 1;
       continue;
     }
+    procuradas.push(conversa.id);
     const jid = conversa.contato.includes("@") ? conversa.contato : `${conversa.contato}@s.whatsapp.net`;
     const historico = await buscarMensagensDoChat(workspaceId, jid, 50, slot).catch(() => []);
     const nome = nomeDePerfilNoHistorico(historico);
@@ -79,6 +96,14 @@ export async function POST() {
       // agora: o número continua valendo, e a próxima rodada tenta de novo.
       semNome += 1;
     }
+  }
+
+  if (procuradas.length) {
+    await prisma.conversa
+      .updateMany({ where: { workspaceId, id: { in: procuradas } }, data: { nomeBuscadoEm: new Date() } })
+      // Falhar aqui não desfaz os nomes que já foram gravados: o pior caso é o aviso voltar uma
+      // vez, que é exatamente o comportamento de antes.
+      .catch((erro) => console.error("[batizar] falha ao marcar as conversas procuradas:", erro));
   }
 
   return NextResponse.json({

@@ -36,6 +36,9 @@ export type ConversaReal = {
    * escrita na linha (favoritar, mudar status, uma importação) e por isso não serve pra dizer o que
    * está quente. `null` quando ainda não há mensagem gravada. */
   ultimaMensagemEm?: string | null;
+  /** Quando o CRM já procurou o nome desta pessoa no histórico do aparelho. `null` = nunca. É o
+   *  que faz o aviso de "está com o número no lugar do nome" sumir depois de procurar. */
+  nomeBuscadoEm?: string | null;
 };
 
 type ConversasContextValue = {
