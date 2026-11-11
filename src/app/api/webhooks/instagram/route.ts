@@ -911,6 +911,29 @@ export async function POST(request: Request) {
       // mensagem, que é o que a pessoa lê e o que aparece na prévia da lista de conversas.
       const texto = mensagem.text ?? rotuloPadrao ?? "";
 
+      /*
+       * O QUE A PESSOA ESCREVEU, SEPARADO DO QUE O CRM ESCREVEU POR ELA.
+       *
+       * `texto` acima é pra LER: quando a mensagem é só um anexo, ele vira a frase do que
+       * aconteceu ("Compartilhou um reel", "Respondeu ao seu story") pra a bolha não chegar em
+       * branco. Serve pra tela. Não serve pra automação.
+       *
+       * E era ele que a automação recebia, com dois estragos:
+       *
+       * 1. ENCAMINHAMENTO CALADO NUNCA DISPARAVA O GATILHO SEM TEXTO. "Quando alguém me
+       *    encaminhar uma pergunta, não necessariamente ela precisa mandar nenhum texto; esse
+       *    gatilho tem que ativar só com o encaminhamento." Mas pro motor nunca chegava vazio:
+       *    chegava "Compartilhou uma publicação", frase que o próprio CRM acabou de inventar.
+       * 2. PALAVRA CASAVA COM O RÓTULO. Um robô com a palavra "publicação" disparava em qualquer
+       *    encaminhamento, e um com "story" em qualquer resposta de story — reagindo ao texto do
+       *    CRM, não ao da pessoa. E, do outro lado, "quero" não casava nunca quando a pessoa
+       *    mandava só o reel.
+       *
+       * Vazio quando a pessoa não escreveu nada é a informação certa: é o que `sem_texto` lê e é
+       * o que faz a lista de palavras não encontrar nada.
+       */
+      const textoDaPessoa = mensagem.text?.trim() ? mensagem.text : "";
+
       // Bolha que não diz nada: anexo de um tipo que o CRM não conhece, sem arquivo baixado e sem
       // texto nenhum. É o que acontece quando alguém manda um número pelo Instagram. O app envia o
       // número como texto E um anexo interativo junto, que aqui virava um "[Anexo]" solto embaixo
@@ -1153,7 +1176,8 @@ export async function POST(request: Request) {
           workspaceId: integracaoDaConta.workspaceId,
           contatoNome: chaveContato,
           canal: "Instagram",
-          textoRecebido: texto,
+          // Ver `textoDaPessoa`: o rótulo que o CRM inventa pra anexo não é fala de ninguém.
+          textoRecebido: textoDaPessoa,
           idDaOpcao: mensagem.quick_reply?.payload,
         }).catch((erro) => console.error("[instagram] falha ao disparar automações:", erro));
 
@@ -1172,7 +1196,7 @@ export async function POST(request: Request) {
                   : tipoDoEvento === "publicacao_compartilhada"
                     ? "instagram_publicacao_compartilhada"
                     : "instagram_midia_recebida",
-            textoRecebido: texto,
+            textoRecebido: textoDaPessoa,
             // A qual story a pessoa respondeu. Permite a automação valer só pro story escolhido
             // no editor. A Meta nem sempre manda o id; quando não manda, o gatilho vale pra
             // qualquer story, que é o que acontecia antes deste campo existir.

@@ -106,7 +106,7 @@ function perguntaDaResposta(marcados: FlowNodeType[]): string {
   return "O que o robô responde";
 }
 
-type ModoDePalavra = "qualquer" | "exata" | "contem" | "comeco";
+type ModoDePalavra = "qualquer" | "exata" | "contem" | "comeco" | "sem_texto";
 
 /**
  * COMO A PALAVRA TEM QUE APARECER NA MENSAGEM.
@@ -133,6 +133,21 @@ const MODOS_DE_PALAVRA: { valor: ModoDePalavra; label: string }[] = [
 
 /** O rótulo da opção "sem filtro nenhum". Não é um `modoPalavra`: é a lista de palavras vazia. */
 const SEM_PALAVRA = "Qualquer palavra-chave";
+
+/**
+ * "SÓ QUANDO VIER SEM NENHUM TEXTO."
+ *
+ * Nasceu do encaminhamento no Direct: "quando alguém me encaminhar uma pergunta, não
+ * necessariamente ela precisa mandar nenhum texto; esse gatilho tem que ativar só com o
+ * encaminhamento". Encaminhar um reel calado é um gesto inteiro — a pessoa manda o post e espera
+ * que você entenda. Com palavra configurada aquele encaminhamento não casava com nada e o robô
+ * ficava mudo; com "qualquer palavra-chave" ele respondia também a quem escreveu junto, que é
+ * outra conversa.
+ *
+ * Esta é a única opção da caixa que não fala de palavra: ela exige a AUSÊNCIA de texto. Por isso
+ * fica no fim, separada das três comparações, e esconde o campo de digitar igual a primeira.
+ */
+const SEM_TEXTO = "Só quando vier sem nenhum texto";
 
 /**
  * O modo gravado, como a caixa o escreve.
@@ -458,7 +473,11 @@ export function GatilhosDoSocial({
    * ele sempre fez.
    */
   const filtrar = dados[marcados[0]]?.filtrarPorPalavra;
-  const semPalavras = typeof filtrar === "boolean" ? !filtrar : palavrasAtuais.length === 0;
+  /* "Sem nenhum texto" é um modo gravado, e vem ANTES de `semPalavras`: ele também guarda a lista
+     vazia, então sem esta linha a caixa mostraria "Qualquer palavra-chave" com ele escolhido. */
+  const semTexto = modoGravado === "sem_texto";
+  const semPalavras =
+    !semTexto && (typeof filtrar === "boolean" ? !filtrar : palavrasAtuais.length === 0);
   const acentoConta = dados[marcados[0]]?.ignorarAcentos === false;
   const [palavraNova, setPalavraNova] = useState("");
   /*
@@ -610,9 +629,11 @@ export function GatilhosDoSocial({
         <span className="gat-escolha-valor">
           <span className="gat-escolha-rotulo">{traduzir("Selecionado")}</span>
           <strong>
-            {semPalavras
-              ? traduzir(SEM_PALAVRA)
-              : traduzir(MODOS_DE_PALAVRA.find((m) => m.valor === modoAtual)?.label ?? "")}
+            {semTexto
+              ? traduzir(SEM_TEXTO)
+              : semPalavras
+                ? traduzir(SEM_PALAVRA)
+                : traduzir(MODOS_DE_PALAVRA.find((m) => m.valor === modoAtual)?.label ?? "")}
           </strong>
         </span>
         <IconSetaBaixo
@@ -636,8 +657,10 @@ export function GatilhosDoSocial({
             className={`gat-escolha-opcao${semPalavras ? " on" : ""}`}
             onClick={() => {
               // Sem filtro: as palavras saem, porque é a lista vazia que o motor lê
-              // como "qualquer mensagem serve".
-              mudarEmTodos({ palavras: [], filtrarPorPalavra: false });
+              // como "qualquer mensagem serve". E o modo volta pro padrão: sem isso,
+              // quem estava em "só sem texto" continuaria nele com a opção vizinha
+              // marcada na tela.
+              mudarEmTodos({ palavras: [], filtrarPorPalavra: false, modoPalavra: "qualquer" });
               setPalavraNova("");
               setModoAberto(false);
             }}
@@ -650,7 +673,7 @@ export function GatilhosDoSocial({
             </span>
           </button>
           {MODOS_DE_PALAVRA.map((modo) => {
-            const escolhida = !semPalavras && modoAtual === modo.valor;
+            const escolhida = !semPalavras && !semTexto && modoAtual === modo.valor;
             return (
               <button
                 key={modo.valor}
@@ -672,12 +695,35 @@ export function GatilhosDoSocial({
               </button>
             );
           })}
+          {/* Ver `SEM_TEXTO`: é a ausência de texto, não um jeito de comparar palavra. Fica por
+              último justamente por não pertencer ao grupo das três de cima. */}
+          <button
+            type="button"
+            role="option"
+            aria-selected={semTexto}
+            className={`gat-escolha-opcao${semTexto ? " on" : ""}`}
+            onClick={() => {
+              // A lista sai junto: no `sem_texto` não há texto onde procurar palavra, e deixar
+              // palavras gravadas faria a tela prometer um filtro que o motor não aplica.
+              mudarEmTodos({ palavras: [], filtrarPorPalavra: false, modoPalavra: "sem_texto" });
+              setPalavraNova("");
+              setModoAberto(false);
+            }}
+          >
+            <span className="gat-escolha-marca" aria-hidden="true">
+              {semTexto ? <IconCheck width={13} height={13} /> : null}
+            </span>
+            <span className="gat-escolha-texto">
+              <strong>{traduzir(SEM_TEXTO)}</strong>
+            </span>
+          </button>
         </div>
       ) : null}
     </div>
 
-    {/* Sem filtro não há o que digitar: o campo de palavras só existe nas outras três. */}
-    {!semPalavras ? (
+    {/* Sem filtro não há o que digitar, e em "só sem texto" muito menos: o campo de palavras só
+        existe nas três comparações do meio. */}
+    {!semPalavras && !semTexto ? (
       <>
         <p className="gat-subtitulo">{traduzir("Adicionar palavras-chave")}</p>
 

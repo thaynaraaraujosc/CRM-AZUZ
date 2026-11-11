@@ -589,8 +589,19 @@ export type ConfiguracaoDePalavras = {
    * `comeco` nasceu do jeito como as pessoas respondem a um story ou a um post: "quero sim, me
    * manda", "link por favor". A intenção está na primeira palavra, e o resto é conversa. Com
    * `exata` isso não dispara, e com `contem` dispara também em "não quero" — que é o contrário.
+   *
+   * `sem_texto` NÃO É UM MODO DE COMPARAÇÃO: é a exigência de que não haja texto nenhum.
+   *
+   * Nasceu do encaminhamento no Direct. "Quando alguém me encaminhar uma pergunta, não
+   * necessariamente ela precisa mandar nenhum texto; esse gatilho tem que ativar só com o
+   * encaminhamento." Encaminhar um reel sem escrever nada é um gesto completo, e muito comum: a
+   * pessoa manda o post e espera que você entenda a pergunta. Com palavra configurada, aquele
+   * encaminhamento não casava com nada e a automação ficava calada; sem palavra nenhuma, ela
+   * respondia também a quem escreveu junto, que é outro caso.
+   *
+   * Com `sem_texto` a lista de palavras não é consultada — não há texto pra procurar nelas.
    */
-  modoPalavra?: "contem" | "exata" | "qualquer" | "comeco";
+  modoPalavra?: "contem" | "exata" | "qualquer" | "comeco" | "sem_texto";
   /**
    * Acento conta? Padrão: não.
    *
@@ -612,6 +623,15 @@ export type ConfiguracaoDePalavras = {
  * dispararia em "não quero", que é o oposto da intenção de quem montou o fluxo.
  */
 export function textoCasaComPalavras(texto: string, config: ConfiguracaoDePalavras): boolean {
+  /*
+   * "SEM NENHUM TEXTO" é conferido ANTES da lista, e tem que ser antes.
+   *
+   * Nesse modo a lista está vazia de propósito, e a saída logo abaixo ("sem palavra configurada,
+   * casa com tudo") devolveria `true` pra mensagem com texto também — ou seja, o modo não faria
+   * nada. Ver `ConfiguracaoDePalavras.modoPalavra`.
+   */
+  if (config.modoPalavra === "sem_texto") return texto.trim() === "";
+
   const lista = (config.palavras ?? [])
     .concat(config.palavraChave ? [config.palavraChave] : [])
     .map((p) => p.trim())

@@ -633,6 +633,9 @@ export function resumoNo(node: FlowNode, funis?: Funil[]): string {
     // única coisa que diferencia dois blocos do mesmo tipo no canvas: sem ela, dois gatilhos de
     // comentário ficam com o card idêntico e quem montou não sabe qual é qual.
     case "instagram_story_respondido": {
+      if (d.modoPalavra === "sem_texto") {
+        return d.storyId ? "Sem nenhum texto · num story escolhido" : "Sem nenhum texto · qualquer story";
+      }
       const palavras = Array.isArray(d.palavras) ? (d.palavras as string[]).filter(Boolean) : [];
       const texto = palavras.length ? palavras.map((p) => `"${p}"`).join(", ") : "Qualquer resposta";
       // Um story escolhido muda o alcance do bloco de "pra sempre" pra "hoje". O card precisa
@@ -642,7 +645,21 @@ export function resumoNo(node: FlowNode, funis?: Funil[]): string {
     case "instagram_direct_recebido":
     case "comentario_instagram":
     case "instagram_comentario_live":
-    case "instagram_resposta_comentario": {
+    case "instagram_resposta_comentario":
+    /*
+     * O ENCAMINHAMENTO ENTRA AQUI, e antes caía no `default`.
+     *
+     * Ele não tem palavra no `dataPadrao`, então o card dizia "Sem configuração adicional" e
+     * pronto. Só que a gaveta do Social Seller grava a regra de palavra em TODOS os gatilhos
+     * marcados, este incluído — e desde que existe "Só quando vier sem nenhum texto", a diferença
+     * entre dois blocos de encaminhamento é justamente essa regra. Sem a linha, o canvas mostrava
+     * dois cards idênticos com comportamentos opostos.
+     */
+    case "instagram_publicacao_compartilhada": {
+      /* "Sem nenhum texto" é a ausência de texto, não uma palavra: ver `ConfiguracaoDePalavras`.
+         A lista vem vazia nesse modo, então ler só a lista mostraria "Qualquer conteúdo" — o
+         oposto do que o bloco faz. */
+      if (d.modoPalavra === "sem_texto") return "Sem nenhum texto";
       const palavras = Array.isArray(d.palavras) ? (d.palavras as string[]).filter(Boolean) : [];
       if (!palavras.length) return "Qualquer conteúdo";
       return palavras.map((p) => `"${p}"`).join(", ");
