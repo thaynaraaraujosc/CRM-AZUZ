@@ -12,6 +12,8 @@ import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { useFunis } from "@/lib/funis-context";
 import { useContatos } from "@/lib/contatos-context";
 import { rotuloDaQualificacao } from "@/lib/contatos/qualificacao";
+import { formatarTelefoneParaExibicao } from "@/lib/telefone";
+import { nomeExibido } from "@/lib/conversas/exibicao";
 import { chaveDeContato } from "@/lib/contatos/chave-nome";
 import { useConversas } from "@/lib/conversas-context";
 import { rotuloDeAtividade } from "@/lib/funis/atividade";
@@ -45,21 +47,19 @@ const ORIGENS_NEGOCIO: NegocioCard["origem"][] = [
   "Indicação",
 ];
 
-/** Formata um telefone salvo cru (só dígitos, com DDI: ex.: "5562982041013") pra leitura:
- * "+55 62 98204-1013". Sem DDI reconhecido (não é BR, ou veio incompleto) devolve só com "+" na
- * frente, ainda melhor que uma sequência crua de números. */
+/**
+ * O TELEFONE DO CARTÃO, pela mesma régua da caixa de entrada.
+ *
+ * Esta função era uma cópia local, mais fraca que a de `telefone.ts`, e a diferença aparecia na
+ * tela: o que ela não reconhecia virava `+` mais os dígitos crus. Era assim que `+131971611123817`
+ * e `+49328018215052` apareciam embaixo do nome com toda a cara de telefone internacional — e não
+ * são telefone nenhum: são LIDs, o identificador novo do WhatsApp, de 14 ou 15 dígitos.
+ *
+ * A compartilhada devolve `null` pro que não tem forma de telefone, e aí a linha simplesmente não
+ * aparece. Número que ninguém pode discar é pior que número nenhum: ele convida a ligar.
+ */
 function formatarTelefoneExibicao(numero: string | null | undefined): string | null {
-  if (!numero) return null;
-  const digitos = numero.replace(/\D/g, "");
-  if (!digitos) return null;
-  if (digitos.startsWith("55") && (digitos.length === 12 || digitos.length === 13)) {
-    const ddd = digitos.slice(2, 4);
-    const resto = digitos.slice(4);
-    const meio = resto.length === 9 ? resto.slice(0, 5) : resto.slice(0, 4);
-    const fim = resto.length === 9 ? resto.slice(5) : resto.slice(4);
-    return `+55 ${ddd} ${meio}-${fim}`;
-  }
-  return `+${digitos}`;
+  return numero ? formatarTelefoneParaExibicao(numero) : null;
 }
 
 export default function FunilPage() {
@@ -76,6 +76,7 @@ function FunilPageInner() {
   const {
     funis,
     setFunis,
+    aplicarSemGravar,
     funilAtivoId,
     setFunilAtivoId,
     excluirFunil,
@@ -477,7 +478,22 @@ function FunilPageInner() {
     const cardMovido = funilAtivo.colunas[colunaOrigem]?.cards[indiceCard];
     const etapaDestino = funilAtivo.colunas[colunaDestino];
 
-    setFunis((prev) =>
+    /*
+     * ARRASTAR UM CARD NÃO DEVOLVE O QUADRO INTEIRO PRO BANCO.
+     *
+     * A gravação já acontece em `/api/funis/mover`, logo abaixo — uma instrução, instantânea, e é
+     * ela que dispara o gatilho da etapa no servidor. Só que mexer no estado com `setFunis` cru
+     * acordava TAMBÉM o sync geral do contexto, que manda o funil inteiro num PUT. Com trinta e
+     * dois cards numa coluna e sete etapas, essa transação estourava o prazo e trazia "o banco
+     * demorou demais pra responder. Parte do funil pode não ter sido salva".
+     *
+     * O pior dos dois mundos: o card JÁ estava salvo, e o erro na tela dizia o contrário — e quem
+     * recarregasse por causa do aviso veria o card no lugar certo, sem entender nada.
+     *
+     * `aplicarSemGravar` muda a tela e não agenda PUT nenhum. O que grava é a rota de mover, que
+     * confere o resultado e relê o funil se o banco recusar.
+     */
+    aplicarSemGravar((prev) =>
       prev.map((f) => {
         if (f.id !== funilAtivo.id) return f;
         const colunas = f.colunas.map((c) => ({ ...c, cards: [...c.cards] }));
@@ -1145,9 +1161,26 @@ function FunilPageInner() {
                           <span className="lname lname-com-msg" draggable={false}>
             {temMensagemNova ? <span className="msg-dot" aria-label={traduzir("Mensagem nova")} /> : null}
                             {(() => {
+                              /*
+                               * O NOME DO CARTÃO PELA MESMA RÉGUA DA CAIXA DE ENTRADA.
+                               *
+                               * Quando o contato ainda se chama pelo identificador — telefone sem
+                               * nome, ou um LID do WhatsApp —, o cartão mostrava os dígitos crus
+                               * ("131971611123817"). `nomeExibido` formata o que é telefone e
+                               * devolve os dígitos só quando não há máscara honesta a aplicar, que
+                               * é exatamente o que a lista de conversas já fazia.
+                               *
+                               * O canal vem da CONVERSA, não de `card.origem`: origem é de onde o
+                               * lead veio ("Meta Ads", "Indicação") e quem chega por anúncio do
+                               * Instagram quase sempre conversa no WhatsApp. Trocar um pelo outro
+                               * poria "Contato do Instagram" em cima de um telefone. Sem conversa
+                               * casada, `undefined` cai no tratamento de WhatsApp, que é o que o
+                               * histórico sem canal gravado sempre foi.
+                               */
                               /* A foto mora na CONVERSA ou no CONTATO: o webhook grava nos dois,
                                  mas conversa antiga (de antes disso) só tem num deles. Olhar um
                                  lugar só deixava metade dos cartões sem foto. */
+                              const nomeNoCartao = nomeExibido(card.nome, conversaDoCard?.canal);
                               const fotoDoCard =
                                 conversaDoCard?.fotoUrl ??
                                 contatoPorNome.get(chaveDeContato(card.nome))?.fotoUrl ??
@@ -1166,10 +1199,10 @@ function FunilPageInner() {
                                       verticalAlign: "middle",
                                     }}
                                   />
-                                  {card.nome}
+                                  {nomeNoCartao}
                                 </>
                               ) : (
-                                card.nome
+                                nomeNoCartao
                               );
                             })()}
                             {veioDeAnuncio ? (

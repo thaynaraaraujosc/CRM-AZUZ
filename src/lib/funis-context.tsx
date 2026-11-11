@@ -48,6 +48,17 @@ type FunisContextValue = {
    * mandaria o funil inteiro de volta, que é exatamente a transação gigante que estourava o prazo.
    */
   recarregar: () => Promise<Funil[]>;
+  /**
+   * MUDA A TELA SEM DEVOLVER O FUNIL INTEIRO PRO BANCO.
+   *
+   * Pra quando a gravação JÁ aconteceu por uma rota própria — arrastar um card, por exemplo, que
+   * grava em `/api/funis/mover`. Com `setFunis` cru, a mudança local disparava o sync geral e o
+   * quadro inteiro voltava num PUT: a transação gigante que estourava o prazo e trazia "o banco
+   * demorou demais pra responder. Parte do funil pode não ter sido salva".
+   *
+   * Era o pior dos dois mundos: o card já estava salvo, e o erro na tela dizia o contrário.
+   */
+  aplicarSemGravar: (atualizador: SetStateAction<Funil[]>) => void;
   /** Cria um funil gravando no banco antes de aparecer na tela. */
   criarFunilPersistido: (funil: Funil) => Promise<{ ok: boolean; erro?: string }>;
   /** Cria uma etapa gravando no banco antes de aparecer na tela. */
@@ -165,6 +176,12 @@ export function FunisProvider({ children }: { children: ReactNode }) {
         esperandoRef.current = null;
         if (esperando) persistirFunis(esperando);
       });
+  }
+
+  /** Ver `aplicarSemGravar` no tipo do contexto: muda a tela sem agendar o PUT do quadro inteiro. */
+  function aplicarSemGravar(atualizador: SetStateAction<Funil[]>) {
+    vindoDoServidorRef.current = true;
+    setFunis(atualizador);
   }
 
   /** Relê os funis do banco. Usado depois de uma gravação recusada e depois de cada operação
@@ -471,6 +488,7 @@ export function FunisProvider({ children }: { children: ReactNode }) {
         reordenarEtapas,
         salvarAparenciaDaEtapa,
         recarregar,
+        aplicarSemGravar,
         erroSincronizacao,
         limparErroSincronizacao: () => setErroSincronizacao(null),
       }}
