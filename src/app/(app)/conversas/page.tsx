@@ -40,7 +40,8 @@ import {
 import { canalDeSaida } from "@/lib/conversas/canal-de-saida";
 import { iniciaisExibidas, nomeExibido } from "@/lib/conversas/exibicao";
 import { valeBuscarNome } from "@/lib/conversas/nome-do-historico";
-import type { TagDeOrigem } from "@/lib/rastreio/tag-de-origem";
+import type { PreviaDaOrigem } from "@/lib/rastreio/tag-de-origem";
+import { OrigemDoLeadBarra } from "@/components/conversas/OrigemDoLeadBarra";
 import { chaveDeContato } from "@/lib/contatos/chave-nome";
 import { BotoesConectarWhatsApp } from "@/components/configuracoes/BotoesConectarWhatsApp";
 import { BolhaMensagem } from "@/components/conversas/BolhaMensagem";
@@ -64,7 +65,7 @@ import {
 } from "@/lib/biblioteca-documentos-context";
 import { HOJE_ISO } from "@/lib/hoje";
 import { useFunis } from "@/lib/funis-context";
-import { numerosNaOrdemDosFunis } from "@/lib/funis/numero-do-funil";
+import { funilDoNumero, numerosNaOrdemDosFunis } from "@/lib/funis/numero-do-funil";
 import { useIdioma } from "@/lib/idioma-context";
 import { useMensagensExtra } from "@/lib/mensagens-extra-context";
 import { criarResolvedorDeMencao, filtrarParticipantes, inserirMencao, mencaoEmDigitacao } from "@/lib/conversas/mencoes";
@@ -496,7 +497,7 @@ function ConversasPageInner() {
   // português, então acrescentar idioma aqui nunca deixa a tela em branco.
   const { t: traduzir, localeNumero } = useIdioma();
   const searchParams = useSearchParams();
-  const { funis, setFunis, atribuirContatoAoFunil } = useFunis();
+  const { funis, setFunis, atribuirContatoAoFunil, reordenarFunis } = useFunis();
 
   /** Etapa do funil onde esse contato está agora (procura em todos os funis, não só o principal):
    * `null` quando ele ainda não é um negócio em nenhum funil (ex.: grupo, ou lead que nunca entrou). */
@@ -1065,6 +1066,35 @@ function ConversasPageInner() {
    * pessoa via ao entrar. Agora quem decide é a ordem que ela arrastou no menu: uma decisão, dois
    * lugares. Ver `numerosNaOrdemDosFunis`.
    */
+  /*
+   * ARRASTAR A ABA DE NÚMERO. "Eu arrastei a barra do funil, coloquei o número dados primeiro; aí
+   * esse aqui tem que seguir a mesma lógica."
+   *
+   * O que é arrastado aqui é o FUNIL daquele número — a mesma ordem do menu lateral. Duas listas
+   * de ordem separadas seriam duas respostas pra mesma pergunta, e elas divergem no primeiro dia.
+   */
+  const [abaArrastando, setAbaArrastando] = useState<string | null>(null);
+  const [abaAlvo, setAbaAlvo] = useState<string | null>(null);
+
+  function soltarAba(chaveAlvo: string) {
+    const de = abaArrastando;
+    setAbaArrastando(null);
+    setAbaAlvo(null);
+    if (!de || de === chaveAlvo) return;
+
+    const funilDe = funilDoNumero(funis, de);
+    const funilAlvo = funilDoNumero(funis, chaveAlvo);
+    // Só reordena o que tem onde ser gravado: número sem funil não tem posição a guardar.
+    if (!funilDe || !funilAlvo) return;
+
+    const ids = funis.map((f) => f.id);
+    const origem = ids.indexOf(funilDe.id);
+    const destino = ids.indexOf(funilAlvo.id);
+    if (origem < 0 || destino < 0) return;
+    ids.splice(destino, 0, ids.splice(origem, 1)[0]);
+    void reordenarFunis(ids);
+  }
+
   const numerosParaAba = numerosNaOrdemDosFunis(
     numerosConectados.filter((n) => n.status === "conectado" && n.chave),
     funis,
@@ -1108,13 +1138,13 @@ function ConversasPageInner() {
    *
    * Chave pelo nome NORMALIZADO, que é como conversa, contato e card se encontram no CRM inteiro.
    */
-  const [origemPorContato, setOrigemPorContato] = useState<Record<string, TagDeOrigem>>({});
+  const [origemPorContato, setOrigemPorContato] = useState<Record<string, PreviaDaOrigem>>({});
 
   useEffect(() => {
     let vivo = true;
     fetch("/api/rastreio/origem-dos-leads")
       .then((r) => (r.ok ? r.json() : null))
-      .then((dados: { porContato?: Record<string, TagDeOrigem> } | null) => {
+      .then((dados: { porContato?: Record<string, PreviaDaOrigem> } | null) => {
         // Falhar aqui não pode roubar a tela de quem veio atender: sem a etiqueta, a lista
         // continua inteira e funcionando.
         if (vivo && dados?.porContato) setOrigemPorContato(dados.porContato);
@@ -4556,10 +4586,16 @@ function ConversasPageInner() {
                       role="tab"
                       key={n.chave}
                       aria-selected={numeroAtivo === n.chave}
-                      className={`wa-numero-aba${numeroAtivo === n.chave ? " on" : ""}`}
+                      className={`wa-numero-aba${numeroAtivo === n.chave ? " on" : ""}${
+                        abaAlvo === n.chave && abaArrastando !== n.chave ? " wa-numero-aba-alvo" : ""
+                      }${abaArrastando === n.chave ? " wa-numero-aba-arrastando" : ""}`}
                       // O telefone no `title`: o nome cabe na aba, o número nem sempre — e é o
                       // número que tira a dúvida quando dois apelidos se parecem.
-                      title={`${n.numeroLegivel || n.nome} — ${traduzir("dois cliques pra renomear")}`}
+                      title={
+                        funilDoNumero(funis, n.chave)
+                          ? `${n.numeroLegivel || n.nome} — ${traduzir("dois cliques pra renomear, arraste pra reordenar")}`
+                          : `${n.numeroLegivel || n.nome} — ${traduzir("dois cliques pra renomear. Pra reordenar, este número precisa de um funil.")}`
+                      }
                       onClick={() => {
                         /*
                           TROCAR DE NÚMERO FECHA O QUE ESTAVA ABERTO.
@@ -4576,6 +4612,41 @@ function ConversasPageInner() {
                         setSelectedId(null);
                       }}
                       onDoubleClick={() => setRenomeando(n.chave)}
+                      /*
+                        ARRASTAR A ABA É ARRASTAR O FUNIL. "Eu arrastei a barra do funil, coloquei
+                        o número dados primeiro; aí esse aqui tem que seguir a mesma lógica."
+                        
+                        E segue literalmente: soltar aqui grava a ordem dos FUNIS, que é a mesma
+                        que o menu lateral usa. Uma decisão, dois lugares — duas listas de ordem
+                        separadas seriam duas respostas pra mesma pergunta, e elas divergem no
+                        primeiro dia.
+                        
+                        Número sem funil não arrasta: não há onde gravar a posição dele, e um
+                        gesto que parece funcionar e não grava é pior que gesto nenhum. O `title`
+                        diz isso quando é o caso.
+                      */
+                      draggable={Boolean(funilDoNumero(funis, n.chave))}
+                      onDragStart={(e) => {
+                        setAbaArrastando(n.chave);
+                        e.dataTransfer.effectAllowed = "move";
+                        e.dataTransfer.setData("text/plain", n.chave);
+                      }}
+                      onDragOver={(e) => {
+                        if (!abaArrastando || !funilDoNumero(funis, n.chave)) return;
+                        // `preventDefault` é o que AUTORIZA o soltar: sem ele o cursor fica com o
+                        // sinal de proibido a barra inteira.
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = "move";
+                        if (abaAlvo !== n.chave) setAbaAlvo(n.chave);
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        soltarAba(n.chave);
+                      }}
+                      onDragEnd={() => {
+                        setAbaArrastando(null);
+                        setAbaAlvo(null);
+                      }}
                     >
                       <span className="wa-numero-aba-nome">{n.apelido?.trim() || n.numeroLegivel || n.nome}</span>
                       <span className="wa-numero-aba-canal">{traduzir(canalDoNumero(n.provedor))}</span>
@@ -5055,6 +5126,11 @@ function ConversasPageInner() {
               <IconConfiguracoes />
             </button>
           </div>
+
+          {/* DE ONDE ESTA PESSOA VEIO: o criativo que ela clicou, o formulário que preencheu, a
+              campanha. Logo abaixo do cabeçalho e acima da primeira mensagem, porque é a pergunta
+              que se faz ao abrir a conversa. Sem rastreio, a barra não existe — ver o componente. */}
+          <OrigemDoLeadBarra previa={origemPorContato[chaveDeContato(aberta.nome)]} />
 
           <div
             className={`chat-body wa-fonte-${config.tamanhoFonte}${arrastandoArquivo ? " wa-dragover" : ""}`}

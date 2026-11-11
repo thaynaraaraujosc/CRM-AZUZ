@@ -33,7 +33,7 @@ import {
   type NumeroParaFunil,
 } from "@/lib/funis/numero-do-funil";
 import { canalDoNumero } from "@/lib/conversas/numeros-conectados";
-import type { TagDeOrigem } from "@/lib/rastreio/tag-de-origem";
+import type { PreviaDaOrigem } from "@/lib/rastreio/tag-de-origem";
 import { VAZIO, ehVazio } from "@/lib/vazio";
 import { useEquipe } from "@/lib/equipe-context";
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
@@ -258,13 +258,13 @@ function FunilPageInner() {
    * "Preciso saber se o lead que entrou no meu chat e no meu funil veio de onde." O cartão mostrava
    * `card.origem` — o canal de chegada —, que não responde se veio de anúncio.
    */
-  const [origemPorContato, setOrigemPorContato] = useState<Record<string, TagDeOrigem>>({});
+  const [origemPorContato, setOrigemPorContato] = useState<Record<string, PreviaDaOrigem>>({});
 
   useEffect(() => {
     let vivo = true;
     fetch("/api/rastreio/origem-dos-leads")
       .then((r) => (r.ok ? r.json() : null))
-      .then((dados: { porContato?: Record<string, TagDeOrigem> } | null) => {
+      .then((dados: { porContato?: Record<string, PreviaDaOrigem> } | null) => {
         // Falhar aqui não pode roubar o quadro de quem veio trabalhar: sem a etiqueta, o cartão
         // continua inteiro, com o canal de chegada como antes.
         if (vivo && dados?.porContato) setOrigemPorContato(dados.porContato);
