@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { tagDeOrigemDoLead } from "@/lib/rastreio/tag-de-origem";
+import { previaDaOrigem, type PreviaDaOrigem } from "@/lib/rastreio/tag-de-origem";
 import { chaveDeContato } from "@/lib/contatos/chave-nome";
 
 /**
@@ -22,9 +22,20 @@ import { chaveDeContato } from "@/lib/contatos/chave-nome";
  */
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
+
+  /*
+   * UM CONTATO SÓ, quando quem pergunta é uma conversa aberta.
+   *
+   * A janela do funil abre UMA conversa por vez: baixar a origem do workspace inteiro pra mostrar
+   * a de uma seria pagar o quadro pra ler a linha. A caixa de entrada é o contrário — ela mostra a
+   * etiqueta em todas as linhas, e lá a lista inteira é a consulta certa.
+   *
+   * A busca é pelo nome NORMALIZADO, que é como conversa, contato e card se encontram no CRM.
+   */
+  const deUmContato = chaveDeContato(new URL(request.url).searchParams.get("contato"));
 
   const linhas = await prisma.origemDoLead.findMany({
     where: { workspaceId: sessao.user.workspaceId },
@@ -45,15 +56,50 @@ export async function GET() {
       // deles nunca sai daqui, e por isso o que vai pro navegador é um booleano.
       referrer: true,
       paginaEntrada: true,
+      /*
+       * O `referral` INTEIRO, como a Meta mandou. É daqui que sai a prévia do criativo: título,
+       * texto, miniatura e link da peça. Ele é LIDO aqui e não sai daqui — o que vai pro navegador
+       * é só a prévia montada, que são quatro campos curtos.
+       */
+      bruto: true,
+      formularioId: true,
     },
   });
 
-  const porContato: Record<string, { rotulo: string; detalhe: string; pago: boolean }> = {};
+  /*
+   * O NOME DO FORMULÁRIO, numa consulta só.
+   *
+   * "Se ela veio pelo formulário, aparece 'veio através do formulário tal', aí o nome do
+   * formulário." O nome mora em `Formulario` e muda quando a empresa renomeia — por isso a origem
+   * guarda só o id, e o nome é buscado na hora.
+   */
+  const idsDeFormulario = [...new Set(linhas.map((l) => l.formularioId).filter((id): id is string => !!id))];
+  const nomeDoFormulario = new Map<string, string>(
+    idsDeFormulario.length
+      ? (
+          await prisma.formulario.findMany({
+            where: { workspaceId: sessao.user.workspaceId, id: { in: idsDeFormulario } },
+            select: { id: true, nome: true },
+          })
+        ).map((f) => [f.id, f.nome])
+      : [],
+  );
+
+  const porContato: Record<string, PreviaDaOrigem> = {};
   for (const linha of linhas) {
     const chave = chaveDeContato(linha.contato?.nome);
     if (!chave) continue;
-    const tag = tagDeOrigemDoLead(linha);
-    if (tag) porContato[chave] = tag;
+    const previa = previaDaOrigem(linha, linha.formularioId ? nomeDoFormulario.get(linha.formularioId) : null);
+    if (previa) porContato[chave] = previa;
+  }
+
+  // Pedido de um contato só: devolve `previa` (podendo ser nula), e não o mapa inteiro. Quem
+  // pergunta por um não deve receber a agenda de rastreio da empresa.
+  if (deUmContato) {
+    return NextResponse.json(
+      { previa: porContato[deUmContato] ?? null },
+      { headers: { "cache-control": "no-store" } },
+    );
   }
 
   return NextResponse.json({ porContato }, { headers: { "cache-control": "no-store" } });

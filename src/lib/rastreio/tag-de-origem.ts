@@ -213,7 +213,7 @@ export function previaDaOrigem(
    * por Click-to-WhatsApp, e a coluna existe também pra quem veio por link rastreado.
    */
   const titulo =
-    comoTexto(ref.headline) ?? limpo(origem.anuncioNome) ?? (nomeDoFormulario?.trim() || undefined);
+    comoTexto(ref.headline) ?? comoTexto(origem.anuncioNome) ?? comoTexto(nomeDoFormulario);
 
   /*
    * A MINIATURA, na ordem do que mostra melhor. `thumbnail_url` é a versão pequena que a Meta

@@ -6,6 +6,8 @@ import { horaDaMensagem, rotuloDoDiaEmBrasilia } from "@/lib/conversas/hora-da-m
 import type { ConvMensagem } from "@/lib/data";
 import { useContatos } from "@/lib/contatos-context";
 import { useMensagensExtra } from "@/lib/mensagens-extra-context";
+import { OrigemDoLeadBarra } from "@/components/conversas/OrigemDoLeadBarra";
+import type { PreviaDaOrigem } from "@/lib/rastreio/tag-de-origem";
 import { BolhaMensagem } from "./BolhaMensagem";
 import { renderizarTrechos } from "./TextoDaMensagem";
 import { interpretarMensagem } from "@/lib/conversas/formatacao-mensagem";
@@ -96,6 +98,39 @@ export function PainelConversa({
   const arquivoDocumentoRef = useRef<HTMLInputElement>(null);
 
   const mensagens = mensagensExtraPorContato[contatoNome] ?? [];
+
+  /*
+   * DE ONDE ESTE LEAD VEIO, buscado por conversa aberta.
+   *
+   * Uma consulta por abertura, e não a lista do workspace inteiro: aqui se abre UMA conversa por
+   * vez, e baixar a origem de todo mundo pra mostrar a de uma seria pagar o quadro pra ler a
+   * linha. (A caixa de entrada é o contrário: ela mostra a etiqueta em TODAS as linhas, e lá a
+   * lista inteira é a consulta certa.)
+   */
+  const [origem, setOrigem] = useState<{ de: string; previa: PreviaDaOrigem | null } | null>(null);
+  useEffect(() => {
+    if (!contatoNome) return;
+    let vivo = true;
+    fetch(`/api/rastreio/origem-dos-leads?contato=${encodeURIComponent(contatoNome)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((dados: { previa?: PreviaDaOrigem | null } | null) => {
+        // Falhar aqui não pode roubar a conversa: sem a barra, a janela continua inteira.
+        if (vivo) setOrigem({ de: contatoNome, previa: dados?.previa ?? null });
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, [contatoNome]);
+
+  /*
+   * A barra só aparece pro contato que ela é.
+   *
+   * O estado guarda DE QUEM é a prévia em vez de ser zerado no começo do efeito: zerar ali é
+   * `setState` no corpo de um efeito, que encadeia renderizações, e trocar de conversa mostraria
+   * por um instante a origem da anterior.
+   */
+  const origemDesteContato = origem?.de === contatoNome ? origem.previa : null;
   const ultima = mensagens[mensagens.length - 1];
   const contato = contatos.find((c) => c.nome === contatoNome);
 
@@ -348,6 +383,10 @@ export function PainelConversa({
             </button>
           </div>
         </header>
+
+        {/* DE ONDE ESTA PESSOA VEIO. A mesma barra da caixa de entrada: o funil é onde ela olha
+            primeiro, e a pergunta "de onde veio esse lead?" é mais frequente aqui do que lá. */}
+        <OrigemDoLeadBarra previa={origemDesteContato} />
 
         <div className="painel-conversa-corpo">
           <div className="painel-conversa-mensagens chat-body">

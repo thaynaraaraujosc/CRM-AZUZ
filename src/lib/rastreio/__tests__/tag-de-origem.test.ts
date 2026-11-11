@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { tagDeOrigemDoLead } from "@/lib/rastreio/tag-de-origem";
+import { previaDaOrigem, tagDeOrigemDoLead } from "@/lib/rastreio/tag-de-origem";
 
 /**
  * "Eu preciso saber se o lead que entrou no meu chat e no meu funil veio de onde. Veio do
@@ -132,5 +132,86 @@ describe("tagDeOrigemDoLead", () => {
 
   it("sem nada a detalhar, o detalhe é vazio — não a palavra 'undefined'", () => {
     expect(tagDeOrigemDoLead({ cliqueId: "f", tipoDoClique: "fbclid" })?.detalhe).toBe("");
+  });
+});
+
+/**
+ * A PRÉVIA DO CRIATIVO. "Tem como aparecer o criativo em miniatura, o nome do criativo pelo qual
+ * essa pessoa veio?"
+ *
+ * Tem, e o dado já estava no banco: quando alguém clica num anúncio de Click-to-WhatsApp, a Meta
+ * manda junto da primeira mensagem um bloco `referral` com título, texto, imagem, miniatura e o
+ * link de origem. O CRM guarda esse bloco inteiro e nunca o leu de volta.
+ */
+describe("previaDaOrigem", () => {
+  const referral = {
+    headline: "KTM 390 Adventure — 0km",
+    body: "Entrada facilitada, fale agora",
+    source_url: "https://fb.me/anuncio123",
+    source_type: "ad",
+    image_url: "https://cdn.meta.com/criativo.jpg",
+    thumbnail_url: "https://cdn.meta.com/mini.jpg",
+  };
+
+  it("monta título, detalhe, miniatura e link de um anúncio", () => {
+    const previa = previaDaOrigem({
+      cliqueId: "ct1",
+      tipoDoClique: "ctwa_clid",
+      campanhaNome: "KTM Novembro",
+      bruto: referral,
+    });
+    expect(previa).toMatchObject({
+      rotulo: "Meta Ads",
+      pago: true,
+      titulo: "KTM 390 Adventure — 0km",
+      detalhe: "KTM Novembro · Entrada facilitada, fale agora",
+      miniatura: "https://cdn.meta.com/mini.jpg",
+      link: "https://fb.me/anuncio123",
+    });
+  });
+
+  it("sem miniatura própria, usa o criativo em tamanho cheio", () => {
+    const { thumbnail_url: _semMini, ...semMiniatura } = referral;
+    const previa = previaDaOrigem({ cliqueId: "c", tipoDoClique: "ctwa_clid", bruto: semMiniatura });
+    expect(previa?.miniatura).toBe("https://cdn.meta.com/criativo.jpg");
+  });
+
+  it("só aceita endereço http(s): JSON não vira `javascript:` na tela", () => {
+    const previa = previaDaOrigem({
+      cliqueId: "c",
+      tipoDoClique: "ctwa_clid",
+      bruto: { thumbnail_url: "javascript:alert(1)", source_url: "data:text/html,<script>" },
+    });
+    expect(previa?.miniatura).toBeUndefined();
+    expect(previa?.link).toBeUndefined();
+  });
+
+  it("formulário do CRM aparece com o nome dele", () => {
+    const previa = previaDaOrigem({ caminho: "formulario" }, "Orçamento rápido");
+    expect(previa).toMatchObject({ rotulo: "Formulário", titulo: "Orçamento rápido", pago: false });
+  });
+
+  it("sem o nome do formulário, a prévia existe e fica sem título", () => {
+    const previa = previaDaOrigem({ caminho: "formulario" });
+    expect(previa?.rotulo).toBe("Formulário");
+    expect(previa?.titulo).toBeUndefined();
+  });
+
+  it("sem rastreio nenhum, não há prévia", () => {
+    expect(previaDaOrigem({})).toBeNull();
+    expect(previaDaOrigem(null)).toBeNull();
+  });
+
+  it("`bruto` que não é objeto não quebra nada", () => {
+    // O campo é Json e já recebeu coisas diferentes ao longo do tempo.
+    const previa = previaDaOrigem({ cliqueId: "c", tipoDoClique: "fbclid", bruto: "texto solto" });
+    expect(previa?.rotulo).toBe("Meta Ads");
+    expect(previa?.miniatura).toBeUndefined();
+  });
+
+  it("o título cai no nome do anúncio quando o referral não veio", () => {
+    // É o caso de quem chegou por link rastreado, e não por clique pra WhatsApp.
+    const previa = previaDaOrigem({ cliqueId: "g", tipoDoClique: "gclid", anuncioNome: "Pesquisa — marca" });
+    expect(previa?.titulo).toBe("Pesquisa — marca");
   });
 });
