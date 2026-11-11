@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { contarDesalinhados, reconciliarFunilEConversas } from "@/lib/conversas/reconciliar";
+import { batizarCardsPeloTelefone } from "@/lib/funis/consolidar";
 
 /**
  * Põe funil e Conversas pra contar a mesma história, agora.
@@ -23,11 +24,24 @@ export async function POST() {
   // negócio sem conversa ficava assim pra sempre, e na tela isso vira "conversei com a pessoa e a
   // conversa não chegou". A mesma reconciliação roda sozinha pelo relógio; aqui ela roda na hora,
   // pra quem não quer esperar.
+  /*
+   * O BATISMO VEM ANTES, e essa ordem importa.
+   *
+   * Card chamado pelo telefone não casa com a conversa da mesma pessoa — as chaves de nome são
+   * diferentes por definição. Reconciliando primeiro, o CRM concluiria que aquela conversa não tem
+   * negócio e criaria um SEGUNDO card pra ela. Batizando antes, os dois já se encontram.
+   */
+  const batizados = await batizarCardsPeloTelefone(sessao.user.workspaceId).catch((erro) => {
+    console.error("[importar-conversas] falha ao batizar negócios pelo telefone:", erro);
+    return 0;
+  });
+
   const resultado = await reconciliarFunilEConversas(sessao.user.workspaceId);
   return NextResponse.json({
     criados: resultado.cardsCriados,
     conversasCriadas: resultado.conversasCriadas,
     semComoLigar: resultado.semComoLigar,
+    batizados,
   });
 }
 

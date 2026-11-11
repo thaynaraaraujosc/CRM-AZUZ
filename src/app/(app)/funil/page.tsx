@@ -18,6 +18,13 @@ import { chaveDeContato } from "@/lib/contatos/chave-nome";
 import { useConversas } from "@/lib/conversas-context";
 import { rotuloDeAtividade } from "@/lib/funis/atividade";
 import {
+  contatoDoCard as acharContatoDoCard,
+  conversaDoCard as acharConversaDoCard,
+  indicesDeContato,
+  indicesDeConversa,
+  nomeParaOCartao,
+} from "@/lib/funis/conversa-do-card";
+import {
   PREFIXO_DO_NOME,
   nomeDoFunil,
   numeroDoFunil,
@@ -102,42 +109,38 @@ function FunilPageInner() {
   const { conversas, excluirConversa, recarregar: recarregarConversas } = useConversas();
 
   /**
-   * Última movimentação por contato: é o que o card mostra no canto e o que dá sentido ao botão
-   * "Mensagens recentes no topo". Antes o card exibia `NegocioCard.dias`, uma string gravada como
-   * "Hoje" quando ele nasceu e nunca mais tocada: o funil inteiro dizia "Hoje", inclusive card de
-   * semanas atrás.
+   * A conversa daquele negócio: pelo nome e, quando o nome falha, PELO TELEFONE.
+   *
+   * "Estou tentando procurar no meu funil a minha cliente Gabriela. Lá no WhatsApp eu achei (…) só
+   * que no funil ela não aparece. É como se não houvesse nenhuma conversa." O card nasceu chamado
+   * pelo telefone — a primeira mensagem não trouxe o nome de perfil — e a conversa virou "GABRIELA
+   * KTM" depois. Os dois lados do CRM passaram a falar de pessoas diferentes, e o cartão abria uma
+   * conversa vazia. Ver `conversa-do-card.ts`, onde a regra mora e tem teste.
    */
-  const atividadePorNome = useMemo(
-    // `ultimaMensagemEm` e não `atualizadoEm`: o segundo sobe por qualquer escrita na conversa, e
-    // uma importação de contatos encostava em todas de uma vez. Deixando o funil inteiro com cara
-    // de recente.
-    //
-    // A chave é o nome NORMALIZADO (ver `chaveDeContato`), não o nome cru. O mesmo contato chega
-    // com o nome escrito de jeitos diferentes conforme o caminho, e comparar texto com texto fazia
-    // o card não achar a própria conversa: sem telefone, sem data, e a pessoa concluindo que a
-    // mensagem não tinha chegado.
-    () => new Map(conversas.map((c) => [chaveDeContato(c.nome), c.ultimaMensagemEm ?? null])),
-    [conversas],
-  );
-
-  /** A conversa daquele negócio, achada pelo nome normalizado. Ver `atividadePorNome`. */
-  const conversaPorNome = useMemo(
-    () => new Map(conversas.map((c) => [chaveDeContato(c.nome), c])),
-    [conversas],
-  );
+  const indicesDeConversas = useMemo(() => indicesDeConversa(conversas), [conversas]);
   /*
-   * O CONTATO DAQUELE NEGÓCIO, pelo nome NORMALIZADO.
+   * O CONTATO DAQUELE NEGÓCIO, por NOME e por TELEFONE.
    *
    * Era `contatos.find((c) => c.nome === card.nome)`, dentro do desenho de cada cartão. Dois
    * problemas num só: a comparação exigia a string idêntica — "+55 11 99746-1401" não casa com
    * "5511997461401", e era por isso que uns cartões tinham foto e outros não — e a varredura
    * acontecia por cartão, o que num quadro com dezenas deles é a lista inteira de contatos
    * percorrida dezenas de vezes a cada render.
+   *
+   * O índice por telefone veio depois, pelo caso da Gabriela: o contato já estava com o nome certo
+   * e o card continuava chamado pelo número, então o cartão ficava sem foto e sem a qualificação
+   * do lead — dois dados que existem, do lado de cá, e que a tela não encontrava por causa de uma
+   * string. Ver `conversa-do-card.ts`.
    */
-  const contatoPorNome = useMemo(
-    () => new Map(contatos.map((c) => [chaveDeContato(c.nome), c])),
-    [contatos],
-  );
+  const indicesDeContatos = useMemo(() => indicesDeContato(contatos), [contatos]);
+
+  /** A conversa de um card, com as três tentativas de `conversa-do-card.ts`. */
+  const acharConversa = (nomeDoCard: string) =>
+    acharConversaDoCard({ nome: nomeDoCard }, indicesDeConversas, indicesDeContatos.porNome.get(chaveDeContato(nomeDoCard)));
+
+  /** O contato de um card, pela mesma régua: nome e, quando ele falha, telefone. */
+  const acharContato = (nomeDoCard: string, conversa?: { nome: string; contato?: string | null; ehGrupo?: boolean } | null) =>
+    acharContatoDoCard({ nome: nomeDoCard }, indicesDeContatos, conversa);
 
   /*
    * AS FOTOS QUE FALTAM NOS CARTÕES, buscadas em segundo plano.
@@ -1334,7 +1337,7 @@ function FunilPageInner() {
                     cabeçalho fica onde está. */}
                 <div className="kcol-cards">
                   {cardsVisiveis.map(({ card, cardIndex }) => {
-                    const conversaDoCard = conversaPorNome.get(chaveDeContato(card.nome));
+                    const conversaDoCard = acharConversa(card.nome);
                     const temMensagemNova = (conversaDoCard?.naoLidas ?? 0) > 0;
                     // "AD": lead veio de anúncio (Meta/Google Ads), não de contato direto/indicação.
                     const veioDeAnuncio = card.origem === "Meta Ads" || card.origem === "Google Ads";
@@ -1394,10 +1397,17 @@ function FunilPageInner() {
                               /* A foto mora na CONVERSA ou no CONTATO: o webhook grava nos dois,
                                  mas conversa antiga (de antes disso) só tem num deles. Olhar um
                                  lugar só deixava metade dos cartões sem foto. */
-                              const nomeNoCartao = nomeExibido(card.nome, conversaDoCard?.canal);
+                              /* Card ainda chamado pelo número, com a conversa já batizada,
+                                 mostra o NOME DA CONVERSA: foi ela que recebeu a mensagem com o
+                                 nome de perfil. "Não aparece com o nome dela nem com as
+                                 conversas" — as duas metades do mesmo problema. */
+                              const nomeNoCartao = nomeExibido(
+                                nomeParaOCartao(card, conversaDoCard),
+                                conversaDoCard?.canal,
+                              );
                               const fotoDoCard =
                                 conversaDoCard?.fotoUrl ??
-                                contatoPorNome.get(chaveDeContato(card.nome))?.fotoUrl ??
+                                acharContato(card.nome, conversaDoCard)?.fotoUrl ??
                                 null;
                               return fotoDoCard ? (
                                 <>
@@ -1493,7 +1503,7 @@ function FunilPageInner() {
                             clique leva ao lugar onde se marca.
                           */}
                           {(() => {
-                            const qual = contatoPorNome.get(chaveDeContato(card.nome))?.qualificacao;
+                            const qual = acharContato(card.nome, conversaDoCard)?.qualificacao;
                             return qual ? (
                               <span className={`lead-qual ${qual}`} title={traduzir("Qualificação do lead")}>
                                 {traduzir(rotuloDaQualificacao(qual))}
@@ -1506,9 +1516,13 @@ function FunilPageInner() {
                               "Ontem" pra sempre, e amanhã continuaria. Data errada é pior que data
                               nenhuma num lugar onde a pessoa decide a quem ligar primeiro. Quando a
                               conversa existe, a data vem da última mensagem e está sempre certa. */}
-                          {atividadePorNome.get(chaveDeContato(card.nome)) ? (
+                          {/* A data vem da CONVERSA ENCONTRADA, não do nome do card: quando os
+                              dois nomes divergem, procurar por `card.nome` não acha atividade
+                              nenhuma e o cartão fica sem data — como se ninguém nunca tivesse
+                              falado com aquela pessoa. */}
+                          {conversaDoCard?.ultimaMensagemEm ? (
                             <span className="days" title={traduzir("Última mensagem deste contato")}>
-                              {rotuloDeAtividade(atividadePorNome.get(chaveDeContato(card.nome)))}
+                              {rotuloDeAtividade(conversaDoCard.ultimaMensagemEm)}
                             </span>
                           ) : (
                             <span className="days" title={traduzir("Ainda não há mensagem deste contato no CRM")}>{traduzir("sem conversa")}</span>
@@ -1638,9 +1652,9 @@ function FunilPageInner() {
       {conversaAberta ? (
         <PainelConversa
           contatoNome={conversaAberta}
-          canal={conversaPorNome.get(chaveDeContato(conversaAberta))?.canal}
+          canal={acharConversa(conversaAberta)?.canal}
           initials={
-            conversaPorNome.get(chaveDeContato(conversaAberta))?.initials ??
+            acharConversa(conversaAberta)?.initials ??
             conversaAberta
               .split(" ")
               .filter(Boolean)
@@ -1654,7 +1668,7 @@ function FunilPageInner() {
             )?.titulo
           }
           fotoUrl={
-            conversaPorNome.get(chaveDeContato(conversaAberta))?.fotoUrl ??
+            acharConversa(conversaAberta)?.fotoUrl ??
             contatos.find((c) => chaveDeContato(c.nome) === chaveDeContato(conversaAberta))?.fotoUrl
           }
           aoFechar={() => setConversaAberta(null)}

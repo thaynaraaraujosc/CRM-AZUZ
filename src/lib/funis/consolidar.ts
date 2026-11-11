@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { chaveDeContato } from "@/lib/contatos/chave-nome";
+import { nomeAindaEhIdCru } from "@/lib/conversas/exibicao";
+import { normalizarTelefoneParaComparacao } from "@/lib/telefone";
 
 /**
  * Conserto dos registros que já estão gravados com o nome escrito de jeitos diferentes.
@@ -30,7 +32,84 @@ function nomeCanonico(candidatos: { nome: string; deConversa: boolean }[]): stri
 export type PadronizacaoNomes = {
   contatosRenomeados: number;
   cardsRenomeados: number;
+  /** Cards que se chamavam pelo telefone e ganharam o nome da conversa. Ver `batizarCardsPeloTelefone`. */
+  cardsBatizados: number;
 };
+
+/**
+ * O CARD QUE SE CHAMA PELO TELEFONE GANHA O NOME DA CONVERSA.
+ *
+ * "Estou tentando procurar no meu funil a minha cliente Gabriela. Lá no WhatsApp eu achei (…) só
+ * que no funil ela não aparece, o número dela não está sendo encontrado. É como se não houvesse
+ * nenhuma conversa."
+ *
+ * O card nasce com o nome que havia quando o lead entrou — e quando a primeira mensagem não traz o
+ * nome de perfil, esse nome é o telefone. A mensagem seguinte batiza a CONVERSA e leva o card
+ * junto (`renomearConversa`), mas basta o card ter nascido por outro caminho, ou com outra grafia,
+ * pra os dois lados do CRM ficarem falando de pessoas diferentes pra sempre.
+ *
+ * `padronizarNomes`, logo abaixo, não resolve este caso: ela junta quem já tem a MESMA chave de
+ * nome, e aqui as chaves são diferentes por definição ("556384544268" e "gabriela ktm"). A ponte é
+ * o TELEFONE, que é a identidade que não muda.
+ *
+ * SÓ NESSA DIREÇÃO, e só quando o destino está livre:
+ *
+ * - Número vira nome, nunca o contrário. Nome de verdade é escolha de alguém.
+ * - Não renomeia se já houver card com aquele nome NO MESMO FUNIL: criaria o duplicado que o botão
+ *   "Juntar repetidos" existe pra desfazer, e criar sozinho o que só se desfaz com confirmação é
+ *   trocar um problema visível por um escondido.
+ *
+ * Não apaga nada e pode rodar quantas vezes for: no estado normal ela lê e não escreve.
+ */
+export async function batizarCardsPeloTelefone(workspaceId: string): Promise<number> {
+  const [cards, conversas] = await Promise.all([
+    prisma.negocioCard.findMany({
+      where: { workspaceId },
+      select: { id: true, nome: true, etapa: { select: { funilId: true } } },
+    }),
+    prisma.conversa.findMany({
+      where: { workspaceId, ehGrupo: false, contato: { not: null } },
+      select: { nome: true, contato: true },
+    }),
+  ]);
+
+  const comNumeroPorNome = cards.filter((c) => nomeAindaEhIdCru(c.nome));
+  if (!comNumeroPorNome.length) return 0;
+
+  // A conversa de cada telefone, só as que já têm nome de gente.
+  const porTelefone = new Map<string, string>();
+  for (const conversa of conversas) {
+    if (nomeAindaEhIdCru(conversa.nome) || !conversa.contato) continue;
+    const telefone = normalizarTelefoneParaComparacao(conversa.contato);
+    if (telefone.length >= 10 && !porTelefone.has(telefone)) porTelefone.set(telefone, conversa.nome);
+  }
+  if (!porTelefone.size) return 0;
+
+  // Quem já ocupa cada nome, por funil: é o que impede criar duplicado.
+  const ocupados = new Set(
+    cards.map((c) => `${c.etapa?.funilId ?? "sem-funil"}|${chaveDeContato(c.nome)}`),
+  );
+
+  let batizados = 0;
+  for (const card of comNumeroPorNome) {
+    const telefone = normalizarTelefoneParaComparacao(card.nome);
+    if (telefone.length < 10) continue;
+    const nome = porTelefone.get(telefone);
+    if (!nome) continue;
+
+    const lugar = `${card.etapa?.funilId ?? "sem-funil"}|${chaveDeContato(nome)}`;
+    if (ocupados.has(lugar)) continue;
+
+    try {
+      await prisma.negocioCard.update({ where: { id: card.id }, data: { nome } });
+      ocupados.add(lugar);
+      batizados += 1;
+    } catch (erro) {
+      console.error(`[consolidar] falha ao batizar o negócio ${card.id}:`, erro);
+    }
+  }
+  return batizados;
+}
 
 /**
  * Deixa contatos e negócios com o MESMO nome que a conversa daquela pessoa usa.
@@ -80,7 +159,15 @@ export async function padronizarNomes(workspaceId: string): Promise<Padronizacao
     );
   }
 
-  return { contatosRenomeados, cardsRenomeados };
+  // O batismo pelo telefone roda DEPOIS da padronização: assim ele já encontra os nomes alinhados
+  // e só trata o que a padronização não alcança — card chamado pelo número, cuja chave de nome é
+  // diferente da de todo mundo por definição.
+  const cardsBatizados = await batizarCardsPeloTelefone(workspaceId).catch((erro) => {
+    console.error("[consolidar] falha ao batizar negócios pelo telefone:", erro);
+    return 0;
+  });
+
+  return { contatosRenomeados, cardsRenomeados, cardsBatizados };
 }
 
 export type CardParaJuntar = {
@@ -202,9 +289,9 @@ export async function padronizarNomesDeTodosOsWorkspaces(): Promise<{
   for (const w of workspaces) {
     const r = await padronizarNomes(w.id).catch((erro) => {
       console.error(`[consolidar] falha no workspace ${w.id}:`, erro);
-      return { contatosRenomeados: 0, cardsRenomeados: 0 };
+      return { contatosRenomeados: 0, cardsRenomeados: 0, cardsBatizados: 0 };
     });
-    const total = r.contatosRenomeados + r.cardsRenomeados;
+    const total = r.contatosRenomeados + r.cardsRenomeados + r.cardsBatizados;
     if (total > 0) tocados += 1;
     renomeados += total;
   }
