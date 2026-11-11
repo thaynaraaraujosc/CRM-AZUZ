@@ -36,7 +36,18 @@
      separacao: o card nao precisa de borda grossa nem de sombra pesada pra existir, ele existe
      porque a superficie atras dele e mais escura.
      Eu tinha deixado piso e card os dois brancos, e por isso nada se separava de nada. */
-  --navy: #f6f7f9;
+  /* BRANCO, e esta e a decisao da Thaynara em 11/11/2026: "o que mais predomina e o cinza, eu
+     quero que o que predomine de fundo seja o branco".
+
+     Ela tem razao, e a razao e de area. O cinza entrou aqui pra SEPARAR o card do piso, e isso
+     funciona num bloco pequeno. Espalhado por 100% da tela de um monitor, o mesmo cinza deixa de
+     separar coisa nenhuma e vira so a cor do produto: tudo fosco, nada limpo.
+
+     A separacao nao se perde, muda de ferramenta. Quem precisa existir sobre o branco existe por
+     BORDA e SOMBRA, que e como o card ja estava desenhado (`.card`, `.task-card`, `.wa-main`), e
+     nao por mancha de cor atras. O cinza continua no sistema (`--navy-raised`), agora no papel
+     que ele faz bem: fundo de hover, de chip, de linha alternada. Area pequena. */
+  --navy: #ffffff;
   /* `--navy-raised` VOLTOU A SER CINZA, e isto e correcao de um estrago meu. Eu apontei ele pra
      branco quando o menu virou branco, sem reparar que OUTRAS 79 REGRAS usavam este token esperando
      cinza claro: busca, cabecalho do app, lista de conversas, card de automacao, seletor de data,
@@ -66,7 +77,11 @@
      encostado em fundo branco não se separa e sobra um fio de 1px como única divisa entre duas
      áreas grandes — que é exatamente o "traçado" que a gente está tirando. Com o fundo um pouco
      mais escuro, o painel branco sobe sozinho e a borda deixa de ser necessária. */
-  --canvas: #eef1f5;
+  /* BRANCO tambem. Este era o cinza das margens e da folga entre o menu e o conteudo: com o piso
+     do conteudo branco, manter o chao cinza deixaria uma moldura cinza em volta de tudo, que e
+     justamente a mancha que se quer tirar. A divisa entre menu e conteudo passa a ser a borda de
+     1px que `.topbar` e o menu ja carregam. */
+  --canvas: #ffffff;
 
   /* Azul da marca: daqui pra frente ACCENT, não superfície: ação principal, item selecionado,
      foco, link, indicador. Nunca preencher área grande só pra "parecer tecnológico". */
@@ -123,7 +138,11 @@
      O marinho continua sendo a identidade e continua onde ele manda: menu, botão, cartão
      selecionado. Aqui ele é a TINTA sobre o azul claro (#002037 sobre #cfe4f3 dá 13,4:1), não a
      superfície. ------------------------------------------------------------------------- */
-  --conversa-fundo: #eef1f5;
+  /* BRANCO. Era o cinza da area de mensagens e do painel da lista — as duas maiores manchas da
+     caixa de entrada, e as que ela apontou primeiro. O balao continua existindo sobre o branco
+     porque ganhou SOMBRA (ver `.bubble`), que e exatamente o que o WhatsApp faz: la o balao
+     branco tambem nao depende da cor do fundo pra existir. */
+  --conversa-fundo: #ffffff;
   --conversa-topo: #dcebf6;
   --bolha-enviada: #cfe4f3;
   --bolha-enviada-texto: #002037;
@@ -2881,22 +2900,54 @@ table.tbl tbody tr:hover td {
 
 /* ---------------- Kanban ---------------- */
 
+/*
+ * O QUADRO SANGRA ATE A BORDA DA JANELA.
+ *
+ * "O final da etapa pode chegar ate pertinho da borda do computador." O quadro respeitava os 28px
+ * de folga que a `.content` da a toda tela do CRM — folga que faz sentido num formulario, porque
+ * texto colado na borda cansa, e nao faz sentido num quadro horizontal, onde cada pixel de folga
+ * e uma etapa a menos visivel sem rolar.
+ *
+ * A margem negativa anula a folga da `.content` e os 12px de `padding-inline` devolvem o minimo
+ * pra primeira e a ultima etapa nao encostarem. Saldo: 16px a mais de quadro de cada lado.
+ */
 .kanban {
   display: flex;
-  gap: var(--space-3);
-  align-items: flex-start;
+  /* ZERO. A separacao entre etapas passa a ser o fio de 1px da coluna, nao um vao de 12px: com
+     seis etapas, aqueles vaos somavam 60px de nada no meio do quadro. */
+  gap: 0;
+  /* `stretch`, nao `flex-start`: e o que faz o fio entre as etapas correr inteiro. Alinhadas ao
+     topo, cada coluna terminava na altura do proprio conteudo e os fios ficavam em degraus — uma
+     etapa vazia desenhava um risco de 2cm ao lado de um de 20. */
+  align-items: stretch;
   overflow-x: auto;
   padding-bottom: 4px;
+  margin-inline: calc(var(--space-6) * -1);
+  padding-inline: var(--space-3);
 }
 
-/* Camada 2: a coluna. Superfície um degrau abaixo da página, sem borda: é o fundo que a define,
-   não uma caixa em volta. Com borda, cinco colunas lado a lado virariam cinco caixas pesadas. */
+/* Camada 2: a coluna. BRANCA, como o resto da tela, separada da vizinha por um fio.
+   Ela era um bloco cinza, e seis blocos cinza lado a lado eram a maior mancha do CRM — o que a
+   Thaynara apontou primeiro. Tirado o fundo, o cartao branco perde o degrau que o separava da
+   coluna; ele continua existindo pela borda e pela sombra que `.task-card` ja tem, que e o mesmo
+   desenho de quadro que o RD Station usa na referencia que ela mandou. */
 .kanban > div {
-  flex: 1 0 240px;
-  min-width: 240px;
-  background: var(--navy-raised-2);
-  border-radius: var(--radius-lg);
+  flex: 1 0 232px;
+  min-width: 232px;
+  background: transparent;
+  border-radius: 0;
+  border-right: 1px solid var(--line-soft);
   padding: var(--space-3) var(--space-3);
+}
+
+.kanban > div:last-child {
+  border-right: none;
+}
+
+/* O cartao sobre fundo branco precisa de um degrau a mais de sombra: o `--shadow-xs` foi
+   calibrado pra cartao sobre coluna cinza, onde a cor ja fazia metade do trabalho. */
+.kanban .lead-card {
+  box-shadow: var(--shadow-sm);
 }
 
 .kcol-h {
@@ -3773,6 +3824,13 @@ table.tbl tbody tr:hover td {
      em mensagem de grupo mais longa. */
   white-space: pre-wrap;
   overflow-wrap: break-word;
+  /* A SOMBRA DO BALAO, e ela e o que substitui o fundo cinza.
+     Com a area de mensagens branca, um balao branco com borda de 1px vira contorno vazado: a
+     conversa lida como uma pilha de retangulos desenhados, nao como falas. A sombra curta e baixa
+     resolve do jeito certo — o balao FLUTUA sobre a folha, que e a mesma sombra que o WhatsApp
+     usa nos baloes dele (0 1px .5px rgba(11,20,26,.13)). Vale pros dois lados da conversa: o
+     enviado e azul claro e tambem some um pouco contra o branco sem ela. */
+  box-shadow: 0 1px 1.5px rgba(0, 32, 55, 0.12);
 }
 
 .wa-ler-mais {
@@ -3857,7 +3915,9 @@ table.tbl tbody tr:hover td {
    existia como balão. Branco sobre o cinza do fundo é a separação mais barata que existe. */
 .bubble.in {
   background: var(--bolha-recebida);
-  border: 1px solid var(--line);
+  /* Borda mais fraca que antes: ela dividia o trabalho com o fundo cinza, e agora divide com a
+     sombra. Cheia, as duas juntas desenhavam o balao duas vezes. */
+  border: 1px solid var(--line-soft);
   color: var(--ink);
   align-self: flex-start;
   border-bottom-left-radius: 5px;
@@ -4073,29 +4133,85 @@ table.tbl tbody tr:hover td {
   white-space: nowrap;
 }
 
+/*
+ * ONDE SE ESCREVE A MENSAGEM. "Deixa mais moderno esse espaco de digitar mensagem, parecido com o
+ * do WhatsApp."
+ *
+ * O que fazia ele parecer velho, em ordem de peso: o campo era um retangulo CINZA de 16px de
+ * folga em cima e embaixo — alto como um campo de formulario, e da cor do que nao se pode
+ * escrever. Num aplicativo de conversa o campo de escrever e a coisa mais clicavel da tela, e
+ * campo clicavel e branco.
+ *
+ * Agora e uma capsula branca, com a borda fina, a altura de uma linha de texto e um anel de foco
+ * quando o cursor esta dentro. E a mesma anatomia do WhatsApp: capsula no meio, botoes redondos
+ * nas pontas.
+ */
 .chat-input {
-  padding: var(--space-3) var(--space-4) var(--space-4);
+  padding: var(--space-3) var(--space-4) var(--space-3);
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  background: var(--conversa-fundo);
+  /* Um fio, nao uma faixa: com a conversa e o campo os dois brancos, a ultima mensagem de uma
+     conversa longa encostava na capsula sem nada dizendo onde uma coisa acaba e a outra comeca. */
+  border-top: 1px solid var(--line-soft);
 }
 
 .chat-input .box {
   flex: 1;
   min-width: 0;
-  background: var(--navy-raised-2);
+  background: var(--surface-elevated);
   border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  padding: var(--space-4) var(--space-4);
+  /* Capsula. 22px e metade da altura da caixa de uma linha, entao as pontas ficam redondas de
+     verdade; quando o texto cresce pra duas ou tres linhas o raio continua coerente porque o
+     campo e o unico elemento arredondado da faixa. */
+  border-radius: var(--radius-xl);
+  padding: 11px var(--space-4);
   font-size: 14px;
-  color: var(--text-faint);
+  /* A tinta normal, nao a apagada: `--text-faint` aqui pintava o que a pessoa ESCREVE da cor de
+     um texto desativado. O placeholder ja tem regra propria logo abaixo. */
+  color: var(--ink);
+  box-shadow: var(--shadow-xs);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
+/* O anel de foco: diz que o cursor esta ali sem precisar piscar borda grossa. */
+.chat-input .box:focus-within,
+.chat-input textarea.box:focus {
+  border-color: var(--line-strong);
+  box-shadow: 0 0 0 3px var(--blue-soft-2);
+  outline: none;
+}
+
+/*
+ * O CAMPO EM SI, que em um dos dois lugares e um <input> CRU dentro da capsula.
+ *
+ * Na caixa de entrada o campo e o proprio `.box` e herda a borda dele. No popup do funil, o
+ * `.box` e a div em volta e dentro dela vai um <input> sem nenhum reset: o navegador desenhava a
+ * borda cinza padrao dele ali dentro, e a capsula aparecia com um segundo retangulo encaixado.
+ * Era o "campo dentro do campo" que se via no popup.
+ *
+ * O reset mora aqui e nao atrapalha a caixa de entrada: la `.chat-input .box` e mais especifico e
+ * continua mandando na borda e no fundo do mesmo elemento.
+ */
 .chat-input-campo {
   display: block;
   width: 100%;
   font-family: inherit;
+  font-size: inherit;
   color: var(--ink);
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0;
+}
+
+/* Sem alça de redimensionar: a altura é dada pelo texto (ver o efeito em conversas/page.tsx), e o
+   teto é o mesmo 120px de lá. */
+.chat-input textarea.box {
+  resize: none;
+  max-height: 120px;
+  overflow-y: auto;
 }
 
 .chat-input-campo::placeholder {
@@ -4109,8 +4225,8 @@ table.tbl tbody tr:hover td {
 
 .chat-mic-btn {
   flex: 0 0 auto;
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: var(--blue-soft-2);
   border: none;
@@ -4135,11 +4251,15 @@ table.tbl tbody tr:hover td {
   color: #fff;
 }
 
+/* `.chat-mais-btn` entrou nesta lista porque NAO TINHA REGRA NENHUMA: no popup do funil o "+"
+   era um <button> cru, com a borda cinza e o cinza de fundo que o navegador da. Era o unico
+   controle do CRM desenhado pelo Chrome. */
 .chat-attach-btn,
+.chat-mais-btn,
 .chat-emoji-btn {
   flex: 0 0 auto;
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: var(--blue-soft-2);
   border: none;
@@ -4153,6 +4273,7 @@ table.tbl tbody tr:hover td {
 }
 
 .chat-attach-btn:hover,
+.chat-mais-btn:hover,
 .chat-emoji-btn:hover {
   background: var(--blue-soft);
 }
@@ -4237,7 +4358,10 @@ table.tbl tbody tr:hover td {
      cartão cinza-claro, os dois tons ficavam a um passo um do outro e a lista lia como uma mancha
      só. Invertido, cada conversa é um objeto branco sobre um fundo, igual ao balão sobre o corpo da
      conversa ao lado. */
-  border: none;
+  /* A BORDA SUBSTITUI O FUNDO CINZA. O painel era cinza pra se separar do piso; com os dois
+     brancos, quem marca onde a lista comeca e termina e a mesma borda de 1px que `.wa-main` ja
+     usa do outro lado. Dois paineis brancos com a mesma moldura, lado a lado. */
+  border: 1px solid var(--line);
   border-radius: var(--radius-xl);
   background: var(--conversa-fundo);
 }
@@ -4246,7 +4370,10 @@ table.tbl tbody tr:hover td {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: var(--space-2) var(--space-3) var(--space-3);
+  /* Sem folga lateral: a linha vai de borda a borda do painel, e e o arredondamento do proprio
+     painel (`overflow: hidden`) que corta as pontas. Com folga, a faixa da conversa aberta ficava
+     flutuando no meio de duas tiras brancas. */
+  padding: 0 0 var(--space-2);
 }
 
 .wa-list-head {
@@ -4424,18 +4551,22 @@ table.tbl tbody tr:hover td {
   /* Cartão MAIS BAIXO. Com 12/16 de folga, cabiam cinco conversas na tela e a lista parecia uma
      sequência de blocos em vez de uma caixa de entrada. A informação é a mesma; o que sai é o ar
      em volta dela. */
-  padding: var(--space-2) var(--space-3);
-  margin-bottom: 4px;
-  /* Cartão BRANCO dentro do painel cinza (antes era o contrário: cartão cinza no painel branco, e
-     os dois tons ficavam tão perto que o cartão não existia como objeto). Branco sobre cinza é a
-     mesma separação que a conversa usa entre balão e fundo: uma leitura só pra tela inteira. */
-  background: var(--bolha-recebida);
+  padding: var(--space-3) var(--space-3);
+  /* LINHA, NAO CARTAO — e isso e consequencia direta do painel ter ficado branco.
+     Cartao branco dentro de painel branco nao e cartao: e um retangulo invisivel que so se separa
+     do vizinho pelos 4px de margem. A caixa de entrada do WhatsApp nunca usou cartao; usa linha
+     corrida com um fio de 1px entre uma conversa e outra, e e por isso que ela aguenta trinta
+     conversas na tela sem virar uma pilha de caixas. O estado passa a ser dito por FUNDO (passar o
+     mouse tinge de leve, a aberta fica azul clara) e pelo filete da acao na esquerda. */
+  margin-bottom: 0;
+  background: transparent;
   border: none;
   border-left: 2px solid transparent;
-  border-radius: var(--radius-md);
+  border-bottom: 1px solid var(--line-soft);
+  border-radius: 0;
   box-shadow: none;
   cursor: pointer;
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
 }
 
 .wa-row:focus-visible {
@@ -4481,8 +4612,9 @@ table.tbl tbody tr:hover td {
 }
 
 .wa-row:hover {
-  border-color: var(--line-strong);
-  box-shadow: var(--shadow-sm);
+  background: var(--navy-raised);
+  border-bottom-color: var(--line);
+  box-shadow: none;
 }
 
 /*
@@ -4509,18 +4641,19 @@ table.tbl tbody tr:hover td {
  */
 .wa-row.active {
   background: var(--conversa-topo);
-  border-color: var(--conversa-topo);
+  border-bottom-color: var(--conversa-topo);
   border-left-color: var(--acao);
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
   color: var(--ink);
 }
 
 /* Hover não altera o cartão aberto: ele já está no estado mais forte que existe, e mudar no passar
    do mouse faria parecer que o clique desfez a seleção. */
 .wa-row.active:hover {
-  border-color: var(--conversa-topo);
+  background: var(--conversa-topo);
+  border-bottom-color: var(--conversa-topo);
   border-left-color: var(--acao);
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
 }
 
 /* Sobre o azul claro, o contador volta ao contraste normal: marinho cheio com texto branco. */
@@ -4750,7 +4883,9 @@ table.tbl tbody tr:hover td {
   margin: var(--space-3) var(--space-3) var(--space-3) 0;
   border: 1px solid var(--line);
   border-radius: var(--radius-xl);
-  background: var(--navy-raised);
+  /* Branco, como a area de mensagens dentro dele. O cinza aqui so aparecia nas sobras em volta do
+     corpo da conversa, e eram justamente essas sobras que deixavam a tela cinza. */
+  background: var(--conversa-fundo);
   overflow: hidden;
 }
 
@@ -6862,9 +6997,14 @@ button.camp-row:hover {
   }
 
   .kpi4,
-  .kpi6,
-  .kanban {
+  .kpi6 {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* A folga da `.content` encolhe nesta largura; a sangria do quadro tem que encolher junto, senao
+     ele vaza 12px pra fora da tela de cada lado. */
+  .kanban {
+    margin-inline: calc(var(--space-4) * -1);
   }
 }
 
@@ -14250,9 +14390,18 @@ button.flow-node-warn:hover {
   color: #fff;
 }
 
-.chat-send-btn:hover {
+.chat-send-btn:hover:not(:disabled) {
   background: var(--blue);
   opacity: 0.9;
+}
+
+/* SEM TEXTO, SEM ENVIO: o botao ja vinha `disabled` no HTML e continuava pintado de marinho
+   cheio, convidando pro clique que nao faz nada. */
+.chat-send-btn:disabled {
+  background: var(--navy-raised-2);
+  color: var(--text-faint);
+  cursor: default;
+  opacity: 1;
 }
 
 .audio-waveform {
@@ -17393,6 +17542,15 @@ button.flow-node-warn:hover {
 .painel-conversa-rodape {
   padding-top: 10px;
   border-top: 1px solid var(--line);
+}
+
+/* Uma divisa so: o rodape do popup ja tem a dele, e o fio que `.chat-input` passou a desenhar
+   (pra caixa de entrada, onde nao ha rodape) virava um risco duplo a 10px de distancia. */
+.painel-conversa-rodape .chat-input {
+  border-top: none;
+  padding-left: 0;
+  padding-right: 0;
+  padding-bottom: 0;
 }
 
 .painel-conversa-mais {
