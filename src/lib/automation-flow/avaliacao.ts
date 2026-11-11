@@ -18,7 +18,7 @@ import type {
   FluxoAutomacao,
   GrupoCondicoes,
 } from "./types";
-import { gatilhoTemTexto, nosDeGatilho, tipoDoGatilhoQueCasa } from "./gatilhos-do-fluxo";
+import { nosDeGatilho, tipoDoGatilhoQueCasa } from "./gatilhos-do-fluxo";
 import { ehCampoPersonalizado, idDoCampoPersonalizado } from "./campos-condicao";
 import { preencher } from "@/lib/automacoes/preencher-variaveis";
 
@@ -740,22 +740,9 @@ export function avaliarNoDeGatilho(
     if (!idsDeStory.includes(storyDoEvento)) return false;
   }
 
-  /*
-   * PALAVRA-CHAVE SÓ ONDE EXISTE TEXTO.
-   *
-   * Comentário e mensagem trazem o que a pessoa escreveu, e aí a palavra filtra. "Começou a te
-   * seguir" não traz nada — seguir não é escrever. Rodar o filtro mesmo assim compararia a palavra
-   * com uma string vazia e nunca casaria: o gatilho ficaria eternamente parado numa automação que
-   * tem palavras configuradas pros OUTROS gatilhos. Sem erro, sem aviso.
-   *
-   * A lista de quem não tem texto mora em `gatilhos-do-fluxo.ts`, junto das outras perguntas sobre
-   * gatilho, e é a mesma que a gaveta consulta pra não pedir palavra-chave a quem não tem o que
-   * casar.
-   */
+  // Palavra configurada no gatilho: comentário ou mensagem só dispara se casar.
   const textoDoEvento = typeof evento.mensagem === "string" ? evento.mensagem : undefined;
-  if (gatilhoTemTexto(noGatilho.type) && textoDoEvento !== undefined && !textoCasaComPalavras(textoDoEvento, data)) {
-    return false;
-  }
+  if (textoDoEvento !== undefined && !textoCasaComPalavras(textoDoEvento, data)) return false;
 
   const agora = new Date();
   if (!dentroDaJanela(fluxo, agora)) return false;

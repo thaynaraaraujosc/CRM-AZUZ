@@ -2958,8 +2958,7 @@ export const TRADUCOES_EN: Record<string, string> = {
   "Negrito e itálico: o Direct não tem. O texto chega exatamente como está escrito — se você usar *asteriscos*, eles chegam junto.": "Bold and italics: Direct has neither. The text arrives exactly as written — if you use *asterisks*, they arrive too.",
   "Dá pra formatar: *negrito*, _itálico_, ~riscado~. O WhatsApp troca os sinais pela formatação na hora de mostrar.": "You can format it: *bold*, _italics_, ~strikethrough~. WhatsApp swaps the marks for the formatting when displaying the message.",
 
-  /* O gatilho que o Instagram não oferece, dito com o motivo e com a saída. */
-  "Procurando \u201ccomeçou a me seguir\u201d?": "Looking for \u201cstarted following me\u201d?",
+  /* O gatilho que o Instagram não oferece: a explicação antiga, de quando a saída era a condição. */
   "O Instagram não avisa quando alguém passa a te seguir — não existe esse aviso na API da Meta, nem jeito de saber quem foi. O que dá pra fazer: escolha um gatilho que existe (comentário, resposta de story, Direct) e, no bloco de Condição, use \u201cÉ seguidor\u201d pra tratar quem segue de um jeito e quem não segue de outro.": "Instagram does not notify you when someone starts following you — Meta's API has no such notification, and no way to know who it was. What you can do: pick a trigger that does exist (comment, story reply, Direct) and, in the Condition block, use \u201cIs a follower\u201d to treat followers one way and non-followers another.",
 
   /* Descrições dos campos de condição do Instagram, que aparecem embaixo do nome na lista. */
@@ -2983,10 +2982,6 @@ export const TRADUCOES_EN: Record<string, string> = {
   "Falta escolher o gatilho — clique aqui": "Pick the trigger — click here",
   "Quando um dos gatilhos acontecer": "When one of the triggers happens",
 
-  /* O gatilho de novo seguidor. */
-  "Começou a te seguir": "Started following you",
-  "Responda quem começar a te seguir": "Reply to whoever starts following you",
-  "Dispara quando alguém que não te seguia aparece te seguindo. O Instagram não avisa na hora do Seguir, então o robô percebe no primeiro contato dela depois disso (comentário, resposta de story ou Direct).": "Fires when someone who was not following you shows up as a follower. Instagram does not notify you at the moment of the Follow, so the bot notices it on that person's first interaction afterwards (a comment, a story reply or a Direct message).",
 
   /* O seletor de onde o gatilho vale. */
   "Publicação específica": "Specific post",
@@ -2997,8 +2992,7 @@ export const TRADUCOES_EN: Record<string, string> = {
   "O desta conversa": "This conversation's",
   "Pro cliente, esta mensagem chega de outro número — numa conversa nova, sem o histórico desta.": "For the customer, this message arrives from a different number — in a new conversation, without this history.",
 
-  /* A palavra-chave e o gatilho que não tem texto. */
-  "As palavras-chave valem para os gatilhos que trazem texto (comentário, resposta de story, Direct). Em “Começou a te seguir” não há texto nenhum pra comparar, então ele dispara de qualquer jeito.": "Keywords apply to the triggers that carry text (comment, story reply, Direct). “Started following you” carries no text to compare, so it fires regardless.",
-
-  "O Instagram não avisa na hora do Seguir: o robô percebe no primeiro comentário, resposta de story ou Direct da pessoa.": "Instagram does not notify you at the moment of the Follow: the bot notices it on that person's first comment, story reply or Direct message.",
+  /* A ausência explicada, no fim da lista de gatilhos. */
+  "Procurando \u201ccomeçou a me seguir\u201d?": "Looking for \u201cstarted following me\u201d?",
+  "O Instagram não avisa quem passou a te seguir, e a API não deixa começar conversa com quem nunca te escreveu — nem a Meta oferece isso nas ferramentas dela. O caminho que funciona é pedir um comentário: \u201ccomenta AZUZ que eu te mando\u201d. Aí o CRM responde no Direct, e a conversa abre.": "Instagram does not tell you who started following you, and the API does not allow starting a conversation with someone who never wrote to you \u2014 Meta does not offer this in its own tools either. The path that works is asking for a comment: \u201ccomment AZUZ and I will send it to you\u201d. Then the CRM replies in Direct, and the conversation opens.",
 };

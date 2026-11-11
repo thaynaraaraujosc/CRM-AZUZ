@@ -84,26 +84,3 @@ export function gatilhoDaExecucao(nodes: readonly FlowNode[], tipoGravado: strin
   const casando = gatilhos.find((n) => tipoDoGatilhoQueCasa(tipoGravado, n.type));
   return casando ?? gatilhos[0];
 }
-
-/**
- * GATILHOS QUE NÃO CARREGAM TEXTO NENHUM.
- *
- * "Se começou a seguir, não precisa ter palavra-chave, certo? Porque a única coisa que a pessoa fez
- * foi me seguir. Ela não comentou nada."
- *
- * Exato — e sem esta lista o defeito seria pior que um campo sobrando na tela: a filtragem por
- * palavra roda sobre o texto do evento, e um evento SEM texto não casa com palavra nenhuma. Numa
- * automação que tivesse palavras-chave configuradas (pro comentário, digamos) e também o gatilho de
- * novo seguidor, o de seguidor simplesmente nunca dispararia — sem erro, sem aviso, sem nada que
- * explicasse.
- *
- * Então a regra mora aqui, perto de quem pergunta "este gatilho casa com este evento", e é
- * consultada nos dois lugares: na avaliação, pra não filtrar o que não tem o que filtrar, e na
- * gaveta, pra não perguntar palavra-chave a quem não tem texto.
- */
-export const GATILHOS_SEM_TEXTO: readonly string[] = ["instagram_novo_seguidor"];
-
-/** Este gatilho traz texto que dê pra casar com palavra-chave? */
-export function gatilhoTemTexto(tipo: string | undefined): boolean {
-  return !!tipo && !GATILHOS_SEM_TEXTO.includes(tipo);
-}
