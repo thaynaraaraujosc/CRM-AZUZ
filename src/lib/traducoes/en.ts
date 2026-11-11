@@ -2982,4 +2982,13 @@ export const TRADUCOES_EN: Record<string, string> = {
   /* A pastilha de início quando ainda falta o gatilho. */
   "Falta escolher o gatilho — clique aqui": "Pick the trigger — click here",
   "Quando um dos gatilhos acontecer": "When one of the triggers happens",
+
+  /* O gatilho de novo seguidor. */
+  "Começou a te seguir": "Started following you",
+  "Responda quem começar a te seguir": "Reply to whoever starts following you",
+  "Dispara quando alguém que não te seguia aparece te seguindo. O Instagram não avisa na hora do Seguir, então o robô percebe no primeiro contato dela depois disso (comentário, resposta de story ou Direct).": "Fires when someone who was not following you shows up as a follower. Instagram does not notify you at the moment of the Follow, so the bot notices it on that person's first interaction afterwards (a comment, a story reply or a Direct message).",
+
+  /* O seletor de onde o gatilho vale. */
+  "Publicação específica": "Specific post",
+  "Onde este gatilho vale": "Where this trigger applies",
 };

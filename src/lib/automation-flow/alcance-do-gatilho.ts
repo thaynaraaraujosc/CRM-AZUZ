@@ -160,3 +160,32 @@ export function resumoDoAlcance(tipo: FlowNodeType | undefined, data: unknown): 
   const escolhidas = chaves.temProxima ? (n === 1 ? "escolhida" : "escolhidas") : n === 1 ? "escolhido" : "escolhidos";
   return `${n} ${coisa} ${escolhidas}`;
 }
+
+/**
+ * AS OPÇÕES DE ALCANCE DAQUELE GATILHO, pro seletor da linha "Onde vale".
+ *
+ * "Ali tem que ser um botão de seleção: quando eu clico em cima, vai aparecer as opções, embaixo
+ * eu vou selecionar." Antes a linha era texto com um "Trocar" ao lado, e o "Trocar" abria três
+ * cartões de rádio com a grade de miniaturas dentro de um deles — dois jeitos de responder a mesma
+ * pergunta, um dentro do outro.
+ *
+ * "Meu próximo post" não aparece pro story de propósito: story some em 24 horas, e "o próximo"
+ * seria uma promessa que o dado não cumpre.
+ */
+export function opcoesDeAlcance(
+  tipo: FlowNodeType | undefined,
+): { valor: EscopoDeAlcance; label: string }[] {
+  const chaves = tipo ? CHAVES[tipo] : undefined;
+  if (!chaves) return [];
+  if (chaves.temProxima) {
+    return [
+      { valor: "qualquer", label: "Qualquer publicação" },
+      { valor: "especifico", label: "Publicação específica" },
+      { valor: "proxima", label: "Só na próxima publicação" },
+    ];
+  }
+  return [
+    { valor: "qualquer", label: "Qualquer story" },
+    { valor: "especifico", label: "Story específico" },
+  ];
+}

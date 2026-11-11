@@ -1,6 +1,7 @@
 import { decriptar } from "@/lib/integracoes/crypto";
 import {
   classificarErroMeta,
+  enviarRespostaPrivadaDeComentario,
   ocultarComentarioInstagram,
   responderComentarioInstagram,
 } from "@/lib/integracoes/instagram-login";
@@ -117,6 +118,34 @@ export async function processarComentarioInstagram(params: {
       // A trava é por comentário: o mesmo fluxo nunca roda duas vezes pro mesmo comentário.
       chaveEvento: `comentario:${comentarioId}`,
       instagramUserId: comentario.from?.id,
+      /*
+       * O DIRECT DE QUEM COMENTOU E NUNCA TE ESCREVEU.
+       *
+       * Este era o buraco do robô inteiro: "comentou → recebe no Direct" só funcionava pra quem já
+       * tinha conversa aberta, porque o Instagram não deixa escrever livre pra quem não escreveu
+       * nas últimas 24 horas. Quem acabou de descobrir a publicação — exatamente o lead que o
+       * Social Seller existe pra pegar — ficava de fora, e a automação registrava "não foi
+       * possível enviar".
+       *
+       * A resposta privada amarra a mensagem ao COMENTÁRIO em vez de à conversa. O motor usa isto
+       * só quando o envio normal não teve por onde sair, e uma vez só, que é o que a Meta permite
+       * (ver `enviarRespostaPrivadaDeComentario`). Depois dela a conversa existe e o resto do
+       * fluxo segue pelo caminho de sempre.
+       */
+      responderNoDirect: token
+        ? async (resposta) => {
+            const mid = await enviarRespostaPrivadaDeComentario(token, comentarioId, resposta);
+            await anotarNaLinhaDoTempo({
+              workspaceId,
+              contatoNome: chaveContato,
+              canal: "Instagram",
+              tipo: "crm_respondeu_no_direct",
+              descricao: `CRM chamou no Direct pelo comentário: "${resposta.slice(0, 120)}"`,
+              dados: { comentarioId },
+            });
+            return mid;
+          }
+        : undefined,
       responderComentario: token
         ? async (resposta) => {
             await responderComentarioInstagram(token, comentarioId, resposta);

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { destinoExternoPermitido } from "@/lib/seguranca/destino-externo";
 import { enviarTextoPeloCanal, iniciarConversaEEnviarTexto } from "@/lib/conversas/enviar-pelo-canal";
 import { registrarMensagemEnviada } from "@/lib/conversas/registrar-saida";
+import { semCaminhoAteOContato } from "./motivo-de-envio";
 import {
   enviarContatoPeloCanal,
   enviarLocalizacaoPeloCanal,
@@ -134,8 +135,24 @@ export function acoesReais(params: {
   responderComentario?: (texto: string) => Promise<void>;
   /** Idem: ocultar só faz sentido quando há um comentário de origem. */
   ocultarComentario?: () => Promise<void>;
+  /**
+   * A RESPOSTA PRIVADA AO COMENTÁRIO: falar no Direct com quem nunca escreveu.
+   *
+   * Só existe quando o fluxo foi disparado por um comentário, e vale UMA VEZ — é o que a Meta
+   * permite. Depois dela a conversa existe e as 24 horas começam a contar, então do segundo passo
+   * em diante o envio comum volta a funcionar.
+   */
+  responderNoDirect?: (texto: string) => Promise<string | undefined>;
 }): AcoesDoMotor {
   const { workspaceId } = params;
+  /*
+   * A COTA DE UMA RESPOSTA PRIVADA, gasta no primeiro uso desta execução.
+   *
+   * A Meta aceita uma por comentário; a segunda ela recusa. Tentar de novo não é insistência útil,
+   * é um erro garantido — e pior, um erro que apareceria no histórico como se o robô tivesse
+   * falhado, quando na verdade ele já tinha entregado a mensagem.
+   */
+  let respostaPrivadaDisponivel = Boolean(params.responderNoDirect);
   return {
     async enviarTexto({ contatoNome, texto, iniciarSemConversa, canaisPermitidos }) {
       if (!texto.trim()) return falha("Mensagem vazia: nada foi enviado.");
@@ -162,6 +179,39 @@ export function acoesReais(params: {
           }
           await registrarMensagemEnviada({ workspaceId, contatoNome, texto, origem: "automacao" });
           return ok(`Conversa iniciada e mensagem enviada: "${resumir(texto)}"`);
+        }
+
+        /*
+         * COMENTOU E NUNCA TE ESCREVEU: a resposta privada é o caminho.
+         *
+         * Era aqui que o robô do Social Seller parava pra quem mais importa — a pessoa que acabou
+         * de descobrir a publicação. Um comentário cria o contato, não cria conversa, e o Direct
+         * livre só vale pra quem escreveu nas últimas 24 horas. O envio normal não tinha por onde
+         * sair, e a automação registrava "não foi possível enviar" pra quem estava ali, naquele
+         * minuto, interessada.
+         *
+         * A resposta privada da Meta liga o Direct ao COMENTÁRIO em vez de à conversa, e com isso
+         * a conversa passa a existir. Vale uma vez por comentário, então ela é gasta no primeiro
+         * passo que precisar dela — e os seguintes já encontram a janela aberta.
+         *
+         * Não é fallback de qualquer falha: só quando a razão de não sair é a ausência de conversa
+         * ou a janela fechada. Um token vencido ou um texto recusado continuam sendo o que são.
+         */
+        if (!r.enviado && respostaPrivadaDisponivel && params.responderNoDirect && semCaminhoAteOContato(r.motivo)) {
+          respostaPrivadaDisponivel = false;
+          try {
+            const mid = await params.responderNoDirect(texto);
+            await registrarMensagemEnviada({
+              workspaceId,
+              contatoNome,
+              texto,
+              wamid: mid ?? null,
+              origem: "automacao",
+            });
+            return ok(`Mensagem enviada no Direct, em resposta ao comentário: "${resumir(texto)}"`);
+          } catch (erro) {
+            return falha("Falha ao responder no Direct pelo comentário.", mensagemDoErro(erro));
+          }
         }
 
         if (!r.enviado) return falha(`Não foi possível enviar: ${r.motivo ?? "motivo desconhecido"}`);

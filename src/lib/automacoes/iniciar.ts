@@ -131,6 +131,8 @@ export async function iniciarFluxoComEstado(params: {
   contato: Record<string, unknown>;
   /** Só existem quando o disparo veio de um comentário do Instagram. */
   responderComentario?: (texto: string) => Promise<void>;
+  /** Resposta privada ao comentário: o Direct de quem nunca escreveu. Vale uma vez. */
+  responderNoDirect?: (texto: string) => Promise<string | undefined>;
   ocultarComentario?: () => Promise<void>;
 }): Promise<FimDaRodada | null> {
   let versao = await versaoAtualPublicada(params.workspaceId, params.fluxoId);
@@ -225,6 +227,7 @@ export async function iniciarFluxoComEstado(params: {
       acoes: acoesReais({
         workspaceId: params.workspaceId,
         responderComentario: params.responderComentario,
+        responderNoDirect: params.responderNoDirect,
         ocultarComentario: params.ocultarComentario,
       }),
     }),
@@ -248,6 +251,8 @@ export async function continuarComResposta(params: {
    * sido cortado em 20 caracteres no envio. */
   idDaOpcao?: string;
   responderComentario?: (texto: string) => Promise<void>;
+  /** Resposta privada ao comentário: o Direct de quem nunca escreveu. Vale uma vez. */
+  responderNoDirect?: (texto: string) => Promise<string | undefined>;
 }): Promise<boolean> {
   const execucao = await execucaoAguardandoDoContato({
     workspaceId: params.workspaceId,
@@ -366,7 +371,7 @@ export async function continuarComResposta(params: {
     saida = "ok";
   }
 
-  await continuarDeDepoisDe({ execucao, versao, noId: no.id, saida, contexto, responderComentario: params.responderComentario });
+  await continuarDeDepoisDe({ execucao, versao, noId: no.id, saida, contexto, responderComentario: params.responderComentario, responderNoDirect: params.responderNoDirect });
   return true;
 }
 
@@ -449,6 +454,8 @@ async function continuarDeDepoisDe(params: {
   saida?: string;
   contexto: ContextoExecucaoPersistido;
   responderComentario?: (texto: string) => Promise<void>;
+  /** Resposta privada ao comentário: o Direct de quem nunca escreveu. Vale uma vez. */
+  responderNoDirect?: (texto: string) => Promise<string | undefined>;
 }): Promise<FimDaRodada> {
   const { execucao, versao, contexto } = params;
   const proximo = proximaAresta(versao.edges, params.noId, params.saida);
@@ -463,7 +470,11 @@ async function continuarDeDepoisDe(params: {
       execucao: { ...execucao, noAtualId: proximo.target, contexto, aguardandoNoId: null, aguardandoEvento: null, aguardandoAte: null },
       nodes: versao.nodes,
       edges: versao.edges,
-      acoes: acoesReais({ workspaceId: execucao.workspaceId, responderComentario: params.responderComentario }),
+      acoes: acoesReais({
+        workspaceId: execucao.workspaceId,
+        responderComentario: params.responderComentario,
+        responderNoDirect: params.responderNoDirect,
+      }),
     }),
   );
 }

@@ -7,7 +7,9 @@ import {
   gatilhoTemAlcance,
   gravarAlcance,
   lerAlcance,
+  opcoesDeAlcance,
   resumoDoAlcance,
+  type EscopoDeAlcance,
 } from "@/lib/automation-flow/alcance-do-gatilho";
 import { EscolhaDeMidia, type ItemDeMidia } from "./forms/EscolhaDeMidia";
 import { IconChave, IconCheck, IconClose, IconSetaBaixo } from "@/components/icons";
@@ -39,6 +41,7 @@ const PRINCIPAIS: FlowNodeType[] = [
   "comentario_instagram",
   "instagram_story_respondido",
   "instagram_direct_recebido",
+  "instagram_novo_seguidor",
   "instagram_comentario_live",
   "instagram_mencao_story",
 ];
@@ -58,6 +61,8 @@ const COMO_FUNCIONA: Partial<Record<FlowNodeType, string>> = {
   instagram_publicacao_compartilhada: "Encaminham uma publicação pra você no Direct → a automação responde.",
   instagram_reacao_recebida: "Reagem com emoji a uma mensagem sua → a automação segue dali.",
   instagram_resposta_comentario: "Respondem a um comentário na sua publicação → a automação entra na conversa.",
+  instagram_novo_seguidor:
+    "Alguém que não te seguia aparece te seguindo → a automação dá as boas-vindas no Direct. O Instagram não avisa na hora do Seguir: o robô percebe no primeiro contato da pessoa depois disso.",
 };
 
 /**
@@ -96,6 +101,7 @@ function perguntaDaResposta(marcados: FlowNodeType[]): string {
     instagram_story_respondido: "Responda quem responder seu story",
     instagram_mencao_story: "Responda quem mencionar você num story",
     instagram_direct_recebido: "Responda quem mandar mensagem no Direct",
+    instagram_novo_seguidor: "Responda quem começar a te seguir",
   };
   for (const tipo of marcados) {
     const frase = porGatilho[tipo];
@@ -221,15 +227,6 @@ export function GatilhosDoSocial({
   const [paraAdicionar, setParaAdicionar] = useState<FlowNodeType[]>([]);
   /** De qual gatilho o menu "⋯" está aberto, no painel. */
   const [menuDoGatilho, setMenuDoGatilho] = useState<FlowNodeType | null>(null);
-  /**
-   * De qual gatilho o ALCANCE está aberto pra troca, no painel.
-   *
-   * Fechado por padrão: o painel é pra LER o que foi escolhido, e a grade de miniaturas aberta em
-   * todos os gatilhos de uma vez transformaria a leitura numa rolagem. A linha diz o estado, o
-   * "Trocar" abre a escolha — e só a de um gatilho por vez, porque trocar o alcance de dois ao
-   * mesmo tempo não é uma coisa que alguém faça.
-   */
-  const [alcanceAberto, setAlcanceAberto] = useState<FlowNodeType | null>(null);
   const fecharMenuDoGatilho = useCallback(() => setMenuDoGatilho(null), []);
   useFecharMenuDeLinha(menuDoGatilho !== null, fecharMenuDoGatilho);
   const [avancadoAberto, setAvancadoAberto] = useState(false);
@@ -332,12 +329,13 @@ export function GatilhosDoSocial({
    * story passou a existir numa cópia e ser ignorada na avaliação. A leitura e a escrita moram em
    * `alcance-do-gatilho.ts`, que tem teste; aqui ficou só o desenho.
    */
-  function escolhaDeAlcance(tipo: FlowNodeType) {
+  function escolhaDeAlcance(tipo: FlowNodeType, somenteGrade = false) {
     if (!gatilhoTemAlcance(tipo)) return null;
     const ehPost = tipo === "comentario_instagram";
     const atual = lerAlcance(tipo, dados[tipo]);
     return (
       <EscolhaDeMidia
+        somenteGrade={somenteGrade}
         tipo={ehPost ? "post" : "story"}
         itens={(ehPost ? publicacoes : stories) ?? []}
         carregando={(ehPost ? publicacoes : stories) === null && !erroDasMidias}
@@ -853,7 +851,7 @@ export function GatilhosDoSocial({
                       <button
                         type="button"
                         className="pg-seta"
-                        aria-label={traduzir("Resposta deste gatilho")}
+                        aria-label={traduzir("Onde este gatilho vale")}
                         aria-expanded={abertoAqui}
                         onClick={() => setRespostaAberta((atual) => (atual === tipo ? null : tipo))}
                       >
@@ -885,7 +883,6 @@ export function GatilhosDoSocial({
                               onClick={() => {
                                 setMenuDoGatilho(null);
                                 setRespostaAberta(tipo);
-                                setAlcanceAberto(tipo);
                               }}
                             >
                               {traduzir(ALCANCE[tipo]!.pergunta)}
@@ -926,29 +923,59 @@ export function GatilhosDoSocial({
                           alcance e escrever a resposta são a mesma visita.
                         */}
                         {gatilhoTemAlcance(tipo) ? (
-                          <div className="pg-alcance">
-                            <div className="pg-alcance-linha">
-                              <span className="pg-alcance-rotulo">{traduzir("Onde vale")}</span>
-                              <strong>{traduzir(resumoDoAlcance(tipo, dados[tipo]) ?? "")}</strong>
-                              <button
-                                type="button"
-                                className="pg-alcance-trocar"
-                                aria-expanded={alcanceAberto === tipo}
-                                onClick={() => setAlcanceAberto((atual) => (atual === tipo ? null : tipo))}
-                              >
-                                {traduzir(alcanceAberto === tipo ? "Pronto" : "Trocar")}
-                              </button>
-                            </div>
-                            {alcanceAberto === tipo ? (
-                              <div className="pg-alcance-escolha">{escolhaDeAlcance(tipo)}</div>
-                            ) : null}
-                          </div>
+                          (() => {
+                            const atual = lerAlcance(tipo, dados[tipo]);
+                            return (
+                              <div className="pg-alcance">
+                                <label className="pg-alcance-rotulo" htmlFor={`alcance-${tipo}`}>
+                                  {traduzir("Onde vale")}
+                                </label>
+                                {/*
+                                  UM SELETOR, e não um texto com "Trocar" do lado.
+                                  
+                                  "Ali tem que ser um botão de seleção: quando eu clico em cima, vai
+                                  aparecer as opções, embaixo eu vou selecionar." Era texto mais um
+                                  link que abria três cartões de rádio com a grade dentro de um
+                                  deles — dois jeitos de responder a mesma pergunta, um dentro do
+                                  outro. Agora a pergunta é uma, a resposta é uma, e a grade só
+                                  aparece quando ela é necessária.
+                                */}
+                                <select
+                                  id={`alcance-${tipo}`}
+                                  className="input"
+                                  value={atual?.escopo ?? "qualquer"}
+                                  onChange={(e) => {
+                                    const escopo = e.target.value as EscopoDeAlcance;
+                                    mudarDados(tipo, {
+                                      ...(dados[tipo] ?? {}),
+                                      ...gravarAlcance(tipo, {
+                                        escopo,
+                                        /* Trocar pra "qualquer" LIMPA os escolhidos: deixá-los
+                                           gravados fazia o motor continuar filtrando por eles,
+                                           enquanto a tela dizia que valia pra todos. */
+                                        ids: escopo === "especifico" ? (atual?.ids ?? []) : [],
+                                        /* "Só na próxima" guarda a foto do que existe HOJE: o que
+                                           já está publicado não é o próximo. */
+                                        ...(escopo === "proxima"
+                                          ? { conhecidos: (publicacoes ?? []).map((m) => m.id) }
+                                          : {}),
+                                      }),
+                                    });
+                                  }}
+                                >
+                                  {opcoesDeAlcance(tipo).map((o) => (
+                                    <option key={o.valor} value={o.valor}>
+                                      {traduzir(o.label)}
+                                    </option>
+                                  ))}
+                                </select>
+                                {atual?.escopo === "especifico" ? (
+                                  <div className="pg-alcance-escolha">{escolhaDeAlcance(tipo, true)}</div>
+                                ) : null}
+                              </div>
+                            );
+                          })()
                         ) : null}
-
-                        <p className="pg-resposta-titulo">
-                          {traduzir(perguntaDaResposta([tipo]))}
-                        </p>
-                        {camposDeResposta(tipo, true)}
                       </div>
                     ) : null}
                   </div>
@@ -1007,26 +1034,6 @@ export function GatilhosDoSocial({
               </>
             ) : null}
 
-            {/*
-              O GATILHO QUE NÃO EXISTE, dito com o motivo e com a saída.
-              
-              "Tá faltando a opção de começou a me seguir. A partir do momento que a pessoa começou
-              a me seguir, ela recebe uma mensagem." O Instagram não avisa isso: entre os campos de
-              webhook que a Meta oferece (mensagem, comentário, comentário de live, reação, menção)
-              não existe nenhum de seguidor novo — e também não existe endereço pra perguntar QUEM
-              seguiu, só quantos seguidores a conta tem.
-              
-              Então o gatilho não entra na lista: ele seria o botão falso que o CRM evita por regra
-              — marcado, nunca dispararia, e a pessoa descobriria dias depois pelo robô que nunca
-              rodou. O que entra é a ausência EXPLICADA, com o caminho que funciona de verdade: o
-              robô acorda por um evento que existe e a condição "É seguidor" decide o caminho.
-            */}
-            <p className="gat-ausente">
-              <strong>{traduzir("Procurando \u201ccomeçou a me seguir\u201d?")}</strong>
-              {traduzir(
-                "O Instagram não avisa quando alguém passa a te seguir — não existe esse aviso na API da Meta, nem jeito de saber quem foi. O que dá pra fazer: escolha um gatilho que existe (comentário, resposta de story, Direct) e, no bloco de Condição, use \u201cÉ seguidor\u201d pra tratar quem segue de um jeito e quem não segue de outro.",
-              )}
-            </p>
           </>
         ) : (
           <div className="gat-etapa" key={etapaAtual.chave}>

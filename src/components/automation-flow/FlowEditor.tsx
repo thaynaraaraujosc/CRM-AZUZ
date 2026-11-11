@@ -1814,12 +1814,6 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
    */
   const posicaoDoInicio = posicaoInicioArrastada ?? fluxo?.configuracoes?.posicaoInicio ?? { x: 120, y: 120 };
 
-  /** O quadro tem algum bloco de gatilho? É o que separa "vai disparar" de "nunca vai disparar". */
-  const temGatilhoNoQuadro = useMemo(
-    () => rfNodes.some((n) => n.data.flowNode.category === "gatilho"),
-    [rfNodes],
-  );
-
   const inicioDesenhado = useMemo(() => {
     const alvo = rfNodes.find((n) => n.id === idDoPrimeiroBloco);
     if (!alvo && !modoConstrucao) return null;
@@ -1832,10 +1826,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
      * COBRINDO 30px do primeiro bloco. O afastamento passa a sair da largura dela mais a folga,
      * em vez de um número que vale pra um dos dois tamanhos.
      */
-    /* A medida segue a FRASE, não a área: a pastilha é maior quando tem a segunda linha, e agora
-       o Instagram também tem a dele ("Quando um dos gatilhos acontecer"). Preso a `inicioNoFunil`,
-       a frase nova nasceria espremida numa pastilha de 150px. */
-    const inicioTemDetalhe = !!inicioNoFunil || ehSocial;
+    const inicioTemDetalhe = !!inicioNoFunil;
     const larguraDoInicio = inicioTemDetalhe ? 230 : 150;
     const posicaoPadrao = alvo
       ? { x: alvo.position.x - (larguraDoInicio + 70), y: alvo.position.y + 6 }
@@ -1903,23 +1894,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
          *
          * Faltando o gatilho ela diz que falta, e o clique leva direto pra gaveta. Ver `InicioNode`.
          */
-        ...(inicioNoFunil
-          ? { detalheInicio: `Lead entra em “${inicioNoFunil.etapaTitulo}”` }
-          : ehSocial
-            ? temGatilhoNoQuadro
-              ? { detalheInicio: "Quando um dos gatilhos acontecer" }
-              : {
-                  detalheInicio: "Falta escolher o gatilho — clique aqui",
-                  ...(modoConstrucao
-                    ? {
-                        aoEscolherGatilho: () => {
-                          setEtapaDaGaveta("lista");
-                          setEscolherGatilhoAberto(true);
-                        },
-                      }
-                    : {}),
-                }
-            : {}),
+        ...(inicioNoFunil ? { detalheInicio: `Lead entra em “${inicioNoFunil.etapaTitulo}”` } : {}),
       } as FlowRFNode["data"],
     };
     if (!alvo) return { no, aresta: null };
@@ -1937,8 +1912,6 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     rfNodes,
     idDoPrimeiroBloco,
     inicioNoFunil,
-    ehSocial,
-    temGatilhoNoQuadro,
     modoConstrucao,
     posicaoDoInicio,
     posicaoInicioArrastada,
