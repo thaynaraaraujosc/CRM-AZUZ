@@ -1,68 +1,98 @@
 /**
- * DE QUAL NÚMERO SÃO OS LEADS DESTE FUNIL.
+ * UM FUNIL, UM NÚMERO. Escolhido na criação e fixo depois.
  *
- * "Eu criei um funil com o nome do Lucas Chaveiro, é o funil do número 26. Por que que esse número
- * lá não está os contatos que eu estou conversando lá?" E: "tem que ter a opção de ver qual que é o
- * número do funil".
+ * "O funil, quando ele é criado, a gente escolhe um número e esse número é fixo. Nenhum funil pode
+ * ter mais do que um número. Não pode receber mensagens de WhatsApps diferentes. (…) Se eu quiser
+ * mudar, eu tenho que excluir esse funil e criar outro funil. O funil, ele é só de um número só."
  *
- * A ligação já existia, e é aí que estava o problema: ela mora nos metadados da CONEXÃO
- * (`metadados.funilId`, em Configurações → WhatsApp), que é o lugar certo pra gravar e o lugar
- * errado pra descobrir. Quem abre o funil está olhando o funil, e não tinha como saber se ele
- * recebe de algum número — nem se recebe de nenhum, que é o padrão e o caso da maioria.
+ * A VERSÃO ANTERIOR DISTO ESTAVA DE CABEÇA PRA BAIXO. O vínculo morava nos metadados da conexão
+ * (`metadados.funilId`): o NÚMERO apontava pro funil. Nessa direção, dois números podiam apontar
+ * pro mesmo quadro, e a tela do funil oferecia um seletor pra trocar o número a qualquer momento —
+ * que é o contrário da regra. Trocar o número de um funil que já tem cards mistura duas caixas de
+ * entrada num quadro só, e desfazer isso depois seria adivinhar de qual número era cada card.
  *
- * A pergunta aqui é a INVERSA da gravada: dado um funil, quais números apontam pra ele. Pode ser
- * nenhum (o funil recebe o que não tem número próprio, que é o comportamento de sempre) e pode ser
- * mais de um — dois celulares da mesma equipe no mesmo quadro é arranjo legítimo, e esconder o
- * segundo faria a tela mentir.
+ * Agora o vínculo é uma coluna do próprio funil (`Funil.contaCanal`), escrita uma vez. "Um funil,
+ * um número" vira o formato do dado em vez de uma regra que alguém precisa lembrar de conferir.
  *
  * Função pura, sem rede: é regra, e regra tem teste.
  */
 
+/** O prefixo fixo do nome. O resto quem escreve é a pessoa — ver `nomeDoFunil`. */
+export const PREFIXO_DO_NOME = "Funil - ";
+
 /** O que esta regra precisa saber de um número conectado. Ver `NumeroDeWhatsApp`. */
-export type NumeroComFunil = {
+export type NumeroParaFunil = {
   /** `contaCanal` da conexão. Vazio em conexão de QR Code cujo número o CRM ainda não descobriu. */
   chave: string;
   nome: string;
   provedor: string;
   status: string;
-  /** O funil pra onde vão os leads deste número. `null` = o padrão da empresa. */
-  funilId: string | null;
 };
 
+/** O que esta regra precisa saber de um funil. */
+export type FunilComNumero = { id: string; nome: string; contaCanal?: string | null };
+
 /**
- * Os números que mandam lead pra este funil, na ordem em que vieram.
+ * O funil que já é deste número, se houver.
  *
- * DESCONECTADO CONTINUA NA LISTA. O vínculo é configuração, não estado: um número que caiu (QR
- * Code expirado, token vencido) volta a receber quando reconectar, e sumir daqui enquanto isso
- * faria a tela dizer "este funil não é de número nenhum" — que é outra coisa, e a diferença
- * importa justamente na hora de investigar por que o lead não chegou.
+ * É o que impede dois quadros disputarem a mesma caixa de entrada: a mensagem só pode cair num
+ * lugar, e dois funis apontando pro mesmo número fariam metade dos leads sumir de um deles sem
+ * explicação nenhuma.
  */
-export function numerosDoFunil<T extends NumeroComFunil>(numeros: T[], funilId: string): T[] {
-  if (!funilId) return [];
-  return numeros.filter((n) => n.funilId === funilId);
+export function funilDoNumero<T extends FunilComNumero>(funis: T[], chave: string): T | null {
+  if (!chave) return null;
+  return funis.find((f) => f.contaCanal === chave) ?? null;
 }
 
 /**
- * A FRASE DA ETIQUETA, do ponto de vista de quem está olhando o funil.
+ * Os números que ainda podem ser escolhidos ao criar um funil.
  *
- * Nenhum número apontando pra cá não é um defeito a sinalizar: é a configuração da maioria das
- * contas, e a frase diz o que acontece na prática ("recebe o que não tem número próprio") em vez
- * de um "sem número" que se lê como erro.
+ * Só os CONECTADOS e com chave: um número desconectado pode voltar, mas escolher agora um que o
+ * CRM nem sabe endereçar criaria um quadro que não recebe nada e não diz por quê. E só os que
+ * ainda não têm funil, pelo motivo de `funilDoNumero`.
  */
-export function rotuloDoNumeroDoFunil(numeros: NumeroComFunil[], funilId: string): string {
-  const meus = numerosDoFunil(numeros, funilId);
-  if (!meus.length) return "Todos os números";
-  if (meus.length === 1) return meus[0].nome;
-  return `${meus[0].nome} +${meus.length - 1}`;
+export function numerosDisponiveis<T extends NumeroParaFunil>(
+  numeros: T[],
+  funis: FunilComNumero[],
+): T[] {
+  return numeros.filter((n) => n.chave && n.status === "conectado" && !funilDoNumero(funis, n.chave));
 }
 
 /**
- * Vale mostrar a etiqueta?
+ * O NÚMERO DESTE FUNIL, como ele aparece na tela. `null` quando o funil não tem número.
  *
- * Só com dois ou mais números conectados. Com um só, "o funil deste número" e "o funil da empresa"
- * são a mesma coisa, e a etiqueta seria um controle que nunca muda nada do que está na tela — o
- * mesmo critério de `precisaEscolherNumero` na caixa de entrada.
+ * Sem número é o funil anterior a esta regra: ele continua recebendo o que não tem número próprio.
+ * Devolver `null` deixa a tela dizer isso com as palavras dela em vez de inventar um rótulo.
  */
-export function valeMostrarNumeroDoFunil(numeros: NumeroComFunil[]): boolean {
-  return numeros.filter((n) => n.status === "conectado" && n.chave).length > 1;
+export function numeroDoFunil<T extends NumeroParaFunil>(
+  numeros: T[],
+  funil: FunilComNumero | null | undefined,
+): T | null {
+  if (!funil?.contaCanal) return null;
+  return numeros.find((n) => n.chave === funil.contaCanal) ?? null;
+}
+
+/**
+ * O nome completo, a partir do que a pessoa digitou.
+ *
+ * "Vai ficar pré-definido que vai chamar funil tracinho. O restante do nome é eu que escolho." O
+ * prefixo é fixo pra a lista de funis ficar legível sem ninguém combinar nada; o resto é texto
+ * livre ("Meta oficial", "Número do Lucas").
+ *
+ * Sufixo vazio devolve string vazia, e não o prefixo sozinho: "Funil - " não é nome de nada, e
+ * deixar criar com ele produziria dois funis indistinguíveis na lista.
+ */
+export function nomeDoFunil(sufixo: string): string {
+  const limpo = sufixo.trim().replace(/\s+/g, " ");
+  return limpo ? `${PREFIXO_DO_NOME}${limpo}` : "";
+}
+
+/**
+ * O sufixo sugerido quando a pessoa escolhe um número: o nome do número.
+ *
+ * É só um palpite — o campo continua editável. Mas é o palpite certo na esmagadora maioria dos
+ * casos, e poupa digitar o óbvio logo depois de escolher.
+ */
+export function sufixoSugerido(numero: NumeroParaFunil | null | undefined): string {
+  return numero?.nome?.trim() ?? "";
 }

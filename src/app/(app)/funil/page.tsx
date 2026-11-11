@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
@@ -14,10 +14,18 @@ import { useContatos } from "@/lib/contatos-context";
 import { rotuloDaQualificacao } from "@/lib/contatos/qualificacao";
 import { formatarTelefoneParaExibicao } from "@/lib/telefone";
 import { nomeExibido } from "@/lib/conversas/exibicao";
-import { NumeroDoFunil } from "@/components/funil/NumeroDoFunil";
 import { chaveDeContato } from "@/lib/contatos/chave-nome";
 import { useConversas } from "@/lib/conversas-context";
 import { rotuloDeAtividade } from "@/lib/funis/atividade";
+import {
+  PREFIXO_DO_NOME,
+  nomeDoFunil,
+  numeroDoFunil,
+  numerosDisponiveis,
+  sufixoSugerido,
+  type NumeroParaFunil,
+} from "@/lib/funis/numero-do-funil";
+import { canalDoNumero } from "@/lib/conversas/numeros-conectados";
 import { VAZIO, ehVazio } from "@/lib/vazio";
 import { useEquipe } from "@/lib/equipe-context";
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
@@ -211,9 +219,58 @@ function FunilPageInner() {
   }
 
   const [novoFunilAberto, setNovoFunilAberto] = useState(false);
-  const [atendenteNovoFunil, setAtendenteNovoFunil] = useState(
-    equipe[0]?.nome ?? "",
-  );
+  /*
+   * O FUNIL NOVO TEM TRÊS RESPOSTAS, e as três são dela.
+   *
+   * Antes havia uma só — o atendente — e o nome saía dele ("Funil - Fulano"), sem como editar.
+   * "Eu posso ter a opção de editar o nome do novo funil. Vai ficar pré-definido que vai chamar
+   * funil tracinho, o restante do nome é eu que escolho. O responsável também, eu escolho (…) ou
+   * eu tenho a opção de não escolher ninguém. E aqui também eu tenho que escolher o número que vai
+   * ficar nesse funil — e esse número não vai mudar."
+   *
+   * O atendente começa VAZIO de propósito: "quem entrar aqui responde" é uma escolha legítima, e
+   * deixar o primeiro da equipe pré-selecionado faz o funil nascer com dono que ninguém escolheu.
+   */
+  const [atendenteNovoFunil, setAtendenteNovoFunil] = useState("");
+  /** Só o que vem DEPOIS de "Funil - ". Ver `nomeDoFunil`. */
+  const [sufixoNovoFunil, setSufixoNovoFunil] = useState("");
+  const [numeroNovoFunil, setNumeroNovoFunil] = useState("");
+  const [criandoFunil, setCriandoFunil] = useState(false);
+  const [erroNovoFunil, setErroNovoFunil] = useState<string | null>(null);
+
+  /*
+   * OS NÚMEROS DE WHATSAPP CONECTADOS. Lidos uma vez, usados em dois lugares: a etiqueta fixa do
+   * quadro aberto e o seletor de número do funil novo.
+   *
+   * `null` é "ainda não chegou" e `[]` é "chegou e não há nenhum" — a tela diz coisas diferentes
+   * nos dois casos, e tratar os dois como lista vazia faria o seletor dizer "nenhum número
+   * conectado" durante o carregamento.
+   */
+  const [numerosDeWhats, setNumerosDeWhats] = useState<NumeroParaFunil[] | null>(null);
+
+  /*
+   * Busca e DEVOLVE, em vez de gravar no estado: assim o efeito grava num callback e não no corpo,
+   * que é o que a regra `react-hooks/set-state-in-effect` cobra. Lista vazia em qualquer falha —
+   * saber de qual número é o funil é informação útil, não indispensável, e um erro aqui não pode
+   * roubar a atenção de quem veio trabalhar o quadro.
+   */
+  const buscarNumeros = useCallback(async (): Promise<NumeroParaFunil[]> => {
+    const r = await fetch("/api/integracoes/numeros").catch(() => null);
+    if (!r?.ok) return [];
+    const corpo = (await r.json().catch(() => null)) as { numeros?: NumeroParaFunil[] } | null;
+    return corpo?.numeros ?? [];
+  }, []);
+
+  useEffect(() => {
+    let vivo = true;
+    buscarNumeros().then((lista) => {
+      if (vivo) setNumerosDeWhats(lista);
+    });
+    return () => {
+      vivo = false;
+    };
+  }, [buscarNumeros]);
+
   const [novoNegocioAberto, setNovoNegocioAberto] = useState(
     () => searchParams.get("criarNegocio") === "1",
   );
@@ -304,6 +361,19 @@ function FunilPageInner() {
   const [motivoEscolhido, setMotivoEscolhido] = useState("");
 
   const funilAtivo = funis.find((f) => f.id === funilAtivoId) ?? funis[0];
+
+  /*
+   * A ETIQUETA DO NÚMERO DO QUADRO ABERTO.
+   *
+   * Texto, não controle: o número é escolhido na criação e não muda ("se eu quiser mudar, eu tenho
+   * que excluir esse funil e criar outro"). Funil sem número não ganha etiqueta — ele é o antigo,
+   * que recebe o que não tem número próprio, e escrever isso na barra a cada abertura seria repetir
+   * um aviso sobre algo que não dá pra mudar daqui.
+   */
+  const numeroDoQuadro = numeroDoFunil(numerosDeWhats ?? [], funilAtivo);
+  const rotuloDoNumeroAtivo = numeroDoQuadro
+    ? `${numeroDoQuadro.nome} · ${canalDoNumero(numeroDoQuadro.provedor)}`
+    : null;
 
   function marcarDesfecho(coluna: number, card: number, statusFechamento: "ganho" | "perdido", motivoPerda?: string) {
     if (!funilAtivo) return;
@@ -421,14 +491,23 @@ function FunilPageInner() {
       return soma + (filtroAtivo ? cards.length : coluna.total);
     }, 0) ?? 0;
 
-  function criarFunil() {
-    const responsavel = atendenteNovoFunil.trim();
-    if (!responsavel) return;
+  /** Os números que ainda podem virar funil: conectados e sem quadro próprio. */
+  const numerosLivres = numerosDisponiveis(numerosDeWhats ?? [], funis);
+
+  async function criarFunil() {
+    const nome = nomeDoFunil(sufixoNovoFunil);
+    if (!nome || !numeroNovoFunil || criandoFunil) return;
+
+    setCriandoFunil(true);
+    setErroNovoFunil(null);
     const carimbo = Date.now();
     const novo = {
       id: `funil-${carimbo}`,
-      nome: `Funil - ${responsavel}`,
-      responsavel,
+      nome,
+      // Vazio vira `undefined`: "ninguém em especial" é uma escolha, e gravar string vazia faria
+      // o filtro por responsável enxergar um atendente chamado "".
+      responsavel: atendenteNovoFunil.trim() || undefined,
+      contaCanal: numeroNovoFunil,
       colunas: [
         { id: `novo-${carimbo}`, titulo: "Novo", total: 0, cards: [] },
         { id: `qualificado-${carimbo}`, titulo: "Qualificado", total: 0, cards: [] },
@@ -436,12 +515,38 @@ function FunilPageInner() {
         { id: `fechado-${carimbo}`, titulo: "Fechado", total: 0, cards: [] },
       ],
     };
-    void criarFunilPersistido(novo).then(({ ok }) => {
-      if (!ok) return;
-      setFunilAtivoId(novo.id);
-      setAtendenteNovoFunil(equipe[0]?.nome ?? "");
-      setNovoFunilAberto(false);
-    });
+
+    const { ok, erro } = await criarFunilPersistido(novo);
+    if (!ok) {
+      // O erro da rota é específico ("esse número já é do funil X") e precisa aparecer AQUI, no
+      // formulário, não só na faixa de sincronização lá em cima: é aqui que a pessoa está olhando.
+      setErroNovoFunil(erro ?? traduzir("Não foi possível criar o funil."));
+      setCriandoFunil(false);
+      return;
+    }
+
+    setFunilAtivoId(novo.id);
+    setAtendenteNovoFunil("");
+    setSufixoNovoFunil("");
+    setNumeroNovoFunil("");
+    setNovoFunilAberto(false);
+
+    /*
+     * O QUADRO JÁ NASCE COM AS CONVERSAS DAQUELE NÚMERO.
+     *
+     * "Na hora que eu criar, que eu escolher o número, todas as conversas que tiver lá no chat do
+     * WhatsApp daquele número vão vir para o funil que representa aquele número."
+     *
+     * Quem faz isso é a reconciliação, que desde agora manda cada conversa pro funil do número
+     * dela. Chamando-a aqui, o quadro novo abre cheio em vez de abrir vazio e só ir enchendo com
+     * as mensagens seguintes — que, pra quem acabou de escolher o número, pareceria que não
+     * funcionou.
+     *
+     * Falhar aqui não desfaz o funil: ele existe e a reconciliação roda sozinha de hora em hora.
+     */
+    await fetch("/api/funis/importar-conversas", { method: "POST" }).catch(() => null);
+    await recarregarFunis().catch(() => []);
+    setCriandoFunil(false);
   }
 
   function criarNegocio() {
@@ -681,12 +786,22 @@ function FunilPageInner() {
             >
               {modoAutomatizar ? traduzir("Ver negócios") : traduzir("Automatizar")}
             </button>
-            {/* DE QUAL NÚMERO SÃO OS LEADS DESTE FUNIL. Fica aqui, e não só em Configurações →
-                WhatsApp, porque é aqui que a pergunta aparece: "criei um funil com o nome do Lucas
-                Chaveiro, é o funil do número 26; por que esse número lá não está os contatos que eu
-                estou conversando?". O componente se esconde sozinho com menos de dois números
-                conectados. */}
-            {funilAtivo ? <NumeroDoFunil funilId={funilAtivo.id} funilNome={funilAtivo.nome} /> : null}
+            {/*
+              DE QUAL NÚMERO É ESTE FUNIL — texto fixo, não seletor.
+              
+              Aqui havia um botão pra trocar o número do funil, e ele estava errado: "nenhum funil
+              pode ter mais do que um número (…) se eu quiser mudar, eu tenho que excluir esse funil
+              e criar outro". O número é escolhido na criação e não muda, porque trocá-lo num quadro
+              que já tem cards mistura duas caixas de entrada e não há como desfazer depois.
+              
+              Continua aparecendo porque a pergunta continua valendo ("tem que ter a opção de ver
+              qual que é o número do funil") — só que a resposta é uma informação, não um controle.
+            */}
+            {rotuloDoNumeroAtivo ? (
+              <span className="hint" style={{ alignSelf: "center", whiteSpace: "nowrap" }}>
+                {rotuloDoNumeroAtivo}
+              </span>
+            ) : null}
             {funilAtivo ? (
               <div className="dropdown-anchor">
                 <button
@@ -816,9 +931,9 @@ function FunilPageInner() {
               <div>
                 <p className="n">{traduzir("Novo funil")}</p>
                 <p className="s">
-                  Cada funil pertence a um atendente. As mensagens e tarefas
-                  atribuídas a ele entram nesse funil. Já sai com o modelo
-                  pronto: Novo, Qualificado, Proposta, Fechado.
+                  Cada funil é de UM número de WhatsApp, escolhido agora e fixo depois: as conversas
+                  daquele número entram aqui, e só elas. Pra trocar o número, é criar outro funil.
+                  Já sai com o modelo pronto: Novo, Qualificado, Proposta, Fechado.
                 </p>
               </div>
               <span
@@ -829,6 +944,66 @@ function FunilPageInner() {
                 {traduzir("Fechar")} <IconClose width={11} height={11} />
               </span>
             </div>
+            {/*
+              O NÚMERO VEM PRIMEIRO, e a ordem dos campos é a ordem da decisão: é ele que define o
+              funil, e é dele que sai o nome sugerido. Perguntar o nome antes faria a pessoa
+              escrever e depois descobrir que o número que ela queria já tem quadro.
+            */}
+            <div className="field">
+              <label>{traduzir("Número deste funil")}</label>
+              <select
+                className="input"
+                style={{ width: "100%", cursor: "pointer" }}
+                value={numeroNovoFunil}
+                onChange={(e) => {
+                  const chave = e.target.value;
+                  setNumeroNovoFunil(chave);
+                  setErroNovoFunil(null);
+                  // O nome segue o número ENQUANTO ninguém escreveu nada. Depois de digitar, a
+                  // escolha é dela: trocar o número não pode apagar o nome que ela deu.
+                  if (!sufixoNovoFunil.trim()) {
+                    setSufixoNovoFunil(sufixoSugerido(numerosLivres.find((n) => n.chave === chave)));
+                  }
+                }}
+              >
+                <option value="">{traduzir("Escolha o número…")}</option>
+                {numerosLivres.map((n) => (
+                  <option key={n.chave} value={n.chave}>
+                    {n.nome} · {traduzir(canalDoNumero(n.provedor))}
+                  </option>
+                ))}
+              </select>
+              <p className="hint" style={{ marginTop: 6 }}>
+                {numerosDeWhats === null
+                  ? traduzir("Carregando os números conectados…")
+                  : numerosLivres.length === 0
+                    ? traduzir(
+                        "Todos os números conectados já têm funil. Cada número tem um só — apague um funil para liberar o número dele.",
+                      )
+                    : traduzir("Escolhido agora e fixo: para trocar, é preciso criar outro funil.")}
+              </p>
+            </div>
+
+            <div className="field">
+              <label>{traduzir("Nome do funil")}</label>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                {/* O prefixo é fixo e aparece FORA do campo: dentro dele, a pessoa poderia apagá-lo
+                    sem querer e o nome deixaria de seguir o padrão da lista. */}
+                <strong style={{ whiteSpace: "nowrap" }}>{PREFIXO_DO_NOME}</strong>
+                <input
+                  className="input"
+                  style={{ width: "100%" }}
+                  type="text"
+                  value={sufixoNovoFunil}
+                  onChange={(e) => setSufixoNovoFunil(e.target.value)}
+                  placeholder={traduzir("Ex.: Meta oficial")}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") void criarFunil();
+                  }}
+                />
+              </div>
+            </div>
+
             <div className="field">
               <label>{traduzir("Atendente responsável")}</label>
               <select
@@ -837,23 +1012,31 @@ function FunilPageInner() {
                 value={atendenteNovoFunil}
                 onChange={(e) => setAtendenteNovoFunil(e.target.value)}
               >
+                {/* "Ou eu tenho a opção de não escolher ninguém, de simplesmente quem entrar aqui
+                    responde." É a primeira opção porque é o padrão de quem atende em equipe. */}
+                <option value="">{traduzir("Ninguém — quem estiver atendendo responde")}</option>
                 {equipe.map((m) => (
                   <option key={m.id} value={m.nome}>
                     {m.nome}
                   </option>
                 ))}
               </select>
-              <p className="hint" style={{ marginTop: 6 }}>
-                {traduzir("Nome do funil:")} <strong>Funil - {atendenteNovoFunil}</strong>
-              </p>
             </div>
+
+            {erroNovoFunil ? (
+              <p className="hint" style={{ color: "var(--erro, #c0392b)" }}>
+                {erroNovoFunil}
+              </p>
+            ) : null}
+
             <div className="section-foot">
               <button
                 type="button"
                 className="btn primary block"
-                onClick={criarFunil}
+                disabled={criandoFunil || !numeroNovoFunil || !nomeDoFunil(sufixoNovoFunil)}
+                onClick={() => void criarFunil()}
               >
-                {traduzir("Criar funil")}
+                {criandoFunil ? traduzir("Criando e trazendo as conversas…") : traduzir("Criar funil")}
               </button>
             </div>
           </section>

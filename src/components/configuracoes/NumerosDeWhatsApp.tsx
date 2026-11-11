@@ -8,6 +8,7 @@ import { SaudeQrCode } from "./SaudeQrCode";
 import type { HistoricoSync } from "@/lib/integracoes/historico-tipos";
 import { useEquipe } from "@/lib/equipe-context";
 import { useIdioma } from "@/lib/idioma-context";
+import { funilDoNumero } from "@/lib/funis/numero-do-funil";
 
 /**
  * OS NÚMEROS DE WHATSAPP DA EMPRESA, numa lista — os dois canais juntos.
@@ -48,7 +49,7 @@ type Numero = {
 
 type Resposta = {
   numeros: Numero[];
-  funis: { id: string; nome: string }[];
+  funis: { id: string; nome: string; contaCanal?: string | null }[];
   limite: number;
   proximoLivre: number | null;
 };
@@ -142,8 +143,9 @@ export function NumerosDeWhatsApp({ aoMudar }: { aoMudar?: () => void }) {
     aoMudar?.();
   }
 
-  /** Nome, funil e responsável vão pela mesma rota: são a mesma decisão sobre a mesma conexão. */
-  async function salvar(n: Numero, mudancas: { apelido?: string; funilId?: string | null; responsavel?: string | null }) {
+  /** Nome e responsável vão pela mesma rota: são a mesma decisão sobre a mesma conexão. (O funil
+   *  não: quem o escolhe é o próprio funil, na criação — ver `numero-do-funil.ts`.) */
+  async function salvar(n: Numero, mudancas: { apelido?: string; responsavel?: string | null }) {
     const r = await fetch("/api/integracoes/numeros", {
       method: "PATCH",
       headers: { "content-type": "application/json" },
@@ -255,22 +257,22 @@ export function NumerosDeWhatsApp({ aoMudar }: { aoMudar?: () => void }) {
               * Fica na linha, e não escondido em "Detalhes", porque é a pergunta que se faz NO
               * momento de conectar um número novo — "e os leads dele, caem onde?". Escondida, a
               * resposta viraria uma descoberta de semanas depois, com o funil já embaralhado.
+              *
+              * O FUNIL SAIU DAQUI, e virou texto. Este seletor ia na direção errada: o NÚMERO
+              * escolhia o funil, e nessa direção dois números podiam apontar pro mesmo quadro — o
+              * que a regra proíbe ("nenhum funil pode ter mais do que um número; não pode receber
+              * mensagens de WhatsApps diferentes"). Agora quem escolhe é o funil, uma vez, na
+              * criação dele; aqui fica a resposta da pergunta, que continua valendo.
               */}
             {n.status === "conectado" ? (
               <div className="wa-numero-destino">
-                <label className="wa-numero-campo">
+                <div className="wa-numero-campo">
                   <span className="flow-rotulo-micro">{traduzir("Funil dos leads")}</span>
-                  <select
-                    className="input"
-                    value={n.funilId ?? ""}
-                    onChange={(e) => void salvar(n, { funilId: e.target.value || null })}
-                  >
-                    <option value="">{traduzir("O funil padrão da conta")}</option>
-                    {dados.funis.map((f) => (
-                      <option key={f.id} value={f.id}>{f.nome}</option>
-                    ))}
-                  </select>
-                </label>
+                  <p className="hint" style={{ margin: "4px 0 0" }}>
+                    {funilDoNumero(dados.funis, n.chave)?.nome ??
+                      traduzir("O funil padrão da conta. Para dar um funil a este número, crie um funil e escolha-o lá.")}
+                  </p>
+                </div>
 
                 <label className="wa-numero-campo">
                   <span className="flow-rotulo-micro">{traduzir("Responsável")}</span>

@@ -18,6 +18,9 @@ function duplicada() {
  * do MESMO funil, usada pelo card legado. `etapa-do-outro` é de um segundo funil — o do outro
  * número — e é ela que prova que um card lá não bloqueia a entrada aqui.
  */
+/** O `funil-1` do dublê tem número próprio? Ver o `findFirst` de `funil`, abaixo. */
+let FUNIL_TEM_NUMERO = false;
+
 const FUNIL_DA_ETAPA: Record<string, string> = {
   "etapa-1": "funil-1",
   "etapa-9": "funil-1",
@@ -54,10 +57,19 @@ vi.mock("@/lib/prisma", () => {
         findFirst: async () => ({ ...etapa, cards: cards.filter((c) => c.etapaId === etapa.id) }),
       },
       funil: {
-        findFirst: async () => ({
-          id: "funil-1",
-          etapas: [{ ...etapa, cards: cards.filter((c) => c.etapaId === etapa.id) }],
-        }),
+        /*
+         * O dublê respeita o `where`, inclusive `contaCanal: null`.
+         *
+         * `entrarNaPrimeiraEtapaComoNovoLead` procura, nesta ordem: o funil escolhido, o funil SEM
+         * número (a rede de segurança) e só então o primeiro da lista. Ignorando o filtro, o dublê
+         * responderia "achei" pras três perguntas e o teste passaria com o lead caindo no quadro de
+         * outro número.
+         */
+        findFirst: async ({ where }: { where: { id?: string; contaCanal?: string | null } }) => {
+          if (where.id && where.id !== "funil-1") return null;
+          if (where.contaCanal === null && FUNIL_TEM_NUMERO) return null;
+          return { id: "funil-1", etapas: [{ ...etapa, cards: cards.filter((c) => c.etapaId === etapa.id) }] };
+        },
       },
       mensagemExtra: {
         count: async ({ where }: { where: { contato: string; contaCanal: { in: string[] } } }) =>
@@ -90,6 +102,7 @@ beforeEach(() => {
   cards = [];
   conversasArquivadas = new Set();
   mensagensPorNumero = new Map();
+  FUNIL_TEM_NUMERO = false;
 });
 
 /**
@@ -334,6 +347,30 @@ describe("entrarNoFunilDoNumero", () => {
       contaCanal: OFICIAL,
       funilId: "funil-1",
     });
+    expect(cards).toHaveLength(1);
+  });
+});
+
+/**
+ * O LEAD DE UM NÚMERO SEM QUADRO PRÓPRIO NÃO PODE CAIR NO QUADRO DE OUTRO NÚMERO.
+ *
+ * O destino era "o primeiro funil do workspace". Com um funil por número — "nenhum funil pode ter
+ * mais do que um número; não pode receber mensagens de WhatsApps diferentes" —, isso punha o lead
+ * de um número no quadro de outro, e quem atende por aquele número liga pra quem não é dele.
+ *
+ * A rede de segurança passou a ser o funil SEM número, que é justamente o que existe pra receber o
+ * que não tem quadro próprio.
+ */
+describe("onde o lead cai quando o número dele não tem funil", () => {
+  it("sem funil sem número, o lead não entra num quadro de outro número", async () => {
+    FUNIL_TEM_NUMERO = true;
+    expect(await entrar("Ana Souza")).toBeNull();
+    expect(cards).toEqual([]);
+  });
+
+  it("havendo funil sem número, é nele que o lead entra", async () => {
+    FUNIL_TEM_NUMERO = false;
+    expect(await entrar("Ana Souza")).not.toBeNull();
     expect(cards).toHaveLength(1);
   });
 });

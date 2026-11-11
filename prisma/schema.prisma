@@ -819,9 +819,32 @@ model Funil {
 
   nome        String
   responsavel String?
-  etapas      FunilEtapa[]
+
+  /// DE QUAL NÚMERO DE WHATSAPP É ESTE FUNIL (`<provedor>:<identificador>`, o mesmo formato de
+  /// `Conversa.contaCanal`).
+  ///
+  /// "O funil, quando é criado, a gente escolhe um número e esse número é fixo. Nenhum funil pode
+  /// ter mais do que um número. Não pode receber mensagens de WhatsApps diferentes. Se eu quiser
+  /// mudar, eu tenho que excluir esse funil e criar outro."
+  ///
+  /// O VÍNCULO MORA AQUI, e não mais nos metadados da conexão (`metadados.funilId`). Lá ele ia na
+  /// direção errada: o número apontava pro funil, então dois números podiam apontar pro mesmo
+  /// quadro — exatamente o que não pode. Com a coluna no funil, "um funil, um número" é o formato
+  /// do dado, não uma regra que alguém precisa lembrar de conferir.
+  ///
+  /// Escrito UMA VEZ, na criação. Não há rota que o altere: trocar o número de um funil que já tem
+  /// cards misturaria duas caixas de entrada num quadro só, e desfazer isso depois seria adivinhar
+  /// de qual número era cada card.
+  ///
+  /// Null = funil anterior a esta coluna. Ele continua funcionando como sempre (recebe o que não
+  /// tem número próprio), e é o que permite a conta existente não quebrar enquanto os funis novos
+  /// não são criados.
+  contaCanal String?
+
+  etapas FunilEtapa[]
 
   @@index([workspaceId])
+  @@index([workspaceId, contaCanal])
 }
 
 model FunilEtapa {

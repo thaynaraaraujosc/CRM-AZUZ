@@ -272,6 +272,8 @@ export function FunisProvider({ children }: { children: ReactNode }) {
           id: funil.id,
           nome: funil.nome,
           responsavel: funil.responsavel ?? null,
+          // De qual número é o funil. Só vai na criação: não existe rota que o altere.
+          contaCanal: funil.contaCanal ?? null,
           etapas: funil.colunas.map((c) => ({ id: c.id, titulo: c.titulo })),
         }),
       });

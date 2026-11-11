@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { lerCorDaEtapa, lerDicas } from "@/lib/funil/etapa-aparencia";
+import { numerosDeWhatsApp } from "@/lib/integracoes/numeros-de-whatsapp";
 
 /**
  * Criar e apagar funil/etapa: gravado na hora, e não pelo PUT de estado inteiro.
@@ -30,6 +31,8 @@ export async function POST(request: Request) {
     id?: string;
     nome?: string;
     responsavel?: string | null;
+    /** De qual número é este funil. Só na CRIAÇÃO: não há rota que o altere. */
+    contaCanal?: string | null;
     funilId?: string;
     etapas?: { id: string; titulo: string }[];
     /** Onde a etapa entra. Ausente = no fim, que é como sempre foi. */
@@ -40,12 +43,47 @@ export async function POST(request: Request) {
     if (!corpo.id || !corpo.nome) {
       return NextResponse.json({ erro: "id e nome são obrigatórios" }, { status: 400 });
     }
+
+    /*
+     * O NÚMERO DO FUNIL, CONFERIDO AQUI — não só no seletor da tela.
+     *
+     * "Nenhum funil pode ter mais do que um número. Não pode receber mensagens de WhatsApps
+     * diferentes." A tela já oferece só o que pode ser escolhido, mas a tela é o navegador: duas
+     * abas abertas criando funil ao mesmo tempo passariam as duas pelo seletor e chegariam aqui
+     * com o mesmo número. Duas caixas de entrada disputando o mesmo quadro fazem metade dos leads
+     * sumir de um deles sem explicação nenhuma.
+     *
+     * Conferido contra as conexões DESTA empresa: um `contaCanal` qualquer vindo do corpo faria o
+     * funil dizer que é de uma conexão que não existe, e nada cairia nele.
+     */
+    let contaCanal: string | null = null;
+    if (corpo.contaCanal) {
+      const chavesConectadas = new Set(
+        (await numerosDeWhatsApp(workspaceId)).map((n) => n.chave).filter(Boolean),
+      );
+      if (!chavesConectadas.has(corpo.contaCanal)) {
+        return NextResponse.json({ erro: "Esse número não está conectado nesta conta." }, { status: 400 });
+      }
+      const jaTem = await prisma.funil.findFirst({
+        where: { workspaceId, contaCanal: corpo.contaCanal },
+        select: { nome: true },
+      });
+      if (jaTem) {
+        return NextResponse.json(
+          { erro: `Esse número já é do funil "${jaTem.nome}". Cada número tem um funil só.` },
+          { status: 409 },
+        );
+      }
+      contaCanal = corpo.contaCanal;
+    }
+
     await prisma.funil.create({
       data: {
         id: corpo.id,
         workspaceId,
         nome: corpo.nome,
         responsavel: corpo.responsavel ?? null,
+        contaCanal,
         etapas: {
           create: (corpo.etapas ?? []).map((etapa, ordem) => ({
             id: etapa.id,

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { slugId } from "@/lib/ids";
 import { chaveDeContato } from "@/lib/contatos/chave-nome";
+import { normalizarContaCanal } from "@/lib/integracoes/conta-canal-normalizar";
 
 /**
  * Funil e Conversas contando a MESMA história, sempre.
@@ -37,62 +38,136 @@ export type Reconciliacao = {
  * sempre é conta que o cliente paga: ele sugere que tem alguma coisa pra fazer quando não tem.
  */
 export async function contarDesalinhados(workspaceId: string): Promise<{ total: number }> {
-  const [conversas, cards] = await Promise.all([
+  const [conversas, cards, funis] = await Promise.all([
     prisma.conversa.findMany({
       where: { workspaceId, ehGrupo: false, arquivada: false },
-      select: { nome: true },
+      select: { nome: true, contaCanal: true },
     }),
-    prisma.negocioCard.findMany({ where: { workspaceId }, select: { nome: true } }),
+    prisma.negocioCard.findMany({
+      where: { workspaceId },
+      select: { nome: true, etapa: { select: { funilId: true } } },
+    }),
+    prisma.funil.findMany({ where: { workspaceId }, select: { id: true, contaCanal: true } }),
   ]);
-  const chavesComCard = new Set(cards.map((c) => chaveDeContato(c.nome)));
+
+  /*
+   * A CONTA SEGUE A MESMA REGRA DA RECONCILIAÇÃO — por funil, não pelo workspace.
+   *
+   * Era workspace inteiro, e com funil por número isso passou a contar menos do que há pra fazer:
+   * quem tem card no quadro de um número e não tem no do outro está desalinhado, e a conta antiga
+   * dizia que estava tudo certo. O botão sumiria com trabalho pendente, que é pior do que o botão
+   * aparecer à toa.
+   */
+  const porConta = new Map<string, string>();
+  for (const f of funis) {
+    if (f.contaCanal) porConta.set(normalizarContaCanal(f.contaCanal), f.id);
+  }
+  const funilSemNumero = funis.find((f) => !f.contaCanal)?.id ?? null;
+
+  const chavesPorFunil = new Map<string, Set<string>>();
+  for (const card of cards) {
+    const funilId = card.etapa?.funilId;
+    if (!funilId) continue;
+    const jaTem = chavesPorFunil.get(funilId) ?? new Set<string>();
+    jaTem.add(chaveDeContato(card.nome));
+    chavesPorFunil.set(funilId, jaTem);
+  }
+
+  const semCard = conversas.filter((c) => {
+    const destino = (c.contaCanal ? porConta.get(normalizarContaCanal(c.contaCanal)) : null) ?? funilSemNumero;
+    // Sem funil de destino não há o que criar, então não há desalinhamento a relatar.
+    return destino ? !chavesPorFunil.get(destino)?.has(chaveDeContato(c.nome)) : false;
+  }).length;
+
   const chavesComConversa = new Set(conversas.map((c) => chaveDeContato(c.nome)));
-  const semCard = conversas.filter((c) => !chavesComCard.has(chaveDeContato(c.nome))).length;
   const semConversa = cards.filter((c) => !chavesComConversa.has(chaveDeContato(c.nome))).length;
   return { total: semCard + semConversa };
 }
 
 export async function reconciliarFunilEConversas(workspaceId: string): Promise<Reconciliacao> {
-  const [conversas, cards, contatos, funil] = await Promise.all([
+  const [conversas, cards, contatos, funis] = await Promise.all([
     prisma.conversa.findMany({
       where: { workspaceId },
       select: { nome: true, canal: true, contato: true, contaCanal: true, ehGrupo: true, arquivada: true, contatoId: true },
     }),
     prisma.negocioCard.findMany({
       where: { workspaceId },
-      select: { id: true, nome: true, origem: true, contaCanal: true },
+      // `etapa.funilId` entra porque "já tem card?" passou a ser por funil, e não pelo workspace.
+      select: { id: true, nome: true, origem: true, contaCanal: true, etapa: { select: { funilId: true } } },
     }),
     prisma.contato.findMany({
       where: { workspaceId },
       select: { id: true, nome: true, whatsapp: true, instagram: true, instagramId: true },
     }),
-    prisma.funil.findFirst({
+    prisma.funil.findMany({
       where: { workspaceId },
       include: { etapas: { orderBy: { ordem: "asc" }, take: 1 } },
+      orderBy: { id: "asc" },
     }),
   ]);
 
-  const chavesComCard = new Set(cards.map((c) => chaveDeContato(c.nome)));
   const chavesComConversa = new Set(conversas.map((c) => chaveDeContato(c.nome)));
   const contatoPorChave = new Map(contatos.map((c) => [chaveDeContato(c.nome), c]));
 
   /* ---------------------------------------- conversa que não tem negócio ---- */
-  const primeiraEtapa = funil?.etapas[0];
-  const semCard = conversas.filter(
-    (c) => !c.ehGrupo && !c.arquivada && !chavesComCard.has(chaveDeContato(c.nome)),
-  );
+
+  /*
+   * CADA CONVERSA VAI PRO FUNIL DO NÚMERO DELA.
+   *
+   * Era um funil só: `findFirst` pegava o primeiro da empresa e TODA conversa virava card nele.
+   * Enquanto havia um quadro, dava no mesmo. Agora o funil é de um número ("nenhum funil pode ter
+   * mais do que um número; não pode receber mensagens de WhatsApps diferentes"), e jogar tudo no
+   * primeiro quadro encheria o funil de um número com os leads do outro — que é o amontoado que
+   * separar por número existe pra desfazer.
+   *
+   * Funil SEM número continua existindo e recebe o que não tem número próprio: conversa antiga, de
+   * antes de o CRM gravar de qual conexão ela veio, e conversa de um número que ainda não tem
+   * quadro. Sem nenhum funil assim, essas conversas ficam de fora em vez de cair no quadro de
+   * outra pessoa — não ter card é um problema menor que ter o card errado.
+   */
+  const porConta = new Map<string, (typeof funis)[number]>();
+  for (const f of funis) {
+    if (f.contaCanal) porConta.set(normalizarContaCanal(f.contaCanal), f);
+  }
+  const funilSemNumero = funis.find((f) => !f.contaCanal) ?? null;
+  const funilDaConversa = (contaCanal: string | null) =>
+    (contaCanal ? porConta.get(normalizarContaCanal(contaCanal)) : null) ?? funilSemNumero;
+
+  /*
+   * "JÁ TEM CARD?" É POR FUNIL, não pelo workspace inteiro.
+   *
+   * A mesma pessoa pode falar por dois números e, nesse caso, estar nos dois quadros de propósito.
+   * Perguntando do workspace inteiro, o segundo quadro nunca receberia ninguém que já tivesse
+   * falado pelo primeiro.
+   */
+  const chavesPorFunil = new Map<string, Set<string>>();
+  for (const card of cards) {
+    const funilId = card.etapa?.funilId;
+    if (!funilId) continue;
+    const jaTem = chavesPorFunil.get(funilId) ?? new Set<string>();
+    jaTem.add(chaveDeContato(card.nome));
+    chavesPorFunil.set(funilId, jaTem);
+  }
+
+  const aCriar = new Map<string, typeof conversas>();
+  for (const conversa of conversas) {
+    if (conversa.ehGrupo || conversa.arquivada) continue;
+    const destino = funilDaConversa(conversa.contaCanal);
+    const etapa = destino?.etapas[0];
+    if (!etapa) continue;
+    if (chavesPorFunil.get(destino.id)?.has(chaveDeContato(conversa.nome))) continue;
+    aCriar.set(etapa.id, [...(aCriar.get(etapa.id) ?? []), conversa]);
+  }
 
   let cardsCriados = 0;
-  if (primeiraEtapa && semCard.length) {
-    const menor = await prisma.negocioCard.aggregate({
-      where: { etapaId: primeiraEtapa.id },
-      _min: { ordem: true },
-    });
-    let ordem = Math.min(menor._min.ordem ?? 0, 0) - semCard.length;
+  for (const [etapaId, daEtapa] of aCriar) {
+    const menor = await prisma.negocioCard.aggregate({ where: { etapaId }, _min: { ordem: true } });
+    let ordem = Math.min(menor._min.ordem ?? 0, 0) - daEtapa.length;
     const criados = await prisma.negocioCard
       .createMany({
-        data: semCard.map((conversa) => ({
+        data: daEtapa.map((conversa) => ({
           id: `${workspaceId}-${slugId(conversa.nome)}-${Date.now()}-${ordem}`,
-          etapaId: primeiraEtapa.id,
+          etapaId,
           ordem: ordem++,
           workspaceId,
           nome: conversa.nome,
@@ -109,7 +184,7 @@ export async function reconciliarFunilEConversas(workspaceId: string): Promise<R
         console.error("[reconciliar] falha ao criar negócios a partir de conversas:", erro);
         return { count: 0 };
       });
-    cardsCriados = criados.count;
+    cardsCriados += criados.count;
   }
 
   /* ---------------------------------------- negócio que não tem conversa ---- */
