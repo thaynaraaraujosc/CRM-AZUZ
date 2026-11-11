@@ -2995,4 +2995,6 @@ export const TRADUCOES_EN: Record<string, string> = {
   /* A ausência explicada, no fim da lista de gatilhos. */
   "Procurando \u201ccomeçou a me seguir\u201d?": "Looking for \u201cstarted following me\u201d?",
   "O Instagram não avisa quem passou a te seguir, e a API não deixa começar conversa com quem nunca te escreveu — nem a Meta oferece isso nas ferramentas dela. O caminho que funciona é pedir um comentário: \u201ccomenta AZUZ que eu te mando\u201d. Aí o CRM responde no Direct, e a conversa abre.": "Instagram does not tell you who started following you, and the API does not allow starting a conversation with someone who never wrote to you \u2014 Meta does not offer this in its own tools either. The path that works is asking for a comment: \u201ccomment AZUZ and I will send it to you\u201d. Then the CRM replies in Direct, and the conversation opens.",
+
+  "Enviar por outro número": "Send from another number",
 };
