@@ -153,3 +153,48 @@ describe("resolverPessoaDoTelefone", () => {
     expect(pessoa.nome).toBe("Lázaro");
   });
 });
+
+/**
+ * TROCA DE NÚMERO: a resposta cai na MESMA janela por onde a mensagem saiu.
+ *
+ * "Eu peguei esse número no contato, selecionei pra mandar pela API oficial, e na hora que enviou
+ * mandou pra um número antigo. (…) Cada WhatsApp é independente. Independente. Se eu quiser mandar
+ * para o número novo, ele tem que abrir uma janela nova."
+ *
+ * A janela nova nasce com o telefone no nome (ver `nomeLivreParaConversa`), porque o nome é a chave
+ * da conversa. Só que aqui a ordem era: contato cadastrado primeiro, thread depois. Com o telefone
+ * novo já na ficha, a resposta dela chegava, o contato era encontrado, e o nome dele era o da
+ * thread ANTIGA. Saída numa janela e resposta noutra, sobre a mesma conversa.
+ */
+describe("thread do número ganha do nome do contato", () => {
+  const NOVO = "5562999990003";
+
+  it("a resposta vai pra janela daquele número, não pra do nome do contato", async () => {
+    // Ficha já atualizada com o número novo, e uma janela própria pra ele.
+    contatoFindMany.mockResolvedValue([{ id: "c9", whatsapp: NOVO }]);
+    contatoFindUnique.mockResolvedValue({ id: "c9", nome: "Cássia", whatsapp: NOVO });
+    conversaFindMany.mockResolvedValue([
+      { nome: "Cássia", contato: "5562988880000" },
+      { nome: "Cássia (+55 (62) 99999-0003)", contato: NOVO },
+    ]);
+
+    const pessoa = await resolverPessoaDoTelefone({ workspaceId: "w1", telefone: NOVO });
+
+    expect(pessoa.nome).toBe("Cássia (+55 (62) 99999-0003)");
+    // O contato continua vindo: é dele que sai o vínculo da conversa, e o telefone é o mesmo nos
+    // dois lados. O que muda é só o nome da thread.
+    expect(pessoa.contatoExistente?.id).toBe("c9");
+    expect(pessoa.contatoExistente?.nome).toBe("Cássia (+55 (62) 99999-0003)");
+  });
+
+  it("sem janela pra esse número, continua valendo o nome do contato", async () => {
+    contatoFindMany.mockResolvedValue([{ id: "c9", whatsapp: NOVO }]);
+    contatoFindUnique.mockResolvedValue({ id: "c9", nome: "Cássia", whatsapp: NOVO });
+    conversaFindMany.mockResolvedValue([{ nome: "Outra Pessoa", contato: "5562988880000" }]);
+
+    const pessoa = await resolverPessoaDoTelefone({ workspaceId: "w1", telefone: NOVO });
+
+    expect(pessoa.nome).toBe("Cássia");
+    expect(pessoa.contatoExistente?.id).toBe("c9");
+  });
+});

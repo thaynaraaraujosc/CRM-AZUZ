@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { normalizarTelefoneParaComparacao } from "@/lib/telefone";
+import { nomeLivreParaConversa } from "@/lib/conversas/nome-por-numero";
+import { numerosDeWhatsApp } from "@/lib/integracoes/numeros-de-whatsapp";
 import { contasCanalVisiveis, filtroContaCanal, provedoresConectados } from "@/lib/integracoes/conta-canal";
 import { cabecalhosComEtag, clienteJaTem, montarEtag, naoModificado } from "@/lib/conversas/assinatura";
 
@@ -118,10 +120,11 @@ export async function POST(request: Request) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
 
-  const { nome, contato, canal } = (await request.json()) as {
+  const { nome, contato, canal, contaCanal } = (await request.json()) as {
     nome?: string;
     contato?: string;
     canal?: string;
+    contaCanal?: string | null;
   };
   if (!nome?.trim() || !contato?.trim()) {
     return NextResponse.json({ erro: "nome e contato são obrigatórios" }, { status: 400 });
@@ -149,6 +152,37 @@ export async function POST(request: Request) {
   });
   if (existente) return NextResponse.json(existente);
 
+  /*
+   * O NOME JÁ É DE OUTRO NÚMERO: a janela nova nasce com o telefone no nome.
+   *
+   * "Eu peguei esse número no contato, selecionei pra mandar pela API oficial, e na hora que enviou
+   * mandou pra um número antigo. (…) Cada WhatsApp é independente. Independente. Se eu quiser
+   * mandar para o número novo, ele tem que abrir uma janela nova."
+   *
+   * A busca logo acima é pelo TELEFONE, que é o certo: número que já tem thread reusa a thread. O
+   * `create` abaixo, porém, gravava o nome do contato cru — e `[workspaceId, nome]` é único. Com
+   * uma conversa antiga do mesmo nome e outro telefone, dava dois resultados, os dois ruins:
+   * estourava na chave única e a conversa não nascia, ou, pelos caminhos que buscam por nome, a
+   * mensagem ia pra thread velha, com o número velho. Quando o número velho ainda existe, ela
+   * CHEGA — na pessoa errada.
+   *
+   * Agora o nome é escolhido entre os que estão livres (ver `nomeLivreParaConversa`): o nome limpo
+   * quando ninguém o ocupa, que é o caso comum e segue igual; e `Nome (+55 …)` quando é de outro
+   * número. A thread antiga não é renomeada: ela continua com o nome, o histórico e o telefone
+   * dela.
+   */
+  const comMesmoNome = await prisma.conversa.findMany({
+    where: { workspaceId: sessao.user.workspaceId, nome: { startsWith: nome.trim() } },
+    select: { nome: true },
+  });
+  const nomeFinal = nomeLivreParaConversa(
+    nome,
+    contatoFinal,
+    comMesmoNome.map((c) => c.nome),
+  );
+
+  // As iniciais saem do nome QUE A PESSOA DIGITOU, não do nome final: com o telefone no nome, o
+  // avatar viraria "C+" em vez de "CS".
   const iniciais =
     nome
       .trim()
@@ -159,14 +193,32 @@ export async function POST(request: Request) {
       .join("")
       .toUpperCase() || "?";
 
+  /*
+   * POR QUAL NÚMERO ESTA CONVERSA FALA, conferido contra as conexões da empresa.
+   *
+   * Sem isto a conversa nascia sem dono. Numa caixa de entrada dividida por número — e ela é, desde
+   * que a aba "Todos" saiu — sem dono quer dizer que ela só aparece na aba das conversas antigas:
+   * a pessoa abre a janela e não a encontra em lugar nenhum.
+   *
+   * O valor VEM DO NAVEGADOR, então é conferido aqui: um `contaCanal` qualquer faria a conversa
+   * dizer que pertence a uma conexão que não existe (ou, pior, à de outro canal), e o envio
+   * escolheria a integração errada. Não casando com nenhuma conexão, fica nulo — que é o
+   * comportamento de antes, e é honesto.
+   */
+  const chavesConectadas = new Set(
+    (await numerosDeWhatsApp(sessao.user.workspaceId)).map((n) => n.chave).filter(Boolean),
+  );
+  const donoFinal = contaCanal && chavesConectadas.has(contaCanal) ? contaCanal : null;
+
   const criada = await prisma.conversa.create({
     data: {
       id: `conversa-${Date.now()}`,
       workspaceId: sessao.user.workspaceId,
-      nome: nome.trim(),
+      nome: nomeFinal,
       initials: iniciais,
       canal: canal ?? "WhatsApp",
       contato: contatoFinal,
+      contaCanal: donoFinal,
     },
   });
   return NextResponse.json(criada);

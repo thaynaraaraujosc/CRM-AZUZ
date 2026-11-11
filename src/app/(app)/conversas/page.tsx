@@ -1262,10 +1262,26 @@ function ConversasPageInner() {
   const contatosSemConversa = (() => {
     const termo = buscaConversa.trim().toLowerCase();
     if (termo.length < 2) return [];
-    const nomesComConversa = new Set(conversas.map((c) => c.nome.toLowerCase()));
+    /*
+     * "TEM CONVERSA?" É PELO TELEFONE, não pelo nome.
+     *
+     * Era pelo nome, e com isso um contato que trocou de número desaparecia desta lista: havia uma
+     * conversa com o nome dele, do número ANTIGO, e o CRM concluía que não havia o que abrir. Era
+     * o caminho que faltava pra "se eu quiser mandar para o número novo, ele tem que abrir uma
+     * janela nova": a janela nova não tinha de onde ser aberta.
+     *
+     * Comparação normalizada (`+55`, 9º dígito) porque o mesmo número é salvo de formas
+     * diferentes: "(62) 99999-0000" na ficha e "5562999990000" no webhook.
+     */
+    const numerosComConversa = new Set(
+      conversas
+        .filter((c) => !c.ehGrupo && c.contato)
+        .map((c) => normalizarTelefoneParaComparacao(c.contato!))
+        .filter(Boolean),
+    );
     return contatos
       .filter((c) => Boolean(c.whatsapp))
-      .filter((c) => !nomesComConversa.has(c.nome.toLowerCase()))
+      .filter((c) => !numerosComConversa.has(normalizarTelefoneParaComparacao(c.whatsapp!)))
       .filter((c) => c.nome.toLowerCase().includes(termo) || (c.whatsapp ?? "").includes(termo))
       .slice(0, 8);
   })();
@@ -1274,7 +1290,23 @@ function ConversasPageInner() {
     if (!contato.whatsapp) return;
     setIniciandoConversa(contato.id);
     try {
-      const nova = await criarConversaIndividual(contato.nome, contato.whatsapp, "WhatsApp");
+      /*
+       * A JANELA NOVA NASCE COM DONO: o número escolhido na ficha, ou o da aba aberta.
+       *
+       * Sem isso ela nascia sem marca de conexão, e numa caixa de entrada dividida por número isso
+       * quer dizer que ela só aparece na aba das conversas antigas — a pessoa cria a janela e não a
+       * encontra. `?numero=` é a escolha que veio da ficha do contato ("ele vai me dar um botão
+       * seletor"); sem ela, a aba em que a pessoa está é a resposta certa, porque é de lá que ela
+       * está falando. "Todos" e a aba das sem-dono não endereçam nada: aí fica nulo, como antes.
+       */
+      const daUrl = searchParams.get("numero");
+      const daAba = numeroAtivo === "Todos" || numeroAtivo === SEM_NUMERO ? null : numeroAtivo;
+      const nova = await criarConversaIndividual(
+        contato.nome,
+        contato.whatsapp,
+        "WhatsApp",
+        daUrl || daAba,
+      );
       setSelectedId(nova.id);
       setBuscaConversa("");
     } catch (erro) {
@@ -1302,7 +1334,38 @@ function ConversasPageInner() {
     const nomeContato = searchParams.get("contato");
     if (!nomeContato) return;
 
-    const jaExiste = conversas.find((c) => c.nome === nomeContato && c.canal !== "Instagram");
+    const contato = contatos.find((c) => c.nome === nomeContato);
+
+    /*
+     * A CONVERSA DESTE NÚMERO, e não "a conversa com este nome".
+     *
+     * "Eu peguei esse número no contato, selecionei pra mandar pela API oficial, e na hora que
+     * enviou mandou pra um número antigo. (…) Se eu quiser mandar para o número novo, ele tem que
+     * abrir uma janela nova."
+     *
+     * Era aqui que o número velho entrava: a busca era pelo NOME, então a ficha do contato — com o
+     * telefone novo na tela, escolhido por ela — abria a thread antiga, do telefone antigo. Dali
+     * pra frente tudo estava coerente com a thread errada: o cabeçalho, o histórico e o
+     * destinatário do envio.
+     *
+     * Com o telefone do contato em mãos, a procura é por ele (normalizado: `+55` e 9º dígito, que é
+     * como o mesmo número aparece escrito de formas diferentes). Não achando, cai no `criar` logo
+     * abaixo e a janela nova nasce — é a rota de criação que escolhe um nome livre, ver
+     * `nomeLivreParaConversa`.
+     *
+     * Sem telefone na ficha não há por onde comparar, e aí vale o nome, que é o que sempre valeu:
+     * é o caso da conversa que nasceu pelo webhook antes de a pessoa virar contato.
+     */
+    const alvo = contato?.whatsapp ? normalizarTelefoneParaComparacao(contato.whatsapp) : "";
+    const jaExiste = alvo
+      ? conversas.find(
+          (c) =>
+            c.canal !== "Instagram" &&
+            !c.ehGrupo &&
+            c.contato &&
+            normalizarTelefoneParaComparacao(c.contato) === alvo,
+        )
+      : conversas.find((c) => c.nome === nomeContato && c.canal !== "Instagram");
     if (jaExiste) {
       contatoDaUrlAtendido.current = true;
       // eslint-disable-next-line react-hooks/set-state-in-effect -- abre a conversa pedida na URL uma vez só; a trava do `ref` impede que isto realimente o próprio efeito.
@@ -1310,7 +1373,6 @@ function ConversasPageInner() {
       return;
     }
 
-    const contato = contatos.find((c) => c.nome === nomeContato);
     if (!contato?.whatsapp) {
       // Sem número não há o que abrir. Marca como atendido pra não ficar tentando a cada render.
       contatoDaUrlAtendido.current = true;
@@ -1403,7 +1465,25 @@ function ConversasPageInner() {
   }
   const localizacao = localizarNoFunil(funis, aberta.nome);
 
-  const contatoDaConversa = contatos.find((c) => c.nome === aberta.nome) ?? null;
+  /*
+   * O CONTATO DESTA CONVERSA, pelo TELEFONE antes do nome.
+   *
+   * Era só pelo nome, e isso quebrava na janela aberta pra um número novo da mesma pessoa: ela
+   * nasce chamada "Cássia (+55 …)" porque o nome é a chave da conversa (ver `nomeLivreParaConversa`),
+   * e nenhum contato se chama assim. Sem contato, o painel lateral ficava vazio e o envio pela API
+   * oficial perdia o telefone da ficha — que é justamente o endereço certo naquele canal.
+   *
+   * O telefone é a identidade estável; o nome é como está escrito. Comparação normalizada (`+55`,
+   * 9º dígito) porque o mesmo número é salvo de formas diferentes. O nome fica como segunda opção:
+   * é o que resolve a conversa que ainda não tem telefone gravado (grupo, Instagram).
+   */
+  const contatoDaConversa = (() => {
+    const alvo = aberta.contato && !aberta.ehGrupo ? normalizarTelefoneParaComparacao(aberta.contato) : "";
+    const porTelefone = alvo
+      ? contatos.find((c) => c.whatsapp && normalizarTelefoneParaComparacao(c.whatsapp) === alvo)
+      : undefined;
+    return porTelefone ?? contatos.find((c) => c.nome === aberta.nome) ?? null;
+  })();
 
   /*
    * De quem é cada menção: montado uma vez por desenho da tela e reusado em todas as mensagens.

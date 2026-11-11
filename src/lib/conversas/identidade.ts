@@ -27,9 +27,23 @@ import { normalizarTelefoneParaComparacao } from "@/lib/telefone";
  * 2. DUAS PESSOAS COM O MESMO NOME DE PERFIL. Dois números diferentes cujo `pushName` coincide
  *    (homônimo, ou o nome genérico que muita gente deixa) se fundiam do mesmo jeito.
  *
- * A ordem aqui vai do mais estável pro menos: telefone (não muda) → thread que já existe pra esse
- * telefone → nome de perfil, e SÓ se esse nome ainda não pertencer a outro número → o telefone cru.
- * Nome de perfil é enfeite: serve pra ler a lista, nunca pra decidir identidade.
+ * A ordem aqui vai do mais estável pro menos: thread que já existe PRA ESTE TELEFONE → contato
+ * cadastrado com este telefone → nome de perfil, e SÓ se esse nome ainda não pertencer a outro
+ * número → o telefone cru. Nome de perfil é enfeite: serve pra ler a lista, nunca pra decidir
+ * identidade.
+ *
+ * A THREAD VEM ANTES DO CONTATO, e essa ordem é uma correção de 11/11/2026.
+ *
+ * Era o contrário, e o estrago aparecia quando a pessoa trocava de número. A ficha do contato passa
+ * a ter o telefone novo; a conversa antiga continua com o antigo. Mandando pelo número novo, o CRM
+ * abre (ou cria) a janela do número novo — "cada WhatsApp é independente; se eu quiser mandar para
+ * o número novo, ele tem que abrir uma janela nova". Mas a RESPOSTA dela caía na thread velha:
+ * chegava aqui, o contato era encontrado pelo telefone novo, e o nome dele era o da thread antiga.
+ * Saída numa janela e resposta noutra, sobre a mesma conversa.
+ *
+ * Os dois primeiros passos são igualmente estáveis — os dois partem do telefone —, então preferir a
+ * thread não perde precisão nenhuma: ela é, literalmente, onde as mensagens deste número já estão.
+ * O contato continua sendo buscado e devolvido, porque é dele que sai o vínculo da conversa.
  */
 export async function resolverPessoaDoTelefone(params: {
   workspaceId: string;
@@ -43,21 +57,26 @@ export async function resolverPessoaDoTelefone(params: {
 }): Promise<{ nome: string; contatoExistente: { id: string; nome: string } | null }> {
   const { workspaceId, telefone, nomeDoPerfil } = params;
 
-  // 1. Contato já cadastrado com esse número: a resposta mais confiável que existe.
   const contatoExistente = await encontrarContatoPorTelefone(workspaceId, telefone);
+
+  // 1. Thread que já existe PRA ESTE NÚMERO. É onde as mensagens dele já estão, e por isso ganha
+  //    até do contato cadastrado: ver o comentário acima sobre troca de número. Vale também pra
+  //    quem começou a conversar antes de virar contato, inclusive quando a conversa foi criada com
+  //    o número cru como nome.
+  const porTelefone = await encontrarConversaPorTelefone(workspaceId, telefone);
+  if (porTelefone) {
+    const batizado = await batizarSeAindaForNumero(workspaceId, porTelefone, telefone, nomeDoPerfil);
+    const nome = batizado ?? porTelefone;
+    // O contato vai junto quando existe: é dele que sai `Conversa.contatoId`, e o vínculo é pelo
+    // telefone, que é o mesmo nos dois lados. Só o NOME é o da thread.
+    return { nome, contatoExistente: contatoExistente ? { ...contatoExistente, nome } : null };
+  }
+
+  // 2. Contato já cadastrado com esse número, quando ainda não há thread pra ele.
   if (contatoExistente) {
     const batizado = await batizarSeAindaForNumero(workspaceId, contatoExistente.nome, telefone, nomeDoPerfil);
     if (batizado) return { nome: batizado, contatoExistente: { ...contatoExistente, nome: batizado } };
     return { nome: contatoExistente.nome, contatoExistente };
-  }
-
-  // 2. Thread que já existe pra esse número, mesmo sem Contato. Mantém a continuidade de quem
-  //    começou a conversar antes de virar contato, inclusive quando a conversa foi criada com o
-  //    número cru como nome.
-  const porTelefone = await encontrarConversaPorTelefone(workspaceId, telefone);
-  if (porTelefone) {
-    const batizado = await batizarSeAindaForNumero(workspaceId, porTelefone, telefone, nomeDoPerfil);
-    return { nome: batizado ?? porTelefone, contatoExistente: null };
   }
 
   // 3. Nome de perfil, e só se ele estiver livre. Ocupado por outro número, cair nele fundiria as
