@@ -192,6 +192,8 @@ export type Contato = {
   estado?: string;
   pais?: string;
   canalPreferido?: Canal;
+  /** Como quem atendeu enxerga este lead: "bom" | "curioso" | "ruim". Ver `qualificacao.ts`. */
+  qualificacao?: string;
   melhorHorario?: string;
   /** @ do Instagram (sem arroba). Preenchido sozinho quando a pessoa chega pelo Direct. */
   instagram?: string;

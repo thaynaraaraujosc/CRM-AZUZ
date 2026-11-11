@@ -11,6 +11,7 @@ import { HOJE_ISO } from "@/lib/hoje";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { useFunis } from "@/lib/funis-context";
 import { useContatos } from "@/lib/contatos-context";
+import { rotuloDaQualificacao } from "@/lib/contatos/qualificacao";
 import { chaveDeContato } from "@/lib/contatos/chave-nome";
 import { useConversas } from "@/lib/conversas-context";
 import { rotuloDeAtividade } from "@/lib/funis/atividade";
@@ -1208,6 +1209,25 @@ function FunilPageInner() {
                           <span className={`tag ${classeOrigem(card.origem)}`}>
                             {card.origem}
                           </span>
+                          {/*
+                            A LEITURA DE QUEM ATENDEU, no cartão.
+                            
+                            Ela é dada na conversa — é lá que se sabe — e aparece AQUI porque é
+                            aqui que se decide a quem ligar primeiro. Uma coluna de trinta cards
+                            com três "Bom" no meio é outra coluna.
+                            
+                            Só mostra, não edita: o cartão inteiro já é um botão (abre a conversa),
+                            e botão dentro de botão não é HTML válido nem gesto previsível. Um
+                            clique leva ao lugar onde se marca.
+                          */}
+                          {(() => {
+                            const qual = contatoPorNome.get(chaveDeContato(card.nome))?.qualificacao;
+                            return qual ? (
+                              <span className={`lead-qual ${qual}`} title={traduzir("Qualificação do lead")}>
+                                {traduzir(rotuloDaQualificacao(qual))}
+                              </span>
+                            ) : null;
+                          })()}
                           {/* Só mostra data quando ela é REAL.
                               `card.data` é uma string gravada quando o negócio nasceu ("Hoje",
                               "Ontem") e nunca mais tocada: um card criado ontem seguia dizendo

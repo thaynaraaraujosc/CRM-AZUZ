@@ -247,6 +247,26 @@ export const CAMPOS_CONDICAO: CampoCondicaoInfo[] = [
   { valor: "valor_negocio", label: "Valor do negócio", grupo: "Negócio", tipo: "moeda" },
 
   /* ---------------------------------- Contato ---------------------------------- */
+  {
+    valor: "qualificacao",
+    label: "Qualificação do lead",
+    grupo: "Contato",
+    tipo: "lista",
+    /*
+     * A LEITURA HUMANA DO LEAD, dentro da automação.
+     *
+     * É o que permite fechar o laço sem ninguém lembrar de fazer: "se a qualificação for Bom,
+     * devolve a conversão pro anúncio". O julgamento continua sendo de quem atendeu — a automação
+     * só evita que ele morra dentro da ficha.
+     */
+    descricao: "Bom, curioso ou ruim — a leitura de quem atendeu.",
+    sinonimos: ["bom", "curioso", "ruim", "lead bom", "qualidade do lead"],
+    opcoesFixas: [
+      { valor: "bom", label: "Bom" },
+      { valor: "curioso", label: "Curioso" },
+      { valor: "ruim", label: "Ruim" },
+    ],
+  },
   { valor: "origem", label: "Origem (fonte do lead)", grupo: "Contato", tipo: "lista", opcoes: "origens_do_lead" },
   /* A etiqueta é um CONJUNTO: o contato tem várias. Ver `TipoDeCampoCondicao`. */
   { valor: "etiqueta", label: "Etiqueta", grupo: "Contato", tipo: "multi", opcoes: "etiquetas" },

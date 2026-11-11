@@ -43,6 +43,10 @@ model Contato {
   estado         String?
   pais           String?
   canalPreferido String?
+  /// Como quem atendeu ENXERGA este lead: "bom" | "curioso" | "ruim". Ver `qualificacao.ts`.
+  /// É julgamento humano, e é por isso que ele vale: o algoritmo de anúncio só aprende a procurar
+  /// gente boa se alguém disser quem foi boa.
+  qualificacao   String?
   melhorHorario  String?
 
   /// OS CAMPOS QUE CADA EMPRESA CRIA, como `{ "<id do campo>": "valor" }`.

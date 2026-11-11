@@ -139,6 +139,7 @@ export type CampoCondicao =
    * usado numa decisão: "se a resposta for 1…". */
   | "mensagem"
   | "origem"
+  | "qualificacao"
   | "canal"
   | "etapa"
   | "funil"

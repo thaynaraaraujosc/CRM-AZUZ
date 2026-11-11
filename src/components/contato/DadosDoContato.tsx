@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 
 import { CamposPersonalizados } from "@/components/conversas/CamposPersonalizados";
+import { QUALIFICACOES } from "@/lib/contatos/qualificacao";
 import { IconCheck, IconClose, IconEdit } from "@/components/icons";
 import { nomeAindaEhIdCru, nomeExibido } from "@/lib/conversas/exibicao";
 import {
@@ -586,6 +587,51 @@ export function DadosDoContato({
         onMudarValor={(id, valor) => setValoresCampos((prev) => ({ ...prev, [id]: valor }))}
         onSalvarDefinicoes={salvarDefinicoesDeCampos}
       />
+
+      {/*
+        A LEITURA DE QUEM ATENDEU, num clique.
+        
+        "Coloca pra eu dizer se o cliente é bom, curioso — pra deixar o traqueamento mais
+        inteligente, porque toda essa inteligência tem que levar a um lugar, que é retorno pros
+        anúncios."
+        
+        É a peça que o CRM não consegue deduzir sozinho. Ele sabe o que o lead FEZ e sabe devolver
+        venda ganha pro Google e pra Meta; o que ele não sabe é o que só quem conversou sabe — se
+        era comprador ou alguém matando tempo.
+        
+        FORA DO FORMULÁRIO DE EDIÇÃO, e isso é a diferença entre ser usado e não ser: marcar
+        acontece no meio da conversa, não numa visita à ficha pra "editar contato". Um clique
+        grava; clicar de novo na mesma desmarca, porque errar a marcação é comum e desfazer não
+        pode exigir abrir formulário.
+      */}
+      <div className="field">
+        <label>{traduzir("Qualificação do lead")}</label>
+        <div className="dc-qualificacao">
+          {QUALIFICACOES.map((q) => (
+            <button
+              type="button"
+              key={q.valor}
+              className={`dc-qual-chip${contato?.qualificacao === q.valor ? ` on ${q.valor}` : ""}`}
+              aria-pressed={contato?.qualificacao === q.valor}
+              title={traduzir(q.descricao)}
+              onClick={() => {
+                const novo = contato?.qualificacao === q.valor ? "" : q.valor;
+                salvarDadosContato(nome, { qualificacao: novo });
+                aoRegistrarNoHistorico?.(
+                  novo ? `Lead marcado como "${q.label}"` : `Qualificação do lead removida`,
+                );
+              }}
+            >
+              {traduzir(q.label)}
+            </button>
+          ))}
+        </div>
+        {contato?.qualificacao === "bom" ? (
+          <p className="hint">
+            {traduzir("Este é o sinal que volta pro anúncio como lead qualificado.")}
+          </p>
+        ) : null}
+      </div>
 
       <div className="field">
         <label>{traduzir("Etiquetas")}</label>

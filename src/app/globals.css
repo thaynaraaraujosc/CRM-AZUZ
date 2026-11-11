@@ -33082,3 +33082,80 @@ td.trafego-col-crm:first-of-type {
   color: var(--text-muted);
   cursor: default;
 }
+
+/* ---------------- Qualificação do lead ----------------
+ *
+ * A leitura de quem atendeu: bom, curioso, ruim. É o dado que o CRM não consegue deduzir sozinho —
+ * ele sabe o que o lead FEZ, não se ele prestava — e é ele que fecha o laço com o anúncio.
+ *
+ * As cores dizem o que cada uma vale pro anúncio, e não "certo/errado": verde é o sinal que volta
+ * como lead qualificado; cinza é o que não vira sinal nenhum; vermelho é lead errado.
+ */
+.dc-qualificacao {
+  display: flex;
+  gap: 6px;
+}
+
+.dc-qual-chip {
+  flex: 1 1 0;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: var(--fw-semibold);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.dc-qual-chip:hover {
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.dc-qual-chip.on.bom {
+  border-color: var(--success);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  color: var(--success);
+}
+
+.dc-qual-chip.on.curioso {
+  border-color: var(--line-strong);
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+
+.dc-qual-chip.on.ruim {
+  border-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
+}
+
+/* No cartão do funil ela é etiqueta, não controle: diz o que foi marcado e nada mais. */
+.lead-qual {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.01em;
+}
+
+.lead-qual.bom {
+  background: color-mix(in srgb, var(--success) 15%, transparent);
+  color: var(--success);
+}
+
+.lead-qual.curioso {
+  background: var(--surface-hover);
+  color: var(--text-muted);
+}
+
+.lead-qual.ruim {
+  background: color-mix(in srgb, var(--danger) 15%, transparent);
+  color: var(--danger);
+}

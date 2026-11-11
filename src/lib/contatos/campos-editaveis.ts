@@ -34,6 +34,8 @@ export const CAMPOS_CONTATO_EDITAVEIS = [
   "estado",
   "pais",
   "canalPreferido",
+  /* Como quem atendeu enxerga este lead ("bom" | "curioso" | "ruim"). Ver `qualificacao.ts`. */
+  "qualificacao",
   "melhorHorario",
   "instagram",
   "instagramId",
