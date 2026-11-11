@@ -38,6 +38,7 @@ import {
   type NumeroConectado,
 } from "@/lib/conversas/numeros-conectados";
 import { canalDeSaida } from "@/lib/conversas/canal-de-saida";
+import { CANAL_NAO_OFICIAL, CANAL_OFICIAL } from "@/lib/integracoes/conta-canal";
 import { iniciaisExibidas, nomeAindaEhIdCru, nomeExibido } from "@/lib/conversas/exibicao";
 import { BotoesConectarWhatsApp } from "@/components/configuracoes/BotoesConectarWhatsApp";
 import { BolhaMensagem } from "@/components/conversas/BolhaMensagem";
@@ -2411,7 +2412,12 @@ function ConversasPageInner() {
   function conversaUsaWhatsappNaoOficial(nomeContato: string): boolean {
     const extras = mensagensExtraPorContato[nomeContato] ?? [];
     for (let i = extras.length - 1; i >= 0; i--) {
-      if (extras[i].canal) return extras[i].canal === "whatsapp_nao_oficial";
+      /* `whatsapp_baileys` é o nome ANTIGO desta conexão, e ele ainda está gravado em mensagem de
+         automação (ver `registrar-saida.ts`). Lido como "não é QR Code", ele fazia a conversa
+         inteira passar por oficial depois de uma resposta automática. */
+      if (extras[i].canal) {
+        return extras[i].canal === CANAL_NAO_OFICIAL || extras[i].canal === "whatsapp_baileys";
+      }
     }
     /* Sem histórico, vale o canal EFETIVO e não a preferência: com uma conexão só, ela é o que
        está ligado. Ver `canalEfetivo`. */
@@ -2541,8 +2547,19 @@ function ConversasPageInner() {
       })
         .then(async (r) => {
           if (!r.ok) throw new Error(((await r.json()) as { erro?: string }).erro);
+          /*
+            A MENSAGEM GUARDA POR ONDE SAIU, e é isto que faz a escolha PEGAR.
+            
+            "Depois que eu escolhi, tem que sumir daqui. Eu já escolhi, eu já estou mandando
+            mensagem pra essa pessoa." Era verdade e a tela não sabia: nenhum dos dois caminhos de
+            envio marcava o canal na bolha, então a conversa continuava "sem dono" depois de
+            enviada — e os seletores continuavam perguntando uma coisa já respondida.
+            
+            Com a marca, a conversa passa a pertencer à conexão por onde ela falou, que é a regra
+            que o resto do CRM já seguia pras mensagens RECEBIDAS.
+          */
           // Esta conexão não informa entrega nem leitura, então o status honesto para em "enviado".
-          if (idLocal) atualizarMensagem(aberta.nome, idLocal, { status: "enviado" });
+          if (idLocal) atualizarMensagem(aberta.nome, idLocal, { status: "enviado", canal: CANAL_NAO_OFICIAL });
         })
         .catch((erro) => {
           if (idLocal) atualizarMensagem(aberta.nome, idLocal, { status: "erro" });
@@ -2581,7 +2598,13 @@ function ConversasPageInner() {
           }
           // Guarda o id que a Meta devolveu: é por ele que os webhooks de entregue/lido vão
           // encontrar esta mensagem depois. E "enviado" aqui é fato, não temporizador.
-          if (idLocal) atualizarMensagem(nomeDaConversa, idLocal, { status: "enviado", wamid: dados.wamid });
+          // Mesma marca do outro caminho: a conversa passa a ser da conexão por onde ela falou.
+          if (idLocal)
+            atualizarMensagem(nomeDaConversa, idLocal, {
+              status: "enviado",
+              wamid: dados.wamid,
+              canal: CANAL_OFICIAL,
+            });
         })
         .catch((erro) => {
           if (idLocal) atualizarMensagem(nomeDaConversa, idLocal, { status: "erro" });
@@ -4395,7 +4418,21 @@ function ConversasPageInner() {
                       // O telefone no `title`: o nome cabe na aba, o número nem sempre — e é o
                       // número que tira a dúvida quando dois apelidos se parecem.
                       title={`${n.numeroLegivel || n.nome} — ${traduzir("dois cliques pra renomear")}`}
-                      onClick={() => setNumeroTopFiltro(n.chave)}
+                      onClick={() => {
+                        /*
+                          TROCAR DE NÚMERO FECHA O QUE ESTAVA ABERTO.
+                          
+                          "Eu estou no número final 26, aí eu cliquei no final 38. A mensagem que
+                          estava ali naquela tela tem que sumir." E tem mesmo: a conversa aberta é
+                          do OUTRO número, e deixá-la na tela com a lista já trocada é o convite
+                          pra responder achando que está num número e estar em outro.
+                          
+                          Fechar é mais honesto que escolher sozinho a primeira da lista nova: a
+                          escolha de qual conversa abrir é de quem atende.
+                        */
+                        setNumeroTopFiltro(n.chave);
+                        setSelectedId(null);
+                      }}
                       onDoubleClick={() => setRenomeando(n.chave)}
                     >
                       <span className="wa-numero-aba-nome">{n.apelido?.trim() || n.numeroLegivel || n.nome}</span>
@@ -4410,7 +4447,10 @@ function ConversasPageInner() {
                   aria-selected={numeroAtivo === SEM_NUMERO}
                   className={`wa-numero-aba${numeroAtivo === SEM_NUMERO ? " on" : ""}`}
                   title={traduzir("Conversas de antes de o CRM guardar de qual número elas vieram.")}
-                  onClick={() => setNumeroTopFiltro(SEM_NUMERO)}
+                  onClick={() => {
+                    setNumeroTopFiltro(SEM_NUMERO);
+                    setSelectedId(null);
+                  }}
                 >
                   <span className="wa-numero-aba-nome">{traduzir("Sem número")}</span>
                   <span className="wa-numero-aba-canal">{traduzir("antigas")}</span>
@@ -5204,9 +5244,12 @@ function ConversasPageInner() {
                     conversa nova no aparelho dele. Por isso a linha diz isso quando a escolha sai
                     do padrão, em vez de deixar a descoberta pro cliente.
                   */}
+                  {/* Conversa que JÁ tem dono não pergunta mais nada: a escolha foi feita e a
+                      mensagem seguinte segue por onde a anterior foi. Quem quiser trocar assim
+                      mesmo abre pelo "+", que é a porta explícita. */}
                   {variosNumeros &&
                   aberta.canal === "WhatsApp" &&
-                  (seletorDeNumeroAberto || numeroEscolhidoDaConversa()) ? (
+                  (seletorDeNumeroAberto || (numeroEscolhidoDaConversa() && conversaSemDono(aberta.nome))) ? (
                     <div className="chat-canal-escolha">
                       <label className="chat-canal-rotulo" htmlFor="numero-de-saida">
                         {traduzir("Enviar pelo número")}
@@ -5251,9 +5294,7 @@ function ConversasPageInner() {
                   {/* Também quando a escolha do número foi explícita: aí a conversa pode já ter
                       dono e mesmo assim a próxima mensagem sai pelo oficial, onde a primeira
                       mensagem precisa de modelo aprovado. */}
-                  {aberta.canal === "WhatsApp" &&
-                  statusWhatsappPronto &&
-                  (conversaSemDono(aberta.nome) || numeroEscolhidoDaConversa()) ? (
+                  {aberta.canal === "WhatsApp" && statusWhatsappPronto && conversaSemDono(aberta.nome) ? (
                     <div className="chat-canal-escolha">
                       {/* Os dois chips só com os DOIS ligados: com um só não há o que escolher, e
                           um botão que não escolhe ensina a desconfiar dos que escolhem. */}
