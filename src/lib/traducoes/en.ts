@@ -2999,4 +2999,6 @@ export const TRADUCOES_EN: Record<string, string> = {
 
   /* A palavra-chave e o gatilho que não tem texto. */
   "As palavras-chave valem para os gatilhos que trazem texto (comentário, resposta de story, Direct). Em “Começou a te seguir” não há texto nenhum pra comparar, então ele dispara de qualquer jeito.": "Keywords apply to the triggers that carry text (comment, story reply, Direct). “Started following you” carries no text to compare, so it fires regardless.",
+
+  "O Instagram não avisa na hora do Seguir: o robô percebe no primeiro comentário, resposta de story ou Direct da pessoa.": "Instagram does not notify you at the moment of the Follow: the bot notices it on that person's first comment, story reply or Direct message.",
 };

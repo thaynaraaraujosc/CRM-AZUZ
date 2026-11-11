@@ -29864,6 +29864,17 @@ td.trafego-col-crm:first-of-type {
 }
 
 /* --- Palavras-chave --- */
+/* A ressalva de um gatilho, embaixo do nome dele na lista. Menor e mais fraca que a descrição:
+   ela não descreve o gatilho, ela avisa sobre um limite dele. */
+.gat-ressalva {
+  display: block;
+  margin-top: 2px;
+  font-size: 11.5px;
+  font-style: normal;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
 .gat-nota {
   margin: 0;
   font-size: 13px;
