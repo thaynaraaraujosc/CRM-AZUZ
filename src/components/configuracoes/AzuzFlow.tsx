@@ -115,7 +115,19 @@ export function AzuzFlow() {
    * e ele amanhecer fechado pra todo mundo da equipe. Quem respondeu "sim" abre direto na primeira
    * vez — acabou de pedir pra configurar — e a setinha manda daí em diante.
    */
-  const [aberto, setAberto] = useState(true);
+  /*
+   * O CARTÃO DO FLOW COMEÇA FECHADO.
+   *
+   * "Essa parte da AZUZ Flow, pode deixar ela sempre fechada, e a pessoa abre caso for usar."
+   *
+   * Ele abria com tudo à mostra — endereço, chave, canal, avisos — e é a seção mais longa de
+   * "Outras integrações", numa tela em que o que a pessoa foi fazer quase sempre é outra coisa.
+   * Quem usa o Flow configura uma vez; quem não usa rolava por tudo isso toda vez.
+   *
+   * O `setAberto(true)` que existe logo abaixo continua: gerar uma chave nova abre o cartão
+   * sozinho, porque a chave aparece UMA vez e esconder a tela que a mostra seria perdê-la.
+   */
+  const [aberto, setAberto] = useState(false);
 
   const ehAdmin = sessao?.user?.papelTipo === "admin" || sessao?.user?.superAdmin;
 
