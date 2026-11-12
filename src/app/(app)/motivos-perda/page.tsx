@@ -122,7 +122,7 @@ export default function MotivosPerdaPage() {
 
         {totalPerdas === 0 ? (
           <div className="card mb14">
-            <div className="dados-nao-conectados" style={{ padding: 17 }}>{traduzir("Você ainda não possui dados suficientes para gerar este indicador. Marque negócios como &quot;perdido&quot; no Funil (com motivo) pra ver a análise aqui.")}</div>
+            <div className="dados-nao-conectados bloco-corpo">{traduzir("Você ainda não possui dados suficientes para gerar este indicador. Marque negócios como &quot;perdido&quot; no Funil (com motivo) pra ver a análise aqui.")}</div>
           </div>
         ) : null}
 
@@ -150,7 +150,7 @@ export default function MotivosPerdaPage() {
 
         <ChartCard title={traduzir("Motivos de perda no período")}>
           {distribuicaoMotivos.length === 0 ? (
-            <p className="hint" style={{ padding: 17 }}>{traduzir("Nenhum motivo de perda registrado ainda.")}</p>
+            <p className="hint bloco-corpo">{traduzir("Nenhum motivo de perda registrado ainda.")}</p>
           ) : (
             <BarList
               items={distribuicaoMotivos.map((m) => ({
@@ -167,7 +167,7 @@ export default function MotivosPerdaPage() {
 
         <ChartCard title={traduzir("Evolução das perdas no período")}>
           {serieDiaria.length === 0 ? (
-            <p className="hint" style={{ padding: 17 }}>{traduzir("Ainda sem movimento suficiente pra traçar uma evolução.")}</p>
+            <p className="hint bloco-corpo">{traduzir("Ainda sem movimento suficiente pra traçar uma evolução.")}</p>
           ) : (
             <LineChart
               series={[
@@ -185,14 +185,14 @@ export default function MotivosPerdaPage() {
         <div className="grid split2">
           <ChartCard title={traduzir("Motivos por etapa")}>
             {porEtapa.length === 0 ? (
-              <p className="hint" style={{ padding: 17 }}>{traduzir("Sem dado ainda.")}</p>
+              <p className="hint bloco-corpo">{traduzir("Sem dado ainda.")}</p>
             ) : (
               <BarList items={porEtapa.map((g) => ({ chave: g.chave, label: g.chave, quantidade: g.total }))} />
             )}
           </ChartCard>
           <ChartCard title={traduzir("Motivos por responsável")}>
             {porResponsavel.length === 0 ? (
-              <p className="hint" style={{ padding: 17 }}>{traduzir("Sem dado ainda.")}</p>
+              <p className="hint bloco-corpo">{traduzir("Sem dado ainda.")}</p>
             ) : (
               <BarList items={porResponsavel.map((g) => ({ chave: g.chave, label: g.chave, quantidade: g.total }))} />
             )}
@@ -202,7 +202,7 @@ export default function MotivosPerdaPage() {
         <div className="grid split2">
           <ChartCard title={traduzir("Motivos por origem")}>
             {porOrigem.length === 0 ? (
-              <p className="hint" style={{ padding: 17 }}>{traduzir("Sem dado ainda.")}</p>
+              <p className="hint bloco-corpo">{traduzir("Sem dado ainda.")}</p>
             ) : (
               <BarList items={porOrigem.map((g) => ({ chave: g.chave, label: g.chave, quantidade: g.total }))} />
             )}
@@ -238,7 +238,7 @@ export default function MotivosPerdaPage() {
               {perdasFiltradas.length === 0 ? (
                 <tr>
                   <td colSpan={7}>
-                    <p className="hint" style={{ padding: 17 }}>{traduzir("Nenhuma negociação perdida com esse filtro.")}</p>
+                    <p className="hint bloco-corpo">{traduzir("Nenhuma negociação perdida com esse filtro.")}</p>
                   </td>
                 </tr>
               ) : null}

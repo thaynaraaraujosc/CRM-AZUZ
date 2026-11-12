@@ -563,9 +563,9 @@ function JornadaClientePageInner() {
             </div>
 
             {buscando ? (
-              <p className="hint" style={{ padding: 17 }}>{traduzir("Carregando…")}</p>
+              <p className="hint bloco-corpo">{traduzir("Carregando…")}</p>
             ) : ordenados.length === 0 ? (
-              <p className="hint" style={{ padding: 17 }}>{traduzir("Nenhum contato encontrado.")}</p>
+              <p className="hint bloco-corpo">{traduzir("Nenhum contato encontrado.")}</p>
             ) : (
               <>
                 <div className="table-wrap">
@@ -753,7 +753,7 @@ function JornadaClientePageInner() {
               <div className="panel-h divided">
                 <h4>{traduzir("Linha do tempo")}</h4>
               </div>
-              <div style={{ padding: 17 }}>
+              <div className="bloco-corpo">
                 <Timeline eventos={eventos} />
               </div>
             </div>
