@@ -5,7 +5,15 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
-import { IconInstagram, IconWhatsApp, IconCalendar } from "@/components/icons";
+import { IconInstagram, IconWhatsApp } from "@/components/icons";
+import {
+  LogoGmail,
+  LogoGoogleAds,
+  LogoGoogleAgenda,
+  LogoGoogleSheets,
+  LogoMeta,
+  LogoOutlook,
+} from "@/components/logos-marcas";
 import { NumerosDeWhatsApp } from "./NumerosDeWhatsApp";
 import { ConexaoWhatsAppOficial } from "./ConexaoWhatsAppOficial";
 import { ConexaoInstagram, ConexaoMetaAds, ConexaoGoogleAds } from "./ConexoesOAuth";
@@ -18,13 +26,29 @@ import type { StatusIntegracaoNaoOficial } from "./useIntegracaoNaoOficial";
 import { useIdioma } from "@/lib/idioma-context";
 import { AzuzFlow } from "./AzuzFlow";
 
-/** O que aparece em "Em breve". Zapier, Make, Stripe e Mercado Pago saíram: não estão no plano. */
-type AppFuturo = { nome: string; descricao: string; categoria: string };
+/**
+ * O que aparece em "Em breve". Zapier, Make, Stripe e Mercado Pago saíram: não estão no plano.
+ *
+ * CADA UM COM A LOGO DELE. Eram quatro cartões de texto puro, e quatro retângulos com nome e
+ * descrição se parecem tanto que a tela vira uma lista de avisos. A logo é o que faz a pessoa
+ * reconhecer a plataforma antes de ler — e é o que estas linhas estão vendendo.
+ *
+ * O Google Agenda continua aqui, e conferi antes de decidir: não existe integração de agenda no
+ * CRM (nenhuma rota, nenhum cliente de API). Ela estava declarada como "Conectada" num `integracoes`
+ * dentro de `src/lib/data.ts` que não é renderizado em lugar nenhum — dado de demonstração, não
+ * funcionalidade.
+ */
+type AppFuturo = {
+  nome: string;
+  descricao: string;
+  categoria: string;
+  Logo: (props: React.SVGProps<SVGSVGElement>) => React.ReactElement;
+};
 const APPS_EM_BREVE: AppFuturo[] = [
-  { nome: "Google Agenda", descricao: "Sincronize compromissos com sua agenda pessoal.", categoria: "Agenda" },
-  { nome: "Gmail", descricao: "Envie e receba e-mails direto do CRM.", categoria: "Comunicação"},
-  { nome: "Outlook", descricao: "Sincronize sua caixa de entrada corporativa.", categoria: "Comunicação"},
-  { nome: "Google Sheets", descricao: "Exporte relatórios direto pra uma planilha.", categoria: "Dados" },
+  { nome: "Google Agenda", descricao: "Sincronize compromissos com sua agenda pessoal.", categoria: "Agenda", Logo: LogoGoogleAgenda },
+  { nome: "Gmail", descricao: "Envie e receba e-mails direto do CRM.", categoria: "Comunicação", Logo: LogoGmail },
+  { nome: "Outlook", descricao: "Sincronize sua caixa de entrada corporativa.", categoria: "Comunicação", Logo: LogoOutlook },
+  { nome: "Google Sheets", descricao: "Exporte relatórios direto pra uma planilha.", categoria: "Dados", Logo: LogoGoogleSheets },
 ];
 /* Derivada da lista, não escrita à mão. Com a lista fixa, tirar os apps de Pagamentos e
    Produtividade deixaria dois filtros que não mostram nada quando clicados: um beco sem saída que
@@ -210,7 +234,9 @@ export function IntegracoesSecao() {
             painel={<ConexaoInstagram />}
           />
           <LinhaReal
-            icone={<IconCalendar width={19} height={19} style={{ color: "var(--blue)" }} />}
+            /* Era `IconCalendar`: um calendario, cinza, do lado do nome de uma plataforma de
+               anuncios. Nao era so a falta da logo — era a logo errada. */
+            icone={<LogoMeta width={21} height={21} />}
             titulo={traduzir("Meta Ads")}
             sub={metaAds.integracao?.status === "conectado" ? traduzir("Alimenta o painel de Tráfego automaticamente") : traduzir("Conecte pra ver essa origem no painel de Tráfego")}
             conectado={metaAds.integracao?.status === "conectado"}
@@ -218,7 +244,7 @@ export function IntegracoesSecao() {
           />
           {statusGoogle.disponivel ? (
             <LinhaReal
-              icone={<span className="rastreio-canal-icones rastreio-google">G</span>}
+              icone={<LogoGoogleAds width={21} height={21} />}
               titulo={traduzir("Google Ads")}
               sub={
                 statusGoogle.status === "conectado"
@@ -274,6 +300,9 @@ export function IntegracoesSecao() {
           {appsFiltrados.map((a) => (
             <div className="config-canal-card" key={a.nome}>
               <div className="config-canal-card-h">
+                <span className="int-logo int-logo-pequena">
+                  <a.Logo width={20} height={20} />
+                </span>
                 <span className="n">{traduzir(a.nome)}</span>
                 <span className="int-status off">{traduzir("Em breve")}</span>
               </div>

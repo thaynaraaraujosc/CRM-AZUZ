@@ -61,6 +61,46 @@ export type NumeroDeWhatsApp = {
  */
 const NOME_PADRAO_OFICIAL = "WhatsApp oficial";
 
+/**
+ * TIRA DA LISTA OS NÚMEROS QUE NÃO EXISTEM MAIS.
+ *
+ * "Se eu conectar um número, depois desconectar e conectar outro, esse número tem que sumir
+ * daqui. Não precisa ficar igual tá esse aí, desconectado. Tira ele daqui, não faz sentido."
+ *
+ * Ela tem razão, e o caso dela era o pior possível: o MESMO número aparecia duas vezes, uma
+ * "Conectado" e outra "Desconectado" logo acima. Duas linhas com treze dígitos idênticos, uma
+ * delas oferecendo "Conectar" num telefone que já está conectado.
+ *
+ * Duas coisas saem, e por motivos diferentes:
+ *
+ * 1. O FANTASMA: posição desconectada cujo número está conectado em OUTRA posição. É sobra de uma
+ *    sessão que caiu e voltou noutro lugar. Reconectar essa linha não faria nada — o telefone já
+ *    está de pé.
+ * 2. A POSIÇÃO VAZIA: desconectada e sem número nenhum. É o que sobra quando alguém desconecta de
+ *    propósito (a rota de desconectar zera o número) ou abre uma posição e desiste. Uma linha que
+ *    não diz qual telefone é não ajuda ninguém a decidir nada.
+ *
+ * O QUE FICA, de propósito: a posição desconectada com número PRÓPRIO — o telefone que caiu
+ * sozinho e não voltou. Essa não é sujeira, é um problema: enquanto ela estiver assim, ninguém
+ * está recebendo mensagem por aquele número. Escondê-la trocaria uma lista limpa por uma falha
+ * silenciosa, e é dessa linha que sai o botão de reconectar.
+ *
+ * Função pura e exportada porque é REGRA, e regra tem teste.
+ */
+export function semNumerosFantasmas(numeros: NumeroDeWhatsApp[]): NumeroDeWhatsApp[] {
+  const conectados = new Set(
+    numeros.filter((n) => n.status === "conectado" && n.chave).map((n) => n.chave),
+  );
+  return numeros.filter((n) => {
+    // O oficial não se conecta nem se desconecta por aqui: ele tem o cadastro da Meta por trás, e
+    // sumir com ele esconderia o número principal da empresa.
+    if (n.provedor === CANAL_OFICIAL) return true;
+    if (n.status !== "desconectado") return true;
+    if (!n.chave) return false;
+    return !conectados.has(n.chave);
+  });
+}
+
 export async function numerosDeWhatsApp(workspaceId: string): Promise<NumeroDeWhatsApp[]> {
   const linhas = await prisma.integracao.findMany({
     where: { workspaceId, provedor: { in: [CANAL_OFICIAL, CANAL_NAO_OFICIAL] } },
@@ -115,5 +155,5 @@ export async function numerosDeWhatsApp(workspaceId: string): Promise<NumeroDeWh
       responsavel,
     });
   }
-  return numeros;
+  return semNumerosFantasmas(numeros);
 }

@@ -108,6 +108,12 @@
      --------------------------------------------------------------------------- */
   --navy-marca: #002037;
   --ouro: #D2A366;
+  /* O DOURADO DA LINHA ABERTA, mais claro que o da marca. "A cor que ta dourada ta muito escura."
+     Estava: o `--ouro` cheio e um PREENCHIMENTO — ele foi calibrado pra botao, onde ocupa 100x36
+     pixels, nao pra uma faixa de 400px de largura que fica na tela o dia inteiro. Nesta diluicao
+     ele continua sendo claramente o dourado da casa, e a tinta navy por cima sobe de 7,3:1 pra
+     12,6:1 de contraste. */
+  --ouro-linha: #eedfc6;
   --ouro-hover: #c08f4e;
   --ouro-active: #b07f3f;
   /* Dourado rebaixado, pra fundo de marcador e filete fino. Nunca pra texto. */
@@ -4793,37 +4799,28 @@ table.tbl tbody tr:hover td {
  */
 .wa-row.active,
 .wa-row.active.nao-lida {
-  background: var(--ouro);
-  border-bottom-color: var(--ouro);
+  background: var(--ouro-linha);
+  border-bottom-color: var(--ouro-linha);
   border-left-color: var(--navy-marca);
   box-shadow: none;
 
   --ink: #002037;
   --ink-nome: #002037;
-  --text-muted: rgba(0, 32, 55, 0.78);
-  --text-faint: rgba(0, 32, 55, 0.68);
-  --line: rgba(0, 32, 55, 0.2);
-  --line-soft: rgba(0, 32, 55, 0.14);
-  --navy-raised: rgba(0, 32, 55, 0.08);
-  --navy-raised-2: rgba(0, 32, 55, 0.12);
-  --surface-elevated: rgba(255, 255, 255, 0.55);
+  --text-muted: rgba(0, 32, 55, 0.74);
+  --text-faint: rgba(0, 32, 55, 0.62);
+  --line: rgba(0, 32, 55, 0.16);
+  --line-soft: rgba(0, 32, 55, 0.1);
+  --navy-raised: rgba(0, 32, 55, 0.06);
+  --navy-raised-2: rgba(0, 32, 55, 0.1);
   --blue: #002037;
-  color: #002037;
-}
-
-/* As etiquetas dentro da linha aberta: fundo navy translucido com tinta navy. As cores proprias
-   delas sao claras e pastel, e sobre o dourado viravam manchas sem contorno. */
-.wa-row.active .tag {
-  background: rgba(0, 32, 55, 0.1);
-  border-color: rgba(0, 32, 55, 0.18);
   color: #002037;
 }
 
 /* Hover não altera o cartão aberto: ele já está no estado mais forte que existe, e mudar no passar
    do mouse faria parecer que o clique desfez a seleção. */
 .wa-row.active:hover {
-  background: var(--ouro);
-  border-bottom-color: var(--ouro);
+  background: var(--ouro-linha);
+  border-bottom-color: var(--ouro-linha);
   border-left-color: var(--navy-marca);
   box-shadow: none;
 }
@@ -4956,8 +4953,52 @@ table.tbl tbody tr:hover td {
   gap: 4px var(--space-2);
 }
 
+/*
+ * AS ETIQUETAS SAO PILULAS, e nao caixinhas.
+ *
+ * "Pode deixar essas caixinhas meio arredondadas e colocar uma cor diferente — fundo azulzinho
+ * claro, algo assim, ta meio feio essa parte."
+ *
+ * O que estava feio tinha nome: na linha aberta elas ganhavam fundo translucido COM BORDA, e
+ * borda de 1px em volta de um texto de 11px desenha um retangulo apertado, nao uma etiqueta. A
+ * pilula dispensa a borda — a cor de fundo ja diz onde ela comeca e termina.
+ *
+ * A TINTA E NAVY E NAO BRANCA, e isso e a unica parte do pedido que eu nao segui ao pe da letra:
+ * branco sobre o azul claro da 2:1, que e ilegivel. Navy sobre o mesmo azul da 13,4:1. A cor que
+ * ela pediu fica; o que muda e quem vai por cima dela.
+ */
 .wa-row .cr3 .tag {
   white-space: nowrap;
+  padding: 2px var(--space-2);
+  border: none;
+  border-radius: 999px;
+  background: var(--conversa-topo);
+  color: var(--navy-marca);
+}
+
+/*
+ * ONDE A LINHA JA TEM COR, A PILULA FICA BRANCA.
+ *
+ * Azul claro sobre a linha nao lida (que e azul clara) desapareceria, e sobre o dourado brigaria
+ * de tom. Branco se separa dos dois sem precisar de uma terceira cor no vocabulario.
+ */
+.wa-row.nao-lida .cr3 .tag,
+.wa-row.active .cr3 .tag {
+  background: #ffffff;
+  color: var(--navy-marca);
+}
+
+/* Estas duas tem cor propria porque dizem outra coisa (a etapa do funil, por qual conexao a
+   conversa fala), e a pilula generica apagaria essa diferenca. */
+.wa-row .cr3 .wa-etapa-funil-tag {
+  background: var(--blue-soft-2);
+  color: var(--blue);
+}
+
+.wa-row .cr3 .wa-conexao-tag {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--text-muted);
 }
 
 .origem-meta {
@@ -17469,6 +17510,30 @@ button.flow-node-warn:hover {
   align-items: center;
   gap: var(--space-2);
   margin-bottom: 6px;
+}
+
+/* A logo dentro do cartão de "Em breve": a mesma caixinha das integrações prontas, num tamanho
+   que cabe ao lado de um nome em vez de abrir uma linha própria. */
+.int-logo-pequena {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-elevated);
+  border: 1px solid var(--line-soft);
+}
+
+/* A marca da casa no cabeçalho do cartão do AZUZ Flow. Maior que um ícone de lista: é a única
+   integração que é produto nosso, e o cartão dela abre uma seção inteira. */
+.flow-marca {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.flow-marca .brand-mark {
+  width: 34px;
+  height: 34px;
+  font-size: 16px;
 }
 .config-canal-card-h .n {
   font-size: 14px;

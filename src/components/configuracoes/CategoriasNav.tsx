@@ -45,7 +45,9 @@ export function CategoriasNav({
                 onClick={() => onSelecionar(cat.id)}
                 aria-pressed={ativa === cat.id}
               >
-                <cat.Icon width={16} height={16} aria-hidden="true" />
+                {/* A cor vai no ÍCONE e não no texto: o rótulo precisa continuar legível em
+                    cima de tudo, e dez palavras coloridas numa coluna seriam confete. */}
+                <cat.Icon width={16} height={16} aria-hidden="true" style={cat.cor ? { color: cat.cor } : undefined} />
                 <span>{traduzir(cat.label)}</span>
                 {cat.emBreve ? <span className="nav-badge-em-breve" style={{ marginLeft: "auto" }}>{traduzir("Em breve")}</span> : null}
               </button>
