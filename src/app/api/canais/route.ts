@@ -2,6 +2,14 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { CANAL_NAO_OFICIAL, CANAL_OFICIAL } from "@/lib/integracoes/conta-canal";
+import { numerosDeWhatsApp } from "@/lib/integracoes/numeros-de-whatsapp";
+import {
+  canalTemNumero,
+  numerosDeEnvio,
+  porQueOCanalNaoServe,
+  type NumeroDeEnvio,
+} from "@/lib/campanhas/canais-de-envio";
 
 /**
  * Quais canais de envio este workspace tem de verdade, agora.
@@ -29,6 +37,15 @@ export type CanalDisponivel = {
    * Marcado, e não escondido: a pergunta "cadê o e-mail?" merece resposta na tela.
    */
   emBreve?: boolean;
+  /**
+   * OS NÚMEROS DESTE CANAL, um por conexão de pé.
+   *
+   * Campo novo, e aditivo de propósito: Templates continua perguntando "quais CANAIS existem?" —
+   * um template pertence a um canal, não a um telefone — enquanto o Disparo pergunta "por qual
+   * NÚMERO isto sai?". São duas perguntas diferentes sobre o mesmo mundo, e a segunda não cabia
+   * na resposta antiga. Ver `canais-de-envio.ts`.
+   */
+  numeros?: NumeroDeEnvio[];
 };
 
 export async function GET() {
@@ -36,30 +53,45 @@ export async function GET() {
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
   const workspaceId = sessao.user.workspaceId;
 
-  const integracoes = await prisma.integracao.findMany({
-    where: { workspaceId, provedor: { in: ["meta_whatsapp", "whatsapp_nao_oficial", "meta_instagram"] } },
-    select: { provedor: true, status: true, metadados: true },
-  });
-  const oficial = integracoes.find((i) => i.provedor === "meta_whatsapp");
+  /*
+   * OS WHATSAPP VÊM DA LISTA DE NÚMEROS, e não de um `.find()` por provedor.
+   *
+   * O `.find()` pegava o PRIMEIRO registro do provedor, sem olhar status. Quem conecta um número,
+   * desconecta e conecta outro fica com a linha velha na frente — e a tela dizia "Escaneie o QR
+   * Code", com o cartão desabilitado, sobre um WhatsApp que estava de pé recebendo mensagem.
+   *
+   * `numerosDeWhatsApp` já responde isto direito (inclusive tirando a linha fantasma), e é a mesma
+   * lista que as abas da caixa de entrada usam. Duas respostas pra mesma pergunta é como as duas
+   * telas passam a discordar — e foi o que aconteceu.
+   */
+  const [integracoes, numerosWhats] = await Promise.all([
+    prisma.integracao.findMany({
+      where: { workspaceId, provedor: { in: ["meta_instagram"] } },
+      select: { provedor: true, status: true, metadados: true },
+    }),
+    numerosDeWhatsApp(workspaceId),
+  ]);
   const instagram = integracoes.find((i) => i.provedor === "meta_instagram");
-  const qr = integracoes.find((i) => i.provedor === "whatsapp_nao_oficial");
-  const numeroOficial = (oficial?.metadados as { displayPhoneNumber?: string; phoneNumber?: string } | null)?.displayPhoneNumber;
-  const numeroQr = (qr?.metadados as { numero?: string } | null)?.numero;
+  const numerosParaEnvio = numerosDeEnvio(numerosWhats);
+  const doOficial = numerosParaEnvio.filter((n) => n.canal === "whatsapp_oficial");
+  const doQr = numerosParaEnvio.filter((n) => n.canal === "whatsapp_nao_oficial");
 
   const canais: CanalDisponivel[] = [
     {
       canal: "whatsapp_oficial",
       label: "WhatsApp API Oficial",
-      conectado: oficial?.status === "conectado",
-      detalhe: numeroOficial ?? null,
-      motivo: oficial?.status === "conectado" ? undefined : "Conecte em Configurações → Outras integrações.",
+      conectado: canalTemNumero(numerosParaEnvio, "whatsapp_oficial"),
+      detalhe: doOficial[0]?.numeroLegivel || doOficial[0]?.nome || null,
+      motivo: doOficial.length ? undefined : porQueOCanalNaoServe(numerosWhats, CANAL_OFICIAL),
+      numeros: doOficial,
     },
     {
       canal: "whatsapp_nao_oficial",
       label: "WhatsApp (QR Code)",
-      conectado: qr?.status === "conectado",
-      detalhe: numeroQr ?? null,
-      motivo: qr?.status === "conectado" ? undefined : "Escaneie o QR Code em Configurações → Outras integrações.",
+      conectado: canalTemNumero(numerosParaEnvio, "whatsapp_nao_oficial"),
+      detalhe: doQr[0]?.numeroLegivel || doQr[0]?.nome || null,
+      motivo: doQr.length ? undefined : porQueOCanalNaoServe(numerosWhats, CANAL_NAO_OFICIAL),
+      numeros: doQr,
     },
     {
       canal: "instagram",

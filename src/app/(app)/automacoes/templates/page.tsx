@@ -110,12 +110,15 @@ export default function TemplatesPage() {
             </p>
           </div>
         ) : (
-          <div className="tpl-grade">
+          /* Classe própria, e não um ajuste em `.tpl-grade`: aquele nome está definido DUAS vezes
+             no globals.css e é usado também em Social Seller → Novo. Mexer lá mudaria a outra
+             tela sem ninguém pedir. */
+          <div className="tpl-grade tpl-grade-cards">
             {visiveis.map((t) => {
               const podeEditar = !t.whatsappTemplateId || t.status === "rejeitado";
               const podeAnalise = t.canal === "whatsapp_oficial" && (t.status === "rascunho" || t.status === "rejeitado");
               return (
-                <article key={t.id} className="card tpl-card">
+                <article key={t.id} className={`card tpl-card tpl-card-${t.status}`}>
                   <header className="tpl-card-cabecalho">
                     <div>
                       <strong>{t.nome}</strong>

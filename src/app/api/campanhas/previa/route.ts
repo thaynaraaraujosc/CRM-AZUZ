@@ -47,12 +47,18 @@ export async function POST(request: Request) {
 
   let limiteDiario: number | null | undefined;
   let limiteConhecido = false;
+  /** O nível da conta na Meta (`TIER_1K`…). Vai pra tela poder dizer de onde o número veio. */
+  let limiteTier: string | undefined;
+  /** Pediu o nível e a Meta não respondeu. É diferente de "não é canal oficial". */
+  let limiteIndisponivel = false;
   if (corpo.canal === "whatsapp_oficial") {
     const conta = await contaConectada(workspaceId);
     if (conta) {
       const limite = await limiteDiarioDaConta(conta);
       limiteDiario = limite.porDia;
       limiteConhecido = limite.conhecido;
+      limiteTier = limite.tier;
+      limiteIndisponivel = !limite.conhecido;
     }
   }
   const previsao = preverDuracao(corpo.canal, comDestino.length, limiteDiario);
@@ -67,5 +73,7 @@ export async function POST(request: Request) {
     previsao,
     ritmo: RITMO[corpo.canal],
     limiteDiario: limiteConhecido ? limiteDiario : undefined,
+    limiteTier,
+    limiteIndisponivel,
   });
 }

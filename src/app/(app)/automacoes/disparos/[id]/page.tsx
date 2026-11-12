@@ -10,6 +10,9 @@ import { type Audiencia } from "@/lib/campanhas/audiencia-tipos";
 import { STATUS_CAMPANHA, STATUS_DESTINATARIO, formatarData } from "@/lib/campanhas/apresentacao";
 import type { MapeamentoVariavel } from "@/lib/campanhas/variaveis";
 import { LIMITES } from "@/lib/templates/regras";
+import { descreverAudiencia } from "@/lib/campanhas/audiencia-tipos";
+import { nomeDoNumeroDeEnvio, type NumeroDeEnvio } from "@/lib/campanhas/canais-de-envio";
+import type { CanalDisponivel } from "@/app/api/canais/route";
 import { useIdioma } from "@/lib/idioma-context";
 
 type Destinatario = {
@@ -31,6 +34,7 @@ type Campanha = {
   corpo: string;
   assunto: string | null;
   canal: keyof typeof LIMITES;
+  contaCanal: string | null;
   status: string;
   agendadaPara: string;
   iniciadaEm: string | null;
@@ -47,6 +51,8 @@ export default function DetalheDisparoPage() {
   const { t: traduzir } = useIdioma();
   const { id } = useParams<{ id: string }>();
   const [campanha, setCampanha] = useState<Campanha | null>(null);
+  /** Os números conectados, só pra traduzir a chave gravada no disparo num nome legível. */
+  const [numeros, setNumeros] = useState<NumeroDeEnvio[]>([]);
   const [erro, setErro] = useState<string | null>(null);
   const [filtro, setFiltro] = useState<"todos" | "falhou" | "respondido" | "pendente">("todos");
   const [ocupado, setOcupado] = useState(false);
@@ -57,6 +63,13 @@ export default function DetalheDisparoPage() {
     if (!r.ok) throw new Error(dados.erro ?? "Disparo não encontrado.");
     setCampanha(dados);
   }, [id]);
+
+  useEffect(() => {
+    fetch("/api/canais", { cache: "no-store" })
+      .then((r) => r.json() as Promise<CanalDisponivel[]>)
+      .then((c) => setNumeros(Array.isArray(c) ? c.flatMap((x) => x.numeros ?? []) : []))
+      .catch(() => setNumeros([]));
+  }, []);
 
   useEffect(() => {
     Promise.resolve().then(recarregar).catch((e) => setErro(e instanceof Error ? e.message : traduzir("Falha ao carregar.")));
@@ -103,6 +116,7 @@ export default function DetalheDisparoPage() {
     return d;
   }, [campanha, filtro]);
 
+  const numeroDoDisparo = nomeDoNumeroDeEnvio(numeros, campanha?.contaCanal);
   const st = campanha ? (STATUS_CAMPANHA[campanha.status] ?? { label: campanha.status, badge: "badge-neutral" }) : null;
   const podePausar = campanha && ["agendada", "enviando"].includes(campanha.status);
   const podeRetomar = campanha?.status === "pausada";
@@ -154,6 +168,37 @@ export default function DetalheDisparoPage() {
                 </div>
                 {st ? <span className={`badge ${st.badge}`}>{st.label}</span> : null}
               </div>
+
+              {/* POR ONDE SAIU E PRA QUEM — o que saiu da lista entra aqui.
+                  "Quando eu entro, que aí mostra qual foi a mensagem que foi enviada, qual foi o
+                  template, quais foram os contatos." A mensagem e o template já estavam logo
+                  abaixo; faltavam o canal, o número e o público, que são a primeira coisa a
+                  conferir quando um disparo não foi pra quem devia. */}
+              <dl className="disp-ficha">
+                <div>
+                  <dt>{traduzir("Sai por")}</dt>
+                  <dd>
+                    {numeroDoDisparo ? (
+                      <>
+                        <em className={`disp-etiqueta ${numeroDoDisparo.canal === "whatsapp_oficial" ? "oficial" : "qr"}`}>
+                          {traduzir(numeroDoDisparo.etiqueta)}
+                        </em>{" "}
+                        {numeroDoDisparo.nome}
+                      </>
+                    ) : (
+                      LIMITES[campanha.canal]?.label ?? campanha.canal
+                    )}
+                  </dd>
+                </div>
+                <div>
+                  <dt>{traduzir("Público")}</dt>
+                  <dd>{descreverAudiencia(campanha.audiencia)}</dd>
+                </div>
+                <div>
+                  <dt>{traduzir("Mensagem")}</dt>
+                  <dd>{campanha.templateNome ? `Template: ${campanha.templateNome}` : traduzir("Escrita na hora")}</dd>
+                </div>
+              </dl>
               {campanha.erroMensagem ? <p className="tpl-rejeicao">{campanha.erroMensagem}</p> : null}
               <div className="disp-metricas">
                 <Metrica valor={resumo.total} label={traduzir("destinatários")} />

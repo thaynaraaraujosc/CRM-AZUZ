@@ -7,6 +7,8 @@ import { RITMO, preverDuracao, type CanalCampanha } from "@/lib/campanhas/ritmo"
 import { resolverParametros, type MapeamentoVariavel } from "@/lib/campanhas/variaveis";
 import { anexarProximaReuniao, destinoDoContato, resolverAudiencia, type Audiencia } from "@/lib/campanhas/audiencia";
 import { contaConectada, limiteDiarioDaConta } from "@/lib/integracoes/whatsapp-oficial";
+import { numerosDeWhatsApp } from "@/lib/integracoes/numeros-de-whatsapp";
+import { numerosDeEnvio } from "@/lib/campanhas/canais-de-envio";
 
 /** GET lista as campanhas do workspace com a contagem de cada situação, mais recentes primeiro. */
 export async function GET() {
@@ -57,6 +59,8 @@ type CorpoCriar = {
   corpo: string;
   assunto?: string;
   canal: CanalCampanha;
+  /** Por qual número sai (`contaCanal` da conexão). Ausente = a escolha de sempre do worker. */
+  contaCanal?: string;
   templateNome?: string;
   templateIdioma?: string;
   /** Template do CRM de onde a mensagem saiu (só pra exibir depois). */
@@ -213,6 +217,31 @@ export async function POST(request: Request) {
     );
   }
 
+  /*
+   * O NÚMERO ESCOLHIDO É CONFERIDO CONTRA AS CONEXÕES DE VERDADE.
+   *
+   * O corpo da requisição não vem só da tela. Gravar uma chave qualquer aqui produziria uma
+   * campanha apontando pra uma conexão que não existe — e o erro só apareceria lá na frente,
+   * destinatário por destinatário, depois de a campanha já estar correndo.
+   *
+   * Tem que ser do MESMO canal da campanha, senão a campanha diria uma coisa e sairia por outra.
+   */
+  let contaCanal: string | null = null;
+  if (corpo.contaCanal) {
+    const disponiveis = numerosDeEnvio(await numerosDeWhatsApp(workspaceId));
+    const escolhido = disponiveis.find((n) => n.contaCanal === corpo.contaCanal);
+    if (!escolhido) {
+      return NextResponse.json(
+        { erro: "Esse número não está conectado agora. Escolha outro no passo do canal." },
+        { status: 400 },
+      );
+    }
+    if (escolhido.canal !== corpo.canal) {
+      return NextResponse.json({ erro: "Esse número é de outro canal." }, { status: 400 });
+    }
+    contaCanal = escolhido.contaCanal;
+  }
+
   const id = `campanha-${workspaceId}-${Date.now()}`;
   const agendadaPara = corpo.agendadaPara ? new Date(corpo.agendadaPara) : new Date();
 
@@ -225,6 +254,7 @@ export async function POST(request: Request) {
         corpo: texto,
         assunto,
         canal: corpo.canal,
+        contaCanal,
         templateNome,
         templateIdioma,
         templateId: corpo.templateId || null,

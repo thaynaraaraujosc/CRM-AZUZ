@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { enviarEmailOuFalhar } from "@/lib/email";
 import { enviarMensagemWhatsAppNaoOficial } from "@/lib/integracoes/evolution";
-import { slotDeEnvio, slotPadraoDeEnvio } from "@/lib/integracoes/conexoes-whatsapp";
+import { numeroDaContaCanal, slotDeEnvio, slotPadraoDeEnvio } from "@/lib/integracoes/conexoes-whatsapp";
 import { contaConectada, enviarPelaCloudApi, limiteDiarioDaConta, tratarErroEnvio } from "@/lib/integracoes/whatsapp-oficial";
 import { enviarDirectComRespostasRapidas } from "@/lib/integracoes/instagram-login";
 import { decriptar } from "@/lib/integracoes/crypto";
@@ -95,6 +95,8 @@ async function enviarUm(
   template: { nome: string; idioma: string } | null,
   variaveis: MapeamentoVariavel[],
   parametros: Record<string, string>,
+  /** Por qual número a campanha escolheu sair. `null` = a escolha de sempre. */
+  contaCanalDaCampanha: string | null,
 ): Promise<string | undefined> {
   // Texto livre (QR e e-mail): as variáveis são trocadas AQUI, com os valores congelados desta
   // pessoa. O corpo da campanha continua sendo o molde. É ele que a tela de acompanhamento mostra.
@@ -142,13 +144,27 @@ async function enviarUm(
      * remetente no meio de um relacionamento é o que faz a mensagem parecer spam de desconhecido.
      * Quem nunca escreveu não tem número de origem, e aí sai pelo primeiro conectado.
      */
-    const conversa = await prisma.conversa.findUnique({
-      where: { workspaceId_nome: { workspaceId, nome: contatoNome } },
-      select: { contaCanal: true },
-    });
-    const slot = conversa?.contaCanal
-      ? (await slotDeEnvio(workspaceId, conversa.contaCanal)).slot
-      : await slotPadraoDeEnvio(workspaceId);
+    /*
+     * E A ESCOLHA DA TELA GANHA DOS DOIS, quando ela existe.
+     *
+     * "Aqui tem que aparecer todos os WhatsApps que estão conectados" — e escolher um só faz
+     * sentido se ele for obedecido. Quem monta o disparo sabe algo que a regra acima não sabe:
+     * que ESTA leva sai pelo número do closer, não pelo de quem atendeu da última vez.
+     *
+     * Sem escolha, nada muda: continua valendo o número da conversa, e depois o primeiro ligado.
+     */
+    const escolhido = contaCanalDaCampanha ? (await slotDeEnvio(workspaceId, contaCanalDaCampanha)).slot : null;
+    const conversa = escolhido
+      ? null
+      : await prisma.conversa.findUnique({
+          where: { workspaceId_nome: { workspaceId, nome: contatoNome } },
+          select: { contaCanal: true },
+        });
+    const slot =
+      escolhido ??
+      (conversa?.contaCanal
+        ? (await slotDeEnvio(workspaceId, conversa.contaCanal)).slot
+        : await slotPadraoDeEnvio(workspaceId));
     if (slot === null) throw new Error("nenhum número de WhatsApp conectado pra esta conversa");
     await enviarMensagemWhatsAppNaoOficial(workspaceId, destino.replace(/\D/g, ""), corpoDestaPessoa, slot);
     return undefined;
@@ -266,14 +282,22 @@ async function processarCampanha(campanhaId: string, prazoFinal: number): Promis
     // tiver mais de uma. Mesmo papel do `phoneNumberId` no oficial.
     identificadorConexao = (integracao?.metadados as { instagramContaId?: string } | null)?.instagramContaId ?? null;
   } else if (canal === "whatsapp_nao_oficial") {
-    // O número da PRIMEIRA conexão ligada, não o da posição 1: é ele que vai gravado como dono das
-    // mensagens da campanha, e marcá-las com um número desconectado as faria sumir da tela.
-    const integracao = await prisma.integracao.findFirst({
-      where: { workspaceId: campanha.workspaceId, provedor: "whatsapp_nao_oficial", status: "conectado" },
-      select: { metadados: true },
-      orderBy: { slot: "asc" },
-    });
-    identificadorConexao = (integracao?.metadados as { numero?: string } | null)?.numero ?? null;
+    // O número ESCOLHIDO, quando houve escolha: é ele que vai gravado como dono das mensagens, e
+    // marcá-las com outro faria a campanha aparecer na aba errada da caixa de entrada — a mesma
+    // confusão que fez a conversa pela API oficial mostrar o histórico do QR Code.
+    const daCampanha = numeroDaContaCanal(campanha.contaCanal);
+    if (daCampanha) {
+      identificadorConexao = daCampanha;
+    } else {
+      // Sem escolha: o número da PRIMEIRA conexão ligada, não o da posição 1 — marcar com um
+      // número desconectado faria as mensagens sumirem da tela.
+      const integracao = await prisma.integracao.findFirst({
+        where: { workspaceId: campanha.workspaceId, provedor: "whatsapp_nao_oficial", status: "conectado" },
+        select: { metadados: true },
+        orderBy: { slot: "asc" },
+      });
+      identificadorConexao = (integracao?.metadados as { numero?: string } | null)?.numero ?? null;
+    }
   }
   // Botões do template (só pra bolha na tela de Conversas mostrar o que a pessoa recebeu).
   const botoes = campanha.templateId
@@ -335,6 +359,7 @@ async function processarCampanha(campanhaId: string, prazoFinal: number): Promis
         template,
         variaveis,
         (proximo.parametros && typeof proximo.parametros === "object" ? proximo.parametros : {}) as Record<string, string>,
+        campanha.contaCanal,
       );
       await prisma.campanhaDestinatario.update({
         where: { id: proximo.id },

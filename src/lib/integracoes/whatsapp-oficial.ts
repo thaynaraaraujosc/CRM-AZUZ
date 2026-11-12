@@ -104,7 +104,29 @@ const CONVERSAS_POR_TIER: Record<string, number | null> = {
   TIER_UNLIMITED: null,
 };
 
-export async function limiteDiarioDaConta(conta: ContaWhatsappOficial): Promise<{ conhecido: boolean; porDia: number | null }> {
+/**
+ * O NOME DO NÍVEL, pra tela poder dizer DE ONDE veio o número.
+ *
+ * "Aqui tá escrito que é 20 por minuto e até 150 pessoas por dia. É o limite da minha conta na
+ * Meta? Isso é o que a minha meta informou lá na conta? Dá uma olhada pra mim."
+ *
+ * A pergunta só existe porque a tela mostrava o número sem a fonte. O CRM nunca chutou esse valor
+ * — ele lê `messaging_limit_tier` da própria conta — mas quem olha não tem como saber disso, e um
+ * número sem origem é indistinguível de um número inventado. Devolver o nível junto é o que
+ * permite a frase dizer qual é o nível, quanto ele vale e que foi a Meta quem disse.
+ */
+export const NIVEIS_DA_META: Record<string, { rotulo: string; porDia: number | null }> = {
+  TIER_50: { rotulo: "50 por dia", porDia: 50 },
+  TIER_250: { rotulo: "250 por dia", porDia: 250 },
+  TIER_1K: { rotulo: "1.000 por dia", porDia: 1_000 },
+  TIER_10K: { rotulo: "10.000 por dia", porDia: 10_000 },
+  TIER_100K: { rotulo: "100.000 por dia", porDia: 100_000 },
+  TIER_UNLIMITED: { rotulo: "sem teto", porDia: null },
+};
+
+export async function limiteDiarioDaConta(
+  conta: ContaWhatsappOficial,
+): Promise<{ conhecido: boolean; porDia: number | null; tier?: string }> {
   try {
     const numero = await chamarGraph<{ messaging_limit_tier?: string }>(
       `/${conta.phoneNumberId}?fields=messaging_limit_tier`,
@@ -119,7 +141,7 @@ export async function limiteDiarioDaConta(conta: ContaWhatsappOficial): Promise<
         data: { metadados: { ...(await metadadosAtuais(conta.integracaoId)), limiteDiarioTier: tier } as never },
       })
       .catch(() => {});
-    return { conhecido: true, porDia: CONVERSAS_POR_TIER[tier] };
+    return { conhecido: true, porDia: CONVERSAS_POR_TIER[tier], tier };
   } catch {
     return { conhecido: false, porDia: null };
   }

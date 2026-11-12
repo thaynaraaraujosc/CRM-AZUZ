@@ -19329,6 +19329,70 @@ table.tbl .name-cell .r {
   margin-left: auto;
   color: var(--danger);
 }
+
+/* --------------------------------------------------- Templates: a grade de cartões
+   A grade de lá (`.tpl-grade`, definida duas vezes no arquivo e usada também em Social Seller)
+   deixa cada cartão com a altura do próprio conteúdo. Com um modelo de quatro linhas ao lado de
+   um de uma linha, a página vira uma escada — foi o que ela viu no print. Aqui as linhas ficam
+   da mesma altura e as ações assentam no rodapé de cada cartão. */
+.tpl-grade-cards {
+  align-items: stretch;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+}
+.tpl-grade-cards .tpl-card {
+  height: 100%;
+  border-left: 3px solid var(--line);
+  transition: border-color 0.12s ease;
+}
+.tpl-grade-cards .tpl-card:hover {
+  border-color: var(--blue);
+}
+/* A MESMA LINGUAGEM DE COR DO DISPARO: aprovado em azul claro, rejeitado em dourado. As duas
+   telas falam do mesmo modelo; cores diferentes pro mesmo estado fariam parecer dois assuntos. */
+.tpl-grade-cards .tpl-card-aprovado {
+  border-left-color: var(--blue);
+  background: var(--blue-soft-2);
+}
+.tpl-grade-cards .tpl-card-rejeitado {
+  border-left-color: var(--acao);
+  background: var(--warning-soft);
+}
+.tpl-grade-cards .tpl-card-em_analise {
+  border-left-color: var(--warning);
+}
+/* As ações eram quatro botões fantasma iguais, sem hierarquia: editar, mandar pra Meta, duplicar
+   e EXCLUIR pesavam o mesmo. O excluir já ficava à direita; agora ele também se lê como o que é. */
+.tpl-grade-cards .tpl-card-acoes .btn {
+  padding: var(--space-2) var(--space-3);
+  font-size: 13px;
+  border-radius: var(--radius-md);
+}
+.tpl-grade-cards .tpl-card-acoes .btn:hover:not(:disabled) {
+  background: var(--blue-soft);
+}
+.tpl-grade-cards .tpl-excluir:hover:not(:disabled) {
+  background: var(--danger-soft);
+}
+
+/* Os filtros de canal, do tamanho de um botão de verdade. */
+.tpl-filtros .pill {
+  font-size: 13px;
+  font-weight: var(--fw-medium);
+  letter-spacing: 0;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+}
+.tpl-filtros .pill:hover:not(.on) {
+  border-color: var(--blue);
+  background: var(--blue-soft-2);
+}
+.tpl-filtros .pill.on {
+  background: var(--blue-soft);
+  border-color: var(--blue);
+  font-weight: var(--fw-semibold);
+}
 .tpl-rejeicao {
   font-size: 13px;
   color: var(--danger);
@@ -19582,10 +19646,249 @@ table.tbl .name-cell .r {
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* --------------------------------------------------- Passo 1: um cartão por NÚMERO
+   Uma empresa com dez números tem dez caixas de saída, e qual delas manda muda o nome, a foto e
+   o histórico que chegam no aparelho de quem recebe. O formato antigo (um cartão por CANAL)
+   escondia essa escolha — e, pior, um registro desconectado antigo deixava o cartão do canal
+   inteiro cinza e travado, com o WhatsApp de pé do outro lado. */
+.disp-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.disp-grupo + .disp-grupo {
+  margin-top: var(--space-4);
+}
+.disp-grupo-titulo {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: 13px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.disp-grupo-titulo .hint {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: var(--fw-regular);
+}
+.disp-numeros {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--space-3);
+}
+.disp-numero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  min-height: 84px;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+.disp-numero:hover:not(:disabled):not(.disp-numero-off) {
+  border-color: var(--blue);
+  background: var(--blue-soft-2);
+}
+/* Escolhido: o azul claro da casa. Em tema escuro o mesmo token vira o dourado da marca, então a
+   seleção continua legível sem uma segunda regra de cor. */
+.disp-numero.on {
+  border-color: var(--blue);
+  background: var(--blue-soft);
+}
+.disp-numero-topo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.disp-numero-topo strong {
+  font-size: 15px;
+}
+.disp-numero .hint {
+  font-size: 13px;
+}
+.disp-numero-off {
+  opacity: 0.65;
+  cursor: not-allowed;
+  background: var(--surface-muted, var(--surface));
+}
+
+/* A etiqueta do canal na frente do número: "se ele é uma API oficial ou API não oficial". Carrega
+   consequência — janela de 24h e modelo aprovado só existem no oficial —, então ela é um rótulo
+   com peso, não um enfeite. */
+.disp-etiqueta {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-2);
+  border-radius: 999px;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.02em;
+  background: var(--gray-100);
+  color: var(--text-muted);
+}
+.disp-etiqueta.oficial {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+.disp-etiqueta.qr {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+/* Esqueleto enquanto a lista de números não chegou. O modal abre na hora; o que falta é só isto.
+   Antes a tela ficava com a frase de ajuda sozinha no branco, sem dizer que havia algo vindo. */
+.disp-numero-esqueleto {
+  min-height: 84px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--line-soft);
+  background: linear-gradient(90deg, var(--surface) 25%, var(--gray-100) 50%, var(--surface) 75%);
+  background-size: 200% 100%;
+  animation: disp-esqueleto 1.1s ease-in-out infinite;
+}
+@keyframes disp-esqueleto {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .disp-numero-esqueleto {
+    animation: none;
+  }
+}
+
+.disp-regra-canal {
+  margin: var(--space-4) 0 0;
+  padding: var(--space-3) var(--space-4);
+  border-left: 3px solid var(--blue);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  background: var(--blue-soft-2);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
 .disp-modos {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
+}
+
+/* Os modos do público viravam etiquetas de 11px — do tamanho de um selo de estado, não de um
+   botão que escolhe o público inteiro do disparo. "Deixa maior isso aí." */
+.disp-modos .pill {
+  font-size: 13px;
+  font-weight: var(--fw-medium);
+  letter-spacing: 0;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+}
+.disp-modos .pill:hover:not(.on) {
+  border-color: var(--blue);
+  background: var(--blue-soft-2);
+}
+.disp-modos .pill.on {
+  background: var(--blue-soft);
+  border-color: var(--blue);
+  font-weight: var(--fw-semibold);
+}
+
+/* --------------------------------------------------- Passo 3: os modelos
+   `.modelo-item` tem `#fff`, `#555` e `#777` escritos à mão: no tema escuro ele é um cartão
+   branco com texto cinza. Classe própria aqui, pelos tokens, em vez de mexer na de lá e arrastar
+   junto todas as outras telas que a usam. */
+.disp-templates {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-3);
+  align-content: start;
+}
+.disp-template {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  text-align: left;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+.disp-template:disabled {
+  cursor: not-allowed;
+}
+.disp-template-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.disp-template-topo strong {
+  font-size: 14px;
+}
+.disp-template-corpo {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+/* Aprovado: azul claro, e é o único que dá pra escolher. */
+.disp-template.aprovado {
+  border-left-color: var(--blue);
+  background: var(--blue-soft-2);
+}
+.disp-template.aprovado:hover {
+  background: var(--blue-soft);
+}
+.disp-template.escolhido {
+  border-color: var(--blue);
+  background: var(--blue-soft);
+  box-shadow: 0 0 0 1px var(--blue) inset;
+}
+/* Rejeitado: dourado. A barra da esquerda é o que se lê de longe; a etiqueta diz o resto. */
+.disp-template.rejeitado {
+  border-left-color: var(--acao);
+  background: var(--warning-soft);
+  opacity: 0.85;
+}
+.disp-template.em_analise {
+  border-left-color: var(--warning);
+}
+
+/* Ritmo e limite, no passo "Quando". Caixa própria porque aqui mora a resposta de "de onde vem
+   esse número", e ela não pode parecer mais uma linha de ajuda perdida no rodapé. */
+.disp-ritmo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--line-soft);
+  border-left: 3px solid var(--blue);
+  border-radius: var(--radius-lg);
+  background: var(--blue-soft-2);
+}
+.disp-ritmo p {
+  margin: 0;
+}
+.disp-ritmo p:first-child {
+  font-size: 15px;
 }
 /* Passo do público quando o canal é Instagram: conta conectada, os dois números e a regra. */
 .disp-ig-conta {
@@ -19727,9 +20030,77 @@ table.tbl .name-cell .r {
   padding: var(--space-4);
   text-decoration: none;
   color: inherit;
+  transition: border-color 0.12s ease;
 }
 .disp-item:hover {
-  border-color: var(--line);
+  border-color: var(--blue);
+}
+
+/* A linha de baixo do cartão: canal, número, público e data. Era uma frase corrida com pontos no
+   meio; a etiqueta do canal passa a ser lida de relance, que é o que se procura numa lista. */
+.disp-item-linha {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+.disp-item-linha .hint {
+  margin-top: 0;
+}
+
+/* ANDAMENTO EM UMA LINHA, no lugar dos seis números grandes.
+   "Poderia ficar só o título do disparo nessa página, e aí quando eu entro é que mostra." Seis
+   blocos por disparo numa lista de cinquenta é uma parede de números em que nada se destaca —
+   inclusive a falha, que é a única coisa que pede ação. Os seis continuam inteiros lá dentro,
+   junto da tabela pessoa por pessoa. */
+.disp-item-andamento {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  text-decoration: none;
+  color: inherit;
+}
+.disp-barra {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--gray-100);
+  overflow: hidden;
+}
+.disp-barra-cheia {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--blue);
+  transition: width 0.3s ease;
+}
+.disp-item-andamento .hint {
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+/* A ficha do disparo: por onde saiu, pra quem, com qual mensagem. */
+.disp-ficha {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-4) 0 0;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--blue-soft-2);
+}
+.disp-ficha dt {
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.disp-ficha dd {
+  margin: var(--space-1) 0 0;
+  font-size: 14px;
 }
 .disp-item-cabecalho {
   display: flex;

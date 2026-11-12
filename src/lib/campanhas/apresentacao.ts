@@ -6,6 +6,8 @@ export type CampanhaResumo = {
   id: string;
   titulo: string;
   canal: keyof typeof LIMITES;
+  /** Por qual número saiu. `null` nos disparos criados antes desta coluna existir. */
+  contaCanal: string | null;
   status: string;
   agendadaPara: string;
   iniciadaEm: string | null;

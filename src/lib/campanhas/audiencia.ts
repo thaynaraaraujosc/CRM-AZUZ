@@ -1,3 +1,4 @@
+import { numerosDoFunil } from "@/lib/funis/numeros-do-funil";
 import { prisma } from "@/lib/prisma";
 import { usaReuniao, type ContatoParaVariaveis, type MapeamentoVariavel } from "./variaveis";
 import { proximasReunioesPorContato } from "@/lib/agenda/proxima-reuniao";
@@ -122,7 +123,24 @@ export async function opcoesDeAudiencia(workspaceId: string) {
     prisma.contato.findMany({ where: { workspaceId }, select: { origem: true, etiquetas: true } }),
     prisma.funil.findMany({
       where: { workspaceId },
-      select: { id: true, nome: true, etapas: { select: { id: true, titulo: true }, orderBy: { ordem: "asc" } } },
+      /*
+       * OS NÚMEROS DO FUNIL VÊM JUNTO, nos dois formatos.
+       *
+       * "Se eu escolhi meta, tem que aparecer só os funis da meta. Se eu escolhi QR Code, tem que
+       * aparecer só o QR Code. Essas coisas são detalhes, pra não dar erro lá na hora de
+       * finalizar." — e não é detalhe: escolher o funil do QR Code num disparo pela API oficial
+       * monta um público que o canal escolhido não alcança, e o erro só aparece no fim.
+       *
+       * `contaCanal` (formato antigo, um número) e `numeros` (o novo, vários) juntos: é o que
+       * `numerosDoFunil` já lê, e o que mantém funcionando o funil criado antes da tabela existir.
+       */
+      select: {
+        id: true,
+        nome: true,
+        contaCanal: true,
+        numeros: { select: { contaCanal: true } },
+        etapas: { select: { id: true, titulo: true }, orderBy: { ordem: "asc" } },
+      },
       orderBy: { nome: "asc" },
     }),
   ]);
@@ -138,7 +156,17 @@ export async function opcoesDeAudiencia(workspaceId: string) {
     }
   }
   const ordenar = (m: Map<string, number>) => Array.from(m.entries()).sort((a, b) => b[1] - a[1]).map(([valor, total]) => ({ valor, total }));
-  return { totalContatos: contatos.length, origens: ordenar(origens), etiquetas: ordenar(etiquetas), funis };
+  return {
+    totalContatos: contatos.length,
+    origens: ordenar(origens),
+    etiquetas: ordenar(etiquetas),
+    funis: funis.map((f) => ({
+      id: f.id,
+      nome: f.nome,
+      etapas: f.etapas,
+      contaCanais: numerosDoFunil({ id: f.id, nome: f.nome, contaCanal: f.contaCanal, contaCanais: f.numeros.map((n) => n.contaCanal) }),
+    })),
+  };
 }
 
 /**

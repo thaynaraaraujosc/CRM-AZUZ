@@ -1821,6 +1821,18 @@ model Campanha {
   /// faria o relatório dizer "80% entregue" sobre coisas que nem são comparáveis.
   canal String
 
+  /// POR QUAL NÚMERO ESTE DISPARO SAI (`meta_whatsapp:<id>` / `whatsapp_nao_oficial:<numero>`).
+  ///
+  /// O canal diz o CAMINHO; este campo diz a CAIXA DE SAÍDA. Numa empresa com o número da
+  /// vendedora e o do closer no mesmo canal, os dois são "whatsapp_nao_oficial" e mesmo assim são
+  /// remetentes diferentes: nome, foto e histórico que chegam no aparelho de quem recebe são do
+  /// número, não do canal. Sem esta coluna o worker escolhia sozinho — a primeira posição ligada —
+  /// e a campanha saía por quem o banco listasse primeiro.
+  ///
+  /// `null` = o comportamento de sempre (a conexão da conversa, senão a primeira ligada). É o que
+  /// mantém intacto todo disparo criado antes desta coluna existir.
+  contaCanal String?
+
   /// Modelo aprovado da Meta, obrigatório no WhatsApp oficial quando a janela de 24h está fechada.
   templateNome   String?
   templateIdioma String?

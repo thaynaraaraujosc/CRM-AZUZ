@@ -17,6 +17,7 @@ import type { Audiencia, ModoAudiencia } from "@/lib/campanhas/audiencia-tipos";
 import type { CanalCampanha } from "@/lib/campanhas/ritmo";
 import { LIMITES } from "@/lib/templates/regras";
 import type { CanalDisponivel } from "@/app/api/canais/route";
+import { funisDoNumero, type NumeroDeEnvio } from "@/lib/campanhas/canais-de-envio";
 import type { JanelaDirect } from "@/app/api/social/janela/route";
 import type { TemplateSalvo } from "./EditorTemplate";
 import { PreviaMensagem } from "./PreviaMensagem";
@@ -26,7 +27,7 @@ type Opcoes = {
   totalContatos: number;
   origens: { valor: string; total: number }[];
   etiquetas: { valor: string; total: number }[];
-  funis: { id: string; nome: string; etapas: { id: string; titulo: string }[] }[];
+  funis: { id: string; nome: string; contaCanais?: string[]; etapas: { id: string; titulo: string }[] }[];
 };
 
 type Previa = {
@@ -38,6 +39,10 @@ type Previa = {
   previsao: { minutos: number; dias: number; limitadoPorCota: boolean };
   ritmo: { porMinuto: number; porDia: number | null; explicacao: string };
   limiteDiario?: number | null;
+  /** O nível da conta na Meta (`TIER_1K`…), pra frase poder dizer de onde o número veio. */
+  limiteTier?: string;
+  /** Perguntou à Meta e ela não respondeu. Diferente de "este canal não tem teto". */
+  limiteIndisponivel?: boolean;
 };
 
 const PASSOS = ["Canal", "Público", "Mensagem", "Quando", "Revisar"] as const;
@@ -76,6 +81,14 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
   const [templates, setTemplates] = useState<TemplateSalvo[]>([]);
 
   const [canal, setCanal] = useState<CanalCampanha | null>(null);
+  /**
+   * POR QUAL NÚMERO ESTE DISPARO SAI. `null` = o canal não tem números (Instagram, e-mail).
+   *
+   * O canal diz o caminho; isto diz a caixa de saída. Quem recebe vê o nome, a foto e o histórico
+   * do NÚMERO — então, numa empresa com o número da vendedora e o do closer no mesmo canal,
+   * escolher entre eles é a decisão que mais muda o que chega no aparelho da pessoa.
+   */
+  const [contaCanal, setContaCanal] = useState<string | null>(null);
   const [audiencia, setAudiencia] = useState<Audiencia>({ modo: "todos" });
   const [busca, setBusca] = useState("");
   const [verQuem, setVerQuem] = useState(false);
@@ -97,18 +110,33 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 
+  /*
+   * TRÊS PEDIDOS, TRÊS CHEGADAS. Antes era um `Promise.all`: a tela só desenhava quando os três
+   * voltassem.
+   *
+   * "Fica por muito tempo até abrir o canal, que é o primeiro passo."
+   *
+   * E o passo do canal não precisa de nenhum dos outros dois. Quem segurava era a prévia, que
+   * varre os contatos do workspace um a um pra contar quem tem WhatsApp — a conta mais cara das
+   * três, pedida antes de a pessoa ter escolhido qualquer coisa. O modal ficava com a frase "Por
+   * onde a mensagem sai" sozinha no meio do branco, esperando uma resposta que o passo 1 nem usa.
+   *
+   * Agora cada um chega quando chega, e cada passo espera só o que ele mesmo precisa.
+   */
   useEffect(() => {
-    Promise.all([
-      fetch("/api/canais", { cache: "no-store" }).then((r) => r.json() as Promise<CanalDisponivel[]>),
-      fetch("/api/campanhas/previa", { cache: "no-store" }).then((r) => r.json() as Promise<Opcoes>),
-      fetch("/api/templates", { cache: "no-store" }).then((r) => r.json() as Promise<TemplateSalvo[]>),
-    ])
-      .then(([c, o, t]) => {
-        setCanais(Array.isArray(c) ? c : []);
-        setOpcoes(o);
-        setTemplates(Array.isArray(t) ? t : []);
-      })
-      .catch((e) => setErro(e instanceof Error ? e.message : traduzir("Falha ao carregar.")));
+    const falhou = (e: unknown) => setErro(e instanceof Error ? e.message : traduzir("Falha ao carregar."));
+    fetch("/api/canais", { cache: "no-store" })
+      .then((r) => r.json() as Promise<CanalDisponivel[]>)
+      .then((c) => setCanais(Array.isArray(c) ? c : []))
+      .catch(falhou);
+    fetch("/api/campanhas/previa", { cache: "no-store" })
+      .then((r) => r.json() as Promise<Opcoes>)
+      .then(setOpcoes)
+      .catch(falhou);
+    fetch("/api/templates", { cache: "no-store" })
+      .then((r) => r.json() as Promise<TemplateSalvo[]>)
+      .then((t) => setTemplates(Array.isArray(t) ? t : []))
+      .catch(falhou);
   }, []);
 
   // A janela é buscada ao escolher o Instagram e RE-buscada ao voltar pro passo do público: ela
@@ -138,6 +166,34 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
       cancelado = true;
     };
   }, [canal, passo]);
+
+  /** Todos os números de WhatsApp de pé, os dois canais numa lista só. Ver `canais-de-envio.ts`. */
+  const numerosDeWhats = useMemo(() => canais.flatMap((c) => c.numeros ?? []), [canais]);
+  const canaisDeWhatsSemNumero = canais.filter(
+    (c) => (c.canal === "whatsapp_oficial" || c.canal === "whatsapp_nao_oficial") && !c.numeros?.length,
+  );
+  const outrosCanais = canais.filter((c) => c.canal === "instagram" || c.canal === "email");
+  const numeroEscolhido = numerosDeWhats.find((n) => n.contaCanal === contaCanal) ?? null;
+
+  function escolherNumero(n: NumeroDeEnvio) {
+    setCanal(n.canal as CanalCampanha);
+    setContaCanal(n.contaCanal);
+    setTemplateId(null);
+    setVariaveis([]);
+    /* O público volta pro começo ao trocar de número, e é de propósito: os funis oferecidos
+       dependem do número (ver `funisDoNumero`), e manter a escolha antiga deixaria selecionado um
+       funil que a nova lista nem mostra — a tela discordando de si mesma. */
+    setAudiencia({ modo: "todos" });
+  }
+
+  /*
+   * Só os funis que o número escolhido alcança. A regra (e o porquê de o funil SEM número ficar
+   * na lista) mora em `funisDoNumero`, com teste.
+   */
+  const funisOferecidos = useMemo(
+    () => funisDoNumero(opcoes?.funis ?? [], contaCanal),
+    [opcoes, contaCanal],
+  );
 
   const limites = canal ? LIMITES[canal] : null;
   const templateEscolhido = templates.find((t) => t.id === templateId) ?? null;
@@ -214,6 +270,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           canal,
+          contaCanal: contaCanal ?? undefined,
           audiencia,
           templateId: templateId ?? undefined,
           corpo: usaTemplate ? undefined : corpoLivre,
@@ -239,7 +296,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
       aberto
       onFechar={aoFechar}
       titulo={traduzir("Novo disparo em massa")}
-      largura={920}
+      largura={1060}
       rodape={
         <>
           <button type="button" className="btn ghost" onClick={passo === 0 ? aoFechar : () => setPasso((p) => p - 1)} disabled={enviando}>
@@ -270,37 +327,103 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
       {/* ------------------------------------------------------------------ 1. Canal */}
       {passo === 0 ? (
         <div className="disp-passo">
-          <p className="hint">{traduzir("Por onde a mensagem sai. Só aparece o que está conectado neste workspace.")}</p>
           {/* O Instagram é um canal como os outros AQUI. Ele tinha uma tela própria em
               Instagram → Disparos, que usava exatamente esta mesma API (`/api/campanhas`
               com `canal: "instagram"`): eram duas telas pro mesmo backend. Disparo agora é um
               lugar só, e o que muda por canal é o passo do público, não a página. */}
-          <div className="disp-canais">
-            {canais.map((c) => (
-              <button
-                key={c.canal}
-                type="button"
-                className={`tpl-canal${canal === c.canal ? " on" : ""}${c.emBreve ? " disp-canal-indisponivel" : ""}`}
-                disabled={!c.conectado}
-                title={!c.conectado ? c.motivo : undefined}
-                onClick={() => {
-                  setCanal(c.canal as CanalCampanha);
-                  setTemplateId(null);
-                  setVariaveis([]);
-                  // O Instagram tem um público só possível: quem está dentro da janela. Escolher
-                  // outro modo ali não é uma opção, é um erro esperando pra acontecer, então o modo
-                  // já vem certo. Sair do Instagram devolve o padrão de todo mundo.
-                  setAudiencia(c.canal === "instagram" ? { modo: "janela_instagram" } : { modo: "todos" });
-                }}
-              >
-                <strong>{traduzir(c.label)}</strong>
-                <span>
-                  {c.emBreve ? "Em breve" : c.conectado ? c.detalhe || "Conectado" : c.motivo}
-                </span>
-              </button>
-            ))}
-          </div>
-          {canal ? <p className="hint">{LIMITES[canal].explicacao}</p> : null}
+          {canais.length === 0 ? (
+            /* Esqueleto no lugar do branco: o modal abre na hora, e o que falta é só esta lista.
+               Antes a tela ficava com a frase de ajuda sozinha, sem dizer que havia algo vindo. */
+            <div className="disp-numeros">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="disp-numero-esqueleto" aria-hidden="true" />
+              ))}
+            </div>
+          ) : (
+            <>
+              {numerosDeWhats.length ? (
+                <section className="disp-grupo">
+                  <h4 className="disp-grupo-titulo">
+                    {traduzir("WhatsApp")}
+                    <span className="hint">
+                      {numerosDeWhats.length === 1
+                        ? traduzir("1 número conectado")
+                        : `${numerosDeWhats.length} ${traduzir("números conectados")}`}
+                    </span>
+                  </h4>
+                  <div className="disp-numeros">
+                    {numerosDeWhats.map((n) => (
+                      <button
+                        key={n.contaCanal}
+                        type="button"
+                        className={`disp-numero${contaCanal === n.contaCanal ? " on" : ""}`}
+                        onClick={() => escolherNumero(n)}
+                      >
+                        <span className="disp-numero-topo">
+                          <strong>{n.nome}</strong>
+                          {/* A etiqueta do canal na frente de cada número: "se ele é uma API
+                              oficial ou API não oficial". Não é decoração — as regras dos dois
+                              são diferentes (janela de 24h e modelo aprovado só existem no
+                              oficial), e é isso que decide o que dá pra mandar. */}
+                          <em className={`disp-etiqueta ${n.canal === "whatsapp_oficial" ? "oficial" : "qr"}`}>
+                            {traduzir(n.etiqueta)}
+                          </em>
+                        </span>
+                        <span className="hint">{n.numeroLegivel || traduzir("Conectado")}</span>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
+
+              {/* Canal de WhatsApp sem nenhum número de pé: fica visível, dizendo por quê. A
+                  pergunta "cadê o meu WhatsApp?" merece resposta na tela, não um sumiço. */}
+              {canaisDeWhatsSemNumero.length ? (
+                <div className="disp-numeros">
+                  {canaisDeWhatsSemNumero.map((c) => (
+                    <div key={c.canal} className="disp-numero disp-numero-off">
+                      <span className="disp-numero-topo">
+                        <strong>{traduzir(c.label)}</strong>
+                      </span>
+                      <span className="hint">{c.motivo}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+
+              <section className="disp-grupo">
+                <h4 className="disp-grupo-titulo">{traduzir("Outros canais")}</h4>
+                <div className="disp-numeros">
+                  {outrosCanais.map((c) => (
+                    <button
+                      key={c.canal}
+                      type="button"
+                      className={`disp-numero${canal === c.canal ? " on" : ""}${c.conectado ? "" : " disp-numero-off"}`}
+                      disabled={!c.conectado}
+                      title={!c.conectado ? c.motivo : undefined}
+                      onClick={() => {
+                        setCanal(c.canal as CanalCampanha);
+                        setContaCanal(null);
+                        setTemplateId(null);
+                        setVariaveis([]);
+                        // O Instagram tem um público só possível: quem está dentro da janela.
+                        // Escolher outro modo ali não é uma opção, é um erro esperando pra
+                        // acontecer, então o modo já vem certo.
+                        setAudiencia(c.canal === "instagram" ? { modo: "janela_instagram" } : { modo: "todos" });
+                      }}
+                    >
+                      <span className="disp-numero-topo">
+                        <strong>{traduzir(c.label)}</strong>
+                        {c.emBreve ? <em className="disp-etiqueta">{traduzir("Em breve")}</em> : null}
+                      </span>
+                      <span className="hint">{c.emBreve ? c.motivo : c.conectado ? c.detalhe || traduzir("Conectado") : c.motivo}</span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            </>
+          )}
+          {canal ? <p className="disp-regra-canal">{LIMITES[canal].explicacao}</p> : null}
         </div>
       ) : null}
 
@@ -440,7 +563,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
                 <label>{audiencia.modo === "funil" ? "Funil" : "Etapa"}</label>
                 <select className="input" value={audiencia.valor ?? ""} onChange={(e) => setAudiencia({ modo: audiencia.modo, valor: e.target.value })}>
                   <option value="">{traduzir("Escolha…")}</option>
-                  {(opcoes?.funis ?? []).map((f) =>
+                  {funisOferecidos.map((f) =>
                     audiencia.modo === "funil" ? (
                       <option key={f.id} value={f.id}>
                         {f.nome}
@@ -456,6 +579,14 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
                     ),
                   )}
                 </select>
+                {numeroEscolhido && funisOferecidos.length < (opcoes?.funis.length ?? 0) ? (
+                  /* Lista menor que o total: a tela DIZ por quê. Um filtro que encolhe a lista em
+                     silêncio é indistinguível de um funil que sumiu. */
+                  <p className="hint">
+                    {traduzir("Mostrando os funis que")} <strong>{numeroEscolhido.nome}</strong>{" "}
+                    {traduzir("alcança, mais os que não têm número próprio.")}
+                  </p>
+                ) : null}
               </div>
             ) : null}
 
@@ -555,18 +686,42 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
               ) : null}
               {templatesDoCanal.map((t) => {
                 const disponivel = t.status === "aprovado";
+                /* A COR DIZ O ESTADO, à distância: aprovado em azul claro, rejeitado em dourado.
+                   "Pra gente ter uma visão melhor." Numa lista de oito modelos, ler oito
+                   etiquetas pequenas pra achar os dois que dá pra usar é trabalho que a cor faz
+                   sozinha. A etiqueta continua lá: cor sozinha não serve a quem não a distingue. */
                 return (
                   <button
                     key={t.id}
                     type="button"
-                    className={`modelo-item${templateId === t.id ? " escolhido" : ""}`}
+                    className={`disp-template ${t.status}${templateId === t.id ? " escolhido" : ""}`}
                     disabled={!disponivel}
+                    title={disponivel ? undefined : traduzir("Só modelo aprovado pela Meta pode ser disparado.")}
                     onClick={() => escolherTemplate(templateId === t.id ? null : t)}
                   >
-                    <strong>
-                      {t.nome} <span className={`badge ${disponivel ? "badge-success" : t.status === "em_analise" ? "badge-warning" : "badge-neutral"}`}>{disponivel ? traduzir("Aprovado") : t.status === "em_analise" ? traduzir("Em análise") : t.status === "rejeitado" ? traduzir("Rejeitado") : traduzir("Rascunho")}</span>
-                    </strong>
-                    <span>{t.corpo.slice(0, 140)}</span>
+                    <span className="disp-template-topo">
+                      <strong>{t.nome}</strong>
+                      <span
+                        className={`badge ${
+                          disponivel
+                            ? "badge-success"
+                            : t.status === "em_analise"
+                              ? "badge-warning"
+                              : t.status === "rejeitado"
+                                ? "badge-danger"
+                                : "badge-neutral"
+                        }`}
+                      >
+                        {disponivel
+                          ? traduzir("Aprovado")
+                          : t.status === "em_analise"
+                            ? traduzir("Em análise")
+                            : t.status === "rejeitado"
+                              ? traduzir("Rejeitado")
+                              : traduzir("Rascunho")}
+                      </span>
+                    </span>
+                    <span className="disp-template-corpo">{t.corpo.slice(0, 160)}</span>
                   </button>
                 );
               })}
@@ -678,10 +833,41 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
             </div>
           ) : null}
           {previa ? (
-            <p className="hint">
-              O envio é feito aos poucos, {previa.ritmo.porMinuto} por minuto{previa.limiteDiario ? ` e até ${previa.limiteDiario.toLocaleString("pt-BR")} pessoas por dia (limite da sua conta na Meta)` : previa.ritmo.porDia ? ` e até ${previa.ritmo.porDia} por dia` : ""}.
-              Para {previa.receberao} contatos, leva {duracaoLegivel(previa.previsao)}. {previa.ritmo.explicacao}
-            </p>
+            <div className="disp-ritmo">
+              <p>
+                <strong>
+                  {previa.ritmo.porMinuto} {traduzir("por minuto")}
+                </strong>{" "}
+                · {traduzir("para")} {previa.receberao} {traduzir("contatos, leva")} {duracaoLegivel(previa.previsao)}.
+              </p>
+              {/* DE ONDE VEM O TETO DIÁRIO — a pergunta que ela fez olhando pra esta frase.
+                  O número nunca foi chutado: sai de `messaging_limit_tier`, lido da conta dela na
+                  Meta a cada prévia. Só que um número sem fonte é indistinguível de um inventado,
+                  e era isso que a frase antiga fazia. Agora ela diz o nível e quem disse. */}
+              {canal === "whatsapp_oficial" ? (
+                previa.limiteDiario ? (
+                  <p className="hint">
+                    {traduzir("Sua conta na Meta está no nível")} <strong>{previa.limiteTier ?? "—"}</strong>:{" "}
+                    {traduzir("até")} <strong>{previa.limiteDiario.toLocaleString("pt-BR")}</strong>{" "}
+                    {traduzir("pessoas DIFERENTES por dia. É o limite da conta, lido da Meta agora — não é uma regra do CRM, e sobe sozinho conforme o histórico de qualidade.")}
+                  </p>
+                ) : previa.limiteTier ? (
+                  <p className="hint">
+                    {traduzir("Sua conta na Meta está no nível")} <strong>{previa.limiteTier}</strong>:{" "}
+                    {traduzir("sem teto diário de pessoas novas.")}
+                  </p>
+                ) : previa.limiteIndisponivel ? (
+                  <p className="hint">
+                    {traduzir("Não deu pra ler o limite diário da sua conta na Meta agora. O disparo sai do mesmo jeito: quando a cota acabar, a Meta recusa e o CRM marca quem ficou pra depois.")}
+                  </p>
+                ) : null
+              ) : previa.ritmo.porDia ? (
+                <p className="hint">
+                  {traduzir("Até")} <strong>{previa.ritmo.porDia}</strong> {traduzir("por dia. Este teto é do CRM, por precaução: este canal não tem limite publicado porque não é uma API oficial.")}
+                </p>
+              ) : null}
+              <p className="hint">{previa.ritmo.explicacao}</p>
+            </div>
           ) : null}
         </div>
       ) : null}
@@ -690,8 +876,20 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
       {passo === 4 && canal ? (
         <div className="disp-passo disp-duas-colunas">
           <dl className="disp-revisao">
-            <dt>{traduzir("Canal")}</dt>
-            <dd>{canalLabel}</dd>
+            <dt>{traduzir("Sai por")}</dt>
+            <dd>
+              {numeroEscolhido ? (
+                <>
+                  <strong>{numeroEscolhido.nome}</strong>{" "}
+                  <em className={`disp-etiqueta ${numeroEscolhido.canal === "whatsapp_oficial" ? "oficial" : "qr"}`}>
+                    {traduzir(numeroEscolhido.etiqueta)}
+                  </em>
+                  {numeroEscolhido.numeroLegivel ? <span className="hint"> · {numeroEscolhido.numeroLegivel}</span> : null}
+                </>
+              ) : (
+                canalLabel
+              )}
+            </dd>
             <dt>{traduzir("Destinatários")}</dt>
             <dd>{previa?.receberao ?? "…"} contatos{previa?.semDestino.length ? ` (${previa.semDestino.length} sem destino ficam de fora)` : ""}</dd>
             <dt>{usaTemplate ? "Template" : "Mensagem"}</dt>

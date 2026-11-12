@@ -8,6 +8,8 @@ import { AssistenteDisparo } from "@/components/automacoes/AssistenteDisparo";
 import { descreverAudiencia } from "@/lib/campanhas/audiencia-tipos";
 import { STATUS_CAMPANHA, contagens, formatarData, type CampanhaResumo } from "@/lib/campanhas/apresentacao";
 import { LIMITES } from "@/lib/templates/regras";
+import { nomeDoNumeroDeEnvio, type NumeroDeEnvio } from "@/lib/campanhas/canais-de-envio";
+import type { CanalDisponivel } from "@/app/api/canais/route";
 import { useIdioma } from "@/lib/idioma-context";
 
 /**
@@ -17,6 +19,8 @@ import { useIdioma } from "@/lib/idioma-context";
 export default function DisparosPage() {
   const { t: traduzir } = useIdioma();
   const [campanhas, setCampanhas] = useState<CampanhaResumo[] | null>(null);
+  /** Os números conectados, só pra traduzir a chave gravada no disparo num nome legível. */
+  const [numeros, setNumeros] = useState<NumeroDeEnvio[]>([]);
   const [assistente, setAssistente] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
   /** Disparo com o menu de ações aberto. Um por vez. */
@@ -29,6 +33,13 @@ export default function DisparosPage() {
     const r = await fetch("/api/campanhas", { cache: "no-store" });
     const dados = (await r.json()) as CampanhaResumo[];
     setCampanhas(Array.isArray(dados) ? dados : []);
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/canais", { cache: "no-store" })
+      .then((r) => r.json() as Promise<CanalDisponivel[]>)
+      .then((c) => setNumeros(Array.isArray(c) ? c.flatMap((x) => x.numeros ?? []) : []))
+      .catch(() => setNumeros([]));
   }, []);
 
   useEffect(() => {
@@ -84,6 +95,11 @@ export default function DisparosPage() {
             {campanhas.map((c) => {
               const n = contagens(c.contagem);
               const st = STATUS_CAMPANHA[c.status] ?? { label: c.status, badge: "badge-neutral" };
+              const numero = nomeDoNumeroDeEnvio(numeros, c.contaCanal);
+              /* Quanto já saiu, em uma linha. Os seis números grandes que ficavam aqui viraram
+                 seis blocos por disparo numa lista de cinquenta — "o resto mostra quando eu
+                 entro". Lá dentro eles continuam inteiros, com a tabela pessoa por pessoa. */
+              const andamento = n.total ? Math.round(((n.enviadas + n.falhas) / n.total) * 100) : 0;
               return (
                 <div key={c.id} className="card disp-item">
                   {/* O cartão inteiro era um link. O menu de ações precisa ficar FORA dele: um
@@ -91,8 +107,19 @@ export default function DisparosPage() {
                   <div className="disp-item-cabecalho">
                     <Link href={`/automacoes/disparos/${c.id}`} className="disp-item-titulo">
                       <strong>{c.titulo}</strong>
-                      <span className="hint">
-                        {LIMITES[c.canal]?.label ?? c.canal} · {descreverAudiencia(c.audiencia)} · {formatarData(c.agendadaPara)}
+                      <span className="disp-item-linha">
+                        {numero ? (
+                          <>
+                            <em className={`disp-etiqueta ${numero.canal === "whatsapp_oficial" ? "oficial" : "qr"}`}>
+                              {traduzir(numero.etiqueta)}
+                            </em>
+                            <span className="hint">{numero.nome}</span>
+                          </>
+                        ) : (
+                          <span className="hint">{LIMITES[c.canal]?.label ?? c.canal}</span>
+                        )}
+                        <span className="hint">· {descreverAudiencia(c.audiencia)}</span>
+                        <span className="hint">· {formatarData(c.agendadaPara)}</span>
                       </span>
                     </Link>
                     <div className="disp-item-acoes">
@@ -137,13 +164,15 @@ export default function DisparosPage() {
                       </div>
                     </div>
                   </div>
-                  <Link href={`/automacoes/disparos/${c.id}`} className="disp-metricas">
-                    <Metrica valor={n.total} label={traduzir("destinatários")} />
-                    <Metrica valor={n.enviadas} label={traduzir("enviadas")} />
-                    <Metrica valor={n.entregues} label={traduzir("entregues")} />
-                    <Metrica valor={n.lidas} label={traduzir("lidas")} />
-                    <Metrica valor={n.respondidas} label={traduzir("respondidas")} />
-                    <Metrica valor={n.falhas} label={traduzir("falhas")} destaque={n.falhas > 0} />
+                  <Link href={`/automacoes/disparos/${c.id}`} className="disp-item-andamento">
+                    <span className="disp-barra" aria-hidden="true">
+                      <span className="disp-barra-cheia" style={{ width: `${andamento}%` }} />
+                    </span>
+                    <span className="hint">
+                      {n.enviadas} {traduzir("de")} {n.total} {n.total === 1 ? traduzir("enviada") : traduzir("enviadas")}
+                      {n.falhas ? ` · ${n.falhas} ${n.falhas === 1 ? traduzir("falha") : traduzir("falhas")}` : ""}
+                      {n.respondidas ? ` · ${n.respondidas} ${n.respondidas === 1 ? traduzir("respondeu") : traduzir("responderam")}` : ""}
+                    </span>
                   </Link>
                 </div>
               );
@@ -191,14 +220,5 @@ export default function DisparosPage() {
         />
       ) : null}
     </>
-  );
-}
-
-function Metrica({ valor, label, destaque }: { valor: number; label: string; destaque?: boolean }) {
-  return (
-    <div className={`disp-metrica${destaque ? " destaque" : ""}`}>
-      <strong>{valor}</strong>
-      <span>{label}</span>
-    </div>
   );
 }
