@@ -25,14 +25,8 @@ import { rotuloDoDiaEmBrasilia } from "@/lib/conversas/hora-da-mensagem";
 import { useTelaEstreita } from "@/lib/tela-estreita";
 import { ehLinkDeMidia } from "@/lib/conversas/midia-mensagem";
 import {
-  conexaoDaConversa,
-  precisaDistinguirConexao,
-  ROTULO_CONEXAO,
-} from "@/lib/conversas/conexao-da-conversa";
-import {
   canalDoNumero,
   conversaDoNumero,
-  mapaDeEtiquetas,
   mapaDeNumeros,
   nomeDoNumeroDaConversa,
   precisaEscolherNumero,
@@ -1034,16 +1028,11 @@ function ConversasPageInner() {
   } = useMensagensExtra();
 
   const atendentesDisponiveis = membrosEquipe.map((m) => m.nome);
-  /* As duas conexões de WhatsApp na mesma lista? Então cada conversa precisa dizer de qual é.
-     Sai da própria lista carregada, sem pedir nada a mais ao servidor. */
-  const distinguirConexao = precisaDistinguirConexao(conversas);
-  /* Com mais de um número de WhatsApp ligado, cada linha diz de QUAL número ela é, e a barra ganha
-     o filtro. Com um só, as duas coisas somem: repetiriam a mesma informação em toda linha. */
+  /* Com mais de um número de WhatsApp ligado, a barra ganha a aba de filtro. A LINHA não diz mais
+     de qual número ela é: como as abas não têm "Todos", a lista é sempre a de um número só, e a
+     etiqueta repetia em cada linha o nome da aba acesa logo acima. */
   const variosNumeros = precisaEscolherNumero(numerosConectados);
   const nomesDosNumeros = mapaDeNumeros(numerosConectados);
-  /* A linha da conversa leva a ETIQUETA (o apelido, ou o canal), e não o número: ver
-     `etiquetaDoNumero`. O número cru ali se lê como o telefone do contato. */
-  const etiquetasDosNumeros = mapaDeEtiquetas(numerosConectados);
 
   /*
    * QUAL ABA DE NÚMERO ESTÁ VALENDO.
@@ -5018,28 +5007,38 @@ function ConversasPageInner() {
                     ) : null}
                   </span>
                   <span className="cr3">
-                    <span className="tag">
-                      {encerradas.has(c.id) ? traduzir("Finalizado") : traduzir(c.status)}
-                    </span>
-                    {/* Por qual conexão esta conversa fala. Só aparece quando as DUAS estão em uso
-                        na lista: com uma só, a etiqueta repetiria a mesma coisa em toda linha. */}
-                    {variosNumeros && nomeDoNumeroDaConversa(etiquetasDosNumeros, c.contaCanal) ? (
-                      /* Com vários números, o que importa é QUAL deles — "WhatsApp QR Code" seria
-                         a mesma etiqueta nos dois. O nome ganha do tipo de conexão. */
-                      <span
-                        className="tag wa-conexao-tag"
-                        title={traduzir("A resposta sai por este mesmo número")}
-                      >
-                        {nomeDoNumeroDaConversa(etiquetasDosNumeros, c.contaCanal)}
-                      </span>
-                    ) : distinguirConexao && conexaoDaConversa(c.contaCanal) ? (
-                      <span
-                        className="tag wa-conexao-tag"
-                        title={traduzir("A resposta sai por esta mesma conexão")}
-                      >
-                        {ROTULO_CONEXAO[conexaoDaConversa(c.contaCanal)!]}
-                      </span>
+                    {/*
+                      O ESTADO SÓ FALA QUANDO TEM O QUE DIZER.
+
+                      "Tira pra mim esse 'não respondido'. Não precisa colocar esse 'não
+                      respondido'."
+
+                      Ela está certa, e dá pra ver o porquê na própria tela: a etiqueta aparecia em
+                      TODAS as linhas com a mesma palavra. "Não respondido" é o estado em que uma
+                      conversa nasce e fica enquanto ninguém mexe — ou seja, é o padrão, e carimbar
+                      o padrão em toda linha não informa nada, só gasta a largura que as etiquetas
+                      que informam precisavam.
+
+                      "Finalizado", "Em conversa" e "Aguardando cliente" continuam aparecendo: esses
+                      alguém escolheu, são poucos, e é justamente por serem exceção que valem uma
+                      etiqueta.
+                    */}
+                    {encerradas.has(c.id) ? (
+                      <span className="tag">{traduzir("Finalizado")}</span>
+                    ) : c.status && c.status !== "Não respondido" ? (
+                      <span className="tag">{traduzir(c.status)}</span>
                     ) : null}
+                    {/*
+                      A ETIQUETA DE CONEXÃO SAIU.
+
+                      "Pode tirar, que é do QR Code ou que é do Meta, porque como a gente já está na
+                      aba, então não precisa."
+
+                      Exato: com mais de um número ligado, a lista é SEMPRE a de um número só — as
+                      abas de cima não têm "Todos" (ver `numeroAtivo`). Então a etiqueta repetia,
+                      linha por linha, o nome da aba que já está acesa logo acima dela. Quem quiser
+                      conferir por onde a conversa corre tem a aba marcada e o cabeçalho do chat.
+                    */}
                     {/*
                       DE ONDE VEIO O LEAD.
                       

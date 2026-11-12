@@ -4974,13 +4974,23 @@ table.tbl tbody tr:hover td {
  * branco sobre o azul claro da 2:1, que e ilegivel. Navy sobre o mesmo azul da 13,4:1. A cor que
  * ela pediu fica; o que muda e quem vai por cima dela.
  */
+/*
+ * CINZA, E NÃO AZUL. "Tira o azulzinho do fundo, coloca tipo um cinza, pra não ficar tão muita
+ * informação."
+ *
+ * O azul claro é a cor que o CRM usa pra dizer "isto aqui é escolha ativa" — a linha não lida, o
+ * chip de filtro ligado, a aba acesa. Numa etiqueta que só CLASSIFICA, ele promete uma ação que
+ * não existe, e com três por linha a lista inteira parecia acesa. O cinza deixa a etiqueta ser o
+ * que ela é: um rótulo. A cor da origem continua no TEXTO — Meta azul, Instagram rosa —, que é
+ * onde ela informa sem gritar.
+ */
 .wa-row .cr3 .tag {
   white-space: nowrap;
   padding: 2px var(--space-2);
   border: none;
   border-radius: 999px;
-  background: var(--conversa-topo);
-  color: var(--navy-marca);
+  background: var(--navy-raised-2);
+  color: var(--text-muted);
 }
 
 /*
@@ -35530,4 +35540,64 @@ td.trafego-col-crm:first-of-type {
   border-radius: 8px;
   border: 1px solid var(--line);
   background: var(--navy-raised);
+}
+
+/* ==========================================================================
+   O ESQUELETO DOS INDICADORES
+
+   "Está demorando muito pra tirar esse quadrado ali e aparecer o investido, o lead, o custo."
+
+   Não era lentidão: a tela afirmava "não tem campanha" enquanto a busca corria, e se desmentia
+   quando a resposta chegava. O esqueleto ocupa exatamente o lugar dos seis indicadores e não diz
+   nada que possa ser desmentido — a tela passa a parecer carregando, que é o que ela está.
+   ========================================================================== */
+
+.kpi-esqueleto {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.kpi-esqueleto-rotulo,
+.kpi-esqueleto-valor {
+  display: block;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--navy-raised-2) 25%,
+    var(--surface-hover) 37%,
+    var(--navy-raised-2) 63%
+  );
+  background-size: 400% 100%;
+  animation: esqueleto-brilho 1.4s ease-in-out infinite;
+}
+
+.kpi-esqueleto-rotulo {
+  width: 52%;
+  height: 9px;
+}
+
+.kpi-esqueleto-valor {
+  width: 72%;
+  height: 18px;
+}
+
+@keyframes esqueleto-brilho {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+/* Quem pediu menos movimento não precisa de um brilho correndo na tela pra entender que algo está
+   carregando: a forma cinza no lugar já diz. */
+@media (prefers-reduced-motion: reduce) {
+  .kpi-esqueleto-rotulo,
+  .kpi-esqueleto-valor {
+    animation: none;
+  }
 }

@@ -137,6 +137,26 @@ export default function TrafegoPage() {
    * devolveu, quantas foram descartadas e por quê), e a tela repete isso em português.
    */
   const [diagnostico, setDiagnostico] = useState<DiagnosticoDeCampanhas | null>(null);
+  /*
+   * A TELA NÃO CONCLUI NADA ENQUANTO NÃO SABE.
+   *
+   * "Está demorando muito pra tirar esse quadrado ali e aparecer o investido, o lead, o custo.
+   * Acho que é algum bug no código, que primeiro aparece isso e depois a tela correta."
+   *
+   * Não era lentidão: era a tela dando uma RESPOSTA antes de ter a pergunta. Com `campanhasReais`
+   * ainda em `null` — que é o estado "a busca não voltou" —, a conta `campanhas.length === 0` dava
+   * zero e a tela desenhava o aviso de conta vazia. Quando a resposta chegava, o aviso sumia e os
+   * indicadores entravam no lugar dele.
+   *
+   * É o mesmo defeito que estava no compositor do WhatsApp: "ainda não sei" sendo renderizado como
+   * se fosse "não tem". Eles se parecem no código (os dois são ausência) e são opostos na tela.
+   */
+  // DERIVADO, não guardado. Um `useState` ligado no começo da busca teria que ser ligado DENTRO do
+  // efeito que busca — e `setState` síncrono dentro de efeito é o que a regra
+  // `react-hooks/set-state-in-effect` proíbe neste projeto, com razão: encadeia renderizações. O
+  // estado de "ainda não sei" já existe nos dados: conectado, sem lista e sem erro.
+  const carregandoCampanhas =
+    adsIntegracao?.status === "conectado" && campanhasReais === null && erroDasCampanhas === null;
 
   // Ajusta durante a renderização (não num efeito) quando o status muda pra "não conectado". Evita
   // setState síncrono dentro do corpo do efeito (regra `react-hooks/set-state-in-effect`).
@@ -566,7 +586,23 @@ export default function TrafegoPage() {
           mesma coisa duas vezes, e a segunda vez dizia errado: zero parece numero apurado, e quem
           olha conclui que investiu e nao teve retorno, em vez de que nada esta conectado.
         */}
-        {campanhas.length === 0 ? (
+        {/*
+          ENQUANTO A BUSCA NÃO VOLTA, A TELA ESPERA EM SILÊNCIO.
+
+          Antes ela afirmava "não tem campanha" durante o carregamento e se desmentia um instante
+          depois. O esqueleto ocupa o mesmo lugar e não diz nada que possa ser desmentido — é a
+          diferença entre uma tela carregando e uma tela errada.
+        */}
+        {carregandoCampanhas || adsIntegracao === null ? (
+          <div className="grid kpi6" aria-busy="true">
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <div className="kpi kpi-esqueleto" key={i} aria-hidden="true">
+                <span className="kpi-esqueleto-rotulo" />
+                <span className="kpi-esqueleto-valor" />
+              </div>
+            ))}
+          </div>
+        ) : campanhas.length === 0 ? (
           <div className="card mb14">
             <div className="dados-nao-conectados trafego-vazio">
               {erroDasCampanhas ? (

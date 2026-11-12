@@ -229,9 +229,27 @@ export function FunnelSteps({ etapas, onClickEtapa }: { etapas: EtapaFunilVisual
                   A primeira etapa não tem anterior, então não tem queda: fica neutra em vez de
                   fingir uma retenção de 100%.
                 */}
+                {/*
+                  SEM NINGUÉM NA ETAPA ANTERIOR, A BARRA NÃO ACUSA NADA.
+
+                  `data-retencao` saía de `0% de retenção` quando a etapa anterior estava vazia — e
+                  0% cai na faixa "crítica", que é vermelha. Resultado: num funil inteiro zerado,
+                  TODAS as barras ficavam vermelhas, como se a operação estivesse perdendo todo
+                  mundo em todas as etapas. Não estava perdendo ninguém: não tinha ninguém. Vermelho
+                  é um alarme, e alarme sobre ausência de dado é o jeito mais rápido de ensinar
+                  alguém a ignorar o alarme.
+                */}
                 <div
                   className="funnel-step-fill"
-                  data-retencao={i === 0 ? "inicio" : percentualAnterior >= 70 ? "boa" : percentualAnterior >= 40 ? "atencao" : "critica"}
+                  data-retencao={
+                    i === 0 || !mostrarRetencao
+                      ? "inicio"
+                      : percentualAnterior >= 70
+                        ? "boa"
+                        : percentualAnterior >= 40
+                          ? "atencao"
+                          : "critica"
+                  }
                   style={{ width: `${largura}%` }}
                 />
               </div>
