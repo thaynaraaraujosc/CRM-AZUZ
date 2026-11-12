@@ -16,6 +16,7 @@ import { publicarNomeDaEmpresa, useIdentidadeDaEmpresa } from "@/lib/empresa/ide
 import { useEquipe } from "@/lib/equipe-context";
 import { useFunis } from "@/lib/funis-context";
 import { INTELIGENCIA_INICIAL } from "@/lib/inteligencia/estrutura";
+import { permissaoDoEndereco } from "@/lib/permissao-da-rota";
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
 import {
   IconAutomacoes,
@@ -126,6 +127,28 @@ export function Sidebar() {
   const { t: traduzir } = useIdioma();
   const pathname = usePathname();
   const { data: sessao } = useSession();
+
+  /*
+   * O MENU SÓ MOSTRA O QUE A PESSOA PODE ABRIR.
+   *
+   * "Ele me mandou o print e tá mostrando que ele tem acesso do WhatsApp, do Insta, coisas que eu
+   * tinha tirado."
+   *
+   * O menu listava os onze módulos pra todo mundo. Clicar num bloqueado redirecionava (o proxy
+   * sempre barrou a tela), mas o menu ANUNCIAVA o acesso: de quem olha, a leitura é "ele tem tudo"
+   * — foi exatamente o que o print dela mostrou. E pra quem usa é pior ainda: um menu em que a
+   * metade dos itens te joga pra outra tela não é um menu, é uma armadilha.
+   *
+   * O admin do workspace continua vendo tudo: restringir o dono da conta dele mesmo não faz
+   * sentido. E rota sem permissão declarada (Início, por exemplo) fica visível, como sempre foi.
+   */
+  const permissoesDaSessao = sessao?.user?.permissoes ?? [];
+  const vêTudo = Boolean(sessao?.user?.superAdmin) || sessao?.user?.papelTipo === "admin";
+  function podeVer(href: string): boolean {
+    if (vêTudo) return true;
+    const exigida = permissaoDoEndereco(href);
+    return !exigida || permissoesDaSessao.includes(exigida);
+  }
   /*
    * RECOLHIDA POR PADRÃO, E ABRE AO PASSAR O MOUSE.
    *
@@ -399,6 +422,10 @@ export function Sidebar() {
         {navEntries.map(({ href, label, Icon }) => {
           if (gestaoAtividadeHrefs.has(href)) {
             if (href !== gestaoAtividadeItens[0].href) return null;
+            /* Inteligência comercial é um grupo: ele aparece se a pessoa puder abrir pelo menos
+               uma das telas dele. Sumir com o grupo inteiro porque UMA está bloqueada esconderia
+               as outras seis sem motivo. */
+            if (!gestaoAtividadeItens.some((i) => podeVer(i.href))) return null;
             const gestaoAtiva = gestaoAtividadeItens.some(
               (i) => pathname === i.href || pathname.startsWith(`${i.href}/`),
             );
@@ -436,6 +463,7 @@ export function Sidebar() {
               </div>
             );
           }
+          if (!podeVer(href)) return null;
           const active = pathname === href || pathname.startsWith(`${href}/`);
           return (
             <div key={href}>

@@ -6,41 +6,8 @@ import { ehRotaPublica } from "@/lib/rotas-publicas";
 import { decidirAcesso } from "@/lib/assinatura/acesso";
 import { statusDaAssinatura } from "@/lib/assinatura/status-cache";
 import { ROTA_INICIAL, ROTA_SEM_PERMISSAO, primeiraRotaPermitida } from "@/lib/rota-inicial";
+import { permissaoDoEndereco } from "@/lib/permissao-da-rota";
 
-/** Módulo do CRM que cada rota pertence, pro bloqueio de permissão (item 4 do pedido: "se eu
- * restringir Formulários/Automações/Configurações, o membro realmente não pode mexer"). Checa só
- * a permissão `_visualizar` de cada módulo. É o suficiente pra decidir se a rota inteira abre ou
- * não; ações mais finas (criar/editar/excluir) continuam decorativas por enquanto, ver
- * `src/lib/configuracoes/permissoes.ts`. Rota que não aparece aqui não é restringível (fica aberta
- * pra qualquer membro logado, mesmo sem nenhuma permissão marcada). */
-const ROTA_PERMISSAO: Record<string, string> = {
-  "/contatos": "contatos_visualizar",
-  "/conversas": "wa_visualizar",
-  "/funil": "funil_visualizar",
-  "/pipeline": "funil_visualizar",
-  "/formularios": "form_visualizar",
-  "/automacoes": "auto_visualizar",
-  "/configuracoes": "config_visualizar",
-  "/relatorios": "rel_visualizar",
-  "/trafego": "rel_visualizar",
-  "/performance-vendas": "rel_visualizar",
-  "/atividades-vendas": "rel_visualizar",
-  "/jornada-cliente": "rel_visualizar",
-  "/motivos-perda": "rel_visualizar",
-  "/crm-live": "rel_visualizar",
-  "/inteligencia-comercial": "rel_visualizar",
-  /*
-   * OS MÓDULOS QUE GANHARAM PERMISSÃO DEPOIS.
-   *
-   * Entram aqui com segurança por causa de `permissoesEfetivas` (ver `permissoes.ts`): quem foi
-   * convidado antes destes ids existirem não tem nenhum deles gravado, e sem aquela regra passaria
-   * a ser barrado de um dia pro outro — numa tela que ninguém nunca lhe negou.
-   */
-  "/instagram": "insta_visualizar",
-  "/equipe": "equipe_visualizar",
-  "/social-seller": "social_visualizar",
-  "/azuz-ia": "ia_visualizar",
-};
 
 export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -101,10 +68,27 @@ export default async function proxy(request: NextRequest) {
   // mesmo não faz sentido); qualquer outro papelTipo só entra se o módulo da rota estiver marcado
   // nas permissões dele. Sem isso, o toggle de permissão em Configurações > Usuários era só
   // decorativo (salvava no banco, nunca impedia nada de verdade).
-  if (!sessao.user.superAdmin && sessao.user.papelTipo !== "admin" && !pathname.startsWith("/api")) {
+  /*
+   * A API ENTROU NO BLOQUEIO, e essa é a correção que importa.
+   *
+   * Estava escrito aqui: `&& !pathname.startsWith("/api")`. A TELA era barrada e os DADOS não —
+   * qualquer página que chamasse a API de outro módulo recebia tudo, e quem soubesse o endereço
+   * pedia direto. "Ele tem acesso a tudo": tinha mesmo, por baixo.
+   *
+   * O mapa agora é um só, com teste (`permissao-da-rota.ts`), e a resposta na API é 403 em vez de
+   * redirecionar: redirecionar um `fetch` devolve o HTML de outra tela, e a tela que pediu os
+   * dados engasga com um erro que não explica nada.
+   */
+  if (!sessao.user.superAdmin && sessao.user.papelTipo !== "admin") {
     const rotaBase = "/" + pathname.split("/")[1];
-    const permissaoNecessaria = ROTA_PERMISSAO[rotaBase];
+    const permissaoNecessaria = permissaoDoEndereco(pathname);
     if (permissaoNecessaria && !sessao.user.permissoes.includes(permissaoNecessaria)) {
+      if (pathname.startsWith("/api")) {
+        return NextResponse.json(
+          { erro: "Você não tem permissão para este módulo." },
+          { status: 403 },
+        );
+      }
       /*
        * O DESTINO NÃO PODE SER UMA ROTA QUE ELA TAMBÉM NÃO PODE VER.
        *
