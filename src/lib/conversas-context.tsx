@@ -50,6 +50,8 @@ type ConversasContextValue = {
   atualizarStatus: (id: string, status: string) => void;
   atribuirAtendente: (id: string, atendente: string | null) => void;
   atualizarFoto: (id: string, fotoUrl: string) => void;
+  /** Move a conversa pra conexão por onde ela passou a acontecer. Ver a função. */
+  definirConexaoDaConversa: (id: string, contaCanal: string) => void;
   /**
    * Abre uma conversa nova. `contaCanal` é POR QUAL NÚMERO ela vai falar.
    *
@@ -207,6 +209,26 @@ export function ConversasProvider({ children }: { children: ReactNode }) {
     atualizarRemoto(id, { fotoUrl });
   }
 
+  /**
+   * A CONVERSA PASSA A MORAR NA CONEXÃO POR ONDE ELA ESTÁ ACONTECENDO.
+   *
+   * "Eu abri um número no WhatsApp oficial, não mandei mensagem, e quando eu saí e entrei de novo
+   * ele foi lá para as mensagens do QR Code. Por mais que ele não tivesse mandado mensagem, era
+   * para ele ter ficado onde eu falei que ia mandar."
+   *
+   * `Conversa.contaCanal` é o que decide em qual aba a conversa aparece. Enquanto ela só era
+   * escrita quando a conversa NASCIA, mandar por outro número deixava a thread listada na aba
+   * antiga pra sempre — a tela discordando do que tinha acabado de acontecer.
+   *
+   * Chamado DEPOIS DE O ENVIO DAR CERTO, e não ao escolher: escolher é uma intenção, e intenção
+   * que ainda pode falhar não deve mudar onde a conversa mora. Enviar é um fato.
+   */
+  function definirConexaoDaConversa(id: string, contaCanal: string) {
+    setConversas((prev) => prev.map((c) => (c.id === id ? { ...c, contaCanal } : c)));
+    esquecerVersao();
+    atualizarRemoto(id, { contaCanal });
+  }
+
   // Usado quando a usuária quer ser a PRIMEIRA a escrever pra alguém sem conversa ainda (ex.: um
   // participante de grupo visto só de longe). Cria de verdade no banco (não é otimista, precisa do
   // `id` real devolvido antes de poder navegar pra ela).
@@ -246,6 +268,7 @@ export function ConversasProvider({ children }: { children: ReactNode }) {
         atualizarStatus,
         atribuirAtendente,
         atualizarFoto,
+        definirConexaoDaConversa,
         criarConversaIndividual,
         recarregar,
         excluirConversa,

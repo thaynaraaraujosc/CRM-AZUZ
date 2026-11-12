@@ -532,6 +532,7 @@ function ConversasPageInner() {
     atualizarStatus: atualizarStatusConversa,
     atribuirAtendente: atribuirAtendenteConversa,
     atualizarFoto: atualizarFotoConversa,
+    definirConexaoDaConversa,
     criarConversaIndividual,
     recarregar: recarregarConversas,
     excluirConversa,
@@ -1390,6 +1391,12 @@ function ConversasPageInner() {
         daUrl || daAba,
       );
       setSelectedId(nova.id);
+      /* A escolha acompanha a conversa recém-criada. Sem isto, a janela nasceria com a conexão
+         certa gravada e o COMPOSITOR ainda assim perguntaria de novo — e, pior, o envio cairia no
+         padrão. O nome vem da resposta porque a rota pode ter escolhido outro (ver
+         `nomeLivreParaConversa`). */
+      const escolhido = daUrl || daAba;
+      if (escolhido) setEscolhaDeNumero({ conversa: nova.nome, chave: escolhido });
       setBuscaConversa("");
     } catch (erro) {
       console.error("Falha ao iniciar conversa:", erro);
@@ -1438,6 +1445,7 @@ function ConversasPageInner() {
      * Sem telefone na ficha não há por onde comparar, e aí vale o nome, que é o que sempre valeu:
      * é o caso da conversa que nasceu pelo webhook antes de a pessoa virar contato.
      */
+    const daUrl = searchParams.get("numero");
     const alvo = contato?.whatsapp ? normalizarTelefoneParaComparacao(contato.whatsapp) : "";
     const jaExiste = alvo
       ? conversas.find(
@@ -1452,6 +1460,26 @@ function ConversasPageInner() {
       contatoDaUrlAtendido.current = true;
       // eslint-disable-next-line react-hooks/set-state-in-effect -- abre a conversa pedida na URL uma vez só; a trava do `ref` impede que isto realimente o próprio efeito.
       setSelectedId(jaExiste.id);
+      /*
+       * A ESCOLHA DE NÚMERO FICA PRESA À CONVERSA QUE DE FATO ABRIU.
+       *
+       * "Eu fui mandar uma mensagem pela API oficial. Esse número eu já conversava pelo QR Code. E
+       * aí simplesmente voltou para não oficial, tipo, não permitiu mandar mensagem."
+       *
+       * Era aqui que a escolha se perdia. A conversa é procurada PELO TELEFONE (foi um conserto
+       * anterior, e está certo), mas quem decidia se a escolha valia comparava o NOME:
+       * `searchParams.get("contato") === aberta.nome`. Os dois quase nunca são iguais — a conversa
+       * nasce com o nome de perfil do WhatsApp e o contato tem o nome que a equipe deu. Nome
+       * diferente, escolha descartada em silêncio, e o envio caindo de volta no histórico: o QR
+       * Code.
+       *
+       * Prendendo a escolha ao NOME DA CONVERSA ABERTA, a comparação passa a ser entre a mesma
+       * coisa e ela mesma. E continua valendo só pra esta conversa, que é a razão de a comparação
+       * existir: uma escolha solta valeria pra qualquer conversa aberta depois, e esse é o jeito
+       * mais silencioso de mandar do número errado.
+       */
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- mesma trava do `ref` acima.
+      if (daUrl) setEscolhaDeNumero({ conversa: jaExiste.nome, chave: daUrl });
       return;
     }
 
@@ -2808,22 +2836,48 @@ function ConversasPageInner() {
     return conexaoEscolhida()?.provedor ?? null;
   }
 
+  /**
+   * O NÚMERO ESCOLHIDO PRA ESTA CONVERSA, ou `null` quando vale o padrão.
+   *
+   * A escolha vem de dois lugares — o menu do "+" aqui dentro, e a ficha do contato, que a manda
+   * pela URL (a tela de Conversas é outra página, e a URL é o único lugar que atravessa). Os dois
+   * gravam no MESMO estado, preso ao nome da conversa que de fato abriu.
+   *
+   * ERA AQUI QUE A ESCOLHA DA FICHA SE PERDIA. A conversa é procurada pelo TELEFONE — conserto
+   * anterior, e certo —, mas a validade da escolha era decidida comparando o NOME do contato com
+   * o nome da conversa. Os dois quase nunca são iguais: a conversa nasce com o nome de perfil do
+   * WhatsApp e o contato tem o nome que a equipe deu. Nome diferente, escolha descartada em
+   * silêncio, e o envio caindo de volta no histórico — "simplesmente voltou para não oficial".
+   *
+   * A comparação continua existindo, e é por isso: uma escolha solta valeria pra qualquer conversa
+   * aberta depois, que é o jeito mais silencioso de mandar do número errado. O que mudou é que
+   * agora ela compara a mesma coisa com ela mesma.
+   */
   function numeroEscolhidoDaConversa(): string | null {
-    if (escolhaDeNumero && escolhaDeNumero.conversa === aberta.nome) return escolhaDeNumero.chave;
-    /*
-     * O NÚMERO ESCOLHIDO NA FICHA DO CONTATO chega pela URL.
-     *
-     * "Lá dentro da página de contatos, naquela pop-up, ao invés de me mandar direto pro chat, ele
-     * vai me dar um botão seletor." A escolha é feita lá e precisa atravessar a navegação — e a
-     * URL é o único lugar que atravessa, porque a tela de conversas é outra página.
-     *
-     * Só vale pro contato que veio no mesmo link: sem a conferência, o número escolhido pra um
-     * lead ficaria valendo pra qualquer conversa aberta depois, que é o jeito mais silencioso de
-     * mandar do número errado.
-     */
-    const daUrl = searchParams.get("numero");
-    if (daUrl && searchParams.get("contato") === aberta.nome) return daUrl;
-    return null;
+    return escolhaDeNumero && escolhaDeNumero.conversa === aberta.nome ? escolhaDeNumero.chave : null;
+  }
+
+  /**
+   * A CONVERSA MUDA DE CASA QUANDO A MENSAGEM SAI POR OUTRO NÚMERO.
+   *
+   * "Eu abri um número no WhatsApp oficial (…) e quando eu saí e entrei de novo ele foi lá para as
+   * mensagens do QR Code. Por mais que ele não tivesse mandado mensagem, era para ele ter ficado
+   * onde eu falei que ia mandar."
+   *
+   * `Conversa.contaCanal` é o que decide em qual aba a conversa aparece, e ele só era escrito
+   * quando a conversa NASCIA. Mandar por outro número deixava a thread listada na aba antiga pra
+   * sempre: a tela discordando do que tinha acabado de acontecer, e a conversa "voltando" pro QR
+   * Code toda vez que a página recarregava.
+   *
+   * DEPOIS DE O ENVIO DAR CERTO, e não ao escolher. Escolher é intenção, e intenção que ainda pode
+   * falhar não deve mudar onde a conversa mora — senão um envio recusado pela Meta deixaria a
+   * conversa mudada de lugar sem nada ter saído.
+   */
+  function mudarCasaDaConversaSeSaiuPorOutroNumero() {
+    const destino = saida.origem !== "conversa" ? saida.contaCanal : null;
+    if (!destino || destino === aberta.contaCanal) return;
+    if (aberta.id === CONVERSA_VAZIA.id) return;
+    definirConexaoDaConversa(aberta.id, destino);
   }
 
   function despacharTexto(texto: string, respondendoMid?: string, idLocal?: string) {
@@ -2869,6 +2923,7 @@ function ConversasPageInner() {
           */
           // Esta conexão não informa entrega nem leitura, então o status honesto para em "enviado".
           if (idLocal) atualizarMensagem(aberta.nome, idLocal, { status: "enviado", canal: CANAL_NAO_OFICIAL });
+          mudarCasaDaConversaSeSaiuPorOutroNumero();
         })
         .catch((erro) => {
           if (idLocal) atualizarMensagem(aberta.nome, idLocal, { status: "erro" });
@@ -2914,6 +2969,7 @@ function ConversasPageInner() {
               wamid: dados.wamid,
               canal: CANAL_OFICIAL,
             });
+          mudarCasaDaConversaSeSaiuPorOutroNumero();
         })
         .catch((erro) => {
           if (idLocal) atualizarMensagem(nomeDaConversa, idLocal, { status: "erro" });
