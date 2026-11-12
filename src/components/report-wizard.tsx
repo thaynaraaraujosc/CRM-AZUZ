@@ -155,7 +155,12 @@ export function ReportWizard({
   useEffect(() => {
     fetch("/api/integracoes/meta/ads/campanhas")
       .then((r) => r.json())
-      .then((dados) => setCampanhasReais(Array.isArray(dados) ? dados : []))
+      // A rota passou a devolver `{ campanhas, diagnostico }` em vez do array cru, pra tela de
+      // Tráfego poder explicar por que a lista veio vazia. Aqui só a lista interessa; o
+      // `Array.isArray` antigo passaria a cair sempre no vazio, então a leitura mudou junto.
+      .then((dados: { campanhas?: Campanha[] } | Campanha[]) =>
+        setCampanhasReais(Array.isArray(dados) ? dados : (dados?.campanhas ?? [])),
+      )
       .catch((erro) => console.error("Falha ao carregar campanhas do Meta Ads:", erro));
   }, []);
 

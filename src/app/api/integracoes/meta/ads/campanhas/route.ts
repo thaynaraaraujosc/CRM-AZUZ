@@ -48,7 +48,17 @@ export async function GET() {
        codificar. A Graph aceita na maioria das vezes e recusa quando o proxy pelo caminho
        normaliza a URL — falha intermitente, do tipo que ninguem reproduz. `encodeURIComponent`
        tira a duvida. */
-    const statusPedido = encodeURIComponent(JSON.stringify(["ACTIVE", "PAUSED"]));
+    /*
+     * CAMPANHA EM ANÁLISE OU COM PROBLEMA TAMBÉM É CAMPANHA.
+     *
+     * Pedia só ACTIVE e PAUSED. No nível de campanha a Meta também devolve `IN_PROCESS` (em
+     * análise) e `WITH_ISSUES` (rejeitada, ou sem forma de pagamento válida) — e justamente essas
+     * são as que a pessoa mais procura na tela, porque são as que não estão entregando. Ficavam
+     * invisíveis, e a tela dizia "nenhuma campanha" sobre uma conta cheia de campanha.
+     */
+    const statusPedido = encodeURIComponent(
+      JSON.stringify(["ACTIVE", "PAUSED", "IN_PROCESS", "WITH_ISSUES"]),
+    );
     const campanhas = await graphGet<{ data: Campanha[] }>(
       `/${adAccountId}/campaigns?fields=id,name,status&effective_status=${statusPedido}&access_token=${accessToken}`,
     );
@@ -56,7 +66,7 @@ export async function GET() {
       `/${adAccountId}/insights?level=campaign&fields=campaign_id,spend,actions,action_values&date_preset=last_30d&access_token=${accessToken}`,
     );
 
-    const investimentos = campanhas.data
+    const todas = campanhas.data
       .map((c) => {
         const insight = insights.data.find((i) => i.campaign_id === c.id);
         const spend = Number(insight?.spend ?? 0);
@@ -65,9 +75,25 @@ export async function GET() {
         const receita = Number(insight?.action_values?.find((a) => TIPOS_COMPRA.includes(a.action_type))?.value ?? 0);
         const roas = spend > 0 ? receita / spend : 0;
         return { nome: c.name, spend, leads, vendas, roas, pausada: c.status !== "ACTIVE" };
-      })
+      });
+
+    const investimentos = todas
       // Campanha pausada só aparece se gastou algo no período. Pausada e sem gasto é ruído.
       .filter((i) => !i.pausada || i.spend > 0);
+
+    /*
+     * O QUE FOI DESCARTADO, pra tela poder dizer o porquê de não ter nada.
+     *
+     * "Aqui fala que está conectado, mas o Meta não devolveu nenhuma campanha. Por quê? Tem que
+     * entender o porquê."
+     *
+     * Lista vazia tinha três causas possíveis e a rota não contava nenhuma: a conta não tem
+     * campanha (quase sempre é a conta errada na conexão), tem campanha mas toda pausada e sem
+     * gasto nos últimos 30 dias (o filtro de cima), ou tem campanha e nenhum gasto registrado no
+     * período. São diagnósticos diferentes, com saídas diferentes, e "não devolveu nada" não
+     * distingue. O que a rota VIU vai junto da resposta.
+     */
+    const descartadas = todas.filter((i) => i.pausada && i.spend === 0);
 
     const maiorSpend = Math.max(1, ...investimentos.map((i) => i.spend));
 
@@ -81,7 +107,28 @@ export async function GET() {
       pausada: i.pausada,
     }));
 
-    return NextResponse.json(resultado);
+    /*
+     * RESPOSTA COM DIAGNÓSTICO, e não só a lista.
+     *
+     * A forma mudou de `Campanha[]` pra `{ campanhas, diagnostico }`. Quem consome são duas telas
+     * (Tráfego e o montador de relatório), as duas neste repositório, as duas ajustadas na mesma
+     * entrega. O preço de um campo a mais é baixo; o de uma tela que não sabe explicar o vazio,
+     * alto — foi o que a Thaynara encontrou.
+     */
+    return NextResponse.json({
+      campanhas: resultado,
+      diagnostico: {
+        conta: adAccountId,
+        /** Quantas campanhas a conta devolveu, ANTES de qualquer filtro nosso. */
+        naConta: todas.length,
+        /** Quantas saíram por estarem pausadas e sem gasto nos últimos 30 dias. */
+        descartadasPausadasSemGasto: descartadas.length,
+        /** Alguns nomes, pra tela poder mostrar de quais está falando. */
+        nomesDescartados: descartadas.slice(0, 6).map((i) => i.nome),
+        /** Quantas linhas de gasto o período devolveu. Zero = não se gastou nada em 30 dias. */
+        linhasDeGasto: insights.data.length,
+      },
+    });
   } catch (erro) {
     const mensagem = erro instanceof Error ? erro.message : "Falha ao buscar campanhas do Meta Ads.";
     return NextResponse.json({ erro: mensagem }, { status: 502 });

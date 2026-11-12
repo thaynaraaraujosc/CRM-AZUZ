@@ -10,7 +10,7 @@ import { useFunis } from "@/lib/funis-context";
 import { useIntegracaoMeta } from "@/components/configuracoes/useIntegracaoMeta";
 import { useGoogleAds } from "@/components/trafego/useGoogleAds";
 import { acharNoCrm, normalizarNome, usePorCampanha } from "@/components/trafego/usePorCampanha";
-import { FilterBar, KpiCard, PERIODO_PADRAO, type FiltroDef, type PeriodoValor } from "@/components/ui";
+import { FilterBar, KpiCard, PERIODO_PADRAO, type PeriodoValor } from "@/components/ui";
 import { ChartCard, FunnelSteps } from "@/components/charts";
 import { useIdioma } from "@/lib/idioma-context";
 import {
@@ -19,11 +19,43 @@ import {
   calcularRoasMedio,
   calcularValorVendido,
   formatarMoeda,
+  funilDeTrafego,
+  negociosDasOrigens,
   parseSubCampanha,
-  todosOsCards,
 } from "@/lib/metrics";
 
 type ColunaOrdenavel = "nome" | "investido" | "leads" | "vendas" | "cpl" | "roas";
+
+/** O que a rota do Meta conta sobre a conta de anúncios. Ver o diagnóstico em `route.ts`. */
+type DiagnosticoDeCampanhas = {
+  conta?: string;
+  naConta?: number;
+  descartadasPausadasSemGasto?: number;
+  nomesDescartados?: string[];
+  linhasDeGasto?: number;
+};
+
+type RespostaDeCampanhas = {
+  campanhas?: Campanha[];
+  diagnostico?: DiagnosticoDeCampanhas;
+  erro?: string;
+};
+
+/**
+ * AS ORIGENS QUE SÃO ANÚNCIO PAGO.
+ *
+ * O funil de tráfego conta negócio que VEIO DE ANÚNCIO, e por isso precisa saber quais origens
+ * são anúncio. Lead de indicação, de formulário do site ou salvo à mão não entra: ele existe sem
+ * ter custado mídia, e somá-lo aqui faria o custo por lead desta tela mentir pra baixo.
+ */
+const ORIGENS_PAGAS = ["Meta Ads", "Google Ads", "TikTok"] as const;
+
+/** A origem que corresponde à letra de plataforma guardada no filtro. */
+function origemDaPlataforma(letra: string): string | null {
+  if (letra === "M") return "Meta Ads";
+  if (letra === "G") return "Google Ads";
+  return null;
+}
 
 /**
  * Visão completa da aquisição: do investimento até a receita. Campos que o
@@ -87,6 +119,16 @@ export default function TrafegoPage() {
    * verdade dele.
    */
   const [erroDasCampanhas, setErroDasCampanhas] = useState<string | null>(null);
+  /*
+   * O QUE A CONTA DE ANÚNCIOS TEM, quando a lista vem vazia.
+   *
+   * "Tem que entender o porquê. Me explica porque tem que aparecer aqui."
+   *
+   * A resposta honesta não é uma frase só: lista vazia tem três causas, e cada uma pede uma coisa
+   * diferente de quem está olhando. A rota agora conta o que viu (quantas campanhas a conta
+   * devolveu, quantas foram descartadas e por quê), e a tela repete isso em português.
+   */
+  const [diagnostico, setDiagnostico] = useState<DiagnosticoDeCampanhas | null>(null);
 
   // Ajusta durante a renderização (não num efeito) quando o status muda pra "não conectado". Evita
   // setState síncrono dentro do corpo do efeito (regra `react-hooks/set-state-in-effect`).
@@ -100,13 +142,15 @@ export default function TrafegoPage() {
     if (adsIntegracao?.status !== "conectado") return;
     fetch("/api/integracoes/meta/ads/campanhas")
       .then((r) => r.json())
-      .then((dados: Campanha[] | { erro?: string }) => {
-        if (Array.isArray(dados)) {
-          setCampanhasReais(dados);
+      .then((dados: RespostaDeCampanhas) => {
+        if (Array.isArray(dados?.campanhas)) {
+          setCampanhasReais(dados.campanhas);
+          setDiagnostico(dados.diagnostico ?? null);
           setErroDasCampanhas(null);
           return;
         }
         setCampanhasReais(null);
+        setDiagnostico(null);
         setErroDasCampanhas(dados?.erro ?? "O Meta não explicou o motivo.");
       })
       .catch((erro: unknown) => {
@@ -244,77 +288,185 @@ export default function TrafegoPage() {
     });
   }
 
+  /*
+   * ==========================================================================
+   * O FUNIL DE TRÁFEGO: ELE NÃO ERA DE TRÁFEGO.
+   *
+   * "Qual que é a lógica desse funil de tráfego? Por exemplo, o novo, dois novos. Aonde foi esses
+   * dois novos? Da onde que ele está pegando essas informações? Esse funil de tráfego é de um
+   * WhatsApp ou de dois WhatsApp?"
+   *
+   * Pergunta certa, e a resposta era ruim. Estava assim:
+   *
+   *     const funilPrincipal = funis[0];
+   *     ...(funilPrincipal?.colunas ?? []).map((coluna) => ({ quantidade: coluna.cards.length }))
+   *
+   * Ou seja: o PRIMEIRO funil da conta, com a contagem CRUA de cards de cada etapa. Nada de
+   * tráfego nisso. "Novo: 2" queria dizer "o primeiro funil tem 2 cards na primeira etapa" — os
+   * mesmos 2 que aparecem no Funil —, viessem eles de anúncio, de indicação, de alguém que mandou
+   * mensagem sozinho ou de um card criado à mão. E o valor na última etapa era a receita de TODOS
+   * os negócios ganhos da conta, não a dos que vieram de anúncio.
+   *
+   * Numa tela cujo trabalho é dizer quanto custa um cliente, isso é pior que não mostrar: todo
+   * lead orgânico entrava no numerador e empurrava o custo por lead pra baixo.
+   *
+   * O QUE CONTA AGORA: negócio cuja ORIGEM é anúncio pago (Meta Ads, Google Ads, TikTok — ver
+   * `ORIGENS_PAGAS`), em TODOS os funis da conta, não só no primeiro. O filtro de plataforma lá de
+   * cima vale aqui também: escolhendo Meta Ads, o funil passa a contar só o que veio do Meta.
+   *
+   * SOBRE "É DE UM WHATSAPP OU DE DOIS": era de UM, e esse era metade do problema. Todo funil é
+   * de um número (`Funil.contaCanal`, escolhido na criação e fixo), e a tela pegava `funis[0]` —
+   * o funil do primeiro número, apresentado como se fosse o tráfego da empresa. Quem tem dois
+   * números via metade da operação sem nada dizendo isso. Agora soma os dois, que é a leitura
+   * certa aqui: anúncio não é comprado por número de WhatsApp.
+   *
+   * ETAPAS COM O MESMO NOME SOMAM NA MESMA BARRA. Dois funis com "Novo" viram um "Novo" só: a
+   * pergunta aqui é em que altura do processo estão os leads pagos, e não em qual quadro.
+   * ==========================================================================
+   */
+  const origemFiltrada = origemDaPlataforma(plataformaFiltro);
+  const origensQueContam: readonly string[] = origemFiltrada ? [origemFiltrada] : ORIGENS_PAGAS;
+
+  // A regra mora em `metrics.ts`, com teste (`__tests__/funil-de-trafego.test.ts`): a tela só
+  // escolhe as origens e desenha. `origensQueContam` deriva de `plataformaFiltro`, então é dele
+  // que a memória depende — do array, ela se refaria a cada render.
+  const cardsPagos = useMemo(
+    () => negociosDasOrigens(funis, origensQueContam),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [funis, plataformaFiltro],
+  );
+
+  const receitaPaga = calcularValorVendido(cardsPagos);
+  const totalPagos = cardsPagos.length;
+
   const investido = calcularInvestimentoTrafego(campanhasFiltradas);
   const leads = calcularLeadsTrafego(campanhasFiltradas);
   const roas = calcularRoasMedio(campanhasFiltradas);
   const custoPorLead = leads.valor > 0 ? investido.valor / leads.valor : 0;
-  const receita = calcularValorVendido(todosOsCards(funis));
-  const vendas = todosOsCards(funis).filter((c) => c.statusFechamento === "ganho").length;
+  /*
+   * VENDAS AQUI É VENDA QUE VEIO DE ANÚNCIO, pelo mesmo motivo do funil logo acima.
+   *
+   * Era `todosOsCards(funis).filter(ganho)`: TODA venda da conta, orgânica inclusive. E logo
+   * abaixo `custoPorVenda = investido / vendas` — gasto de mídia dividido por vendas que em parte
+   * não custaram mídia. O número saía otimista, e otimista por construção: quanto mais a empresa
+   * vendesse por indicação, mais barato o anúncio parecia.
+   */
+  const vendas = cardsPagos.filter((c) => c.statusFechamento === "ganho").length;
   const custoPorVenda = vendas > 0 ? investido.valor / vendas : 0;
 
-  // Funil de tráfego usa as etapas de verdade do funil ativo (nome/quantidade de colunas variam
-  // por workspace: não são mais 4 rótulos fixos de mock).
-  const funilPrincipal = funis[0];
-  const funilSteps = (funilPrincipal?.colunas ?? []).map((coluna, i, todas) => ({
-    chave: coluna.id,
-    label: coluna.titulo,
-    quantidade: coluna.cards.length,
-    valorLabel: i === todas.length - 1 ? receita.label : undefined,
-  }));
+  const funilSteps = useMemo(() => {
+    const etapas = funilDeTrafego(funis, origensQueContam);
+    return etapas.map((etapa, i) => ({
+      ...etapa,
+      // O valor fica na última etapa, e é a receita dos negócios PAGOS ganhos — não a da conta
+      // inteira, que era o que estava escrito ali.
+      valorLabel: i === etapas.length - 1 ? receitaPaga.label : undefined,
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [funis, plataformaFiltro, receitaPaga.label]);
 
   const origensComDados = ORIGENS.map((origem: Origem) => {
     const leadsOrigem = contatos.filter((c) => c.origem === origem).length;
-    const vendasOrigem = todosOsCards(funis).filter((card) => card.origem === origem && card.statusFechamento === "ganho").length;
+    const vendasOrigem = negociosDasOrigens(funis, [origem]).filter(
+      (card) => card.statusFechamento === "ganho",
+    ).length;
     /*
      * Investimento só existe pra origem que tem campanha ligada. "Google Ads" fica em `null`
      * (traço na tela) enquanto o canal não estiver conectado: zero ali diria "anunciou e não
      * gastou", que é afirmação, e não ausência de dado.
      */
     const plataformaDaOrigem = origem === "Meta Ads" ? "M" : origem === "Google Ads" ? "G" : null;
-    const temConexao = plataformaDaOrigem === "M" || (plataformaDaOrigem === "G" && statusGoogle.status === "conectado");
+    /*
+     * "Origens, Meta Ads, investimento. Por que que não está aparecendo nos investimentos lá do
+     * Meta Ads?"
+     *
+     * Estava aparecendo — como R$ 0,00, que é pior. Duas coisas erradas aqui:
+     *
+     * 1. `temConexao` para o Meta era `plataformaDaOrigem === "M"`, constante verdadeira: dizia
+     *    "o Meta está conectado" sem nunca olhar a conexão. Agora olha, como já olhava a do
+     *    Google.
+     * 2. Com a conexão de pé e nenhuma campanha devolvida, a soma de uma lista vazia dá 0, e a
+     *    célula escrevia R$ 0,00. Zero é uma AFIRMAÇÃO — "anunciou e não gastou nada" — e escrevê-la
+     *    sobre a conta de alguém que está rodando campanha é exatamente o defeito que ela
+     *    encontrou. Sem campanha pra somar, a célula fica em traço: não se sabe.
+     */
+    const conexaoDaOrigem =
+      plataformaDaOrigem === "M"
+        ? adsIntegracao?.status === "conectado"
+        : plataformaDaOrigem === "G"
+          ? statusGoogle.status === "conectado"
+          : false;
+    const campanhasDaOrigem = plataformaDaOrigem
+      ? campanhas.filter((c) => c.plataforma === plataformaDaOrigem)
+      : [];
     const investimentoOrigem =
-      plataformaDaOrigem && temConexao
-        ? campanhas
-            .filter((c) => c.plataforma === plataformaDaOrigem)
-            .reduce((s, c) => s + parseSubCampanha(c.sub).investido, 0)
+      plataformaDaOrigem && conexaoDaOrigem && campanhasDaOrigem.length > 0
+        ? campanhasDaOrigem.reduce((s, c) => s + parseSubCampanha(c.sub).investido, 0)
         : null;
     return { origem, leadsOrigem, vendasOrigem, investimentoOrigem };
   });
 
   const campanhaDetalhe = campanhaAberta ? campanhas.find((c) => c.nome === campanhaAberta) : null;
 
-  const filtros: FiltroDef[] = [
-    {
-      chave: "plataforma",
-      label: "Plataforma",
-      valor: plataformaFiltro,
-      opcoes: [
-        { valor: "Todas", label: "Todas" },
-        { valor: "M", label: "Meta Ads" },
-        ...(mostrarGoogle ? [{ valor: "G", label: "Google Ads" }] : []),
-      ],
-    },
-  ];
-
   return (
     <>
-      <div className="topbar">
-        <div>
-          <div className="topbar-title-row">
-            <h2>{traduzir("Tráfego")}</h2>
-          </div>
-          <p className="sub">{traduzir("Da aquisição de leads até a receita atribuída às campanhas")}</p>
+      {/*
+        SEM O TÍTULO E SEM A FRASE.
+
+        "Retire esse nome duplicado, Tráfego. E aí embaixo tem 'da aquisição de leads até a
+        receita'. Pode tirar essa frase também."
+
+        O nome já está aceso no menu ao lado, em azul, com o ícone. Repetir "Tráfego" em letra
+        grande logo abaixo gasta a primeira linha da tela pra dizer o que a pessoa acabou de
+        clicar. E a frase era descrição de catálogo, não informação de trabalho: não muda nunca e
+        não ajuda a decidir nada.
+      */}
+      <div className="topbar topbar-so-acoes">
+        {/*
+          OS FILTROS SUBIRAM PRA FAIXA, E VIRARAM UMA LINHA SÓ.
+
+          "Aqueles botões que tem ali em cima, período, plataforma, mais filtro, exportar, olha
+          como não tem margem, olha como esses botões são feios, deixa esses botões em uma linha
+          só. Ou se não, coloca lá em cima."
+
+          Eram quatro controles numa tira solta logo abaixo da faixa, sem respiro em cima e
+          encostando na borda esquerda do conteúdo. Na faixa eles ganham a margem que a faixa já
+          tem (`--space-4` por `--space-6`) e ficam na mesma linha das conexões, à direita — uma
+          linha de comando pra tela inteira em vez de duas tiras empilhadas.
+
+          E "Mais filtros" SAIU: o único filtro dentro dele era Plataforma, que já é o botão ao
+          lado. Era um botão que abria um painel pra oferecer o que estava visível. "O de filtro,
+          coloca uma coisa só."
+        */}
+        <div className="trafego-filtros">
+          <FilterBar
+            periodo={periodo}
+            onPeriodoChange={setPeriodo}
+            principalLabel="Plataforma"
+            principalValor={rotuloDoFiltro(plataformaFiltro)}
+            principalOpcoes={mostrarGoogle ? ["Todas", "Meta Ads", "Google Ads"] : ["Todas", "Meta Ads"]}
+            onPrincipalChange={(v) => setPlataformaFiltro(v === "Meta Ads" ? "M" : v === "Google Ads" ? "G" : "Todas")}
+            onLimpar={() => {
+              setPeriodo(PERIODO_PADRAO);
+              setPlataformaFiltro("Todas");
+            }}
+            onExportar={() => window.print()}
+            viewKey="trafego"
+          />
         </div>
         <div className="top-actions">
+          {/* A CONEXÃO NUMA PÍLULA SÓ, por plataforma: o ponto diz o estado e o botão faz a
+              ação. Eram duas peças soltas por plataforma — uma frase "Meta Ads conectado:
+              fulano" e um botão "Desconectar Meta Ads" —, quatro elementos pra dizer duas
+              coisas, e a frase repetia a palavra que já estava no botão. */}
           {adsIntegracao?.status === "conectado" ? (
-            <>
-              <span className="hint">
-                Meta Ads conectado: {(adsIntegracao.metadados?.adAccountNome as string | undefined) ?? "conta"}
-              </span>
-              <button type="button" className="btn ghost" onClick={() => void desconectarAds()} disabled={adsDesconectando}>
-                {adsDesconectando ? "Desconectando…" : "Desconectar Meta Ads"}
+            <span className="conexao-pill">
+              <span className="conexao-ponto on" aria-hidden="true" />
+              Meta Ads
+              <button type="button" className="conexao-acao" onClick={() => void desconectarAds()} disabled={adsDesconectando}>
+                {adsDesconectando ? traduzir("Desconectando…") : traduzir("Desconectar")}
               </button>
-            </>
+            </span>
           ) : (
             <a className="btn ghost" href="/api/integracoes/meta/conectar?provedor=meta_ads">
               {traduzir("Conectar Meta Ads")}
@@ -322,26 +474,27 @@ export default function TrafegoPage() {
           )}
           {mostrarGoogle ? (
             statusGoogle.status === "conectado" ? (
-              <>
-                <span className="hint">Google Ads conectado: conta {statusGoogle.contaId ?? "—"}</span>
+              <span className="conexao-pill">
+                <span className="conexao-ponto on" aria-hidden="true" />
+                Google Ads
                 <button
                   type="button"
-                  className="btn ghost"
+                  className="conexao-acao"
                   onClick={() => void desconectarGoogle()}
                   disabled={googleDesconectando}
                 >
-                  {googleDesconectando ? "Desconectando…" : "Desconectar Google Ads"}
+                  {googleDesconectando ? traduzir("Desconectando…") : traduzir("Desconectar")}
                 </button>
-              </>
+              </span>
             ) : (
               <a className="btn ghost" href="/api/integracoes/google-ads/conectar">
                 {traduzir("Conectar Google Ads")}
               </a>
             )
           ) : null}
-          <Link className="btn primary" href="/relatorios?tipo=trafego">
-            {traduzir("Gerar relatório de tráfego")}
-          </Link>
+          {/* "Não precisa desse botão gerar relatório de tráfego, porque a gente já tem a aba de
+              relatório, não faz sentido." Dois caminhos pra mesma tela, e um deles ocupando a
+              ação principal da página. */}
         </div>
       </div>
 
@@ -359,25 +512,6 @@ export default function TrafegoPage() {
             </div>
           </div>
         ) : null}
-        <FilterBar
-          periodo={periodo}
-          onPeriodoChange={setPeriodo}
-          principalLabel="Plataforma"
-          principalValor={rotuloDoFiltro(plataformaFiltro)}
-          principalOpcoes={mostrarGoogle ? ["Todas", "Meta Ads", "Google Ads"] : ["Todas", "Meta Ads"]}
-          onPrincipalChange={(v) => setPlataformaFiltro(v === "Meta Ads" ? "M" : v === "Google Ads" ? "G" : "Todas")}
-          filtros={filtros}
-          onFiltroChange={(chave, valor) => {
-            if (chave === "plataforma") setPlataformaFiltro(valor);
-          }}
-          onLimpar={() => {
-            setPeriodo(PERIODO_PADRAO);
-            setPlataformaFiltro("Todas");
-          }}
-          onExportar={() => window.print()}
-          viewKey="trafego"
-        />
-
         {/*
           Sem campanha conectada, mostrar SO o aviso.
           Antes o aviso aparecia e os seis indicadores vinham logo abaixo, todos zerados. Dizia a
@@ -407,7 +541,26 @@ export default function TrafegoPage() {
                   {/* CONECTADO E SEM CAMPANHA NO PERÍODO. Não é falta de conexão, é falta de
                       campanha — dizer "conecte" aqui manda a pessoa refazer algo que já está
                       feito. */}
-                  <strong>{traduzir("Conectado, mas o Meta não devolveu nenhuma campanha.")}</strong>
+                  <strong>
+                    {/*
+                      O VAZIO AGORA TEM CAUSA, e cada causa tem uma saída diferente.
+
+                      "Aqui fala que está conectado, mas o Meta não devolveu nenhuma campanha. Por
+                      quê? Tem que entender o porquê."
+
+                      A frase anterior era honesta e inútil: dizia que não veio nada e parava ali.
+                      A rota passou a contar o que viu na conta, e são três situações:
+
+                        · a conta não tem campanha nenhuma  → é quase sempre a conta errada
+                        · tem campanha, toda pausada e sem gasto em 30 dias → está tudo parado
+                        · tem campanha e nenhum gasto no período → nada rodou nos últimos 30 dias
+                    */}
+                    {diagnostico?.naConta === 0
+                      ? traduzir("Essa conta de anúncios não tem nenhuma campanha.")
+                      : (diagnostico?.descartadasPausadasSemGasto ?? 0) > 0
+                        ? traduzir("As campanhas dessa conta estão todas pausadas e sem gasto nos últimos 30 dias.")
+                        : traduzir("Conectado, mas o Meta não devolveu nenhuma campanha.")}
+                  </strong>
                   {/*
                     QUAL CONTA DE ANÚNCIOS ESTÁ LIGADA — dita na tela, e não só guardada.
 
@@ -422,10 +575,42 @@ export default function TrafegoPage() {
                       <b>{adsIntegracao.metadados.adAccountId}</b>
                     </span>
                   ) : null}
+                  {/* O QUE A CONTA TEM, em número: é o que separa "conta errada" de "tudo
+                      pausado", e é a informação que falta pra decidir o que fazer. */}
+                  {typeof diagnostico?.naConta === "number" ? (
+                    <span>
+                      {traduzir("O que essa conta devolveu:")}{" "}
+                      <b>
+                        {diagnostico.naConta}{" "}
+                        {diagnostico.naConta === 1 ? traduzir("campanha") : traduzir("campanhas")}
+                      </b>
+                      {(diagnostico.descartadasPausadasSemGasto ?? 0) > 0 ? (
+                        <>
+                          {", "}
+                          {diagnostico.descartadasPausadasSemGasto}{" "}
+                          {traduzir("pausada(s) e sem gasto no período")}
+                          {diagnostico.nomesDescartados?.length
+                            ? ` (${diagnostico.nomesDescartados.join(", ")})`
+                            : ""}
+                        </>
+                      ) : null}
+                      {". "}
+                      {diagnostico.linhasDeGasto === 0
+                        ? traduzir("Nenhum gasto registrado nos últimos 30 dias.")
+                        : null}
+                    </span>
+                  ) : null}
                   <span>
                     {traduzir(
-                      "O CRM busca as campanhas ativas e as pausadas que gastaram nos últimos 30 dias, da conta de anúncios escolhida na conexão. Se as suas campanhas estão em outra conta de anúncios, é só trocar a conta em Configurações › Outras integrações › Meta Ads.",
-                    )}
+                      "O CRM busca, dessa conta, as campanhas ativas, em análise ou com problema, mais as pausadas que gastaram nos últimos 30 dias. Pausada e sem gasto fica de fora porque não há o que medir nela.",
+                    )}{" "}
+                    {diagnostico?.naConta === 0
+                      ? traduzir(
+                          "Como a conta não tem campanha nenhuma, quase certamente a conexão está apontando pra outra conta de anúncios — quem administra várias tem isso o tempo todo. Troque a conta em Configurações › Outras integrações › Meta Ads.",
+                        )
+                      : traduzir(
+                          "Se as suas campanhas estão em outra conta de anúncios, é só trocar a conta em Configurações › Outras integrações › Meta Ads.",
+                        )}
                   </span>
                 </>
               ) : (
@@ -459,7 +644,41 @@ export default function TrafegoPage() {
           {funilSteps.length === 0 ? (
             <p className="hint trafego-aviso">{traduzir("Crie um funil com etapas pra ver essa visão aqui.")}</p>
           ) : (
-            <FunnelSteps etapas={funilSteps} />
+            <>
+              <FunnelSteps etapas={funilSteps} />
+              {/*
+                A TELA DIZ O QUE ESTÁ CONTANDO.
+
+                "Por exemplo, o novo, dois novos. Aonde foi esses dois novos? Da onde que ele está
+                pegando essas informações?"
+
+                Gráfico que não diz de onde tirou o número obriga quem olha a confiar ou a
+                desconfiar, e nenhuma das duas é trabalho. Uma linha embaixo resolve: o que entra,
+                de onde vem, e o que não entra.
+              */}
+              <p className="hint trafego-aviso">
+                {totalPagos === 0 ? (
+                  <>
+                    {traduzir("Nenhum negócio com origem de anúncio ainda.")}{" "}
+                    {traduzir(
+                      "As barras contam negócios cuja origem está marcada como anúncio pago; os que vieram por indicação, formulário do site ou mensagem direta aparecem no Funil, mas não aqui.",
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <strong>
+                      {totalPagos} {totalPagos === 1 ? traduzir("negócio") : traduzir("negócios")}
+                    </strong>{" "}
+                    {traduzir("com origem em")}{" "}
+                    <strong>{origemFiltrada ?? traduzir("anúncio pago (Meta Ads, Google Ads, TikTok)")}</strong>
+                    {traduzir(", somando todos os funis da conta. Etapas com o mesmo nome em funis diferentes somam na mesma barra, e o valor na última etapa é a receita só desses negócios.")}{" "}
+                    {traduzir(
+                      "Negócio que entrou por indicação, formulário ou mensagem direta não conta aqui — ele não custou mídia. E soma os seus números de WhatsApp: cada funil é de um número, e esta tela junta todos, porque anúncio não é comprado por número.",
+                    )}
+                  </>
+                )}
+              </p>
+            </>
           )}
         </ChartCard>
 
@@ -512,7 +731,24 @@ export default function TrafegoPage() {
                 {linhasCampanha.length === 0 ? (
                   <tr>
                     <td colSpan={11}>
-                      <p className="hint trafego-aviso">{traduzir("Nenhuma campanha com esses filtros.")}</p>
+                      {/*
+                        "Esse desempenho por campanha. Não tá mostrando nada aqui por quê?"
+
+                        Porque não havia campanha nenhuma pra mostrar — e a tabela dizia "nenhuma
+                        campanha COM ESSES FILTROS", acusando os filtros. Quem lê vai mexer no
+                        filtro, não achar nada, e concluir que a tela está quebrada. Filtro só é a
+                        causa quando há campanha e o filtro a esconde; as duas situações passam a
+                        dizer a sua.
+                      */}
+                      <p className="hint trafego-aviso">
+                        {campanhas.length === 0
+                          ? traduzir(
+                              "Esta tabela lista uma linha por campanha. Ainda não há nenhuma: ou as plataformas de anúncio não devolveram campanha (o aviso acima diz o motivo), ou nenhum lead do CRM chegou com campanha identificada no link de rastreamento.",
+                            )
+                          : busca
+                            ? traduzir("Nenhuma campanha com esse nome.")
+                            : traduzir("Nenhuma campanha com esses filtros.")}
+                      </p>
                     </td>
                   </tr>
                 ) : null}
@@ -672,6 +908,20 @@ export default function TrafegoPage() {
               </tbody>
             </table>
           </div>
+          {/*
+            O TRAÇO EXPLICADO UMA VEZ, embaixo da tabela.
+
+            "Por que que não está aparecendo nos investimentos lá do Meta Ads?" — porque não há
+            campanha pra somar. Antes a célula escrevia R$ 0,00, que afirma "gastou nada"; agora
+            escreve traço, que é o certo, mas traço sem legenda também não responde. A legenda
+            responde.
+          */}
+          <p className="hint trafego-aviso">
+            {traduzir("Leads e vendas vêm da origem gravada em cada contato e em cada negócio do CRM.")}{" "}
+            {traduzir(
+              "Investimento só existe para origem que é campanha paga, e sai da plataforma: traço quer dizer que o CRM não sabe o valor — porque o canal não está conectado, ou porque a plataforma não devolveu campanha —, nunca que foi zero. Site, indicação e WhatsApp não têm investimento por natureza.",
+            )}
+          </p>
         </ChartCard>
       </div>
     </>

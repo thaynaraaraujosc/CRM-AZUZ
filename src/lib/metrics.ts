@@ -294,3 +294,67 @@ export function calcularRoasMedio(campanhas: Campanha[]): Metrica<Campanha> {
     registros: campanhas,
   };
 }
+
+/* ==========================================================================
+   O FUNIL DE TRÁFEGO
+
+   "Qual que é a lógica desse funil de tráfego? Por exemplo, o novo, dois novos. Aonde foi esses
+   dois novos? Da onde que ele está pegando essas informações? Esse funil de tráfego é de um
+   WhatsApp ou de dois WhatsApp?"
+
+   A versão anterior morava solta dentro da página e fazia isto:
+
+       const funilPrincipal = funis[0];
+       funilPrincipal.colunas.map((coluna) => ({ quantidade: coluna.cards.length }))
+
+   Ou seja, nada de tráfego: o primeiro funil da conta, contagem crua de cards. "Novo: 2" eram os
+   mesmos 2 cards que aparecem no Funil — de anúncio, de indicação ou criados à mão, todos juntos.
+   Numa tela que divide gasto de mídia por quantidade de lead, isso empurra o custo por lead pra
+   baixo toda vez que a empresa recebe um cliente orgânico.
+
+   Agora é esta função, com teste, e a regra é uma só: conta negócio cuja ORIGEM é anúncio pago.
+   ========================================================================== */
+
+/** Uma etapa do funil de tráfego: o nome da etapa e quantos negócios pagos estão nela. */
+export type EtapaDeTrafego = { chave: string; label: string; quantidade: number };
+
+/**
+ * As etapas do funil considerando SÓ os negócios vindos das origens informadas.
+ *
+ * Três decisões que a página sozinha não deixava ver:
+ *
+ * 1. TODOS OS FUNIS, não o primeiro. Quem separa funil por produto ou por vendedor tinha a tela
+ *    mostrando um pedaço da operação como se fosse ela inteira.
+ * 2. ETAPAS COM O MESMO NOME SOMAM. A pergunta é em que altura do processo estão os leads pagos,
+ *    não em qual quadro eles moram. A ordem é a da primeira aparição.
+ * 3. OS NÚMEROS DE WHATSAPP SOMAM. Um funil É de um número — `Funil.contaCanal`, escolhido na
+ *    criação e fixo —, e era daí que vinha o estranhamento: pegando `funis[0]`, a tela mostrava o
+ *    funil de UM número e chamava aquilo de "funil de tráfego" da empresa. Somando todos, ela
+ *    passa a mostrar a operação inteira, que é a leitura certa aqui: anúncio não é comprado por
+ *    número de WhatsApp. Quem precisa ver um número por vez usa o filtro de funil no Funil.
+ *
+ * A LISTA DE FUNIS JÁ CHEGA RECORTADA. `GET /api/funis` aplica `ESCOPOS.funis` antes de
+ * responder, então quem só pode ver um funil soma só o dele — esta função não precisa (nem deve)
+ * repetir a checagem de permissão.
+ */
+export function funilDeTrafego(funis: Funil[], origens: readonly string[]): EtapaDeTrafego[] {
+  const porEtapa = new Map<string, number>();
+  for (const funil of funis) {
+    for (const coluna of funil.colunas) {
+      const pagos = coluna.cards.filter((card) => origens.includes(card.origem));
+      // `set` mesmo com zero: etapa vazia precisa aparecer como barra zerada, senão o funil pula
+      // degraus e a queda entre etapas, que é o que se lê nele, sai errada.
+      porEtapa.set(coluna.titulo, (porEtapa.get(coluna.titulo) ?? 0) + pagos.length);
+    }
+  }
+  return [...porEtapa.entries()].map(([titulo, quantidade]) => ({
+    chave: titulo,
+    label: titulo,
+    quantidade,
+  }));
+}
+
+/** Os negócios vindos das origens informadas, em todos os funis. Base dos KPIs desta tela. */
+export function negociosDasOrigens(funis: Funil[], origens: readonly string[]): NegocioCard[] {
+  return todosOsCards(funis).filter((card) => origens.includes(card.origem));
+}
