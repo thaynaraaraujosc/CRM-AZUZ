@@ -120,7 +120,7 @@ export default function AtividadesVendasPage() {
               <div className="panel-h">
                 <h4>{traduzir("Tempo de primeira resposta por responsável")}</h4>
               </div>
-              <div className="dados-nao-conectados" style={{ margin: 17 }}>{traduzir("Dados não conectados: o CRM ainda não rastreia qual responsável atendeu cada mensagem, então não dá pra medir tempo de resposta por pessoa ainda.")}</div>
+              <div className="dados-nao-conectados bloco-corpo">{traduzir("Dados não conectados: o CRM ainda não rastreia qual responsável atendeu cada mensagem, então não dá pra medir tempo de resposta por pessoa ainda.")}</div>
             </div>
           </>
         ) : null}
@@ -139,7 +139,7 @@ export default function AtividadesVendasPage() {
 
             <ChartCard title={traduzir("Interações por responsável (conversas atribuídas)")}>
               {equipe.every((m) => conversas.filter((c) => c.atendenteSelecionado === m.nome).length === 0) ? (
-                <p className="hint" style={{ padding: 17 }}>{traduzir("Nenhuma conversa atribuída a um responsável ainda.")}</p>
+                <p className="hint bloco-corpo">{traduzir("Nenhuma conversa atribuída a um responsável ainda.")}</p>
               ) : (
                 <BarList
                   items={equipe
@@ -158,7 +158,7 @@ export default function AtividadesVendasPage() {
                 <div className="panel-h">
                   <h4>{traduzir("Ligações")}</h4>
                 </div>
-                <div className="dados-nao-conectados" style={{ margin: 17 }}>
+                <div className="dados-nao-conectados bloco-corpo">
                   {traduzir("Dados não conectados: o CRM ainda não tem telefonia integrada.")}
                 </div>
               </div>
@@ -166,7 +166,7 @@ export default function AtividadesVendasPage() {
                 <div className="panel-h">
                   <h4>{traduzir("Reuniões e e-mails")}</h4>
                 </div>
-                <div className="dados-nao-conectados" style={{ margin: 17 }}>
+                <div className="dados-nao-conectados bloco-corpo">
                   {traduzir("Dados não conectados: conecte agenda/e-mail pra ver reuniões e e-mails aqui.")}
                 </div>
               </div>
@@ -175,7 +175,7 @@ export default function AtividadesVendasPage() {
               <div className="panel-h">
                 <h4>{traduzir("Documentos enviados")}</h4>
               </div>
-              <div className="dados-nao-conectados" style={{ margin: 17 }}>
+              <div className="dados-nao-conectados bloco-corpo">
                 {traduzir("Dados não conectados: vincule documentos a conversas pra ver esse total aqui.")}
               </div>
             </div>

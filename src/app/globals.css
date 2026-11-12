@@ -34673,3 +34673,95 @@ td.trafego-col-crm:first-of-type {
 .int-paginas .panel-h .input {
   border-radius: 999px;
 }
+
+/* ==========================================================================
+   O LAYOUT DENTRO DOS BLOCOS
+
+   "Melhore o layout dentro dos blocos."
+
+   O defeito era de ALINHAMENTO, e estava em 21 lugares de cinco telas: o título do bloco
+   (`.panel-h`) tem recuo de 20px, e o corpo vinha com `style={{ padding: 17 }}` escrito à mão.
+   17 não está na escala do produto (4/8/12/16/20/28) e não bate com 20 — então em todo bloco o
+   texto começava 3px antes do título. Três pixels ninguém mede e todo mundo sente: a tela parece
+   "quase alinhada", que é pior do que desalinhada de propósito.
+
+   Os 21 viraram esta classe. Agora o corpo nasce no mesmo prumo do título, e mudar o respiro de
+   todos é mudar uma linha — não vinte e uma.
+   ========================================================================== */
+
+.bloco-corpo {
+  /* Em cima menos que embaixo: o título já deu o respiro superior com o `padding-bottom` dele, e
+     repetir os 20px dos dois lados abre um vão no meio do bloco. */
+  padding: var(--space-4) var(--space-5) var(--space-5);
+}
+
+/* Quando o corpo é uma caixa com contorno (o aviso de dado não conectado), o recuo vira MARGEM:
+   com padding, o contorno encostaria na borda do cartão. */
+.dados-nao-conectados.bloco-corpo {
+  padding: var(--space-4);
+  margin: var(--space-4) var(--space-5) var(--space-5);
+}
+
+/*
+ * O AVISO DE "AINDA NÃO HÁ DADO" vira um estado vazio de verdade.
+ *
+ * Era uma tira tracejada de uma linha, com o texto colado na borda esquerda e alinhado ao centro
+ * vertical — o formato de um alerta de erro, para uma frase que não é erro nenhum: é o CRM
+ * dizendo o que falta acontecer para o número existir.
+ *
+ * Centrado e com respiro, ele passa a ocupar o bloco como conteúdo, não como remendo. O tracejado
+ * fica, porque é ele que diz "aqui vai aparecer algo um dia" em vez de "aqui tem uma caixa".
+ */
+.dados-nao-conectados {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: var(--space-2);
+  min-height: 120px;
+  padding: var(--space-5) var(--space-4);
+  line-height: 1.5;
+  background: var(--navy-raised);
+}
+
+/* O primeiro texto é a frase principal do estado vazio: tinta cheia, para ser lido. O resto fica
+   apagado, que é o papel de explicação. */
+.dados-nao-conectados strong {
+  color: var(--ink);
+  font-size: 15px;
+}
+
+/* Na barra larga do Tráfego o estado vazio é a tela inteira, então ele ganha mais ar. */
+.trafego-vazio {
+  min-height: 160px;
+  gap: var(--space-3);
+}
+
+.trafego-vazio span {
+  max-width: 62ch;
+}
+
+/*
+ * O RITMO ENTRE BLOCOS.
+ *
+ * Cada bloco trazia a própria margem inferior por `mb14` (14px, mais um valor fora da escala).
+ * Blocos de alturas diferentes com 14px entre eles leem como uma pilha apertada; 20px é o mesmo
+ * respiro que separa as colunas do funil e os painéis da caixa de entrada.
+ */
+/* FILHOS DIRETOS da área de conteúdo, e não qualquer cartão vizinho de outro.
+   Sem o `>` a regra entrava DENTRO das grades: numa fileira de quatro indicadores, do segundo em
+   diante cada um ganhava 20px de margem no topo e descia — quatro cartões em degrau, e a mesma
+   coisa nas duas colunas de "Ligações / Reuniões". Vi na primeira renderização. */
+.int-paginas .content > .card + .card,
+.int-paginas .content > .card + .grid,
+.int-paginas .content > .grid + .card,
+.int-paginas .content > .grid + .grid {
+  margin-top: var(--space-5);
+}
+
+/* O cabeçalho do bloco sem a linha embaixo quando o corpo é um estado vazio: a caixa tracejada já
+   começa logo abaixo, e as duas juntas desenham duas divisas para o mesmo corte. */
+.int-paginas .card > .panel-h:has(+ .dados-nao-conectados) {
+  border-bottom: none;
+  padding-bottom: 0;
+}

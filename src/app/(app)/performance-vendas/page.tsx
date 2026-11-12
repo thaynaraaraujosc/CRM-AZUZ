@@ -121,7 +121,7 @@ function PerformanceVendasPageInner() {
 
         {totalOportunidades === 0 ? (
           <div className="card mb14">
-            <div className="dados-nao-conectados" style={{ padding: 17 }}>{traduzir("Você ainda não possui dados suficientes para gerar este indicador. Marque negócios como ganhos/perdidos no Funil pra ver a performance aqui.")}</div>
+            <div className="dados-nao-conectados bloco-corpo">{traduzir("Você ainda não possui dados suficientes para gerar este indicador. Marque negócios como ganhos/perdidos no Funil pra ver a performance aqui.")}</div>
           </div>
         ) : null}
 
@@ -148,7 +148,7 @@ function PerformanceVendasPageInner() {
           <div className="panel-h">
             <h4>{traduzir("Desempenho por responsável")}</h4>
           </div>
-          <div style={{ padding: 17 }}>
+          <div className="bloco-corpo">
             {porResponsavel.length === 0 ? (
               <p className="hint">{traduzir("Nenhum negócio com responsável e desfecho registrado ainda.")}</p>
             ) : (
@@ -177,7 +177,7 @@ function PerformanceVendasPageInner() {
                 {traduzir("Fechar")} <IconClose width={11} height={11} />
               </button>
             </div>
-            <div style={{ padding: 17 }}>
+            <div className="bloco-corpo">
               <div className="stat-row">
                 <span className="sl">{traduzir("Vendas")}</span>
                 <span className="sv">{pessoaDetalhe.vendidas}</span>
@@ -215,7 +215,7 @@ function PerformanceVendasPageInner() {
           }
         >
           {serieDiaria.length === 0 ? (
-            <p className="hint" style={{ padding: 17 }}>{traduzir("Ainda sem movimento suficiente pra traçar uma evolução. O gráfico aparece assim que houver negócios criados/fechados em mais de um dia.")}</p>
+            <p className="hint bloco-corpo">{traduzir("Ainda sem movimento suficiente pra traçar uma evolução. O gráfico aparece assim que houver negócios criados/fechados em mais de um dia.")}</p>
           ) : (
             <LineChart
               series={[
@@ -237,7 +237,7 @@ function PerformanceVendasPageInner() {
               {traduzir("Ver análise completa de perdas →")}
             </Link>
           </div>
-          <div style={{ padding: 17 }}>
+          <div className="bloco-corpo">
             {valorPerdido.registros.length === 0 ? (
               <p className="hint">{traduzir("Nenhum negócio perdido registrado ainda.")}</p>
             ) : (

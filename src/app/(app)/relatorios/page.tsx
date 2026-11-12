@@ -115,7 +115,7 @@ function RelatoriosPageInner() {
             <h4>{traduzir("Relatórios gerados")}</h4>
           </div>
           {historico.length === 0 ? (
-            <p className="hint" style={{ padding: 17 }}>{traduzir("Nenhum relatório gerado ainda.")}</p>
+            <p className="hint bloco-corpo">{traduzir("Nenhum relatório gerado ainda.")}</p>
           ) : (
             <div className="table-wrap">
             <table className="tbl">
