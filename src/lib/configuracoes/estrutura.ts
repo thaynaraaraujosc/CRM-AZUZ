@@ -39,6 +39,21 @@ export type CategoriaConfig = {
   label: string;
   descricao: string;
   Icon: IconeCategoria;
+  /**
+   * A COR DO ÍCONE NO MENU. "Vamos dar vida pra essa região aqui."
+   *
+   * O menu eram dez ícones cinza, todos do mesmo traço e do mesmo tom: uma lista onde nada se
+   * distingue de nada, e em que achar "Segurança" custa ler as dez palavras. Cor não é enfeite
+   * aqui — é o que faz a pessoa acertar o item no segundo acesso sem ler.
+   *
+   * A regra que a Thaynara deu é a certa: "realmente as cores que são". Sino amarelo, relógio
+   * cinza, escudo verde, cartão. Cada ícone na cor que a coisa tem no mundo, não numa paleta
+   * inventada — é o que dispensa decorar.
+   *
+   * O valor é literal e não token: estas são cores de SINALIZAÇÃO, não da marca. Um token do CRM
+   * mudaria junto com o tema e com a identidade, e aí o sino deixaria de ser amarelo.
+   */
+  cor?: string;
   /** Mostra a tag "Em breve" ao lado do label e troca o conteúdo da categoria por uma vitrine
    * informativa em vez do formulário. Mesmo padrão já usado em Azuz IA (`/azuz-ia`). */
   emBreve?: boolean;
@@ -64,12 +79,16 @@ export const GRUPOS_CONFIGURACOES: GrupoConfig[] = [
         label: "Meu perfil",
         descricao: "Nome, telefone, e-mail, senha, foto, tema e os dados da sua empresa.",
         Icon: IconContatos,
+        cor: "#3B82F6",
       },
-      { id: "notificacoes", label: "Notificações", descricao: "Quando e como você é avisado.", Icon: IconBell },
-      { id: "expediente", label: "Horário de funcionamento", descricao: "Quando o CRM considera que vocês estão abertos.", Icon: IconRelogio },
-      { id: "seguranca", label: "Segurança", descricao: "Autenticação, sessões e políticas de acesso.", Icon: IconEscudo },
-      { id: "etiquetas", label: "Etiquetas", descricao: "Marcações usadas em contatos e automações.", Icon: IconErro },
-      { id: "importacao", label: "Importação e exportação", descricao: "Trazer ou tirar dados do CRM.", Icon: IconImportar, emBreve: true },
+      { id: "notificacoes", label: "Notificações", descricao: "Quando e como você é avisado.", Icon: IconBell, cor: "#F59E0B" },
+      { id: "expediente", label: "Horário de funcionamento", descricao: "Quando o CRM considera que vocês estão abertos.", Icon: IconRelogio, cor: "#94A3B8" },
+      /* Verde, e não amarelo como foi pedido: o sino logo acima já é o amarelo desta lista, e duas
+         linhas vizinhas da mesma cor deixam as duas de dizer alguma coisa. Verde é a cor que um
+         escudo tem no mundo. */
+      { id: "seguranca", label: "Segurança", descricao: "Autenticação, sessões e políticas de acesso.", Icon: IconEscudo, cor: "#16A34A" },
+      { id: "etiquetas", label: "Etiquetas", descricao: "Marcações usadas em contatos e automações.", Icon: IconErro, cor: "#8B5CF6" },
+      { id: "importacao", label: "Importação e exportação", descricao: "Trazer ou tirar dados do CRM.", Icon: IconImportar, cor: "#0EA5E9", emBreve: true },
       /* "Auditoria e atividades" saiu daqui. A tela mostrava quatro linhas escritas à mão, com
          nomes de pessoas que não existem em workspace nenhum, e os filtros filtravam esse array.
          Nada era lido do banco.
@@ -84,7 +103,7 @@ export const GRUPOS_CONFIGURACOES: GrupoConfig[] = [
   {
     titulo: "Inteligências",
     categorias: [
-      { id: "azuz-ia", label: "Azuz IA", descricao: "Comportamento, dados permitidos e sugestões.", Icon: IconSparkle, emBreve: true },
+      { id: "azuz-ia", label: "Azuz IA", descricao: "Comportamento, dados permitidos e sugestões.", Icon: IconSparkle, cor: "#D2A366", emBreve: true },
     ],
   },
   {
@@ -100,14 +119,14 @@ export const GRUPOS_CONFIGURACOES: GrupoConfig[] = [
          Instagram, caixa de e-mail competiria com o Gmail que o cliente já tem aberto, e enviar em
          nome do domínio de cada cliente exige SPF/DKIM/DMARC por cliente. Errar isso manda o
          e-mail dele pro spam, e a culpa cai no CRM. */
-      { id: "rastreamento", label: "Rastreamento de anúncios", descricao: "De qual anúncio veio cada lead.", Icon: IconSwitch },
-      { id: "integracoes", label: "Outras integrações", descricao: "Conexões com outras ferramentas.", Icon: IconSwitch },
+      { id: "rastreamento", label: "Rastreamento de anúncios", descricao: "De qual anúncio veio cada lead.", Icon: IconSwitch, cor: "#EA580C" },
+      { id: "integracoes", label: "Outras integrações", descricao: "Conexões com outras ferramentas.", Icon: IconSwitch, cor: "#6366F1" },
     ],
   },
   {
     titulo: "Plano e cobrança",
     categorias: [
-      { id: "plano", label: "Plano e cobrança", descricao: "Seu plano atual, uso e forma de pagamento.", Icon: IconCartao },
+      { id: "plano", label: "Plano e cobrança", descricao: "Seu plano atual, uso e forma de pagamento.", Icon: IconCartao, cor: "#0D9488" },
     ],
   },
 ];

@@ -17511,6 +17511,30 @@ button.flow-node-warn:hover {
   gap: var(--space-2);
   margin-bottom: 6px;
 }
+
+/* A logo dentro do cartão de "Em breve": a mesma caixinha das integrações prontas, num tamanho
+   que cabe ao lado de um nome em vez de abrir uma linha própria. */
+.int-logo-pequena {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-elevated);
+  border: 1px solid var(--line-soft);
+}
+
+/* A marca da casa no cabeçalho do cartão do AZUZ Flow. Maior que um ícone de lista: é a única
+   integração que é produto nosso, e o cartão dela abre uma seção inteira. */
+.flow-marca {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.flow-marca .brand-mark {
+  width: 34px;
+  height: 34px;
+  font-size: 16px;
+}
 .config-canal-card-h .n {
   font-size: 14px;
   font-weight: 700;

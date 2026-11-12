@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 
+import { MarcaDoTopo } from "@/components/marca-do-topo";
 import { IconAlerta, IconSetaBaixo } from "@/components/icons";
 import { ModalConfirmacao } from "@/components/ui";
 import { useIdioma } from "@/lib/idioma-context";
@@ -318,7 +319,14 @@ export function AzuzFlow() {
         aria-expanded={aberto}
         onClick={() => setAberto((v) => !v)}
       >
-        <span className="config-bloco-titulo">{traduzir("AZUZ Flow")}</span>
+        {/* A marca da casa, do lado do nome — "o AZUZ Flow tambem, poe a logo maior". O cartao
+            dele era o unico da tela com so texto no cabecalho, bem no bloco que fala do produto
+            irmao. `MarcaDoTopo` e o mesmo componente do menu: a logo que a agencia subiu aparece
+            aqui igual, e quem nao subiu nenhuma ve o quadradinho da marca. */}
+        <span className="flow-marca">
+          <MarcaDoTopo mostrarNome={false} />
+        </span>
+        <span className="config-bloco-titulo" style={{ flex: 1 }}>{traduzir("AZUZ Flow")}</span>
         <IconSetaBaixo className={aberto ? "girado" : undefined} width={14} height={14} aria-hidden="true" />
       </button>
 
