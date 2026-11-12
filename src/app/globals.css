@@ -34405,253 +34405,32 @@ td.trafego-col-crm:first-of-type {
    ========================================================================== */
 
 /*
- * A PELE FUTURISTA, e de onde ela veio.
+ * A CASCA, SEM PELE PRÓPRIA.
  *
- * "Eu queria que você fizesse algo bem parecido com a nossa página, o nosso site. O nosso site é
- * bem futurístico. Essa parte de inteligência comercial, desde o tráfego até o CRM Live, fica bem
- * diferente do resto do CRM."
+ * Eu tinha pintado estas sete telas de escuro, com a aurora e a malha da landing page. Era o que
+ * eu entendi de "fica bem diferente do resto do CRM" — e não era o que ela pediu:
  *
- * O site dela não abre desta sessão (o domínio está fora da rede permitida), mas a fonte certa
- * estava aqui dentro: a landing page pública do próprio produto
- * (`src/components/landing/PaginaInicial.tsx`) já tem esse sistema inteiro — fundo quase preto
- * azulado, malha fina, aurora azul respirando atrás do topo, superfícies de vidro e o oceano
- * #2e6bff como único acento. Os valores abaixo são os mesmos de lá, não uma imitação de memória.
+ *   "Hora nenhuma eu pedi pra você colocar azul, pra tirar do branco. É pra MANTER branco, do
+ *    jeito que estava. Eu pedi pra melhorar o DESIGN, pra ficar de acordo com a identidade visual.
+ *    Tudo mais arredondado do que quadrado. Os botões mais flutuantes."
  *
- * A TÉCNICA É A MESMA DO MENU E DAS TELAS DE LOGIN: em vez de reescrever sete telas, os TOKENS do
- * CRM são redefinidos para dentro de `.int-casca`. `.card`, `.kpi`, `.input`, `.btn`, a tabela e o
- * resto continuam escritos como sempre e herdam a pele inteira. É o que permitiu virar o visual de
- * sete telas sem tocar no conteúdo de nenhuma — e o que permite desfazer removendo um bloco.
+ * Trocar a cor de fundo é a resposta preguiçosa pra "melhore o design": muda tudo de uma vez, não
+ * resolve nada do que estava mal desenhado, e ainda cria uma segunda linguagem visual dentro do
+ * mesmo produto — que foi o problema que a unificação já tinha resolvido antes.
+ *
+ * O que ficou: a coluna fixa, as margens e o CRM Live em janela própria. O refinamento de desenho
+ * (raio, flutuação, dourado) está mais abaixo, em `.int-paginas`, e vale sobre o branco.
  */
 .int-casca {
   display: flex;
   flex: 1;
   min-height: 0;
-  position: relative;
-  isolation: isolate;
-
-  /* A escada de superfícies, invertida: o piso é o quase-preto e o que sobe é vidro branco. */
-  --navy: transparent;
-  --navy-raised: rgba(255, 255, 255, 0.04);
-  --navy-raised-2: rgba(255, 255, 255, 0.07);
-  --navy-deep: transparent;
-  /* VIDRO ESCURO, e não o branco 5% da landing. Lá a aurora fica só atrás do topo e o branco
-     diluído funciona; aqui ela passa POR BAIXO dos cartões, e branco sobre luz azul vira painel
-     claro — os rótulos sumiam. O azul profundo da landing (`--lp-bg-2`) com transparência deixa a
-     luz atravessar e continua sendo superfície escura. */
-  --surface-elevated: rgba(11, 21, 51, 0.62);
-  --surface: rgba(11, 21, 51, 0.62);
-  --surface-hover: rgba(255, 255, 255, 0.08);
-  --surface-active: rgba(255, 255, 255, 0.12);
-
-  --ink: #ffffff;
-  --ink-nome: #ffffff;
-  --text-muted: rgba(255, 255, 255, 0.68);
-  --text-faint: rgba(255, 255, 255, 0.46);
-
-  --line: rgba(255, 255, 255, 0.1);
-  --line-soft: rgba(255, 255, 255, 0.06);
-  --line-strong: rgba(255, 255, 255, 0.24);
-
-  /* O oceano da landing é o único acento. No resto do CRM `--blue` é o navy da marca; aqui ele é
-     o azul que a página pública usa, porque é ele que dá a temperatura "futurista". */
-  --blue: #2e6bff;
-  --blue-soft: rgba(46, 107, 255, 0.2);
-  --blue-soft-2: rgba(46, 107, 255, 0.1);
-  --blue-strong: #7ea2ff;
-  --acao: #2e6bff;
-  --conversa-topo: rgba(46, 107, 255, 0.18);
-  --cfg-azul-raso: rgba(46, 107, 255, 0.12);
-  --cfg-azul-raso-forte: rgba(46, 107, 255, 0.2);
-  --cfg-azul-traco: rgba(126, 162, 255, 0.4);
-  --cfg-sombra: none;
-
-  /* Sombra não existe sobre fundo escuro: o que separa é a borda clara e o vidro. */
-  --shadow-xs: none;
-  --shadow-sm: none;
-  --shadow-md: none;
-  --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.5);
-
-  --grid-line: transparent;
-  --barra-rolagem: rgba(255, 255, 255, 0.18);
-  --barra-rolagem-forte: rgba(255, 255, 255, 0.34);
-
-  background: #060b1a;
-  color: var(--ink);
-  /* Sem isto o navegador de quem usa no tema claro pinta barra de rolagem e autofill como se a
-     área fosse clara, e elas aparecem como manchas brancas. É o mesmo motivo da landing. */
-  color-scheme: dark;
-}
-
-/* A MALHA: o traço "tecnológico" sem virar mais um elemento. Some antes do conteúdo, pela
-   máscara — a mesma de `.lp-grid`. */
-.int-casca::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -2;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-  background-size: 72px 72px;
-  mask-image: radial-gradient(ellipse 65% 42% at 50% 0%, #000 30%, transparent 100%);
-}
-
-/* A AURORA: duas manchas de azul muito diluídas que respiram devagar, atrás de tudo. É o que dá
-   profundidade sem acender neon em cima do texto. Mesmos valores e mesmo ciclo da landing. */
-.int-casca::after {
-  content: "";
-  position: absolute;
-  inset: -24% -10% auto;
-  height: 620px;
-  z-index: -1;
-  pointer-events: none;
-  /* Mais diluída que na landing: lá ela compete com um título de 64px, aqui com números que
-     precisam ser lidos. Luz de fundo, não holofote. */
-  background:
-    radial-gradient(ellipse 42% 38% at 28% 32%, rgba(46, 107, 255, 0.22), transparent 70%),
-    radial-gradient(ellipse 38% 34% at 74% 20%, rgba(126, 162, 255, 0.12), transparent 72%);
-  filter: blur(28px);
-  animation: lp-respirar 18s ease-in-out infinite;
-}
-
-@keyframes lp-respirar {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0) scale(1);
-    opacity: 0.9;
-  }
-  50% {
-    transform: translate3d(-2%, 2%, 0) scale(1.08);
-    opacity: 1;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .int-casca::after {
-    animation: none;
-  }
-}
-
-/*
- * O QUE ESCREVE COR NA MARRA, e por isso não herda os tokens.
- *
- * `.topbar` e `.input` trazem `background: #fff` literal — escrito quando branco era a única
- * superfície que existia. Sobre o fundo escuro viravam duas faixas brancas atravessando a tela.
- */
-.int-casca .topbar {
-  background: transparent;
-  border-bottom-color: var(--line);
-}
-
-/* `.config-nav` traz `background: #ffffff` literal — o cartão branco do menu de Configurações.
-   Aqui ele virava um bloco branco com texto branco dentro: a lista inteira sumia. */
-.int-casca .config-nav {
-  background: transparent;
-  border-color: transparent;
-}
-
-.int-casca .config-nav-item {
-  color: var(--text-muted);
-}
-
-.int-casca .config-nav-item:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--ink);
-}
-
-.int-casca .config-nav-item.active {
-  background: var(--blue-soft);
-  color: #ffffff;
-  box-shadow: inset 2px 0 0 0 var(--blue);
-}
-
-/* O botão apagado (`ghost`) é texto sobre nada: sobre o escuro ele precisa da borda pra existir. */
-.int-casca .btn.ghost {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--line-strong);
-  color: var(--ink);
-}
-
-.int-casca .btn.ghost:hover {
-  background: rgba(255, 255, 255, 0.12);
-}
-
-/* A pílula de filtro, mesma história. */
-.int-casca .fchip {
-  border-color: var(--line-strong);
-  color: var(--text-muted);
-}
-
-.int-casca .fchip.active {
-  background: var(--blue);
-  border-color: var(--blue);
-  color: #ffffff;
-}
-
-.int-casca .input,
-.int-casca .search {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: var(--line-strong);
-  color: var(--ink);
-}
-
-.int-casca .input::placeholder {
-  color: var(--text-faint);
-}
-
-/*
- * O QUADRO DE INDICADOR tem cor PRÓPRIA (`.kpi { background: var(--cyan-soft-2) }`, um azul quase
- * branco) e não herda `--surface-elevated` — por isso os seis números do topo apareciam como
- * blocos brancos com texto branco dentro, ilegíveis. Dos defeitos desta pele, foi o pior.
- */
-.int-casca .card,
-.int-casca .kpi {
-  /* Vidro: o fundo semitransparente deixa a aurora passar por baixo, que é o que faz o cartão
-     parecer sobre a página em vez de recortado dela. */
-  backdrop-filter: blur(10px);
-}
-
-.int-casca .kpi {
-  background: var(--surface-elevated);
-  border-color: var(--line);
-  box-shadow: none;
-}
-
-.int-casca .kpi:hover,
-.int-casca .trafego-view .kpi:hover {
-  border-color: var(--blue);
-  box-shadow: 0 0 0 1px rgba(46, 107, 255, 0.4);
-}
-
-/* O número grande é o que a tela existe pra mostrar: ele fica branco cheio, e o rótulo apagado. */
-.int-casca .kpi .n {
-  color: #ffffff;
-}
-
-.int-casca table thead th {
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--text-muted);
-}
-
-.int-casca tbody tr:nth-child(even) {
-  background: rgba(255, 255, 255, 0.02);
-}
-
-/* O botão de ação principal fica no oceano, e não no navy: sobre fundo escuro o navy da marca
-   desaparece (1,19:1), que é a mesma razão de o tema escuro do CRM usar o dourado. */
-.int-casca .btn.primary,
-.int-casca .btn:not(.ghost):not(.danger) {
-  background: var(--blue);
-  border-color: var(--blue);
-  color: #ffffff;
 }
 
 .int-menu {
   /*
    * A MARGEM, que estava colada. "O menu lateral está colado na linha que separa. Padroniza as
-   * margens." Estava mesmo: a folga existia só do lado de fora (`padding-left`), e do lado da
-   * divisa o item encostava no fio. Agora a folga é igual dos dois lados, e o fio fica com ar.
+   * margens." A folga existia só do lado de fora; do lado da divisa o item encostava no fio.
    */
   flex: 0 0 236px;
   width: 236px;
@@ -34664,38 +34443,6 @@ td.trafego-col-crm:first-of-type {
 .int-menu .config-nav-grupo-h {
   padding-left: var(--space-3);
   margin-bottom: var(--space-2);
-}
-
-/* A etiqueta "TV" do CRM Live: diz que aquele item abre uma janela nova antes de alguém clicar. */
-/* O cabeçalho sobre as telas de Inteligência comercial: mesma pele, pra não sobrar uma faixa
-   branca atravessando o topo do escuro. Os tokens vão PARA DENTRO dele, como em todo o resto. */
-.app-header-escuro {
-  background: #060b1a;
-  border-bottom-color: rgba(255, 255, 255, 0.1);
-  color-scheme: dark;
-
-  --ink: #ffffff;
-  --ink-nome: #ffffff;
-  --text-muted: rgba(255, 255, 255, 0.68);
-  --text-faint: rgba(255, 255, 255, 0.46);
-  --line: rgba(255, 255, 255, 0.1);
-  --line-soft: rgba(255, 255, 255, 0.06);
-  --line-strong: rgba(255, 255, 255, 0.24);
-  --navy-raised: rgba(255, 255, 255, 0.06);
-  --navy-raised-2: rgba(255, 255, 255, 0.1);
-  --surface-elevated: rgba(255, 255, 255, 0.06);
-  --surface-hover: rgba(255, 255, 255, 0.1);
-  --blue: #2e6bff;
-}
-
-.app-header-escuro .search {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.16);
-  color: var(--ink);
-}
-
-.app-header-escuro .search input {
-  color: var(--ink);
 }
 
 .int-menu-tv {
@@ -34754,4 +34501,175 @@ td.trafego-col-crm:first-of-type {
     border-radius: 999px;
     border: 1px solid var(--line);
   }
+}
+
+/* ==========================================================================
+   O DESENHO DAS TELAS DE INTELIGÊNCIA COMERCIAL
+
+   "Eu pedi pra melhorar o design, pra ficar de acordo com a identidade visual. Tudo mais
+   arredondado do que quadrado. Os botões mais flutuantes. Os botões dentro da atividade, colocar
+   dourado."
+
+   Tudo aqui é sobre FORMA e PESO — raio, sombra, altura, ritmo. A cor não muda: o fundo continua
+   branco e a paleta continua a do CRM. Foi a lição da tentativa anterior, em que eu pintei as sete
+   telas de escuro achando que "melhorar o design" pedia outra cor. Não pedia.
+
+   Vale em `.int-paginas`, que é a área à direita do menu — as sete telas de uma vez, sem tocar no
+   conteúdo de nenhuma.
+   ========================================================================== */
+
+/*
+ * OS BOTÕES: arredondados e flutuantes.
+ *
+ * Eram retângulos de 11px de raio, chapados na superfície com uma sombra de 1px que não se vê. A
+ * cápsula dá a forma, e a sombra em dois níveis (parado e no hover) dá o que ela chamou de
+ * flutuante: o botão descola do papel quando o ponteiro chega.
+ */
+.int-paginas .btn,
+.int-paginas .fchip {
+  border-radius: 999px;
+  box-shadow: 0 1px 2px rgba(0, 32, 55, 0.06), 0 2px 8px rgba(0, 32, 55, 0.05);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast),
+    background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.int-paginas .btn:hover:not(:disabled),
+.int-paginas .fchip:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 32, 55, 0.08), 0 8px 18px rgba(0, 32, 55, 0.1);
+}
+
+/* Apertado, ele encosta de volta no papel. Sem isto o botão fica flutuando enquanto se clica,
+   e o clique não dá retorno nenhum. */
+.int-paginas .btn:active:not(:disabled),
+.int-paginas .fchip:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 32, 55, 0.08);
+}
+
+/*
+ * A AÇÃO PRINCIPAL É DOURADA, com tinta navy por cima.
+ *
+ * É a regra da marca e a única leitura aprovada: navy sobre dourado dá 7,3:1; branco sobre
+ * dourado dá 2,3:1, reprovado. A cápsula dourada é o único elemento de cor cheia destas telas —
+ * e é por isso que ela diz "é aqui que se clica" sem precisar de mais nada.
+ */
+.int-paginas .btn.primary,
+.int-paginas .btn.acao {
+  background: var(--ouro);
+  border-color: var(--ouro);
+  color: var(--navy-marca);
+}
+
+.int-paginas .btn.primary:hover:not(:disabled),
+.int-paginas .btn.acao:hover:not(:disabled) {
+  background: var(--ouro-hover);
+  border-color: var(--ouro-hover);
+}
+
+/* A pílula de filtro ligada: dourado também, pela mesma razão — é escolha ativa, não informação. */
+.int-paginas .fchip.active {
+  background: var(--ouro);
+  border-color: var(--ouro);
+  color: var(--navy-marca);
+}
+
+/*
+ * OS CARTÕES: mais arredondados, e com a sombra mais aberta.
+ *
+ * `--radius-lg` (16px) num cartão de 400px de largura lê como quase-quadrado. 22px é o mesmo raio
+ * dos painéis da caixa de entrada — a tela passa a ter o arredondamento do resto do produto em
+ * vez de um menor, só dela.
+ */
+.int-paginas .card,
+.int-paginas .kpi {
+  border-radius: var(--radius-xl);
+}
+
+.int-paginas .kpi {
+  box-shadow: 0 1px 2px rgba(0, 32, 55, 0.05), 0 6px 16px rgba(0, 32, 55, 0.05);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.int-paginas .kpi:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 32, 55, 0.08), 0 14px 30px rgba(0, 32, 55, 0.1);
+}
+
+/*
+ * O FUNIL DE TRÁFEGO.
+ *
+ * A barra tinha 10px e ficava solta embaixo do nome, com a perda numa terceira linha: três alturas
+ * diferentes por etapa, e seis etapas viravam dezoito linhas de ritmo irregular.
+ *
+ * Agora cada etapa é um bloco só, que acende ao passar o mouse: barra mais alta (14px), com a
+ * ponta arredondada de verdade, e o número grande à direita. A ponta DOURADA no fim do
+ * preenchimento é o toque de marca — um detalhe de 3px, que é o papel que o dourado tem aqui.
+ */
+.int-paginas .funnel-steps {
+  gap: var(--space-2);
+}
+
+.int-paginas .funnel-step-bar-wrap {
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+  transition: background var(--transition-fast);
+}
+
+.int-paginas .funnel-step-bar-wrap:hover {
+  background: var(--navy-raised);
+}
+
+.int-paginas .funnel-step-track {
+  height: 14px;
+  background: var(--navy-raised-2);
+}
+
+.int-paginas .funnel-step-fill {
+  /* O filete dourado fica na ponta do preenchimento, onde o olho para pra ler o número. */
+  box-shadow: inset -3px 0 0 0 var(--ouro);
+}
+
+.int-paginas .funnel-step-qtd {
+  font-size: 18px;
+}
+
+/*
+ * A TABELA DE DESEMPENHO POR CAMPANHA.
+ *
+ * As linhas já eram cartões soltos (`border-spacing`), mas com raio de 11px e sem relevo: liam
+ * como faixas cinzas empilhadas. Com o raio maior e a elevação no hover, cada linha vira o que ela
+ * é — uma campanha, clicável.
+ */
+.int-paginas table.tbl td {
+  padding: var(--space-4) var(--space-4);
+}
+
+.int-paginas table.tbl tbody tr td:first-child {
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+}
+
+.int-paginas table.tbl tbody tr td:last-child {
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+}
+
+.int-paginas table.tbl tbody tr:hover td {
+  background: var(--surface-elevated);
+  box-shadow: 0 2px 6px rgba(0, 32, 55, 0.07);
+}
+
+/* O cabeçalho da tabela em caixa alta pequena, que é como o resto do CRM escreve rótulo de
+   coluna. Sem isto ele competia em peso com o conteúdo da linha. */
+.int-paginas table.tbl th {
+  font-size: 11px;
+  letter-spacing: var(--track-wide);
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+/* O campo de busca dentro do painel segue a cápsula dos botões, senão sobra um retângulo no meio
+   de uma fileira de pílulas. */
+.int-paginas .panel-h .input {
+  border-radius: 999px;
 }
