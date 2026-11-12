@@ -6,6 +6,8 @@ import type { ReactNode } from "react";
 
 import { ITENS_INTELIGENCIA } from "@/lib/inteligencia/estrutura";
 import { useIdioma } from "@/lib/idioma-context";
+import { useSession } from "next-auth/react";
+import { permissaoDoEndereco } from "@/lib/permissao-da-rota";
 
 /**
  * A CASCA DAS TELAS DE INTELIGÊNCIA COMERCIAL: o menu fixo à esquerda e a tela à direita.
@@ -20,13 +22,25 @@ import { useIdioma } from "@/lib/idioma-context";
 export function MenuInteligencia({ children }: { children: ReactNode }) {
   const { t: traduzir } = useIdioma();
   const pathname = usePathname();
+  const { data: sessao } = useSession();
+
+  /* A coluna segue a mesma regra do menu lateral: só lista o que a pessoa consegue abrir. Hoje as
+     sete telas pedem a mesma permissão (`rel_visualizar`), então ou aparecem todas ou nenhuma —
+     mas a checagem é por item, pra continuar certa no dia em que uma delas tiver a sua. */
+  const vêTudo = Boolean(sessao?.user?.superAdmin) || sessao?.user?.papelTipo === "admin";
+  const permissoes = sessao?.user?.permissoes ?? [];
+  const itens = ITENS_INTELIGENCIA.filter((item) => {
+    if (vêTudo) return true;
+    const exigida = permissaoDoEndereco(item.href);
+    return !exigida || permissoes.includes(exigida);
+  });
 
   return (
     <div className="int-casca">
       <nav className="int-menu" aria-label={traduzir("Inteligência comercial")}>
         <p className="config-nav-grupo-h">{traduzir("Inteligência comercial")}</p>
         <div className="config-nav">
-          {ITENS_INTELIGENCIA.map((item) => {
+          {itens.map((item) => {
             const ativo = pathname === item.href || pathname.startsWith(`${item.href}/`);
 
             /*

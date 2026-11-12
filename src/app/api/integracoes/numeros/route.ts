@@ -4,6 +4,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { esquecerConexoes } from "@/lib/integracoes/conexoes-cache";
 import { CANAL_NAO_OFICIAL, CANAL_OFICIAL } from "@/lib/integracoes/conta-canal";
+import { grafiasDoContaCanal } from "@/lib/integracoes/conta-canal-normalizar";
+import { ESCOPOS, escopoPermitido } from "@/lib/configuracoes/permissoes";
 import { LIMITE_DE_NUMEROS, listarConexoesWhats, proximoSlotLivre } from "@/lib/integracoes/conexoes-whatsapp";
 import { numerosDeWhatsApp } from "@/lib/integracoes/numeros-de-whatsapp";
 
@@ -33,9 +35,27 @@ export async function GET() {
     }),
   ]);
 
+  /*
+   * O RECORTE DE NÚMEROS TAMBÉM VALE AQUI, e esta era a falha que ela viu no print.
+   *
+   * "Coloquei que ele não poderia ficar com os dois WhatsApp, somente um, mas tá mostrando que ele
+   * tá com acesso do WhatsApp" — e estava: a LISTA de conversas já respeitava o recorte
+   * (`/api/conversas`), mas a lista de NÚMEROS não. Resultado: as abas em cima da caixa de entrada
+   * mostravam os dois telefones, com o número completo de cada um, pra quem só podia ver um.
+   *
+   * O mesmo recorte, no servidor, e pela mesma razão de lá: esconder na tela é esconder de quem
+   * olha, não de quem pede.
+   *
+   * Nada marcado = vê todos, que é o comportamento de sempre para quem nunca teve recorte.
+   */
+  const numerosPermitidos = escopoPermitido(sessao.user.permissoes, ESCOPOS.numerosDeWhatsApp);
+  const numerosNoRecorte = numerosPermitidos
+    ? numeros.filter((n) => numerosPermitidos.some((p) => grafiasDoContaCanal(p).includes(n.chave)))
+    : numeros;
+
   return NextResponse.json(
     {
-      numeros,
+      numeros: numerosNoRecorte,
       funis,
       limite: LIMITE_DE_NUMEROS,
       proximoLivre: proximoSlotLivre(conexoesQr.map((c) => c.slot)),
