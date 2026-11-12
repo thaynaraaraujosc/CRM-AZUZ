@@ -67,3 +67,45 @@ export function rotuloDoStatusDaConta(status: number): string {
 export function escolherContaPadrao<T extends { account_status: number }>(contas: T[]): T | null {
   return contas.find((c) => c.account_status === 1) ?? contas[0] ?? null;
 }
+
+/**
+ * O ESTADO DE UMA CAMPANHA, em português e com a saída junto.
+ *
+ * "O que tiver pausado, lembra de pegar todas as informações aqui."
+ *
+ * A tabela escrevia só "pausada", e pausada é o caso FÁCIL — alguém pausou de propósito. Os dois
+ * que doem são os outros: `WITH_ISSUES` (rejeitada no anúncio, ou sem forma de pagamento válida) e
+ * `IN_PROCESS` (ainda em análise). Nos dois a campanha existe, aparece na lista, e NÃO ENTREGA — e
+ * chamar isso de "pausada" faz quem olha concluir que foi escolha dela.
+ */
+export type SituacaoDaCampanha = {
+  rotulo: string;
+  /** `ok` entrega; `parada` é escolha de quem anuncia; `travada` é problema a resolver. */
+  tom: "ok" | "parada" | "travada";
+  explicacao: string;
+};
+
+export function situacaoDaCampanha(status: string | undefined, pausada: boolean | undefined): SituacaoDaCampanha | null {
+  switch (status) {
+    case "ACTIVE":
+      return null; // Entregando: o normal não precisa de etiqueta.
+    case "PAUSED":
+      return { rotulo: "Pausada", tom: "parada", explicacao: "Alguém pausou esta campanha. Ela não está entregando." };
+    case "IN_PROCESS":
+      return {
+        rotulo: "Em análise",
+        tom: "travada",
+        explicacao: "A Meta ainda está revisando. Costuma liberar em algumas horas; até lá não entrega.",
+      };
+    case "WITH_ISSUES":
+      return {
+        rotulo: "Com problema",
+        tom: "travada",
+        explicacao:
+          "A Meta travou esta campanha: anúncio rejeitado, ou forma de pagamento sem validade. Enquanto não resolver no Gerenciador de Anúncios, ela não entrega e o dinheiro não sai.",
+      };
+    default:
+      // Sem o estado cru (campanha do Google, ou resposta antiga), sobra o que se sabe.
+      return pausada ? { rotulo: "Pausada", tom: "parada", explicacao: "Não está entregando." } : null;
+  }
+}

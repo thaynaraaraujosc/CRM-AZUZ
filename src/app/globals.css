@@ -35042,3 +35042,213 @@ td.trafego-col-crm:first-of-type {
   padding: var(--space-2) var(--space-2) 0;
   line-height: 1.45;
 }
+
+/* ==========================================================================
+   DE ONDE O LEAD VEIO — a régua no topo da ficha
+
+   Mesma gramática da qualificação logo abaixo (chip, um clique grava, clicar de novo desmarca),
+   porque é a mesma natureza de marcação: coisa que quem atendeu sabe e o CRM não tem como deduzir.
+   A diferença é que aqui são oito opções, então elas quebram em linhas em vez de dividir a largura
+   em oito fatias ilegíveis.
+   ========================================================================== */
+
+.dc-origem {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.dc-origem-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: var(--fw-semibold);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.dc-origem-chip:hover {
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+/*
+ * MARCADA: o azul claro da marca, com tinta navy por cima.
+ *
+ * `--conversa-topo` é o mesmo azul do fundo das conversas e da linha não lida: entra a cor que o
+ * CRM já tem, não uma nova. E navy sobre esse azul dá 13,4:1 — a leitura aprovada. (Note que
+ * `--blue` aqui É navy: a marca não tem um azul médio, e usá-lo deixaria o chip marcado quase
+ * igual ao não marcado.)
+ */
+.dc-origem-chip.on {
+  border-color: var(--navy-marca);
+  background: var(--conversa-topo);
+  color: var(--navy-marca);
+}
+
+/*
+ * O PONTO DAS ORIGENS PAGAS — dourado, a mesma marca de tráfego pago que a lista de conversas e o
+ * cartão do funil já usam. Ele avisa, ANTES do clique, que essa escolha põe o lead no custo por
+ * lead do Tráfego: marcar "Instagram" e marcar "Meta Ads" não têm a mesma consequência, e nada na
+ * tela dizia isso.
+ */
+.dc-origem-ponto {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ouro);
+  flex: 0 0 auto;
+}
+
+.dc-origem-chip.on .dc-origem-ponto {
+  background: currentColor;
+}
+
+/* ==========================================================================
+   DESEMPENHO POR CAMPANHA
+
+   "Olha como tá feio esse layout. A margem tá muito ruim, não tem cor, a gente pode colocar um
+   azulzinho claro nos botões."
+
+   Três coisas erradas, e nenhuma era gosto: a tabela encostava nas bordas do cartão enquanto todo
+   o resto da tela respira 20px; o cabeçalho era texto cinza sobre branco, sem nada dizendo que as
+   colunas são clicáveis pra ordenar; e seis linhas de explicação ocupavam, todo dia, o lugar de
+   uma linha de dado.
+   ========================================================================== */
+
+/* O título com o "?" ao lado, alinhados pela mesma linha de base. */
+.panel-h-titulo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* A MARGEM. A tabela começava colada na borda esquerda do cartão. */
+.trafego-view .table-wrap {
+  padding-inline: var(--space-5);
+  padding-bottom: var(--space-3);
+}
+
+.trafego-view .tbl {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+/*
+ * A COR: o azul claro no cabeçalho.
+ *
+ * Cabeçalho de tabela não é decoração — é o que separa rótulo de dado, e ele estava com o mesmo
+ * peso visual das linhas. O azul é o `--cyan-soft` que os indicadores desta tela já usam, então
+ * não entra cor nova: entra a cor que a tela já tem, no lugar onde faltava.
+ */
+.trafego-view .tbl thead th {
+  background: var(--conversa-topo);
+  color: var(--navy-marca);
+  font-weight: var(--fw-semibold);
+  padding: 10px var(--space-3);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.trafego-view .tbl thead th:first-child {
+  border-top-left-radius: var(--radius-md);
+  border-bottom-left-radius: var(--radius-md);
+}
+
+.trafego-view .tbl thead th:last-child {
+  border-top-right-radius: var(--radius-md);
+  border-bottom-right-radius: var(--radius-md);
+}
+
+/* Coluna que ordena PARECE que ordena: a seta já estava lá, faltava o convite. */
+.trafego-view .tbl thead th[style*="cursor"]:hover {
+  background: color-mix(in srgb, var(--blue) 16%, var(--conversa-topo));
+}
+
+.trafego-view .tbl tbody td {
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+  /* Número quebrado em duas linhas ("R$\A116,03") deixa a coluna torta e é mais difícil de ler
+     do que a mesma coluna um pouco mais larga. Só o nome da campanha quebra. */
+  white-space: nowrap;
+}
+
+/* O nome é o único campo de texto livre aqui, e nome de campanha é longo por natureza
+   ("CADASTRO - ESTETICA - FORMULARIO - 2026-10"). Ele quebra, e leva a etiqueta de situação
+   junto, numa coluna com largura de leitura. */
+.trafego-view .tbl td.trafego-col-nome {
+  white-space: normal;
+  min-width: 220px;
+  max-width: 320px;
+}
+
+/* `<button>` centraliza o próprio texto por padrão do navegador: um nome de duas linhas ficava
+   centrado dentro de uma coluna alinhada à esquerda, e a tabela parecia desalinhada só nessa
+   linha. */
+.trafego-view .tbl td.trafego-col-nome .link {
+  text-align: left;
+}
+
+.trafego-view .tbl tbody tr:hover td {
+  background: var(--surface-hover);
+}
+
+/* A MINIATURA DO CRIATIVO: o jeito de reconhecer a campanha sem ler o código no nome dela. */
+.trafego-col-foto {
+  width: 44px;
+  padding-right: 0 !important;
+}
+
+.trafego-foto {
+  display: block;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  border: 1px solid var(--line);
+  background: var(--navy-raised);
+}
+
+/* Sem criativo, o lugar continua ocupado: linha com foto e linha sem foto desalinhariam a coluna
+   do nome, e a tabela passaria a parecer torta em vez de incompleta. */
+.trafego-foto-vazia {
+  border-style: dashed;
+}
+
+/*
+ * A SITUAÇÃO DA CAMPANHA. Era uma `.tag` cinza escrita "pausada" pra tudo que não estivesse
+ * ativo. Agora "pausada" (alguém pausou) e "com problema" (a Meta travou) têm cores diferentes,
+ * porque uma é escolha e a outra é dinheiro parado esperando alguém resolver.
+ */
+.trafego-situacao {
+  display: inline-flex;
+  align-items: center;
+  margin-left: var(--space-2);
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--track-wide);
+  cursor: help;
+}
+
+.trafego-situacao.parada {
+  background: var(--surface-active);
+  color: var(--text-muted);
+}
+
+.trafego-situacao.travada {
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  color: var(--danger);
+}

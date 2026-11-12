@@ -1335,6 +1335,14 @@ export type Campanha = {
   /** Só vêm da rota real do Meta Ads; o mock não tem esses campos. */
   vendas?: number;
   pausada?: boolean;
+  /** A foto do criativo do primeiro anúncio da campanha. `null` quando a Graph não deixou ler. */
+  miniatura?: string | null;
+  /**
+   * O estado cru da Meta: ACTIVE, PAUSED, IN_PROCESS (em análise), WITH_ISSUES (rejeitada ou sem
+   * forma de pagamento válida). Guardado além de `pausada` porque "não está entregando" tem causas
+   * diferentes, com saídas diferentes: uma pausada alguém pausou; uma WITH_ISSUES está travada.
+   */
+  situacao?: string;
 };
 
 export const campanhas: Campanha[] = [

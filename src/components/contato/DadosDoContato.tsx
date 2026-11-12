@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 
 import { CamposPersonalizados } from "@/components/conversas/CamposPersonalizados";
 import { QUALIFICACOES } from "@/lib/contatos/qualificacao";
+import { ORIGENS_DO_LEAD, origemEhPaga } from "@/lib/contatos/origem-do-lead";
 import { IconCheck, IconClose, IconEdit } from "@/components/icons";
 import { nomeAindaEhIdCru, nomeExibido } from "@/lib/conversas/exibicao";
 import {
@@ -494,10 +495,61 @@ export function DadosDoContato({
               </span>
             ) : null}
             {contato?.etapa ? <span className="ficha-chip">{contato.etapa}</span> : null}
-            {contato?.origem ? <span className="ficha-chip">{contato.origem}</span> : null}
           </div>
         </div>
       ) : null}
+
+      {/*
+        DE ONDE ESTE LEAD VEIO — marcável à mão, no topo da ficha.
+
+        "Lá na configuração do lead não tem a opção de onde ele veio. Eu sei que essa cliente
+        olhou o tráfego, viu o tráfego, aí foi lá, viu meu Instagram e mandou mensagem por fora.
+        Não veio direto do tráfego. Então eu posso colocar aqui que ela veio do tráfego, só que
+        ela não clicou. Da mesma forma que você fez pra qualificação do lead."
+
+        ERA O ELO QUE FALTAVA PRO TRÁFEGO INTEIRO. A origem só era gravada sozinha, por quem clica
+        no anúncio e cai direto no WhatsApp. Quem vê o anúncio, procura o perfil e manda mensagem
+        por fora — o caminho mais comum em serviço — nascia "Salvo manualmente" e ficava assim pra
+        sempre, porque não havia onde dizer o contrário. Daí a Meta cobrando 9 leads e o funil de
+        tráfego em 0: não era erro de conta, era um dado que ninguém tinha como informar.
+
+        ERA UM CHIP DE LEITURA, virou escolha. Antes a origem aparecia como etiqueta cinza ali em
+        cima, ao lado da etapa — informação sem ação. Agora é a mesma régua da qualificação: um
+        clique grava, clicar de novo na mesma desmarca, e tudo fora do formulário de edição,
+        porque isso se marca no meio do atendimento e não numa visita à ficha.
+      */}
+      <div className="field dc-origem-campo">
+        <label>{traduzir("De onde veio")}</label>
+        <div className="dc-origem">
+          {ORIGENS_DO_LEAD.map((o) => (
+            <button
+              type="button"
+              key={o.valor}
+              className={`dc-origem-chip${contato?.origem === o.valor ? " on" : ""}${o.paga ? " paga" : ""}`}
+              aria-pressed={contato?.origem === o.valor}
+              title={traduzir(o.descricao)}
+              onClick={() => {
+                const novo = contato?.origem === o.valor ? "" : o.valor;
+                salvarDadosContato(nome, { origem: novo });
+                aoRegistrarNoHistorico?.(
+                  novo ? `Origem marcada como "${o.label}"` : "Origem do lead removida",
+                );
+              }}
+            >
+              {/* O ponto é a mesma marca de tráfego pago usada na lista de conversas e no cartão
+                  do funil: aqui ele avisa, ANTES do clique, que esta escolha põe o lead no custo
+                  por lead da tela de Tráfego. */}
+              {o.paga ? <span className="dc-origem-ponto" aria-hidden="true" /> : null}
+              {traduzir(o.label)}
+            </button>
+          ))}
+        </div>
+        <p className="hint">
+          {origemEhPaga(contato?.origem)
+            ? traduzir("Conta no funil de tráfego e no custo por lead. Vale marcar também quem viu o anúncio e mandou mensagem por fora — o dinheiro foi gasto do mesmo jeito.")
+            : traduzir("As três de anúncio contam no funil de tráfego e no custo por lead. Marque mesmo quem não clicou no anúncio: se foi ele que trouxe a pessoa, o dinheiro foi gasto.")}
+        </p>
+      </div>
 
       {/*
         O NOME, E A CAIXA PRA DAR UM quando ainda não há.

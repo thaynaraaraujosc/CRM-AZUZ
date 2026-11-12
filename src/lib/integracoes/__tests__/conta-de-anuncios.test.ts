@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { escolherContaPadrao, rotuloDoStatusDaConta } from "@/lib/integracoes/conta-de-anuncios";
+import { escolherContaPadrao, rotuloDoStatusDaConta, situacaoDaCampanha } from "@/lib/integracoes/conta-de-anuncios";
 
 const conta = (id: string, account_status: number) => ({ id, account_status });
 
@@ -30,5 +30,26 @@ describe("rotuloDoStatusDaConta", () => {
 
   it("estado que a Meta ainda não documentou não vira frase inventada", () => {
     expect(rotuloDoStatusDaConta(999)).toBe("Estado desconhecido");
+  });
+});
+
+describe("situacaoDaCampanha", () => {
+  it("campanha entregando não ganha etiqueta: o normal não precisa de aviso", () => {
+    expect(situacaoDaCampanha("ACTIVE", false)).toBeNull();
+  });
+
+  it("separa 'alguém pausou' de 'a Meta travou' — são problemas diferentes", () => {
+    expect(situacaoDaCampanha("PAUSED", true)?.tom).toBe("parada");
+    expect(situacaoDaCampanha("WITH_ISSUES", false)?.tom).toBe("travada");
+    expect(situacaoDaCampanha("IN_PROCESS", false)?.tom).toBe("travada");
+  });
+
+  it("campanha travada não pode ser lida como 'pausada', que sugere escolha", () => {
+    expect(situacaoDaCampanha("WITH_ISSUES", false)?.rotulo).toBe("Com problema");
+  });
+
+  it("sem o estado cru (Google Ads, resposta antiga), usa o que se sabe", () => {
+    expect(situacaoDaCampanha(undefined, true)?.rotulo).toBe("Pausada");
+    expect(situacaoDaCampanha(undefined, false)).toBeNull();
   });
 });

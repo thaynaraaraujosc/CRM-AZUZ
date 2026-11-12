@@ -6,12 +6,14 @@ import Link from "next/link";
 import { ORIGENS, type Campanha, type Origem } from "@/lib/data";
 import { IconClose } from "@/components/icons";
 import { useContatos } from "@/lib/contatos-context";
+import { ORIGENS_PAGAS } from "@/lib/contatos/origem-do-lead";
+import { situacaoDaCampanha } from "@/lib/integracoes/conta-de-anuncios";
 import { useFunis } from "@/lib/funis-context";
 import { useIntegracaoMeta } from "@/components/configuracoes/useIntegracaoMeta";
 import { useGoogleAds } from "@/components/trafego/useGoogleAds";
 import { SeletorDeContaDeAnuncios } from "@/components/trafego/SeletorDeContaDeAnuncios";
 import { acharNoCrm, normalizarNome, usePorCampanha } from "@/components/trafego/usePorCampanha";
-import { FilterBar, KpiCard, PERIODO_PADRAO, type PeriodoValor } from "@/components/ui";
+import { Ajuda, FilterBar, KpiCard, PERIODO_PADRAO, type PeriodoValor } from "@/components/ui";
 import { ChartCard, FunnelSteps } from "@/components/charts";
 import { useIdioma } from "@/lib/idioma-context";
 import {
@@ -42,14 +44,12 @@ type RespostaDeCampanhas = {
   erro?: string;
 };
 
-/**
- * AS ORIGENS QUE SÃO ANÚNCIO PAGO.
- *
- * O funil de tráfego conta negócio que VEIO DE ANÚNCIO, e por isso precisa saber quais origens
- * são anúncio. Lead de indicação, de formulário do site ou salvo à mão não entra: ele existe sem
- * ter custado mídia, e somá-lo aqui faria o custo por lead desta tela mentir pra baixo.
+/*
+ * `ORIGENS_PAGAS` vem de `contatos/origem-do-lead.ts`, junto das opções que a ficha do contato
+ * oferece — de propósito. Marcar "Meta Ads" na ficha e ver o lead aparecer aqui tem que ser a
+ * MESMA decisão: duas listas em dois arquivos combinariam por acaso, e divergiriam no primeiro
+ * dia em que alguém acrescentasse uma plataforma só de um lado.
  */
-const ORIGENS_PAGAS = ["Meta Ads", "Google Ads", "TikTok"] as const;
 
 /** A origem que corresponde à letra de plataforma guardada no filtro. */
 function origemDaPlataforma(letra: string): string | null {
@@ -677,13 +677,24 @@ export default function TrafegoPage() {
         <div className="grid kpi6">
           <KpiCard label={traduzir("Investido")} value={investido.label} formula={investido.formula} />
           <KpiCard label={traduzir("Leads")} value={leads.label} formula={leads.formula} href="/funil" />
+          {/*
+            DIVISÃO POR ZERO NÃO É ZERO. É "não dá pra saber".
+
+            Com nenhuma venda, "Custo / venda R$ 0,00" afirma que cada venda saiu de graça — e
+            aparecia exatamente assim na tela dela, ao lado de "Vendas 0". É o mesmo defeito que a
+            coluna de investimento em Origens tinha: o zero parece número apurado. Traço.
+          */}
           <KpiCard
             label={traduzir("Custo / lead")}
-            value={formatarMoeda(custoPorLead)}
+            value={leads.valor > 0 ? formatarMoeda(custoPorLead) : "—"}
             formula="Investido em tráfego ÷ leads gerados, nas campanhas filtradas"
           />
           <KpiCard label={traduzir("Vendas")} value={String(vendas)} href="/performance-vendas" />
-          <KpiCard label={traduzir("Custo / venda")} value={formatarMoeda(custoPorVenda)} />
+          <KpiCard
+            label={traduzir("Custo / venda")}
+            value={vendas > 0 ? formatarMoeda(custoPorVenda) : "—"}
+            formula="Investido em tráfego ÷ vendas vindas de anúncio. Sem nenhuma venda de anúncio ainda, não há conta a fazer."
+          />
           <KpiCard label={traduzir("ROAS")} value={roas.label} formula={roas.formula} />
         </div>
         )}
@@ -732,7 +743,24 @@ export default function TrafegoPage() {
 
         <div className="card mb14">
           <div className="panel-h">
-            <h4>{traduzir("Desempenho por campanha")}</h4>
+            {/*
+              O TEXTÃO VIROU UM "?".
+
+              "Lá embaixo tem um texto. Esse texto pode muito bem colocar um sinal de interrogação
+              e, quando passa o mouse, ele aparece. Não precisa ficar esse texto aqui."
+
+              Eram seis linhas de explicação embaixo da tabela, lidas uma vez na vida e ocupando
+              espaço todo dia. O balão de ajuda já existe no CRM (`Ajuda`, em `ui.tsx`) e é o que
+              se usa em toda parte pra isso — era esta tela que estava fora do padrão.
+            */}
+            <h4 className="panel-h-titulo">
+              {traduzir("Desempenho por campanha")}
+              <Ajuda
+                texto={traduzir(
+                  "As colunas da esquerda são o que a plataforma de anúncio informa: ela só enxerga o que acontece dentro dela. As três da direita são o que o CRM registrou de verdade — lead que virou contato e negócio marcado como ganho no funil. O ROAS real cruza os dois: receita do seu funil dividida pelo que a plataforma cobrou. Assistida é venda em que a campanha participou sem ter trazido o lead: a pessoa viu o anúncio, não comprou, e voltou por outro caminho. Desligar uma campanha com muitas assistidas costuma derrubar junto a que estava fechando.",
+                )}
+              />
+            </h4>
             <div className="filters-row" style={{ margin: 0 }}>
               <input
                 className="input"
@@ -751,6 +779,7 @@ export default function TrafegoPage() {
               <thead>
                 <tr>
                   <th></th>
+                  <th className="trafego-col-foto" aria-label={traduzir("Criativo")}></th>
                   <th>{traduzir("Plataforma")}</th>
                   <th style={{ cursor: "pointer" }} onClick={() => alternarOrdenacao("nome")}>
                     Campanha {ordenarPor === "nome" ? (ordemDesc ? "↓" : "↑") : ""}
@@ -778,7 +807,7 @@ export default function TrafegoPage() {
               <tbody>
                 {linhasCampanha.length === 0 ? (
                   <tr>
-                    <td colSpan={11}>
+                    <td colSpan={12}>
                       {/*
                         "Esse desempenho por campanha. Não tá mostrando nada aqui por quê?"
 
@@ -810,8 +839,28 @@ export default function TrafegoPage() {
                         aria-label={`Selecionar ${c.nome}`}
                       />
                     </td>
+                    <td className="trafego-col-foto">
+                      {/*
+                        A MINIATURA DO CRIATIVO. "Se tem como colocar a miniatura ali da campanha,
+                        se dá para fazer, então faz."
+
+                        Nome de campanha é código interno — "[11/11] - [Leads] - [Formulário]" não
+                        diz qual peça está rodando. A foto diz, e é o jeito de reconhecer a
+                        campanha sem abrir o Gerenciador.
+
+                        `<img>` cru e não `next/image`: a URL é de um domínio da Meta que muda e
+                        expira, e o otimizador do Next exigiria cadastrar o domínio e ficaria
+                        quebrando quando ele mudasse.
+                      */}
+                      {c.miniatura ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img className="trafego-foto" src={c.miniatura} alt="" loading="lazy" />
+                      ) : (
+                        <span className="trafego-foto trafego-foto-vazia" aria-hidden="true" />
+                      )}
+                    </td>
                     <td>{rotuloPlataforma(c.plataforma)}</td>
-                    <td>
+                    <td className="trafego-col-nome">
                       <button
                         type="button"
                         className="link"
@@ -819,7 +868,16 @@ export default function TrafegoPage() {
                       >
                         {c.nome}
                       </button>
-                      {c.pausada ? <span className="tag" style={{ marginLeft: 8 }}>pausada</span> : null}
+                      {/* A ETIQUETA DIZ POR QUE NÃO ESTÁ ENTREGANDO, não só que não está. Ver
+                          `situacaoDaCampanha`: pausada é escolha, "com problema" é conta travada. */}
+                      {(() => {
+                        const situacao = situacaoDaCampanha(c.situacao, c.pausada);
+                        return situacao ? (
+                          <span className={`trafego-situacao ${situacao.tom}`} title={traduzir(situacao.explicacao)}>
+                            {traduzir(situacao.rotulo)}
+                          </span>
+                        ) : null;
+                      })()}
                     </td>
                     <td>{c.semPlataforma ? "—" : formatarMoeda(c.investido)}</td>
                     <td>{c.semPlataforma ? "—" : c.leads}</td>
@@ -860,23 +918,18 @@ export default function TrafegoPage() {
               </tbody>
             </table>
           </div>
-          <p className="hint trafego-aviso">
-            {traduzir("As colunas à esquerda são o que a")} <strong>plataforma de anúncio</strong> informa: ela só
-            enxerga o que acontece dentro dela. As três da direita são o que o <strong>{traduzir("CRM")}</strong>{" "}
-            registrou de verdade — lead que virou contato e negócio marcado como ganho no funil. O
-            ROAS real cruza os dois: receita do seu funil dividida pelo que a plataforma cobrou.{" "}
-            <strong>{traduzir("Assistida")}</strong> é venda em que a campanha participou sem ter trazido o lead —
-            a pessoa viu o anúncio, não comprou, e voltou por outro caminho. Desligar uma campanha
-            com muitas assistidas costuma derrubar junto a que estava fechando.
-            {leadsSemCampanha > 0 ? (
-              <>
-                {" "}
-                {leadsSemCampanha}{" "}
-                {leadsSemCampanha === 1 ? "lead veio de anúncio mas sem" : "leads vieram de anúncio mas sem"}{" "}
-                identificação de campanha, então não aparecem em nenhuma linha.
-              </>
-            ) : null}
-          </p>
+          {/* SÓ O QUE MUDA FICA ESCRITO. A explicação foi pro "?" lá em cima; esta linha é dado
+              vivo — um número que muda toda semana e que não aparece em nenhuma outra parte da
+              tela. */}
+          {leadsSemCampanha > 0 ? (
+            <p className="hint trafego-aviso">
+              <strong>{leadsSemCampanha}</strong>{" "}
+              {leadsSemCampanha === 1
+                ? traduzir("lead veio de anúncio mas sem identificação de campanha")
+                : traduzir("leads vieram de anúncio mas sem identificação de campanha")}
+              {traduzir(", então não aparecem em nenhuma linha acima.")}
+            </p>
+          ) : null}
         </div>
 
         {campanhaDetalhe ? (
@@ -924,7 +977,18 @@ export default function TrafegoPage() {
           </div>
         ) : null}
 
-        <ChartCard title={traduzir("Origens")}>
+        {/* Mesmo tratamento do bloco de cima: a explicação vai pro "?" do cabeçalho, e o espaço
+            embaixo da tabela volta a ser espaço. */}
+        <ChartCard
+          title={traduzir("Origens")}
+          action={
+            <Ajuda
+              texto={traduzir(
+                "Leads e vendas vêm da origem gravada em cada contato e em cada negócio do CRM — a mesma que dá pra marcar à mão na ficha do contato, em “De onde veio”. Investimento só existe para origem que é campanha paga, e sai da plataforma: traço quer dizer que o CRM não sabe o valor, porque o canal não está conectado ou porque a plataforma não devolveu campanha — nunca que foi zero. Site, indicação e WhatsApp não têm investimento por natureza.",
+              )}
+            />
+          }
+        >
           <div className="table-wrap">
             <table className="tbl">
               <thead>
@@ -956,20 +1020,6 @@ export default function TrafegoPage() {
               </tbody>
             </table>
           </div>
-          {/*
-            O TRAÇO EXPLICADO UMA VEZ, embaixo da tabela.
-
-            "Por que que não está aparecendo nos investimentos lá do Meta Ads?" — porque não há
-            campanha pra somar. Antes a célula escrevia R$ 0,00, que afirma "gastou nada"; agora
-            escreve traço, que é o certo, mas traço sem legenda também não responde. A legenda
-            responde.
-          */}
-          <p className="hint trafego-aviso">
-            {traduzir("Leads e vendas vêm da origem gravada em cada contato e em cada negócio do CRM.")}{" "}
-            {traduzir(
-              "Investimento só existe para origem que é campanha paga, e sai da plataforma: traço quer dizer que o CRM não sabe o valor — porque o canal não está conectado, ou porque a plataforma não devolveu campanha —, nunca que foi zero. Site, indicação e WhatsApp não têm investimento por natureza.",
-            )}
-          </p>
         </ChartCard>
       </div>
     </>

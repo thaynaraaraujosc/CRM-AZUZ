@@ -66,6 +66,37 @@ export async function GET() {
       `/${adAccountId}/insights?level=campaign&fields=campaign_id,spend,actions,action_values&date_preset=last_30d&access_token=${accessToken}`,
     );
 
+    /*
+     * A MINIATURA DO CRIATIVO, pedida duas vezes: "se tem como mostrar a miniatura das campanhas
+     * que estão rodando, então faz".
+     *
+     * UMA chamada pra conta inteira, não uma por campanha. Pedindo `/{campanha}/ads` campanha a
+     * campanha, uma conta com vinte campanhas vira vinte idas à Graph só pra desenhar vinte
+     * quadradinhos — e a tela passa a demorar em proporção ao tamanho da conta de quem a usa.
+     *
+     * A miniatura é a do PRIMEIRO anúncio que a campanha devolver. Campanha tem vários anúncios e
+     * escolher "o principal" exigiria gasto por anúncio, que é mais uma consulta. Na lista, o
+     * quadradinho responde "qual é essa campanha?" — e pra isso qualquer peça dela serve.
+     *
+     * FALHA SOZINHA, sem derrubar a tela. É enfeite com função, não dado: se a Graph negar este
+     * pedido (acontece quando o acesso tem `ads_read` mas não `ads_management`), a tabela aparece
+     * inteira, só sem as fotos. Deixar o erro subir trocaria a tela toda por uma mensagem.
+     */
+    const miniaturas = new Map<string, string>();
+    try {
+      const anuncios = await graphGet<{
+        data: { campaign_id: string; creative?: { thumbnail_url?: string } }[];
+      }>(
+        `/${adAccountId}/ads?fields=campaign_id,creative{thumbnail_url}&limit=200&access_token=${accessToken}`,
+      );
+      for (const anuncio of anuncios.data ?? []) {
+        const url = anuncio.creative?.thumbnail_url;
+        if (url && !miniaturas.has(anuncio.campaign_id)) miniaturas.set(anuncio.campaign_id, url);
+      }
+    } catch {
+      // Sem miniatura. A tabela não depende dela.
+    }
+
     const todas = campanhas.data
       .map((c) => {
         const insight = insights.data.find((i) => i.campaign_id === c.id);
@@ -74,7 +105,20 @@ export async function GET() {
         const vendas = Number(insight?.actions?.find((a) => TIPOS_COMPRA.includes(a.action_type))?.value ?? 0);
         const receita = Number(insight?.action_values?.find((a) => TIPOS_COMPRA.includes(a.action_type))?.value ?? 0);
         const roas = spend > 0 ? receita / spend : 0;
-        return { nome: c.name, spend, leads, vendas, roas, pausada: c.status !== "ACTIVE" };
+        return {
+          nome: c.name,
+          spend,
+          leads,
+          vendas,
+          roas,
+          pausada: c.status !== "ACTIVE",
+          miniatura: miniaturas.get(c.id) ?? null,
+          /* O estado CRU da Meta, e não só "pausada sim/não". `WITH_ISSUES` (rejeitada ou sem
+             forma de pagamento) e `IN_PROCESS` (em análise) são os dois casos em que a campanha
+             existe, aparece na lista e NÃO ENTREGA — e, sem o rótulo, ler "pausada" ali seria
+             entender que alguém a pausou de propósito. */
+          situacao: c.status,
+        };
       });
 
     const investimentos = todas
@@ -105,6 +149,8 @@ export async function GET() {
       barra: Math.round((i.spend / maiorSpend) * 100),
       vendas: i.vendas,
       pausada: i.pausada,
+      miniatura: i.miniatura,
+      situacao: i.situacao,
     }));
 
     /*
