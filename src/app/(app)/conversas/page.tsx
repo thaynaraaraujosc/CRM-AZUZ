@@ -34,6 +34,7 @@ import {
 } from "@/lib/conversas/numeros-conectados";
 import { canalDaConexao, canalDeSaida } from "@/lib/conversas/canal-de-saida";
 import { numeroQueResponde, porQueEsteNumero } from "@/lib/funis/numero-que-responde";
+import { janelaAbertaPelasMensagens } from "@/lib/integracoes/janela-do-oficial";
 import { aquecerModelos } from "@/lib/conversas/modelos-whatsapp";
 import { iniciaisExibidas, nomeExibido } from "@/lib/conversas/exibicao";
 import { valeBuscarNome } from "@/lib/conversas/nome-do-historico";
@@ -1543,6 +1544,28 @@ function ConversasPageInner() {
   });
 
   const canalDoNumeroEscolhido = canalDaConexao(numeroEscolhidoDaConversa());
+
+  /*
+   * A JANELA DE 24H DO OFICIAL, CONFERIDA AQUI TAMBÉM — antes de a pessoa digitar.
+   *
+   * "Eu tenho muitas conversas na API não oficial. Às vezes eu quero mandar pra aquele mesmo
+   * contato através da API oficial. Eu vou lá em contatos, escolho a API oficial, e não foi."
+   *
+   * A Cloud API só aceita texto livre nas 24 horas seguintes a a pessoa ter escrito PARA AQUELE
+   * NÚMERO. Quem conversa pelo QR Code nunca escreveu pro oficial — então, ao escolher o oficial,
+   * o único caminho é o modelo aprovado. Sem esta conta, a tela deixava escrever, o envio falhava
+   * no servidor, e o caminho que funciona ficava escondido.
+   *
+   * A MESMA REGRA DOS DOIS LADOS (`janela-do-oficial.ts`): o servidor recusa, a tela oferece o
+   * modelo. Duas cópias é como os dois passam a discordar.
+   */
+  const janelaDoOficialAberta = janelaAbertaPelasMensagens(
+    (mensagensExtraPorContato[aberta.nome] ?? []).filter((m) => m.tipo === "in"),
+  );
+  /** Escolheu o oficial numa conversa que nunca falou por ele: só com modelo aprovado. */
+  const sairiaPeloOficial =
+    canalDaConexao(saida.origem === "conversa" ? null : saida.contaCanal) === "whatsapp_oficial";
+  const precisaDeModeloAgora = sairiaPeloOficial && !janelaDoOficialAberta;
 
   /*
    * HÁ UMA CONVERSA DE VERDADE ABERTA?
@@ -5701,7 +5724,9 @@ function ConversasPageInner() {
                     onde olhar. A linha diz o número E o porquê, porque o número sozinho não
                     explica — ver `porQueEsteNumero`.
                   */}
-                  {conversaAbertaDeVerdade && saida.origem === "etapa" ? (
+                  {conversaAbertaDeVerdade &&
+                  saida.origem !== "conversa" &&
+                  !conversaSemDono(aberta.nome) ? (
                     <div className="chat-canal-escolha">
                       <span className="chat-canal-rotulo">
                         {traduzir("Enviando por")}:{" "}
@@ -5710,9 +5735,39 @@ function ConversasPageInner() {
                             traduzir(canalDoNumero(saida.contaCanal?.split(":")[0] ?? ""))}
                         </b>
                       </span>
+                      {/*
+                        E AQUI ESTAVA O SILÊNCIO QUE ELA DESCREVEU.
+
+                        "Eu escolho a API oficial, só que na hora que carrega está na não oficial."
+                        Numa conversa que JÁ TEM histórico, nada na tela dizia qual número estava
+                        escolhido — a linha de estado só existia pra conversa sem dono. A escolha
+                        valia por dentro e não aparecia por fora, então a única leitura possível
+                        era "voltou pro de antes".
+                      */}
                       <span className="chat-canal-aviso">
-                        {traduzir(porQueEsteNumero("etapa", colunaDoNegocioAberto?.titulo))}
+                        {traduzir(
+                          porQueEsteNumero(saida.origem, colunaDoNegocioAberto?.titulo),
+                        )}
                       </span>
+                      {/*
+                        E O CAMINHO QUE FUNCIONA, quando escrever não é um deles.
+
+                        Escolher o número oficial pra quem só falou pelo QR Code quer dizer começar
+                        uma conversa nova do lado da Meta — e ali só se fala primeiro com modelo
+                        aprovado. Sem este botão, a pessoa digita, manda, e descobre no erro.
+                      */}
+                      {precisaDeModeloAgora ? (
+                        <button
+                          type="button"
+                          className="btn primary pequeno chat-canal-modelo"
+                          title={traduzir(
+                            "Esta pessoa nunca escreveu para o número oficial, então a Meta só aceita um modelo aprovado para começar.",
+                          )}
+                          onClick={() => setTemplateAberto(true)}
+                        >
+                          {traduzir("Escolher modelo")}
+                        </button>
+                      ) : null}
                     </div>
                   ) : null}
                   {/*

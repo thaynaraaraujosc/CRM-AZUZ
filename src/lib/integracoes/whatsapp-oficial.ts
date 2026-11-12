@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { explicarErroDoWhatsApp } from "@/lib/integracoes/erro-whatsapp-oficial";
 import { decriptar } from "@/lib/integracoes/crypto";
+import { janelaAbertaPelasMensagens } from "@/lib/integracoes/janela-do-oficial";
 import {
   MENSAGEM_POR_CODIGO_META,
   chamarGraph,
@@ -8,9 +9,10 @@ import {
   normalizarNumeroBrasileiro,
 } from "@/lib/integracoes/meta";
 
-/** Janela de atendimento da Cloud API: passadas 24h desde a última mensagem RECEBIDA daquela
- * pessoa, só dá pra falar com ela usando um modelo de mensagem aprovado. */
-const JANELA_ATENDIMENTO_MS = 24 * 60 * 60 * 1000;
+/* A janela de atendimento da Cloud API (24h desde a última mensagem recebida PELO NÚMERO OFICIAL)
+   mora em `janela-do-oficial.ts`, junto da regra de quais mensagens contam. Ficava aqui como uma
+   constante solta, e era fácil de ler como "24h desde a última mensagem daquela pessoa" — que foi
+   exatamente o defeito. */
 
 export type ContaWhatsappOficial = {
   integracaoId: string;
@@ -40,16 +42,29 @@ export async function contaConectada(workspaceId: string): Promise<ContaWhatsapp
   };
 }
 
-/** `true` quando a pessoa mandou alguma mensagem nas últimas 24h. Ou seja, dá pra responder com
- * mensagem livre. Fora disso, só modelo aprovado. */
+/**
+ * `true` quando a pessoa escreveu PARA O NÚMERO OFICIAL nas últimas 24h — e só então dá pra
+ * responder com mensagem livre. Fora disso, só modelo aprovado.
+ *
+ * A PALAVRA QUE FALTAVA ERA "OFICIAL". A consulta era `tipo: "in"` e mais nada: qualquer mensagem
+ * recebida daquela pessoa, de qualquer conexão. Quem conversa pelo QR Code tinha a janela do
+ * oficial dada como aberta pelas mensagens do aparelho — o CRM deixava escrever texto livre, a
+ * Cloud API recusava, e a mensagem não saía. Pior: achando a janela aberta, o CRM não oferecia o
+ * modelo aprovado, que é o ÚNICO jeito de falar primeiro por um número novo. A pessoa ficava
+ * tentando o que nunca ia dar certo, sem ver a porta ao lado.
+ *
+ * Busca as últimas recebidas e deixa a regra decidir quais contam — ver `janela-do-oficial.ts`,
+ * com teste. O teto de 50 é porque a resposta está nas mais recentes: se as cinquenta últimas
+ * forem todas do QR Code, a janela do oficial está fechada de qualquer jeito.
+ */
 export async function janelaDeAtendimentoAberta(workspaceId: string, contatoNome: string): Promise<boolean> {
-  const ultimaRecebida = await prisma.mensagemExtra.findFirst({
+  const recebidas = await prisma.mensagemExtra.findMany({
     where: { workspaceId, contato: contatoNome, tipo: "in" },
     orderBy: { criadoEm: "desc" },
-    select: { criadoEm: true },
+    take: 50,
+    select: { criadoEm: true, canal: true },
   });
-  if (!ultimaRecebida?.criadoEm) return false;
-  return Date.now() - ultimaRecebida.criadoEm.getTime() < JANELA_ATENDIMENTO_MS;
+  return janelaAbertaPelasMensagens(recebidas);
 }
 
 /** Traduz o erro da Graph pra algo que faz sentido pra quem está atendendo, e marca a integração
