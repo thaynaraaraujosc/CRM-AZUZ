@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   API_PERMISSAO,
+  API_REGRA_FINA,
   API_SEMPRE_LIBERADA,
   ROTA_PERMISSAO,
   permissaoDoEndereco,
+  permissaoFina,
 } from "@/lib/permissao-da-rota";
+import { TODAS_PERMISSOES_IDS } from "@/lib/configuracoes/permissoes";
 
 /**
  * A TRANCA, E POR QUE ELA PRECISA DE TESTE.
@@ -66,6 +69,61 @@ describe("permissaoDoEndereco", () => {
     const naApi = new Set(Object.values(API_PERMISSAO));
     for (const permissao of naTela) {
       expect(naApi.has(permissao), `${permissao} não tem nenhuma API protegida`).toBe(true);
+    }
+  });
+});
+
+/**
+ * AS PERMISSÕES FINAS. "Faz as permissões finas."
+ *
+ * Até aqui valia só "vê o módulo" ou "não vê" — quem via o WhatsApp conseguia, pela API, enviar
+ * mensagem e apagar conversa. As caixinhas de Responder e Excluir eram gravadas e nenhuma rota as
+ * consultava.
+ */
+describe("permissaoFina", () => {
+  it("ler não pede nada além do módulo", () => {
+    expect(permissaoFina("/api/conversas/enviar", "GET")).toBeNull();
+    expect(permissaoFina("/api/contatos", "GET")).toBeNull();
+  });
+
+  it("enviar mensagem pede Responder, nos dois canais do WhatsApp", () => {
+    expect(permissaoFina("/api/conversas/enviar", "POST")).toBe("wa_responder");
+    expect(permissaoFina("/api/integracoes/whatsapp-nao-oficial/enviar", "POST")).toBe("wa_responder");
+    expect(permissaoFina("/api/integracoes/meta/whatsapp/enviar", "POST")).toBe("wa_responder");
+  });
+
+  it("o endereço mais específico ganha do mais geral", () => {
+    // Sem isso, enviar mensagem passaria a exigir permissão de INTEGRAÇÃO, porque
+    // `/api/integracoes/meta/whatsapp/enviar` começa com `/api/integracoes`.
+    expect(permissaoFina("/api/integracoes/meta/whatsapp/enviar", "POST")).toBe("wa_responder");
+    expect(permissaoFina("/api/integracoes/meta/desconectar", "POST")).toBe("config_integracoes");
+  });
+
+  it("`[id]` casa com um trecho qualquer, e não confunde com a coleção", () => {
+    // Apagar um contato não pode pedir a permissão de CRIAR contato.
+    expect(permissaoFina("/api/contatos", "POST")).toBe("contatos_criar");
+    expect(permissaoFina("/api/contatos/abc123", "DELETE")).toBe("contatos_excluir");
+    expect(permissaoFina("/api/contatos/abc123", "PATCH")).toBe("contatos_editar");
+    expect(permissaoFina("/api/contatos/abc123", "POST")).toBeNull();
+  });
+
+  it("equipe separa convidar, editar e remover", () => {
+    expect(permissaoFina("/api/equipe", "POST")).toBe("equipe_convidar");
+    expect(permissaoFina("/api/equipe/x1", "PATCH")).toBe("equipe_editar");
+    expect(permissaoFina("/api/equipe/x1", "DELETE")).toBe("equipe_remover");
+  });
+
+  it("endereço sem regra própria devolve null, e aí vale só a do módulo", () => {
+    // `/api/funis` PUT grava o quadro inteiro (etapa, ordem e cartão juntos): restringir no chute
+    // quebraria a conta de quem tem a permissão certa.
+    expect(permissaoFina("/api/funis", "PUT")).toBeNull();
+    expect(permissaoFina("/api/funis/mover", "POST")).toBe("funil_mover_negocios");
+  });
+
+  it("toda permissão fina citada existe no catálogo de permissões", () => {
+    const todas = new Set(Object.values(API_REGRA_FINA).flatMap((r) => Object.values(r)));
+    for (const p of todas) {
+      expect(TODAS_PERMISSOES_IDS, p).toContain(p);
     }
   });
 });
