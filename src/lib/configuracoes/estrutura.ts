@@ -83,10 +83,13 @@ export const GRUPOS_CONFIGURACOES: GrupoConfig[] = [
       },
       { id: "notificacoes", label: "Notificações", descricao: "Quando e como você é avisado.", Icon: IconBell, cor: "#F59E0B" },
       { id: "expediente", label: "Horário de funcionamento", descricao: "Quando o CRM considera que vocês estão abertos.", Icon: IconRelogio, cor: "#94A3B8" },
-      /* Verde, e não amarelo como foi pedido: o sino logo acima já é o amarelo desta lista, e duas
-         linhas vizinhas da mesma cor deixam as duas de dizer alguma coisa. Verde é a cor que um
-         escudo tem no mundo. */
-      { id: "seguranca", label: "Segurança", descricao: "Autenticação, sessões e políticas de acesso.", Icon: IconEscudo, cor: "#16A34A" },
+      /* AMARELO, por decisão da Thaynara em 12/11/2026.
+         Eu tinha posto verde e explicado o motivo — o sino logo acima já é amarelo, e duas linhas
+         vizinhas da mesma cor deixam as duas de dizer alguma coisa. Ela ouviu e manteve o pedido,
+         então vale o que ela escolheu.
+         O que ficou da objeção é só isto: é um amarelo um passo diferente do sino (#EAB308 contra
+         #F59E0B). Os dois leem como amarelo; nenhum é cópia do outro. */
+      { id: "seguranca", label: "Segurança", descricao: "Autenticação, sessões e políticas de acesso.", Icon: IconEscudo, cor: "#EAB308" },
       { id: "etiquetas", label: "Etiquetas", descricao: "Marcações usadas em contatos e automações.", Icon: IconErro, cor: "#8B5CF6" },
       { id: "importacao", label: "Importação e exportação", descricao: "Trazer ou tirar dados do CRM.", Icon: IconImportar, cor: "#0EA5E9", emBreve: true },
       /* "Auditoria e atividades" saiu daqui. A tela mostrava quatro linhas escritas à mão, com
