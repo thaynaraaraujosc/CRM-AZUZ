@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 import { ORIGENS, type Campanha, type Origem } from "@/lib/data";
@@ -9,6 +9,7 @@ import { useContatos } from "@/lib/contatos-context";
 import { useFunis } from "@/lib/funis-context";
 import { useIntegracaoMeta } from "@/components/configuracoes/useIntegracaoMeta";
 import { useGoogleAds } from "@/components/trafego/useGoogleAds";
+import { SeletorDeContaDeAnuncios } from "@/components/trafego/SeletorDeContaDeAnuncios";
 import { acharNoCrm, normalizarNome, usePorCampanha } from "@/components/trafego/usePorCampanha";
 import { FilterBar, KpiCard, PERIODO_PADRAO, type PeriodoValor } from "@/components/ui";
 import { ChartCard, FunnelSteps } from "@/components/charts";
@@ -97,7 +98,12 @@ export default function TrafegoPage() {
   const [selecionadas, setSelecionadas] = useState<Set<string>>(new Set());
   const [campanhaAberta, setCampanhaAberta] = useState<string | null>(null);
 
-  const { integracao: adsIntegracao, desconectando: adsDesconectando, desconectar: desconectarAds } = useIntegracaoMeta("meta_ads");
+  const {
+    integracao: adsIntegracao,
+    desconectando: adsDesconectando,
+    desconectar: desconectarAds,
+    recarregar: recarregarAds,
+  } = useIntegracaoMeta("meta_ads");
   const [campanhasReais, setCampanhasReais] = useState<Campanha[] | null>(null);
   /*
    * O QUE A META RESPONDEU, quando ela não respondeu campanhas.
@@ -138,8 +144,10 @@ export default function TrafegoPage() {
     if (adsIntegracao?.status !== "conectado") setCampanhasReais(null);
   }
 
-  useEffect(() => {
-    if (adsIntegracao?.status !== "conectado") return;
+  // Virou função nomeada porque agora tem dois gatilhos: a conexão ficar de pé (o efeito abaixo)
+  // e a pessoa TROCAR a conta de anúncios — e trocar a conta sem recarregar deixaria a tela
+  // mostrando as campanhas da conta anterior, que é a confusão que o seletor existe pra acabar.
+  const recarregarCampanhas = useCallback(() => {
     fetch("/api/integracoes/meta/ads/campanhas")
       .then((r) => r.json())
       .then((dados: RespostaDeCampanhas) => {
@@ -157,7 +165,12 @@ export default function TrafegoPage() {
         console.error("Falha ao carregar campanhas do Meta Ads:", erro);
         setErroDasCampanhas("Não deu pra falar com o Meta agora.");
       });
-  }, [adsIntegracao?.status]);
+  }, []);
+
+  useEffect(() => {
+    if (adsIntegracao?.status !== "conectado") return;
+    recarregarCampanhas();
+  }, [adsIntegracao?.status, recarregarCampanhas]);
 
   const { statusGoogle, campanhasGoogle, desconectando: googleDesconectando, desconectar: desconectarGoogle } = useGoogleAds();
   const { linhasDoCrm, leadsSemCampanha } = usePorCampanha();
@@ -463,6 +476,32 @@ export default function TrafegoPage() {
             <span className="conexao-pill">
               <span className="conexao-ponto on" aria-hidden="true" />
               Meta Ads
+              {/*
+                QUAL CONTA DE ANÚNCIOS, e o jeito de trocar — na própria pílula.
+
+                "E se essa campanha tiver errada? Eu tô achando que essa conta não é essa conta.
+                Como que eu faço pra mudar?"
+
+                Não fazia: o CRM escolhia a conta sozinho no fim do OAuth e nunca mais perguntava.
+                A dúvida nasce olhando esta tela vazia, então a saída fica aqui, e não escondida em
+                Configurações.
+              */}
+              <SeletorDeContaDeAnuncios
+                contaAtualId={
+                  typeof adsIntegracao?.metadados?.adAccountId === "string"
+                    ? adsIntegracao.metadados.adAccountId
+                    : undefined
+                }
+                contaAtualNome={
+                  typeof adsIntegracao?.metadados?.adAccountNome === "string"
+                    ? adsIntegracao.metadados.adAccountNome
+                    : undefined
+                }
+                onTrocada={() => {
+                  recarregarAds();
+                  recarregarCampanhas();
+                }}
+              />
               <button type="button" className="conexao-acao" onClick={() => void desconectarAds()} disabled={adsDesconectando}>
                 {adsDesconectando ? traduzir("Desconectando…") : traduzir("Desconectar")}
               </button>
@@ -532,7 +571,7 @@ export default function TrafegoPage() {
                   </span>
                   <span>
                     {traduzir(
-                      "Quase sempre é uma destas três: o acesso expirou (reconecte em Configurações › Outras integrações), a permissão de leitura de anúncios não foi concedida na hora de conectar, ou a conta de anúncios escolhida não é a que está rodando as campanhas.",
+                      "Quase sempre é uma destas três: o acesso expirou (reconecte em Configurações › Outras integrações), a permissão de leitura de anúncios não foi concedida na hora de conectar, ou a conta de anúncios que o CRM está lendo não é a que roda as campanhas — essa última dá pra conferir e trocar clicando no nome da conta, na faixa de cima.",
                     )}
                   </span>
                 </>
@@ -604,12 +643,21 @@ export default function TrafegoPage() {
                     {traduzir(
                       "O CRM busca, dessa conta, as campanhas ativas, em análise ou com problema, mais as pausadas que gastaram nos últimos 30 dias. Pausada e sem gasto fica de fora porque não há o que medir nela.",
                     )}{" "}
+                    {/*
+                      A SAÍDA FICA ONDE A DÚVIDA ESTÁ.
+
+                      Este texto mandava pra "Configurações › Outras integrações › Meta Ads" —
+                      e lá não havia nada pra trocar: a conta de anúncios era escolhida sozinha
+                      no fim do OAuth e não tinha tela nenhuma. Era instrução pra um lugar que
+                      não existia. Agora o seletor está na pílula de conexão, na faixa logo
+                      acima, e é pra lá que o texto aponta.
+                    */}
                     {diagnostico?.naConta === 0
                       ? traduzir(
-                          "Como a conta não tem campanha nenhuma, quase certamente a conexão está apontando pra outra conta de anúncios — quem administra várias tem isso o tempo todo. Troque a conta em Configurações › Outras integrações › Meta Ads.",
+                          "Como a conta não tem campanha nenhuma, quase certamente a conexão está lendo outra conta de anúncios — quem administra várias tem isso o tempo todo. Clique no nome da conta, ali na faixa de cima ao lado de “Meta Ads”, pra ver todas as contas que esse acesso enxerga e escolher a certa.",
                         )
                       : traduzir(
-                          "Se as suas campanhas estão em outra conta de anúncios, é só trocar a conta em Configurações › Outras integrações › Meta Ads.",
+                          "Se as suas campanhas estão em outra conta de anúncios, clique no nome da conta ali na faixa de cima, ao lado de “Meta Ads”, e escolha a certa.",
                         )}
                   </span>
                 </>

@@ -6,6 +6,7 @@ import { esquecerConexoes } from "@/lib/integracoes/conexoes-cache";
 import { encriptar } from "@/lib/integracoes/crypto";
 import { META_GRAPH_URL, verificarState } from "@/lib/integracoes/meta";
 import { envLimpo } from "@/lib/integracoes/env-limpo";
+import { escolherContaPadrao, type ContaDeAnuncios } from "@/lib/integracoes/conta-de-anuncios";
 
 /** `metadados` tem forma diferente por provedor (união estrutural que o Prisma não casa com
  * `InputJsonValue` automaticamente): o valor em runtime já é JSON puro, o cast é só pro TS. */
@@ -94,12 +95,22 @@ async function resolverWhatsapp(accessToken: string) {
   };
 }
 
-/** Resolve a conta de anúncios (ad account). Prioriza uma ativa, senão pega a primeira. */
+/**
+ * Resolve a conta de anúncios (ad account) — como PRIMEIRO PALPITE, não como decisão final.
+ *
+ * A regra saiu daqui e virou `escolherContaPadrao`, com teste: é a mesma (primeira ativa, senão a
+ * primeira da lista), mas agora dá pra trocar depois, em `/api/integracoes/meta/ads/contas`. Antes
+ * esta linha era a única chance de acertar a conta na vida de uma conexão — e quem administra mais
+ * de uma ficava com a que a Meta devolveu primeiro, sem saber e sem saída.
+ *
+ * O `limit=200` também é novo: a Graph pagina `adaccounts` em 25 por padrão, então quem tem mais
+ * do que isso sequer tinha as outras na lista de onde o palpite saía.
+ */
 async function resolverAds(accessToken: string) {
-  const contas = await graphGet<{ data: { id: string; name: string; account_status: number; currency: string }[] }>(
-    `/me/adaccounts?fields=id,name,account_status,currency&access_token=${accessToken}`,
+  const contas = await graphGet<{ data: ContaDeAnuncios[] }>(
+    `/me/adaccounts?fields=id,name,account_status,currency&limit=200&access_token=${accessToken}`,
   );
-  const conta = contas.data?.find((c) => c.account_status === 1) ?? contas.data?.[0];
+  const conta = escolherContaPadrao(contas.data ?? []);
   if (!conta) throw new Error("Nenhuma conta de anúncios encontrada nessa conta.");
 
   return {

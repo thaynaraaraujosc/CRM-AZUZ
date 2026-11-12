@@ -34920,3 +34920,125 @@ td.trafego-col-crm:first-of-type {
     justify-content: flex-start;
   }
 }
+
+/* ==========================================================================
+   ESCOLHER A CONTA DE ANÚNCIOS
+
+   "E se essa campanha tiver errada? Eu tô achando que essa conta não é essa conta. Como que eu
+   faço pra mudar?"
+
+   O nome da conta entra DENTRO da pílula de conexão, como um botão discreto: ler "Meta Ads"
+   sozinho não dizia de qual carteira as campanhas estavam vindo, e era justamente essa a dúvida.
+   ========================================================================== */
+
+.conexao-conta {
+  max-width: 190px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: var(--fw-light);
+  color: var(--text-muted);
+}
+
+/* O nome é a porta pra trocar, então precisa parecer clicável — mas sem virar um segundo botão
+   com a mesma presença do "Desconectar", que é ação destrutiva e deve continuar sendo a peça
+   mais visível da pílula. Sublinhado pontilhado: a convenção de "tem mais aqui". */
+.conexao-conta-btn {
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: var(--body);
+  font-size: 13px;
+  cursor: pointer;
+  border-bottom: 1px dotted var(--line-strong);
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.conexao-conta-btn:hover {
+  color: var(--blue);
+  border-bottom-color: var(--blue);
+}
+
+.contas-ads {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2);
+}
+
+.contas-ads-h {
+  font-size: 12px;
+  font-weight: var(--fw-semibold);
+  color: var(--text-muted);
+  padding: 0 var(--space-2) var(--space-1);
+}
+
+.contas-ads-erro {
+  color: var(--danger);
+}
+
+.contas-ads-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: none;
+  padding: var(--space-2);
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.contas-ads-item:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.contas-ads-item:disabled {
+  cursor: default;
+}
+
+/* A que está sendo lida fica marcada pelo dourado da marca, que é a cor de "escolha ativa" nestas
+   telas — a mesma da pílula de filtro ligada. */
+.contas-ads-item.escolhida {
+  border-color: var(--ouro);
+  background: var(--ouro-soft);
+}
+
+.contas-ads-nome {
+  font-size: 13px;
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
+}
+
+.contas-ads-meta {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.contas-ads-ok {
+  color: #16a34a;
+}
+
+/* Conta desativada ou com fatura em aberto PARA de entregar, e da tela do CRM isso é igualzinho a
+   "não tem campanha". Por isso o estado vem em vermelho na lista: é a diferença entre escolher
+   outra conta e resolver uma pendência no Gerenciador. */
+.contas-ads-parada {
+  color: var(--danger);
+  font-weight: var(--fw-semibold);
+}
+
+.contas-ads-marca {
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  color: var(--navy-marca);
+}
+
+.contas-ads-nota {
+  border-top: 1px solid var(--line-soft);
+  margin-top: var(--space-1);
+  padding: var(--space-2) var(--space-2) 0;
+  line-height: 1.45;
+}
