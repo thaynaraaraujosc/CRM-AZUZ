@@ -50,10 +50,19 @@ const APPS_EM_BREVE: AppFuturo[] = [
   { nome: "Outlook", descricao: "Sincronize sua caixa de entrada corporativa.", categoria: "Comunicação", Logo: LogoOutlook },
   { nome: "Google Sheets", descricao: "Exporte relatórios direto pra uma planilha.", categoria: "Dados", Logo: LogoGoogleSheets },
 ];
-/* Derivada da lista, não escrita à mão. Com a lista fixa, tirar os apps de Pagamentos e
-   Produtividade deixaria dois filtros que não mostram nada quando clicados: um beco sem saída que
-   ninguém lembraria de limpar. Assim o filtro acompanha a lista sozinho, nos dois sentidos. */
-const CATEGORIAS = ["Todas", ...Array.from(new Set(APPS_EM_BREVE.map((a) => a.categoria)))];
+/*
+ * O FILTRO DE CATEGORIA SAIU, em 12/11/2026.
+ *
+ * "Não precisa deixar quatro abas. Agenda, comunicação, dados, não. Tira todas essas abas e deixa
+ * só o que vai aparecer em breve."
+ *
+ * Eram quatro chips ("Todas", "Agenda", "Comunicação", "Dados") em cima de QUATRO cartões. Um
+ * filtro para quatro itens é um controle que custa uma leitura para esconder três coisas que já
+ * cabiam na tela — e dois dos chips deixavam um único cartão visível.
+ *
+ * O campo `categoria` fica no tipo: ele continua dizendo o que cada integração é, e o dia em que
+ * a lista crescer o bastante para precisar de filtro, a informação já está lá.
+ */
 
 /**
  * Uma integração da lista "Prontas pra usar".
@@ -163,8 +172,6 @@ export function IntegracoesSecao() {
   const qrCodeLigada = naoOficialStatus?.status === "conectado";
   const numeroRepetido = oficialLigada && qrCodeLigada && mesmoNumero(numeroOficial, numeroQrCode);
 
-  const [categoriaFiltro, setCategoriaFiltro] = useState("Todas");
-  const appsFiltrados = APPS_EM_BREVE.filter((a) => categoriaFiltro === "Todas" || a.categoria === categoriaFiltro);
 
   return (
     <div className="config-secao">
@@ -289,15 +296,8 @@ export function IntegracoesSecao() {
 
       <div className="config-bloco">
         <p className="config-bloco-titulo">{traduzir("Em breve")}</p>
-        <div className="filters-row mb14">
-          {CATEGORIAS.map((c) => (
-            <button type="button" key={c} className={`fchip${categoriaFiltro === c ? " active" : ""}`} onClick={() => setCategoriaFiltro(c)}>
-              {traduzir(c)}
-            </button>
-          ))}
-        </div>
         <div className="config-canais-grid">
-          {appsFiltrados.map((a) => (
+          {APPS_EM_BREVE.map((a) => (
             <div className="config-canal-card" key={a.nome}>
               <div className="config-canal-card-h">
                 <span className="int-logo int-logo-pequena">

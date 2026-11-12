@@ -16720,6 +16720,23 @@ button.flow-node-warn:hover {
   padding: var(--space-2) 0;
 }
 
+/*
+ * O TEXTO SOLTO DENTRO DO CARTÃO AZUL PRECISA DA FOLGA DELE.
+ *
+ * "A frase está saindo um pouco da borda, ajusta isso."
+ *
+ * O cartão tem `padding: 8px 0` — ZERO na horizontal, de propósito: as linhas de dentro
+ * (`.flow-linha`) carregam a própria folga, e algumas precisam ir de ponta a ponta. Só que um
+ * `<p>` largado ali não carrega folga nenhuma, e encostava na borda de 1px dos dois lados.
+ *
+ * A folga vai no parágrafo e não no cartão: mudar o cartão mexeria em todas as linhas que já
+ * estão certas, pra consertar uma que não está.
+ */
+.flow-cartao > .hint,
+.flow-cartao > p:not([class]) {
+  padding-inline: var(--space-4);
+}
+
 /* O interruptor desligado tem o trilho em `--line-soft`, que sobre o azul claro quase some: o
    controle mais importante do cartão virava um risco apagado. Branco com contorno azul ele
    continua lendo como desligado e continua lendo como botão. */
@@ -34275,4 +34292,103 @@ td.trafego-col-crm:first-of-type {
   gap: var(--space-3);
   font-size: 14px;
   color: var(--text-muted);
+}
+
+/* ==========================================================================
+   NOTIFICAÇÕES EM BOTÕES
+
+   "Cada notificação você bota um botão. Bota azulzinho claro, fica bonito."
+
+   O botão É o estado: ligado fica azul claro com a marca de conferido, desligado fica branco com
+   a borda fina. Sem interruptor ao lado — o alvo é o botão inteiro, que é o que faz isto
+   funcionar no celular sem precisar de mira.
+   ========================================================================== */
+
+.notif-botoes {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.notif-botao {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface-elevated);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.notif-botao:hover {
+  border-color: var(--line-strong);
+}
+
+.notif-botao.on {
+  background: var(--conversa-topo);
+  border-color: var(--conversa-topo);
+}
+
+.notif-botao-icone {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  /* Branco nos dois estados: sobre o azul claro ele vira a caixinha que destaca o ícone colorido,
+     e sobre o branco a borda fina dá o mesmo recorte. */
+  background: var(--surface-elevated);
+  border: 1px solid var(--line-soft);
+}
+
+.notif-botao-texto {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.notif-botao-texto strong {
+  font-size: 14px;
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
+}
+
+.notif-botao-texto span {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.notif-botao.on .notif-botao-texto strong,
+.notif-botao.on .notif-botao-texto span {
+  color: var(--navy-marca);
+}
+
+.notif-botao-marca {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-top: 4px;
+  border-radius: 999px;
+  color: #ffffff;
+  background: transparent;
+}
+
+.notif-botao.on .notif-botao-marca {
+  background: var(--navy-marca);
+}
+
+.notif-rodape {
+  margin-top: var(--space-3);
 }
