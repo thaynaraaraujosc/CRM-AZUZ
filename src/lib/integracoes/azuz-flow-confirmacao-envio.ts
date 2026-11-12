@@ -38,6 +38,15 @@ export type DependenciasDoEnvio = {
     workspaceId: string;
     conversaNome: string;
     texto: string;
+    /**
+     * O modelo aprovado desta confirmação, quando o formulário escolheu um.
+     *
+     * Quem preencheu um formulário NUNCA escreveu pro número oficial: a janela de 24 horas está
+     * fechada por definição, e a Cloud API recusa texto livre ali. Pela API oficial, confirmação é
+     * modelo aprovado ou não é nada — e qual modelo é escolha do formulário, porque a confirmação
+     * da consultoria não é a mesma da seleção de closer.
+     */
+    templateId?: string | null;
     /* `botoes` vem preenchido quando o envio saiu como MODELO aprovado (janela de 24h fechada):
        o modelo leva botão, e o registro na conversa precisa mostrar o que o cliente viu. */
   }) => Promise<{ enviado: boolean; motivo?: string; wamid?: string | null; botoes?: string[] }>;
@@ -177,6 +186,7 @@ async function tratarUma(
     workspaceId: linha.workspaceId,
     conversaNome: linha.conversaNome,
     texto: linha.texto ?? "",
+    templateId: linha.templateId,
   });
 
   if (envio.enviado) {

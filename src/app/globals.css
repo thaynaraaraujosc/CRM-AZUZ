@@ -36328,3 +36328,21 @@ td.trafego-col-crm:first-of-type {
   font-size: 11px;
   color: var(--text-faint);
 }
+
+/* Os dois seletores de "por onde a confirmação sai", lado a lado: o número escolhe o caminho, e o
+   caminho decide se cabe texto livre ou só modelo aprovado. São uma decisão só. */
+.fflow-saida {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--azul-claro-linha);
+  border-radius: var(--radius-md);
+  background: var(--azul-claro-2);
+}
+.fflow-saida .field {
+  padding-left: 0;
+  padding-right: 0;
+  margin: 0;
+}

@@ -27,6 +27,8 @@ export async function enviarTextoPeloCanal(params: {
   workspaceId: string;
   conversaNome: string;
   texto: string;
+  /** Modelo aprovado a usar quando a janela de 24h estiver fechada. Ver `retomada-envio`. */
+  templateId?: string | null;
 }): Promise<{
   enviado: boolean;
   motivo?: string;
@@ -162,7 +164,12 @@ export async function enviarTextoPeloCanal(params: {
       // Configurações. É o que faz o follow-up sair sozinho em vez de virar tarefa de quem usa:
       // o follow-up existe pra falar com quem parou de responder, ou seja, ele nasce mirando o
       // lado de fora da janela. Sem modelo escolhido, nada muda e o motivo é dito como antes.
-      const retomada = await enviarModeloDeRetomada({ workspaceId, conversaNome, destinatario: conversa.contato });
+      const retomada = await enviarModeloDeRetomada({
+        workspaceId,
+        conversaNome,
+        destinatario: conversa.contato,
+        templateId: params.templateId,
+      });
       if (retomada) return retomada;
       return {
         enviado: false,

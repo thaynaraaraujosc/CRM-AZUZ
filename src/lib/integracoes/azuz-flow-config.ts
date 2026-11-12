@@ -94,7 +94,7 @@ export type ConfigDoFlow = {
    * protegem o NÚMERO, não o formulário. Uma por formulário protegeria pela metade — cinco
    * formulários com teto de 30 são 150 primeiras mensagens no mesmo número, no mesmo dia.
    */
-  porFormulario: Record<string, { confirmacao: { ativa: boolean; texto: string } }>;
+  porFormulario: Record<string, { confirmacao: ConfirmacaoDeFormulario }>;
   /**
    * O mesmo, para os formulários DO PRÓPRIO CRM.
    *
@@ -103,7 +103,32 @@ export type ConfigDoFlow = {
    * configuração de quem já salvou alguma — e o sintoma seria a mensagem voltar sozinha pro texto
    * geral, sem nada explicando.
    */
-  porFormularioDoCrm: Record<string, { confirmacao: { ativa: boolean; texto: string } }>;
+  porFormularioDoCrm: Record<string, { confirmacao: ConfirmacaoDeFormulario }>;
+};
+
+/**
+ * A CONFIRMAÇÃO DE UM FORMULÁRIO: o texto, por qual número sai e com qual modelo.
+ *
+ * "Não seria melhor a gente escolher aqui, na parte de formulário, qual é o número que a gente
+ * quer que envie? E aí, quando enviar, a gente envia pelo Meta."
+ *
+ * Os dois campos novos existem por um motivo só, e ele é técnico: quem acabou de preencher um
+ * formulário NUNCA escreveu pro número oficial. A janela de 24 horas está fechada por definição, e
+ * a Cloud API recusa texto livre ali. Então "enviar pelo Meta" e "escrever um texto" são
+ * incompatíveis — pela API oficial, confirmação é modelo aprovado ou não é nada.
+ *
+ * Por isso os dois andam juntos: escolher o número oficial sem escolher o modelo é escolher um
+ * envio que vai falhar. A tela cobra os dois; aqui eles moram lado a lado pra ficar claro que são
+ * uma decisão só.
+ */
+export type ConfirmacaoDeFormulario = {
+  ativa: boolean;
+  /** Usado quando a confirmação sai como texto livre (QR Code, ou janela aberta no oficial). */
+  texto: string;
+  /** Por qual número sai. `null` = a escolha geral da empresa (`config.canal`). */
+  contaCanal: string | null;
+  /** O modelo aprovado, quando sai pela API oficial. `null` = texto livre. */
+  templateId: string | null;
 };
 
 export const CONFIG_PADRAO: ConfigDoFlow = {
@@ -185,6 +210,11 @@ const MAX_POR_FORMULARIO = 300;
 
 /** As exceções por formulário, com a mesma desconfiança do resto: veio do banco, pode ter qualquer
  *  forma. Entrada sem id ou sem objeto é descartada — ela não teria a que se aplicar. */
+/** Texto aproveitável, ou nulo. Branco e não-string são a mesma coisa: "não escolheu". */
+function textoOuNulo(valor: unknown): string | null {
+  return typeof valor === "string" && valor.trim() ? valor.trim() : null;
+}
+
 function lerPorFormulario(dados: unknown): ConfigDoFlow["porFormulario"] {
   if (typeof dados !== "object" || dados === null) return {};
   const saida: ConfigDoFlow["porFormulario"] = {};
@@ -201,6 +231,10 @@ function lerPorFormulario(dados: unknown): ConfigDoFlow["porFormulario"] {
         // gente de verdade.
         ativa: confirmacao.ativa === true,
         texto: texto || CONFIG_PADRAO.confirmacao.texto,
+        // Vazio vira nulo: string em branco guardada aqui faria o envio procurar uma conexão
+        // chamada "" e desistir sem dizer por quê.
+        contaCanal: textoOuNulo(confirmacao.contaCanal),
+        templateId: textoOuNulo(confirmacao.templateId),
       },
     };
     if (Object.keys(saida).length >= MAX_POR_FORMULARIO) break;
@@ -218,11 +252,19 @@ function lerPorFormulario(dados: unknown): ConfigDoFlow["porFormulario"] {
 export function confirmacaoDoFormulario(
   config: ConfigDoFlow,
   formularioId: string | null | undefined,
-): { ativa: boolean; texto: string; doFormulario: boolean } {
+): ConfirmacaoDeFormulario & { doFormulario: boolean } {
   const id = formularioId?.trim();
   const proprio = id ? config.porFormulario[id] : undefined;
   if (proprio) return { ...proprio.confirmacao, doFormulario: true };
-  return { ativa: config.confirmacao.ativa, texto: config.confirmacao.texto, doFormulario: false };
+  // A geral não escolhe número nem modelo, pelo mesmo motivo da do CRM: herdar aqui mudaria por
+  // onde fala todo formulário que nunca pediu nada.
+  return {
+    ativa: config.confirmacao.ativa,
+    texto: config.confirmacao.texto,
+    contaCanal: null,
+    templateId: null,
+    doFormulario: false,
+  };
 }
 
 /**
@@ -236,13 +278,17 @@ export function confirmacaoDoFormulario(
 export function confirmacaoDoFormularioDoCrm(
   config: ConfigDoFlow,
   formularioId: string | null | undefined,
-): { ativa: boolean; texto: string; doFormulario: boolean } {
+): ConfirmacaoDeFormulario & { doFormulario: boolean } {
   const id = formularioId?.trim();
   const proprio = id ? config.porFormularioDoCrm[id] : undefined;
   if (proprio) return { ...proprio.confirmacao, doFormulario: true };
   return {
     ativa: config.formulario.confirmacao.ativa,
     texto: config.formulario.confirmacao.texto,
+    // A geral não escolhe número nem modelo: ela é o texto que vale pra quem nunca abriu esta
+    // tela, e herdar um número aqui mudaria por onde fala todo formulário que não pediu nada.
+    contaCanal: null,
+    templateId: null,
     doFormulario: false,
   };
 }
@@ -327,9 +373,9 @@ export type MudancasDoFlow = Partial<
    * `null` em `confirmacao` APAGA a exceção — o formulário volta a seguir a geral. É a diferença
    * entre "desligado neste formulário" e "sem regra própria", e sem ela não haveria como desfazer.
    */
-  umFormulario?: { id: string; confirmacao: { ativa: boolean; texto: string } | null };
+  umFormulario?: { id: string; confirmacao: ConfirmacaoDeFormulario | null };
   /** O mesmo, para um formulário do próprio CRM. */
-  umFormularioDoCrm?: { id: string; confirmacao: { ativa: boolean; texto: string } | null };
+  umFormularioDoCrm?: { id: string; confirmacao: ConfirmacaoDeFormulario | null };
 };
 
 /** Grava o que mudou, preservando o resto. Devolve como ficou. */

@@ -6,6 +6,9 @@ import { CANAIS_DO_FLOW, type CanalDoFlow } from "@/lib/integracoes/azuz-flow-ca
 import { conexoesDeWhatsappDoWorkspace } from "@/lib/integracoes/azuz-flow-conexoes";
 import { configDoFlow, salvarConfigDoFlow, type MudancasDoFlow } from "@/lib/integracoes/azuz-flow-config";
 import { lerDisjuntor, religarDisjuntor } from "@/lib/integracoes/azuz-flow-disjuntor";
+import { numerosDeWhatsApp } from "@/lib/integracoes/numeros-de-whatsapp";
+import { numerosDeEnvio } from "@/lib/campanhas/canais-de-envio";
+import { prisma } from "@/lib/prisma";
 import { montarRespostaDoFlow } from "@/lib/integracoes/azuz-flow-resposta";
 import { minutosDoRelogio } from "@/lib/integracoes/azuz-flow-janela";
 import { comRespostaEmJson } from "@/lib/integracoes/resposta-em-json";
@@ -81,12 +84,12 @@ export async function PUT(request: Request) {
       religar?: unknown;
       /** O texto da confirmação do formulário DO CRM. Separado por origem, a pedido: cada uma fala
        *  com as palavras da agência pra aquele público. As proteções seguem compartilhadas. */
-      formulario?: { confirmacao?: { ativa?: unknown; texto?: unknown } };
+      formulario?: { confirmacao?: { ativa?: unknown; texto?: unknown; contaCanal?: unknown; templateId?: unknown } };
       /** A confirmação de UM formulário do Flow. `confirmacao: null` apaga a exceção e o
        *  formulário volta a seguir a geral. Ver `MudancasDoFlow`. */
-      umFormulario?: { id?: unknown; confirmacao?: { ativa?: unknown; texto?: unknown } | null };
+      umFormulario?: { id?: unknown; confirmacao?: { ativa?: unknown; texto?: unknown; contaCanal?: unknown; templateId?: unknown } | null };
       /** O mesmo, para um formulário do próprio CRM. */
-      umFormularioDoCrm?: { id?: unknown; confirmacao?: { ativa?: unknown; texto?: unknown } | null };
+      umFormularioDoCrm?: { id?: unknown; confirmacao?: { ativa?: unknown; texto?: unknown; contaCanal?: unknown; templateId?: unknown } | null };
     };
 
     const mudancas: MudancasDoFlow = {};
@@ -237,10 +240,41 @@ export async function PUT(request: Request) {
       if (c.texto.length > 2000) {
         return NextResponse.json({ erro: "O texto da confirmação passou de 2000 caracteres." }, { status: 400 });
       }
-      // Os dois campos juntos, e não um `Partial`: esta é a configuração INTEIRA daquele
-      // formulário. Salvar só metade criaria uma exceção pela metade, com o outro campo vindo de
-      // lugar nenhum.
-      mudancas[campo] = { id, confirmacao: { ativa: c.ativa, texto: c.texto } };
+      /*
+       * O NÚMERO E O MODELO VÊM CONFERIDOS CONTRA O QUE EXISTE.
+       *
+       * Vazio é "não escolheu", e vira nulo. Mas uma chave qualquer gravada aqui produziria uma
+       * confirmação apontando pra uma conexão ou um modelo que não existem — e o erro só
+       * apareceria lá na frente, quando alguém preenchesse o formulário, longe de quem salvou.
+       */
+      const contaCanal = typeof c.contaCanal === "string" && c.contaCanal.trim() ? c.contaCanal.trim() : null;
+      const templateId = typeof c.templateId === "string" && c.templateId.trim() ? c.templateId.trim() : null;
+
+      if (contaCanal) {
+        const numeros = numerosDeEnvio(await numerosDeWhatsApp(workspaceId));
+        if (!numeros.some((n) => n.contaCanal === contaCanal)) {
+          return NextResponse.json({ erro: "Esse número não está conectado agora." }, { status: 400 });
+        }
+      }
+      if (templateId) {
+        const modelo = await prisma.template.findFirst({
+          where: { id: templateId, workspaceId },
+          select: { status: true, canal: true },
+        });
+        if (!modelo) return NextResponse.json({ erro: "Esse modelo não existe mais." }, { status: 400 });
+        // Modelo não aprovado é recusado pela Meta com erro genérico, e o erro chegaria só quando
+        // alguém preenchesse o formulário. Dizer agora é o que permite corrigir agora.
+        if (modelo.status !== "aprovado") {
+          return NextResponse.json({ erro: "Esse modelo ainda não está aprovado pela Meta." }, { status: 400 });
+        }
+        if (modelo.canal !== "whatsapp_oficial") {
+          return NextResponse.json({ erro: "Modelo aprovado só existe no WhatsApp API Oficial." }, { status: 400 });
+        }
+      }
+
+      // Os campos juntos, e não um `Partial`: esta é a configuração INTEIRA daquele formulário.
+      // Salvar só metade criaria uma exceção pela metade, com o resto vindo de lugar nenhum.
+      mudancas[campo] = { id, confirmacao: { ativa: c.ativa, texto: c.texto, contaCanal, templateId } };
     }
 
     if (!Object.keys(mudancas).length) {

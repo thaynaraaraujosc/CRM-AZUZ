@@ -49,6 +49,8 @@ export async function enfileirarConfirmacao(params: {
   conversaNome: string | null;
   /** Quando ela pode sair. Hoje é "agora"; a janela e o intervalo entram na etapa das proteções. */
   enviarApos: Date;
+  /** O modelo aprovado desta confirmação, quando o formulário escolheu um. */
+  templateId?: string | null;
   /** O texto já montado, guardado porque "o que foi que o CRM mandou" é a primeira pergunta
    *  quando algo dá errado — e o modelo pode ter mudado desde então. */
   texto: string;
@@ -68,6 +70,7 @@ export async function enfileirarConfirmacao(params: {
         situacao: "na_fila",
         enviarApos: params.enviarApos,
         texto: params.texto,
+        templateId: params.templateId ?? null,
         respostaId: params.respostaId ?? null,
       },
     });

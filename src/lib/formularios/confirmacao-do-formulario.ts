@@ -3,7 +3,9 @@ import { slugId } from "@/lib/ids";
 import { dataIsoEmBrasilia, horaEmBrasilia } from "@/lib/agenda/fuso";
 import { ehChaveDuplicada } from "@/lib/prisma-erros";
 import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
-import { escolherCanalDoFlow } from "@/lib/integracoes/azuz-flow-canal";
+import { escolhaPorNumero, escolherCanalDoFlow } from "@/lib/integracoes/azuz-flow-canal";
+import { numerosDeWhatsApp } from "@/lib/integracoes/numeros-de-whatsapp";
+import { numerosDeEnvio } from "@/lib/campanhas/canais-de-envio";
 import { configDoFlow, confirmacaoDoFormularioDoCrm } from "@/lib/integracoes/azuz-flow-config";
 import { conexoesDeWhatsappDoWorkspace } from "@/lib/integracoes/azuz-flow-conexoes";
 import { decidirConfirmacao } from "@/lib/integracoes/azuz-flow-confirmacao-decisao";
@@ -98,8 +100,22 @@ export async function confirmarReuniaoDoFormulario(params: {
   const confirmacao = confirmacaoDoFormularioDoCrm(config, params.formularioId);
   if (!confirmacao.ativa) return;
 
-  const conexoes = await conexoesDeWhatsappDoWorkspace(workspaceId);
-  const escolha = escolherCanalDoFlow(config.canal, conexoes);
+  /*
+   * POR QUAL NÚMERO ESTA CONFIRMAÇÃO SAI.
+   *
+   * "Não seria melhor a gente escolher aqui, na parte de formulário, qual é o número que a gente
+   * quer que envie?"
+   *
+   * O formulário escolhendo um número específico GANHA da opção geral da empresa — e não cai em
+   * outro quando ele está fora do ar: quem escolheu um número escolheu contra os outros, e mandar
+   * a confirmação pelo número errado é pior do que não mandar. A regra, com teste, mora em
+   * `escolhaPorNumero`.
+   *
+   * Sem escolha, nada muda: vale `config.canal`, como sempre.
+   */
+  const escolha = confirmacao.contaCanal
+    ? escolhaPorNumero(confirmacao.contaCanal, numerosDeEnvio(await numerosDeWhatsApp(workspaceId)))
+    : escolherCanalDoFlow(config.canal, await conexoesDeWhatsappDoWorkspace(workspaceId));
 
   // A conversa só nasce quando há canal. Sem ela não há por onde mandar — e `decidirConfirmacao`
   // diz isso com todas as letras, em vez de o lead sumir em silêncio.
@@ -194,6 +210,15 @@ export async function confirmarReuniaoDoFormulario(params: {
     contatoNome: lead.nome,
     conversaNome,
     texto,
+    /*
+     * O MODELO VAI JUNTO, e é ele que faz a confirmação sair pela API oficial.
+     *
+     * Quem acabou de preencher o formulário nunca escreveu pro número oficial — a janela de 24
+     * horas está fechada por definição, e a Cloud API recusa texto livre ali. Com o modelo
+     * escolhido, o envio sai aprovado; sem ele, pelo oficial, não sai nada (e o motivo fica
+     * escrito na linha da fila). Pelo QR Code o texto livre continua valendo e o modelo é ignorado.
+     */
+    templateId: confirmacao.templateId,
     enviarApos: quando.enviarApos,
     respostaId: params.respostaId,
   });

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { autenticarChaveDoFlow, PROVEDOR_FLOW } from "@/lib/integracoes/azuz-flow-chave";
-import { configDoFlow } from "@/lib/integracoes/azuz-flow-config";
+import { configDoFlow, type ConfirmacaoDeFormulario } from "@/lib/integracoes/azuz-flow-config";
 import {
   formulariosDoFlow,
   guardarFormulariosDoFlow,
@@ -72,14 +72,14 @@ export type RecursoDosFormularios = ListaDeFormularios & {
   /** Existe chave do Flow ativa nesta empresa? É o que decide se a aba aparece. */
   conectado: boolean;
   /** A confirmação GERAL dos formulários do Flow, pro que não tem regra própria. */
-  geral: { ativa: boolean; texto: string };
+  geral: ConfirmacaoDeFormulario;
   /** As exceções, por id de formulário do Flow. */
-  porFormulario: Record<string, { confirmacao: { ativa: boolean; texto: string } }>;
+  porFormulario: Record<string, { confirmacao: ConfirmacaoDeFormulario }>;
   /** A geral dos formulários DO CRM. Texto separado desde sempre: cada origem fala com o público
    *  dela com as palavras da agência. */
-  geralDoCrm: { ativa: boolean; texto: string };
+  geralDoCrm: ConfirmacaoDeFormulario;
   /** As exceções, por id de formulário do CRM. */
-  porFormularioDoCrm: Record<string, { confirmacao: { ativa: boolean; texto: string } }>;
+  porFormularioDoCrm: Record<string, { confirmacao: ConfirmacaoDeFormulario }>;
 };
 
 export async function GET() {
@@ -105,11 +105,14 @@ export async function GET() {
     const recurso: RecursoDosFormularios = {
       ...lista,
       conectado: Boolean(chave),
-      geral: { ativa: config.confirmacao.ativa, texto: config.confirmacao.texto },
+      // A geral não escolhe número nem modelo: ela é o texto de quem nunca abriu esta tela.
+      geral: { ativa: config.confirmacao.ativa, texto: config.confirmacao.texto, contaCanal: null, templateId: null },
       porFormulario: config.porFormulario,
       geralDoCrm: {
         ativa: config.formulario.confirmacao.ativa,
         texto: config.formulario.confirmacao.texto,
+        contaCanal: null,
+        templateId: null,
       },
       porFormularioDoCrm: config.porFormularioDoCrm,
     };

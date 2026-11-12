@@ -5,6 +5,9 @@ import Link from "next/link";
 
 import { Ajuda, Toggle } from "@/components/ui";
 import { GrupoRecolhivel } from "@/components/automacoes/GrupoRecolhivel";
+import type { ConfirmacaoDeFormulario } from "@/lib/integracoes/azuz-flow-config";
+import type { NumeroDeEnvio } from "@/lib/campanhas/canais-de-envio";
+import type { CanalDisponivel } from "@/app/api/canais/route";
 import { AcoesNoTopo } from "@/lib/topo-da-pagina";
 import { ProtecoesDoNumero } from "@/components/automacoes/ProtecoesDoNumero";
 import { IconSetaBaixo } from "@/components/icons";
@@ -69,13 +72,18 @@ function LinhaDoFormulario({
   propria,
   geral,
   aoSalvar,
+  numeros,
+  templates,
 }: {
   formulario: FormularioDoFlow;
   robos: FluxoAutomacao[];
   /** A configuração só deste formulário. `null` = segue a geral. */
-  propria: { ativa: boolean; texto: string } | null;
-  geral: { ativa: boolean; texto: string };
-  aoSalvar: (id: string, valor: { ativa: boolean; texto: string } | null) => Promise<void>;
+  propria: ConfirmacaoDeFormulario | null;
+  geral: ConfirmacaoDeFormulario;
+  aoSalvar: (id: string, valor: ConfirmacaoDeFormulario | null) => Promise<void>;
+  /** Os números conectados e os modelos aprovados, pra escolha de por onde a confirmação sai. */
+  numeros: NumeroDeEnvio[];
+  templates: { id: string; nome: string }[];
 }) {
   const { t: traduzir } = useIdioma();
   const [aberta, setAberta] = useState(false);
@@ -88,16 +96,38 @@ function LinhaDoFormulario({
   const efetiva = propria ?? geral;
   const [ativa, setAtiva] = useState(efetiva.ativa);
   const [texto, setTexto] = useState(efetiva.texto);
+  const [contaCanal, setContaCanal] = useState(efetiva.contaCanal ?? "");
+  const [templateId, setTemplateId] = useState(efetiva.templateId ?? "");
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
-  const mudou = ativa !== efetiva.ativa || texto !== efetiva.texto;
+  const numeroEscolhido = numeros.find((n) => n.contaCanal === contaCanal) ?? null;
+  /*
+   * PELA API OFICIAL, CONFIRMAÇÃO É MODELO APROVADO OU NÃO É NADA.
+   *
+   * Quem acabou de preencher o formulário nunca escreveu pro número oficial: a janela de 24 horas
+   * está fechada por definição, e a Cloud API recusa texto livre ali. Escolher o número oficial
+   * sem escolher o modelo é escolher um envio que vai falhar — e falhar depois, quando alguém
+   * preencher, longe de quem configurou.
+   */
+  const precisaDeModelo = numeroEscolhido?.canal === "whatsapp_oficial" && !templateId;
+
+  const mudou =
+    ativa !== efetiva.ativa ||
+    texto !== efetiva.texto ||
+    contaCanal !== (efetiva.contaCanal ?? "") ||
+    templateId !== (efetiva.templateId ?? "");
 
   async function salvar() {
     setSalvando(true);
     setErro(null);
     try {
-      await aoSalvar(formulario.id, { ativa, texto });
+      await aoSalvar(formulario.id, {
+        ativa,
+        texto,
+        contaCanal: contaCanal || null,
+        templateId: templateId || null,
+      });
     } catch (e) {
       setErro(e instanceof Error ? e.message : traduzir("Não deu pra salvar."));
     } finally {
@@ -197,6 +227,56 @@ function LinhaDoFormulario({
               ))}
             </p>
 
+            {/* POR ONDE ELA SAI. Dois campos lado a lado porque são uma decisão só: o número
+                escolhe o caminho, e o caminho decide se cabe texto livre ou só modelo aprovado. */}
+            <div className="fflow-saida">
+              <div className="field">
+                <label>{traduzir("Sai pelo número")}</label>
+                <select className="input" value={contaCanal} onChange={(e) => setContaCanal(e.target.value)}>
+                  <option value="">{traduzir("Seguir a escolha geral da empresa")}</option>
+                  {numeros.map((n) => (
+                    <option key={n.contaCanal} value={n.contaCanal}>
+                      {n.nome} · {n.etiqueta}
+                      {n.numeroLegivel ? ` · ${n.numeroLegivel}` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="field">
+                <label>{traduzir("Modelo aprovado")}</label>
+                <select
+                  className="input"
+                  value={templateId}
+                  onChange={(e) => setTemplateId(e.target.value)}
+                  disabled={numeroEscolhido?.canal === "whatsapp_nao_oficial"}
+                >
+                  <option value="">
+                    {numeroEscolhido?.canal === "whatsapp_nao_oficial"
+                      ? traduzir("Não precisa: o QR Code manda o texto acima")
+                      : traduzir("Nenhum — manda o texto acima")}
+                  </option>
+                  {templates.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.nome}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {precisaDeModelo ? (
+              <p className="fflow-aviso">
+                {traduzir(
+                  "Quem acabou de preencher o formulário nunca escreveu para o seu número oficial, e a Meta não aceita texto livre nessa situação. Escolha um modelo aprovado, senão a confirmação não vai sair.",
+                )}
+              </p>
+            ) : null}
+            {numeroEscolhido?.canal === "whatsapp_oficial" && templateId ? (
+              <p className="hint">
+                {traduzir("O texto acima fica de reserva: ele só é usado se a pessoa já tiver escrito para este número nas últimas 24 horas.")}
+              </p>
+            ) : null}
+
             {erro ? <p className="int-aviso-conflito">{erro}</p> : null}
 
             <div className="fflow-acoes">
@@ -255,6 +335,27 @@ export default function FormulariosPage() {
   const [recurso, setRecurso] = useState<RecursoDosFormularios | null>(null);
   const [erro, setErro] = useState(false);
   const [abertos, setAbertos] = useState<{ flow: boolean; crm: boolean }>({ flow: true, crm: false });
+  /* Os números conectados e os modelos APROVADOS. Carregados em paralelo e sem travar a tela: a
+     lista de formulários é o assunto aqui, e estes dois só preenchem dois seletores. */
+  const [numeros, setNumeros] = useState<NumeroDeEnvio[]>([]);
+  const [templates, setTemplates] = useState<{ id: string; nome: string }[]>([]);
+
+  useEffect(() => {
+    fetch("/api/canais", { cache: "no-store" })
+      .then((r) => r.json() as Promise<CanalDisponivel[]>)
+      .then((c) => setNumeros(Array.isArray(c) ? c.flatMap((x) => x.numeros ?? []) : []))
+      .catch(() => setNumeros([]));
+    fetch("/api/templates", { cache: "no-store" })
+      .then((r) => r.json() as Promise<{ id: string; nome: string; canal: string; status: string }[]>)
+      .then((t) =>
+        setTemplates(
+          Array.isArray(t)
+            ? t.filter((x) => x.canal === "whatsapp_oficial" && x.status === "aprovado").map((x) => ({ id: x.id, nome: x.nome }))
+            : [],
+        ),
+      )
+      .catch(() => setTemplates([]));
+  }, []);
 
   const carregar = useCallback(() => {
     return fetch("/api/integracoes/azuz-flow/formularios")
@@ -276,7 +377,7 @@ export default function FormulariosPage() {
   async function salvarUm(
     campo: "umFormulario" | "umFormularioDoCrm",
     id: string,
-    valor: { ativa: boolean; texto: string } | null,
+    valor: ConfirmacaoDeFormulario | null,
   ) {
     const resposta = await fetch("/api/integracoes/azuz-flow/config", {
       method: "PUT",
@@ -290,9 +391,9 @@ export default function FormulariosPage() {
     await carregar();
   }
 
-  const salvarFormulario = (id: string, valor: { ativa: boolean; texto: string } | null) =>
+  const salvarFormulario = (id: string, valor: ConfirmacaoDeFormulario | null) =>
     salvarUm("umFormulario", id, valor);
-  const salvarFormularioDoCrm = (id: string, valor: { ativa: boolean; texto: string } | null) =>
+  const salvarFormularioDoCrm = (id: string, valor: ConfirmacaoDeFormulario | null) =>
     salvarUm("umFormularioDoCrm", id, valor);
 
   const deFormulario = fluxos.filter((f) => gatilhoDeFormulario(f) !== null && !f.arquivada);
@@ -389,6 +490,8 @@ export default function FormulariosPage() {
                         propria={recurso.porFormulario[f.id]?.confirmacao ?? null}
                         geral={recurso.geral}
                         aoSalvar={salvarFormulario}
+                        numeros={numeros}
+                        templates={templates}
                       />
                     ))}
                   </ul>
@@ -432,6 +535,8 @@ export default function FormulariosPage() {
                       propria={recurso.porFormularioDoCrm[f.id]?.confirmacao ?? null}
                       geral={recurso.geralDoCrm}
                       aoSalvar={salvarFormularioDoCrm}
+                      numeros={numeros}
+                      templates={templates}
                     />
                   ))}
                 </ul>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { escolherCanalDoFlow } from "../azuz-flow-canal";
+import { escolhaPorNumero, escolherCanalDoFlow } from "../azuz-flow-canal";
 
 /**
  * O QUE ESTES TESTES PRENDEM: o lead do Flow entrando sem conversa — e, sem conversa, toda
@@ -153,5 +153,43 @@ describe("o QR ligado sem o número conhecido", () => {
     const r = escolherCanalDoFlow("qrcode", { oficial: null, qrcode: null });
     expect(r.conexao).toBeNull();
     expect(r.aviso).toContain("não está conectado");
+  });
+});
+
+describe("escolhaPorNumero", () => {
+  const ligados = [
+    { contaCanal: "meta_whatsapp:109", canal: "whatsapp_oficial", nome: "Comercial" },
+    { contaCanal: "whatsapp_nao_oficial:5562994361377", canal: "whatsapp_nao_oficial", nome: "Thaynara" },
+  ];
+
+  it("o número escolhido é o que manda, e o canal vem dele", () => {
+    expect(escolhaPorNumero("meta_whatsapp:109", ligados)).toEqual({
+      contaCanal: "meta_whatsapp:109",
+      conexao: "oficial",
+      aviso: null,
+    });
+    expect(escolhaPorNumero("whatsapp_nao_oficial:5562994361377", ligados).conexao).toBe("qrcode");
+  });
+
+  it("dois números do MESMO canal se distinguem — é o que só a conta resolve", () => {
+    const comDois = [
+      ...ligados,
+      { contaCanal: "whatsapp_nao_oficial:5511999998888", canal: "whatsapp_nao_oficial", nome: "Closer" },
+    ];
+    expect(escolhaPorNumero("whatsapp_nao_oficial:5511999998888", comDois).contaCanal).toBe(
+      "whatsapp_nao_oficial:5511999998888",
+    );
+  });
+
+  it("número escolhido fora do ar NÃO cai noutro: fica sem conversa, com o motivo", () => {
+    /*
+     * Mesma regra do pedido por canal, e pela mesma razão: quem escolheu um número escolheu contra
+     * os outros. Cair noutro manda a confirmação pelo número errado — pior do que não mandar, e em
+     * silêncio, porque ninguém confere um lead que "deu certo".
+     */
+    const fora = escolhaPorNumero("meta_whatsapp:999", ligados);
+    expect(fora.contaCanal).toBeNull();
+    expect(fora.conexao).toBeNull();
+    expect(fora.aviso).toMatch(/não está conectado/i);
   });
 });

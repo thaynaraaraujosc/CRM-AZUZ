@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { CONFIG_PADRAO, confirmacaoDoFormulario, lerConfigDoFlow } from "../azuz-flow-config";
+import {
+  CONFIG_PADRAO,
+  confirmacaoDoFormulario,
+  confirmacaoDoFormularioDoCrm,
+  lerConfigDoFlow,
+} from "../azuz-flow-config";
 
 /**
  * Isto lê um JSON que veio do banco, e o que veio do banco pode ter qualquer forma: linha escrita
@@ -78,8 +83,20 @@ describe("confirmação por formulário", () => {
    */
   it("segue a configuração geral quando o formulário não foi configurado à parte", () => {
     const config = lerConfigDoFlow({ confirmacao: { ativa: true, texto: "Geral" } });
-    expect(confirmacaoDoFormulario(config, "f1")).toEqual({ ativa: true, texto: "Geral", doFormulario: false });
-    expect(confirmacaoDoFormulario(config, null)).toEqual({ ativa: true, texto: "Geral", doFormulario: false });
+    expect(confirmacaoDoFormulario(config, "f1")).toEqual({
+      ativa: true,
+      texto: "Geral",
+      contaCanal: null,
+      templateId: null,
+      doFormulario: false,
+    });
+    expect(confirmacaoDoFormulario(config, null)).toEqual({
+      ativa: true,
+      texto: "Geral",
+      contaCanal: null,
+      templateId: null,
+      doFormulario: false,
+    });
   });
 
   it("o formulário configurado à parte manda", () => {
@@ -87,7 +104,13 @@ describe("confirmação por formulário", () => {
       confirmacao: { ativa: true, texto: "Geral" },
       porFormulario: { f1: { confirmacao: { ativa: false, texto: "Só deste" } } },
     });
-    expect(confirmacaoDoFormulario(config, "f1")).toEqual({ ativa: false, texto: "Só deste", doFormulario: true });
+    expect(confirmacaoDoFormulario(config, "f1")).toEqual({
+      ativa: false,
+      texto: "Só deste",
+      contaCanal: null,
+      templateId: null,
+      doFormulario: true,
+    });
     // E o vizinho não é afetado.
     expect(confirmacaoDoFormulario(config, "f2").texto).toBe("Geral");
   });
@@ -110,5 +133,52 @@ describe("confirmação por formulário", () => {
   it("não quebra quando o guardado não é objeto", () => {
     expect(lerConfigDoFlow({ porFormulario: "nada" }).porFormulario).toEqual({});
     expect(lerConfigDoFlow({}).porFormulario).toEqual({});
+  });
+});
+
+describe("por onde a confirmação de um formulário sai", () => {
+  it("guarda o número e o modelo escolhidos", () => {
+    /*
+     * "Não seria melhor a gente escolher aqui, na parte de formulário, qual é o número que a gente
+     * quer que envie? E aí, quando enviar, a gente envia pelo Meta."
+     *
+     * Os dois juntos porque são uma decisão só: quem preencheu um formulário nunca escreveu pro
+     * número oficial, a janela de 24h está fechada por definição, e pela API oficial confirmação é
+     * modelo aprovado ou não é nada.
+     */
+    const config = lerConfigDoFlow({
+      porFormularioDoCrm: {
+        f1: {
+          confirmacao: {
+            ativa: true,
+            texto: "Oi",
+            contaCanal: "meta_whatsapp:109",
+            templateId: "tpl-consultoria",
+          },
+        },
+      },
+    });
+    const lida = config.porFormularioDoCrm.f1.confirmacao;
+    expect(lida.contaCanal).toBe("meta_whatsapp:109");
+    expect(lida.templateId).toBe("tpl-consultoria");
+  });
+
+  it("vazio é nulo, não string em branco", () => {
+    // Branco guardado faria o envio procurar uma conexão chamada "" e desistir sem dizer por quê.
+    const config = lerConfigDoFlow({
+      porFormularioDoCrm: { f1: { confirmacao: { ativa: true, texto: "Oi", contaCanal: "   ", templateId: "" } } },
+    });
+    expect(config.porFormularioDoCrm.f1.confirmacao.contaCanal).toBeNull();
+    expect(config.porFormularioDoCrm.f1.confirmacao.templateId).toBeNull();
+  });
+
+  it("formulário sem escolha própria não herda número da geral", () => {
+    /*
+     * Herdar aqui mudaria por onde fala TODO formulário que nunca pediu nada — e por onde uma
+     * mensagem sai é a coisa que mais se nota do lado de quem recebe.
+     */
+    const config = lerConfigDoFlow({ confirmacao: { ativa: true, texto: "Geral" } });
+    expect(confirmacaoDoFormularioDoCrm(config, "qualquer").contaCanal).toBeNull();
+    expect(confirmacaoDoFormularioDoCrm(config, "qualquer").templateId).toBeNull();
   });
 });

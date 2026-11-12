@@ -126,3 +126,39 @@ export function escolherCanalDoFlow(
 function semConexao(aviso: string): EscolhaDeCanal {
   return { contaCanal: null, conexao: null, aviso };
 }
+
+/**
+ * POR QUAL NÚMERO, quando o formulário escolheu um específico.
+ *
+ * "Não seria melhor a gente escolher aqui, na parte de formulário, qual é o número que a gente
+ * quer que envie?"
+ *
+ * `escolherCanalDoFlow` decide entre CANAIS — oficial ou QR Code —, e isso bastava quando havia um
+ * número de cada. Com dez conexões possíveis, o canal não identifica nada: os números da vendedora
+ * e do closer são os dois "qrcode", e qual dos dois manda muda o nome, a foto e o histórico que
+ * aparecem no aparelho de quem recebe.
+ *
+ * ──────────────────────────────────────────────────────────────────────────────
+ * E AQUI TAMBÉM NÃO EXISTE PLANO B, pela mesma razão de lá: quem escolheu um número escolheu
+ * contra os outros. Cair noutro mandaria a confirmação pelo número errado — pior do que não
+ * mandar, e em silêncio, porque ninguém vai conferir um lead que "deu certo".
+ */
+export function escolhaPorNumero(
+  contaCanal: string,
+  ligados: { contaCanal: string; canal: string; nome: string }[],
+): EscolhaDeCanal {
+  const achado = ligados.find((n) => n.contaCanal === contaCanal);
+  if (!achado) {
+    return {
+      contaCanal: null,
+      conexao: null,
+      aviso:
+        "O número escolhido para este formulário não está conectado agora; o lead entrou sem conversa e a confirmação não saiu.",
+    };
+  }
+  return {
+    contaCanal: achado.contaCanal,
+    conexao: achado.canal === "whatsapp_oficial" ? "oficial" : "qrcode",
+    aviso: null,
+  };
+}

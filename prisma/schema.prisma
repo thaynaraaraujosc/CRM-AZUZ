@@ -2231,6 +2231,16 @@ model ConfirmacaoDeReuniao {
   /// pergunta quando algo dá errado, e o modelo pode ter mudado desde então.
   texto String? @db.Text
 
+  /// O MODELO APROVADO que esta confirmação deve usar, quando o formulário escolheu um.
+  ///
+  /// Quem acabou de preencher um formulário nunca escreveu pro número oficial — a janela de 24h
+  /// está fechada por definição, e a Cloud API recusa texto livre ali. O único jeito de a
+  /// confirmação sair pela API oficial é um modelo aprovado, e QUAL modelo é escolha do
+  /// formulário: a confirmação da consultoria não é a mesma da seleção de closer.
+  ///
+  /// `null` = texto livre, o comportamento de sempre (e o único possível no QR Code).
+  templateId String?
+
   /// Por onde saiu (`contaCanal`). Null enquanto não saiu.
   canal String?
 
