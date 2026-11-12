@@ -3,6 +3,7 @@ import type { ComponentType, SVGProps } from "react";
 import {
   IconContatos,
   IconCartao,
+  IconEquipe,
   IconEscudo,
   IconErro,
   IconImage,
@@ -23,6 +24,7 @@ export type CategoriaId =
   | "expediente"
   | "seguranca"
   | "etiquetas"
+  | "equipe"
   | "importacao"
   | "azuz-ia"
   | "empresa"
@@ -54,6 +56,19 @@ export type CategoriaConfig = {
    * mudaria junto com o tema e com a identidade, e aí o sino deixaria de ser amarelo.
    */
   cor?: string;
+  /**
+   * Quando a categoria é uma TELA PRÓPRIA e não um painel desta página.
+   *
+   * "Coloca o bloco de equipe dentro de configurações. Faz mais sentido." E faz: quem convida
+   * alguém, define papel e mexe em permissão está configurando a conta, não trabalhando — é
+   * vizinho de Segurança e de Plano, não de Funil e Conversas.
+   *
+   * Equipe é uma tela inteira, com convite, lista, papéis e os onze módulos de permissão. Trazer
+   * tudo isso para dentro do painel de Configurações seria copiar uma tela para dentro de outra;
+   * o menu leva até ela, e ela mostra este mesmo menu ao lado. O resultado é o que ela pediu, e a
+   * tela continua sendo uma só.
+   */
+  href?: string;
   /** Mostra a tag "Em breve" ao lado do label e troca o conteúdo da categoria por uma vitrine
    * informativa em vez do formulário. Mesmo padrão já usado em Azuz IA (`/azuz-ia`). */
   emBreve?: boolean;
@@ -90,6 +105,14 @@ export const GRUPOS_CONFIGURACOES: GrupoConfig[] = [
          O que ficou da objeção é só isto: é um amarelo um passo diferente do sino (#EAB308 contra
          #F59E0B). Os dois leem como amarelo; nenhum é cópia do outro. */
       { id: "seguranca", label: "Segurança", descricao: "Autenticação, sessões e políticas de acesso.", Icon: IconEscudo, cor: "#EAB308" },
+      {
+        id: "equipe",
+        label: "Equipe",
+        descricao: "Quem tem acesso, com qual papel e o que cada um pode ver.",
+        Icon: IconEquipe,
+        cor: "#0EA5E9",
+        href: "/equipe",
+      },
       { id: "etiquetas", label: "Etiquetas", descricao: "Marcações usadas em contatos e automações.", Icon: IconErro, cor: "#8B5CF6" },
       { id: "importacao", label: "Importação e exportação", descricao: "Trazer ou tirar dados do CRM.", Icon: IconImportar, cor: "#0EA5E9", emBreve: true },
       /* "Auditoria e atividades" saiu daqui. A tela mostrava quatro linhas escritas à mão, com

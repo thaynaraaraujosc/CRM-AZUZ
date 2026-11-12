@@ -44,8 +44,13 @@ export async function GET() {
   try {
     const accessToken = decriptar(integracao.accessTokenCriptografado);
 
+    /* `effective_status` e um ARRAY JSON num parametro de URL, e ia cru: aspas e colchetes sem
+       codificar. A Graph aceita na maioria das vezes e recusa quando o proxy pelo caminho
+       normaliza a URL — falha intermitente, do tipo que ninguem reproduz. `encodeURIComponent`
+       tira a duvida. */
+    const statusPedido = encodeURIComponent(JSON.stringify(["ACTIVE", "PAUSED"]));
     const campanhas = await graphGet<{ data: Campanha[] }>(
-      `/${adAccountId}/campaigns?fields=id,name,status&effective_status=["ACTIVE","PAUSED"]&access_token=${accessToken}`,
+      `/${adAccountId}/campaigns?fields=id,name,status&effective_status=${statusPedido}&access_token=${accessToken}`,
     );
     const insights = await graphGet<{ data: Insight[] }>(
       `/${adAccountId}/insights?level=campaign&fields=campaign_id,spend,actions,action_values&date_preset=last_30d&access_token=${accessToken}`,

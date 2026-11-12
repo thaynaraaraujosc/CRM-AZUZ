@@ -17,6 +17,7 @@ import { MarcaDoTopo } from "@/components/marca-do-topo";
 import { publicarNomeDaEmpresa, useIdentidadeDaEmpresa } from "@/lib/empresa/identidade";
 import { useEquipe } from "@/lib/equipe-context";
 import { useFunis } from "@/lib/funis-context";
+import { INTELIGENCIA_INICIAL } from "@/lib/inteligencia/estrutura";
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
 import {
   IconAutomacoes,
@@ -26,7 +27,6 @@ import {
   IconConfiguracoes,
   IconContatos,
   IconDoc,
-  IconEquipe,
   IconPipeline,
   IconRelatorios,
   IconSparkle,
@@ -70,7 +70,10 @@ export const navEntries: NavEntry[] = [
   { href: "/instagram", label: "Instagram", Icon: IconInstagram },
   { href: "/funil", label: "Funil comercial", Icon: IconPipeline },
   { href: "/formularios", label: "Formulário", Icon: IconDoc },
-  { href: "/equipe", label: "Equipe", Icon: IconEquipe },
+  /* EQUIPE SAIU DAQUI e virou categoria de Configurações, em 12/11/2026: "coloca o bloco de
+     equipe dentro de configurações, faz mais sentido". E faz — convidar alguém, definir papel e
+     mexer em permissão é configurar a conta, não trabalhar. O endereço `/equipe` continua o
+     mesmo, então link antigo e favorito não quebram. */
   { href: "/contatos", label: "Contatos", Icon: IconContatos },
   ...gestaoAtividadeItens,
   { href: "/automacoes", label: "Automações", Icon: IconAutomacoes },
@@ -477,18 +480,26 @@ export function Sidebar() {
                 onMouseEnter={abrirGestaoAtividade}
                 onMouseLeave={agendarFechamentoGestaoAtividade}
               >
-                <button
-                  type="button"
+                {/*
+                  CLICAR ABRE A TELA, em vez de abrir um menu flutuante.
+
+                  "Quando eu clico em inteligência comercial, já abre tudo."
+
+                  Era um <button> que só abria o submenu — e submenu que vive sobre o conteúdo
+                  some quando o ponteiro escorrega, e no celular não existe. Agora o clique leva a
+                  Tráfego, e lá dentro as sete telas ficam numa coluna fixa ao lado
+                  (`MenuInteligencia`), do jeito que Configurações faz.
+
+                  O voo ao passar o mouse continua, como atalho para quem já sabe onde quer ir. O
+                  que sumiu foi a dependência dele: por teclado, Tab + Enter agora abre a tela em
+                  vez de não fazer nada.
+                */}
+                <Link
+                  href={INTELIGENCIA_INICIAL}
+                  prefetch
                   className={`nav-item${gestaoAtiva ? " active" : ""}`}
-                  style={{ width: "100%", textAlign: "left", cursor: "pointer" }}
-                  aria-haspopup="true"
-                  aria-expanded={gestaoAtividadeAberta}
+                  style={{ width: "100%", textAlign: "left" }}
                   title={mostrandoNomes ? undefined : traduzir("Inteligência comercial")}
-                  // O submenu só abria no `onMouseEnter` do <div> de fora. Quem navega por teclado
-                  // chegava neste botão com Tab, apertava Enter e nada acontecia: o menu inteiro de
-                  // Inteligência comercial era inalcançável sem mouse. O clique não atrapalha o
-                  // hover, ele só dá um segundo caminho pra mesma coisa.
-                  onClick={() => (gestaoAtividadeAberta ? setGestaoAtividadeAberta(false) : abrirGestaoAtividade())}
                 >
                   <IconRelatorios />
                   {mostrandoNomes ? (
@@ -497,7 +508,7 @@ export function Sidebar() {
                       <span className="r" style={{ marginLeft: "auto" }}>▸</span>
                     </>
                   ) : null}
-                </button>
+                </Link>
               </div>
             );
           }

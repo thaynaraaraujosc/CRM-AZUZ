@@ -67,6 +67,26 @@ export default function TrafegoPage() {
 
   const { integracao: adsIntegracao, desconectando: adsDesconectando, desconectar: desconectarAds } = useIntegracaoMeta("meta_ads");
   const [campanhasReais, setCampanhasReais] = useState<Campanha[] | null>(null);
+  /*
+   * O QUE A META RESPONDEU, quando ela não respondeu campanhas.
+   *
+   * "O meu Meta já está conectado, eu já estou rodando campanha, mas não estou vendo nada aqui.
+   * 'Conecte o Meta Ads ou o Google para ver' — mas eu já conectei."
+   *
+   * Ela estava certa, e o defeito é de DIAGNÓSTICO: três situações diferentes caíam na mesma
+   * frase, e a frase acusava a única que não era o caso.
+   *
+   *   1. Não conectado          → "Conecte o Meta Ads"  (certo)
+   *   2. Conectado, consulta FALHOU (token vencido, permissão `ads_read` ausente, conta de
+   *      anúncios errada) → dizia "Conecte o Meta Ads" (errado, e sem saída: reconectar não
+   *      conserta permissão faltando, e a mensagem da Meta, que diz o que fazer, era jogada fora)
+   *   3. Conectado, consulta OK, zero campanhas no período → também dizia "conecte"
+   *
+   * A rota já devolvia o motivo (`{ erro }`, com o texto da própria Meta). A tela fazia
+   * `Array.isArray(dados) ? ... : null` e descartava. Agora o motivo fica, e cada caso diz a
+   * verdade dele.
+   */
+  const [erroDasCampanhas, setErroDasCampanhas] = useState<string | null>(null);
 
   // Ajusta durante a renderização (não num efeito) quando o status muda pra "não conectado". Evita
   // setState síncrono dentro do corpo do efeito (regra `react-hooks/set-state-in-effect`).
@@ -80,8 +100,19 @@ export default function TrafegoPage() {
     if (adsIntegracao?.status !== "conectado") return;
     fetch("/api/integracoes/meta/ads/campanhas")
       .then((r) => r.json())
-      .then((dados) => (Array.isArray(dados) ? setCampanhasReais(dados) : setCampanhasReais(null)))
-      .catch((erro) => console.error("Falha ao carregar campanhas do Meta Ads:", erro));
+      .then((dados: Campanha[] | { erro?: string }) => {
+        if (Array.isArray(dados)) {
+          setCampanhasReais(dados);
+          setErroDasCampanhas(null);
+          return;
+        }
+        setCampanhasReais(null);
+        setErroDasCampanhas(dados?.erro ?? "O Meta não explicou o motivo.");
+      })
+      .catch((erro: unknown) => {
+        console.error("Falha ao carregar campanhas do Meta Ads:", erro);
+        setErroDasCampanhas("Não deu pra falar com o Meta agora.");
+      });
   }, [adsIntegracao?.status]);
 
   const { statusGoogle, campanhasGoogle, desconectando: googleDesconectando, desconectar: desconectarGoogle } = useGoogleAds();
@@ -356,12 +387,43 @@ export default function TrafegoPage() {
         {campanhas.length === 0 ? (
           <div className="card mb14">
             <div className="dados-nao-conectados trafego-vazio">
-              <strong>
-                {mostrarGoogle
-                  ? "Conecte o Meta Ads ou o Google Ads para ver esta tela com dados."
-                  : traduzir("Conecte o Meta Ads para ver esta tela com dados.")}
-              </strong>
-              <span>{traduzir("Investimento, custo por lead, custo por venda e ROAS saem das suas campanhas. Sem a conexão não há o que calcular, então os números ficam de fora em vez de aparecerem zerados.")}</span>
+              {erroDasCampanhas ? (
+                <>
+                  {/* CONECTADO, MAS A CONSULTA FALHOU. A mensagem é a da própria Meta, repassada
+                      inteira: é ela que diz se o que falta é permissão, conta ou token. Resumir
+                      em "deu erro" tiraria justamente a parte acionável. */}
+                  <strong>{traduzir("O Meta Ads está conectado, mas não deu pra ler as campanhas.")}</strong>
+                  <span>
+                    {traduzir("O que o Meta respondeu:")} <b>{erroDasCampanhas}</b>
+                  </span>
+                  <span>
+                    {traduzir(
+                      "Quase sempre é uma destas três: o acesso expirou (reconecte em Configurações › Outras integrações), a permissão de leitura de anúncios não foi concedida na hora de conectar, ou a conta de anúncios escolhida não é a que está rodando as campanhas.",
+                    )}
+                  </span>
+                </>
+              ) : adsIntegracao?.status === "conectado" ? (
+                <>
+                  {/* CONECTADO E SEM CAMPANHA NO PERÍODO. Não é falta de conexão, é falta de
+                      campanha — dizer "conecte" aqui manda a pessoa refazer algo que já está
+                      feito. */}
+                  <strong>{traduzir("Conectado, mas o Meta não devolveu nenhuma campanha.")}</strong>
+                  <span>
+                    {traduzir(
+                      "O CRM busca as campanhas ativas e as pausadas que gastaram nos últimos 30 dias, da conta de anúncios escolhida na conexão. Se as suas campanhas estão em outra conta de anúncios, é só trocar a conta em Configurações › Outras integrações › Meta Ads.",
+                    )}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <strong>
+                    {mostrarGoogle
+                      ? "Conecte o Meta Ads ou o Google Ads para ver esta tela com dados."
+                      : traduzir("Conecte o Meta Ads para ver esta tela com dados.")}
+                  </strong>
+                  <span>{traduzir("Investimento, custo por lead, custo por venda e ROAS saem das suas campanhas. Sem a conexão não há o que calcular, então os números ficam de fora em vez de aparecerem zerados.")}</span>
+                </>
+              )}
             </div>
           </div>
         ) : (

@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useState } from "react";
 
 import { GRUPOS_CONFIGURACOES, type CategoriaId } from "@/lib/configuracoes/estrutura";
@@ -37,7 +39,22 @@ export function CategoriasNav({
         return (
           <div className="config-nav-grupo" key={traduzir(grupo.titulo)}>
             <p className="config-nav-grupo-h">{traduzir(grupo.titulo)}</p>
-            {categoriasFiltradas.map((cat) => (
+            {categoriasFiltradas.map((cat) =>
+              /* Categoria com `href` é uma TELA PRÓPRIA (hoje só Equipe): vira link de verdade,
+                 com o endereço na barra e o botão Voltar funcionando. Um <button> que navega por
+                 `router.push` tiraria as duas coisas. */
+              cat.href ? (
+                <Link
+                  key={cat.id}
+                  href={cat.href}
+                  prefetch
+                  className={`config-nav-item${ativa === cat.id ? " active" : ""}`}
+                  aria-current={ativa === cat.id ? "page" : undefined}
+                >
+                  <cat.Icon width={16} height={16} aria-hidden="true" style={cat.cor ? { color: cat.cor } : undefined} />
+                  <span>{traduzir(cat.label)}</span>
+                </Link>
+              ) : (
               <button
                 type="button"
                 key={cat.id}
@@ -51,7 +68,8 @@ export function CategoriasNav({
                 <span>{traduzir(cat.label)}</span>
                 {cat.emBreve ? <span className="nav-badge-em-breve" style={{ marginLeft: "auto" }}>{traduzir("Em breve")}</span> : null}
               </button>
-            ))}
+              ),
+            )}
           </div>
         );
       })}
