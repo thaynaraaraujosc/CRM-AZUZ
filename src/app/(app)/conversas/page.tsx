@@ -33,6 +33,7 @@ import {
   type NumeroConectado,
 } from "@/lib/conversas/numeros-conectados";
 import { canalDaConexao, canalDeSaida } from "@/lib/conversas/canal-de-saida";
+import { numeroQueResponde, porQueEsteNumero } from "@/lib/funis/numero-que-responde";
 import { aquecerModelos } from "@/lib/conversas/modelos-whatsapp";
 import { iniciaisExibidas, nomeExibido } from "@/lib/conversas/exibicao";
 import { valeBuscarNome } from "@/lib/conversas/nome-do-historico";
@@ -498,9 +499,20 @@ function ConversasPageInner() {
   /** Etapa do funil onde esse contato está agora (procura em todos os funis, não só o principal):
    * `null` quando ele ainda não é um negócio em nenhum funil (ex.: grupo, ou lead que nunca entrou). */
   function etapaAtualDoContato(nomeContato: string): string | null {
+    return colunaAtualDoContato(nomeContato)?.titulo ?? null;
+  }
+
+  /**
+   * A ETAPA INTEIRA em que o negócio desta pessoa está — não só o título.
+   *
+   * O título bastava enquanto a etapa era só um rótulo na linha da conversa. Agora ela decide por
+   * onde a resposta sai ("no quadro de proposta é o closer que vai responder"), e pra isso é
+   * preciso o `contaCanal` dela. Ver `numeroQueResponde`.
+   */
+  function colunaAtualDoContato(nomeContato: string) {
     for (const f of funis) {
       for (const c of f.colunas) {
-        if (c.cards.some((card) => card.nome === nomeContato)) return c.titulo;
+        if (c.cards.some((card) => card.nome === nomeContato)) return c;
       }
     }
     return null;
@@ -1486,6 +1498,22 @@ function ConversasPageInner() {
    * de ordem de declaração (`ordem-de-declaracao.test.ts`) a derrubou — era o ReferenceError que
    * já derrubou a tela de Conversas duas vezes.
    */
+  /*
+   * POR ONDE A RESPOSTA DESTA CONVERSA SAI.
+   *
+   * Três fontes, nesta ordem: a escolha que a pessoa fez agora, o número da ETAPA em que o
+   * negócio está, e — sem nenhum dos dois — a conexão da própria conversa, que é o comportamento
+   * de sempre. A regra mora em `numero-que-responde.ts`, com teste; aqui só se aplica.
+   */
+  const colunaDoNegocioAberto = aberta.nome ? colunaAtualDoContato(aberta.nome) : null;
+  const saida = numeroQueResponde({
+    escolhaDaTela: numeroEscolhidoDaConversa(),
+    etapaDoNegocio: colunaDoNegocioAberto
+      ? { id: colunaDoNegocioAberto.id, contaCanal: colunaDoNegocioAberto.contaCanal }
+      : null,
+    contaCanalDaConversa: aberta.contaCanal,
+  });
+
   const canalDoNumeroEscolhido = canalDaConexao(numeroEscolhidoDaConversa());
 
   /*
@@ -2735,8 +2763,8 @@ function ConversasPageInner() {
     /* A leitura do prefixo mora em `canalDaConexao`, com teste: era a MESMA regra escrita aqui e
        no compositor, e duas cópias de uma regra de canal é como o envio e a tela passam a dizer
        coisas diferentes. */
-    const canalEscolhidoPeloNumero = canalDaConexao(numeroEscolhidoDaConversa());
-    if (canalEscolhidoPeloNumero) return canalEscolhidoPeloNumero === "whatsapp_nao_oficial";
+    const canalDaSaida = canalDaConexao(saida.origem === "conversa" ? null : saida.contaCanal);
+    if (canalDaSaida) return canalDaSaida === "whatsapp_nao_oficial";
     return conversaUsaWhatsappNaoOficial(aberta.nome);
   }
 
@@ -2820,9 +2848,10 @@ function ConversasPageInner() {
           texto,
           // Por qual número conectado esta resposta sai. Ver a rota de envio.
           conversa: aberta.nome,
-          /* Só vai quando houve escolha explícita na tela. Sem ela, o servidor usa o número que
-             recebeu a conversa, como sempre fez. */
-          ...(numeroEscolhidoDaConversa() ? { conexao: numeroEscolhidoDaConversa() } : {}),
+          /* Só vai quando a escolha NÃO é a da própria conversa — ou seja, quando a pessoa
+             escolheu um número ou quando a etapa do negócio tem o dela. Sem isso, o servidor usa
+             o número que recebeu a conversa, como sempre fez. Ver `numeroQueResponde`. */
+          ...(saida.origem !== "conversa" && saida.contaCanal ? { conexao: saida.contaCanal } : {}),
         }),
       })
         .then(async (r) => {
@@ -5605,6 +5634,31 @@ function ConversasPageInner() {
                   {/* Conversa que JÁ tem dono não pergunta mais nada: a escolha foi feita e a
                       mensagem seguinte segue por onde a anterior foi. Quem quiser trocar assim
                       mesmo abre pelo "+", que é a porta explícita. */}
+                  {/*
+                    A ETAPA ESTÁ DECIDINDO O NÚMERO — e isso precisa estar escrito.
+
+                    "No quadro de proposta é o closer: eu quero colocar o número do closer ali,
+                    que é ele que vai responder."
+
+                    Uma regra que muda por onde a mensagem sai e não aparece em lugar nenhum é a
+                    pior espécie de automação: funciona, e quando não funcionar ninguém vai saber
+                    onde olhar. A linha diz o número E o porquê, porque o número sozinho não
+                    explica — ver `porQueEsteNumero`.
+                  */}
+                  {conversaAbertaDeVerdade && saida.origem === "etapa" ? (
+                    <div className="chat-canal-escolha">
+                      <span className="chat-canal-rotulo">
+                        {traduzir("Enviando por")}:{" "}
+                        <b>
+                          {nomeDoNumeroDaConversa(nomesDosNumeros, saida.contaCanal) ??
+                            traduzir(canalDoNumero(saida.contaCanal?.split(":")[0] ?? ""))}
+                        </b>
+                      </span>
+                      <span className="chat-canal-aviso">
+                        {traduzir(porQueEsteNumero("etapa", colunaDoNegocioAberto?.titulo))}
+                      </span>
+                    </div>
+                  ) : null}
                   {/*
                     E NÃO APARECE QUANDO A ESCOLHA JÁ FOI FEITA NA FICHA DO CONTATO.
 

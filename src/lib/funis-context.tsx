@@ -82,7 +82,7 @@ type FunisContextValue = {
   salvarAparenciaDaEtapa: (
     funilId: string,
     etapaId: string,
-    mudanca: { cor?: string | null; dicas?: DicasDaEtapa },
+    mudanca: { cor?: string | null; dicas?: DicasDaEtapa; contaCanal?: string | null },
   ) => Promise<{ ok: boolean; erro?: string }>;
   /** Último erro de gravação, pra tela avisar em vez de fingir que salvou. */
   erroSincronizacao: string | null;
@@ -398,11 +398,11 @@ export function FunisProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  /** Cor e dicas de uma etapa. Mesma ideia: muda na tela, grava, e volta atrás se falhar. */
+  /** Cor, dicas e NÚMERO QUE RESPONDE de uma etapa. Muda na tela, grava, e volta atrás se falhar. */
   async function salvarAparenciaDaEtapa(
     funilId: string,
     etapaId: string,
-    mudanca: { cor?: string | null; dicas?: DicasDaEtapa },
+    mudanca: { cor?: string | null; dicas?: DicasDaEtapa; contaCanal?: string | null },
   ): Promise<{ ok: boolean; erro?: string }> {
     const antes = funis;
     setFunis((prev) =>
@@ -416,6 +416,9 @@ export function FunisProvider({ children }: { children: ReactNode }) {
                       ...c,
                       ...(mudanca.cor !== undefined ? { cor: mudanca.cor ?? undefined } : {}),
                       ...(mudanca.dicas !== undefined ? { dicas: mudanca.dicas } : {}),
+                      ...(mudanca.contaCanal !== undefined
+                        ? { contaCanal: mudanca.contaCanal ?? undefined }
+                        : {}),
                     }
                   : c,
               ),

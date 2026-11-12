@@ -24,8 +24,14 @@ export type PermissaoModulo = {
   /** Uma frase que diz o que o módulo é, pra tela não depender do nome sozinho. */
   descricao: string;
   permissoes: { id: string; label: string }[];
-  /** Quando o módulo tem "de quais?", o prefixo do escopo. Ver `ESCOPOS`. */
-  escopo?: EscopoDeModulo;
+  /**
+   * Os recortes de "de quais?" deste módulo. Ver `ESCOPOS`.
+   *
+   * Lista porque o Funil passou a ter DOIS: quais quadros e, dentro deles, quais colunas. Eram um
+   * campo só, e um campo só obrigaria a escolher entre as duas perguntas — que são as duas que ela
+   * faz.
+   */
+  escopos?: EscopoDeModulo[];
 };
 
 /**
@@ -54,6 +60,22 @@ export const ESCOPOS = {
     prefixo: "funil_id",
     titulo: "Quais funis ela enxerga",
     vazio: "Nenhum funil criado ainda.",
+  },
+  /**
+   * QUAIS ETAPAS DO FUNIL a pessoa enxerga. O valor é o id da etapa.
+   *
+   * "Eu coloquei o closer dentro do meu CRM, ele virou da equipe. Mas eu não quero que ele veja
+   * todo o processo do funil — novo, qualificado, proposta, fechado. Eu quero que ele tenha a
+   * visão apenas de proposta, porque ele vai ficar responsável por proposta."
+   *
+   * É um recorte mais fino do que o de funil, e os dois se somam: primeiro quais quadros, depois
+   * quais colunas dentro deles. Nada marcado = vê todas, que é o comportamento de hoje e o que
+   * mantém quem já existe funcionando sem ninguém abrir tela nenhuma.
+   */
+  etapasDoFunil: {
+    prefixo: "funil_etapa",
+    titulo: "Quais etapas do funil ela enxerga",
+    vazio: "Nenhuma etapa criada ainda.",
   },
 } as const satisfies Record<string, EscopoDeModulo>;
 
@@ -91,7 +113,7 @@ export const PERMISSOES_POR_MODULO: PermissaoModulo[] = [
   {
     modulo: "WhatsApp",
     descricao: "A caixa de entrada e o atendimento.",
-    escopo: ESCOPOS.numerosDeWhatsApp,
+    escopos: [ESCOPOS.numerosDeWhatsApp],
     permissoes: [
       { id: "wa_visualizar", label: "Visualizar conversas" },
       { id: "wa_responder", label: "Responder" },
@@ -113,7 +135,7 @@ export const PERMISSOES_POR_MODULO: PermissaoModulo[] = [
   {
     modulo: "Funil",
     descricao: "Os quadros de negócios.",
-    escopo: ESCOPOS.funis,
+    escopos: [ESCOPOS.funis, ESCOPOS.etapasDoFunil],
     permissoes: [
       { id: "funil_visualizar", label: "Visualizar" },
       { id: "funil_criar_negocios", label: "Criar negócios" },

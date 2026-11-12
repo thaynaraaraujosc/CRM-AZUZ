@@ -249,6 +249,8 @@ export async function PATCH(request: Request) {
     etapaId?: string;
     cor?: unknown;
     dicas?: unknown;
+    /** Qual número responde esta etapa. `null` = nenhum, e a resposta sai por onde a conversa veio. */
+    contaCanal?: unknown;
   } | null;
 
   if (corpo?.tipo === "ordem-etapas") {
@@ -304,6 +306,35 @@ export async function PATCH(request: Request) {
     if (corpo.dicas !== undefined) {
       const limpas = lerDicas(corpo.dicas);
       dados.dicas = limpas ? (limpas as Prisma.InputJsonValue) : Prisma.DbNull;
+    }
+
+    /*
+     * O NÚMERO QUE RESPONDE ESTA ETAPA, conferido contra as conexões DESTA empresa.
+     *
+     * "No quadro de proposta é o closer: eu quero colocar o número do closer ali, que é ele que
+     * vai responder."
+     *
+     * Um `contaCanal` qualquer vindo do corpo faria a etapa apontar pra uma conexão que não
+     * existe, e a resposta sairia pela integração errada — ou por nenhuma. `null` é "nenhum
+     * número próprio", que é o estado de toda etapa que existe hoje.
+     */
+    if (corpo.contaCanal !== undefined) {
+      if (corpo.contaCanal === null || corpo.contaCanal === "") {
+        dados.contaCanal = null;
+      } else if (typeof corpo.contaCanal !== "string") {
+        return NextResponse.json({ erro: "Número inválido." }, { status: 400 });
+      } else {
+        const conectados = new Set(
+          (await numerosDeWhatsApp(workspaceId)).map((n) => n.chave).filter(Boolean),
+        );
+        if (!conectados.has(corpo.contaCanal)) {
+          return NextResponse.json(
+            { erro: "Esse número não está conectado nesta conta." },
+            { status: 400 },
+          );
+        }
+        dados.contaCanal = corpo.contaCanal;
+      }
     }
 
     await prisma.funilEtapa.update({ where: { id: corpo.etapaId }, data: dados });

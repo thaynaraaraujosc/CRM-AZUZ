@@ -35661,3 +35661,108 @@ td.trafego-col-crm:first-of-type {
   color: var(--text-muted);
   white-space: nowrap;
 }
+
+/* ==========================================================================
+   O NÚMERO QUE RESPONDE CADA ETAPA, e o encaminhar do cartão
+
+   "Dentro de cada etapa, cada quadro, eu escolher qual número que vai responder aquele quadro."
+   "Ele pode ir lá nos três pontinhos e mandar para a etapa tal."
+   ========================================================================== */
+
+/* O seletor no cabeçalho da coluna: discreto por padrão, porque é configuração e não operação. Ele
+   fica ali pra ser lido de relance ("quem responde isto?") e mexido de vez em quando. */
+.kcol-numero {
+  width: 100%;
+  margin-top: 6px;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  font-family: var(--body);
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.kcol-numero:hover {
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+/*
+ * OS TRÊS PONTINHOS DO CARTÃO.
+ *
+ * Canto superior direito, e só visível no hover do cartão: ele é a saída de exceção ("mandar pra
+ * outra etapa"), não o gesto do dia a dia — que continua sendo arrastar. Permanente, ele
+ * competiria com o nome do lead em todo cartão do quadro.
+ */
+.lead-card {
+  position: relative;
+}
+
+.lead-encaminhar {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  color: var(--text-faint);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--transition-fast), background var(--transition-fast);
+}
+
+.lead-card:hover .lead-encaminhar,
+.lead-encaminhar:focus-visible {
+  opacity: 1;
+}
+
+.lead-encaminhar:hover {
+  background: var(--surface-active);
+  color: var(--ink);
+}
+
+/* No celular não existe hover: ali ele fica sempre visível, senão a função some do aparelho em que
+   arrastar entre colunas é mais difícil — que é justamente onde ela mais serve. */
+@media (hover: none) {
+  .lead-encaminhar {
+    opacity: 1;
+  }
+}
+
+.encaminhar-menu {
+  padding: var(--space-2);
+}
+
+.encaminhar-h {
+  padding: 0 var(--space-2) var(--space-1);
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  color: var(--text-muted);
+}
+
+.encaminhar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  width: 100%;
+  text-align: left;
+}
+
+.encaminhar-item .n {
+  font-size: 13px;
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
+}
+
+.encaminhar-item .s {
+  font-size: 11px;
+  color: var(--text-faint);
+}

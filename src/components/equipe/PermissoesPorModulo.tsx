@@ -92,6 +92,13 @@ export function PermissoesPorModulo({
         nota: `${traduzir(canalDoNumero(n.provedor))}${n.status === "conectado" ? "" : ` · ${traduzir("desconectado agora")}`}`,
       }));
     }
+    if (escopo.prefixo === ESCOPOS.etapasDoFunil.prefixo) {
+      /* A etapa é identificada pelo id, mas quem marca precisa ler o NOME DO FUNIL junto: numa
+         conta com três quadros, "Proposta" aparece três vezes e marcar a errada é silencioso. */
+      return funis.flatMap((f) =>
+        (f.colunas ?? []).map((c) => ({ valor: c.id, rotulo: c.titulo, nota: f.nome })),
+      );
+    }
     return funis.map((f) => ({ valor: f.id, rotulo: f.nome }));
   }
 
@@ -112,8 +119,6 @@ export function PermissoesPorModulo({
 
       {PERMISSOES_POR_MODULO.map((modulo) => {
         const todasLigadas = modulo.permissoes.every((p) => marcadas.has(p.id));
-        const itens = modulo.escopo ? itensDoEscopo(modulo.escopo) : [];
-        const recorte = modulo.escopo ? escopoPermitido(selecionadas, modulo.escopo) : null;
 
         return (
           <section className="perm-modulo" key={modulo.modulo}>
@@ -150,38 +155,44 @@ export function PermissoesPorModulo({
               ))}
             </div>
 
-            {modulo.escopo ? (
-              <div className="perm-escopo">
-                <p className="perm-escopo-t">{traduzir(modulo.escopo.titulo)}</p>
-                {itens.length === 0 ? (
-                  <p className="hint">{traduzir(modulo.escopo.vazio)}</p>
-                ) : (
-                  <>
-                    {itens.map((item) => {
-                      const id = idDeEscopo(modulo.escopo!, item.valor);
-                      return (
-                        <label className="perm-escopo-item" key={id}>
-                          <input
-                            type="checkbox"
-                            checked={marcadas.has(id)}
-                            onChange={(e) => alternar(id, e.target.checked)}
-                          />
-                          <span>
-                            {item.rotulo}
-                            {item.nota ? <em>{item.nota}</em> : null}
-                          </span>
-                        </label>
-                      );
-                    })}
-                    <p className="hint">
-                      {recorte
-                        ? traduzir("Só os marcados. O resto fica invisível pra essa pessoa.")
-                        : traduzir("Nenhum marcado: ela enxerga todos.")}
-                    </p>
-                  </>
-                )}
-              </div>
-            ) : null}
+            {/* UM BLOCO POR RECORTE. O Funil tem dois — quais quadros e, dentro deles, quais
+                colunas —, e eram perguntas diferentes disputando o mesmo campo. */}
+            {(modulo.escopos ?? []).map((escopo) => {
+              const itens = itensDoEscopo(escopo);
+              const recorte = escopoPermitido(selecionadas, escopo);
+              return (
+                <div className="perm-escopo" key={escopo.prefixo}>
+                  <p className="perm-escopo-t">{traduzir(escopo.titulo)}</p>
+                  {itens.length === 0 ? (
+                    <p className="hint">{traduzir(escopo.vazio)}</p>
+                  ) : (
+                    <>
+                      {itens.map((item) => {
+                        const id = idDeEscopo(escopo, item.valor);
+                        return (
+                          <label className="perm-escopo-item" key={id}>
+                            <input
+                              type="checkbox"
+                              checked={marcadas.has(id)}
+                              onChange={(e) => alternar(id, e.target.checked)}
+                            />
+                            <span>
+                              {item.rotulo}
+                              {item.nota ? <em>{item.nota}</em> : null}
+                            </span>
+                          </label>
+                        );
+                      })}
+                      <p className="hint">
+                        {recorte
+                          ? traduzir("Só os marcados. O resto fica invisível pra essa pessoa.")
+                          : traduzir("Nenhum marcado: ela enxerga todos.")}
+                      </p>
+                    </>
+                  )}
+                </div>
+              );
+            })}
           </section>
         );
       })}

@@ -367,6 +367,14 @@ export type ColunaFunil = {
   cards: NegocioCard[];
   /** `#RRGGBB` escolhido por quem montou o funil. Ausente = a cor automática, pela posição. */
   cor?: string;
+  /**
+   * QUAL NÚMERO RESPONDE ESTA ETAPA (`<provedor>:<identificador>`).
+   *
+   * "No quadro de proposta é o closer: eu quero colocar o número do closer ali, que é ele que vai
+   * responder." Ausente = a etapa não tem número próprio e a resposta sai por onde a conversa
+   * veio, que é o comportamento de toda etapa que existe hoje.
+   */
+  contaCanal?: string;
   /** O que fazer quando um lead chega nesta etapa, em três níveis. */
   dicas?: DicasDaEtapa;
 };

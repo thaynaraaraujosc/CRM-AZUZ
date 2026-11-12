@@ -85,6 +85,19 @@ export async function GET() {
    * Nada marcado = vê todos, que é o comportamento de sempre.
    */
   const funisPermitidos = escopoPermitido(sessao.user.permissoes, ESCOPOS.funis);
+  /*
+   * O RECORTE DE ETAPAS, mais fino que o de funis e aplicado também aqui.
+   *
+   * "Eu coloquei o closer dentro do meu CRM. Mas eu não quero que ele veja todo o processo do
+   * funil — novo, qualificado, proposta, fechado. Eu quero que ele tenha a visão apenas de
+   * proposta, porque ele vai ficar responsável por proposta."
+   *
+   * No servidor pelo mesmo motivo do recorte de funis: esconder coluna no navegador é esconder de
+   * quem olha, não de quem pede — e a coluna carrega nome de cliente, valor e telefone.
+   *
+   * Nada marcado = vê todas, que é o comportamento de hoje.
+   */
+  const etapasPermitidas = escopoPermitido(sessao.user.permissoes, ESCOPOS.etapasDoFunil);
 
   const linhas = await prisma.funil.findMany({
     where: {
@@ -97,6 +110,7 @@ export async function GET() {
     include: {
       numeros: { select: { contaCanal: true } },
       etapas: {
+        ...(etapasPermitidas ? { where: { id: { in: etapasPermitidas } } } : {}),
         orderBy: { ordem: "asc" },
         include: { cards: { where: filtroConexaoDeNegocio(provedores), orderBy: { ordem: "asc" } } },
       },
@@ -122,6 +136,8 @@ export async function GET() {
       titulo: e.titulo,
       total: e.cards.length,
       cor: e.cor ?? undefined,
+      // Qual número responde esta etapa. Ver `FunilEtapa.contaCanal`.
+      contaCanal: e.contaCanal ?? undefined,
       dicas: lerDicas(e.dicas),
       cards: e.cards.map((c) => ({
         id: c.id,

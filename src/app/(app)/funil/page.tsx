@@ -29,6 +29,7 @@ import {
   nomeDoFunil,
   numeroDoFunil,
   numerosDisponiveis,
+  numerosDoFunilNaTela,
   sufixoSugerido,
   type NumeroParaFunil,
 } from "@/lib/funis/numero-do-funil";
@@ -100,6 +101,7 @@ function FunilPageInner() {
     moverNegocio,
     criarFunilPersistido,
     criarEtapaPersistida,
+    salvarAparenciaDaEtapa,
     recarregar: recarregarFunis,
     erroSincronizacao,
     limparErroSincronizacao,
@@ -526,6 +528,33 @@ function FunilPageInner() {
 
   /** Os números que ainda podem virar funil: conectados e sem quadro próprio. */
   const numerosLivres = numerosDisponiveis(numerosDeWhats ?? [], funis);
+
+  /** Os números DESTE funil — é entre eles que cada etapa escolhe quem responde. */
+  const numerosDesteFunil = numerosDoFunilNaTela(numerosDeWhats ?? [], funilAtivo);
+
+  /*
+   * ENCAMINHAR UM NEGÓCIO PRA OUTRA ETAPA.
+   *
+   * A lista de destinos é buscada na PRIMEIRA abertura e fica — ela muda quando alguém cria uma
+   * etapa, não entre dois cliques. Buscar a cada abertura seria uma ida ao servidor pra desenhar o
+   * mesmo menu.
+   */
+  const [encaminhando, setEncaminhando] = useState<{ cardId: string; rect: DOMRect } | null>(null);
+  const [destinos, setDestinos] = useState<
+    { id: string; titulo: string; funilId: string; funilNome: string }[] | null
+  >(null);
+
+  function abrirEncaminhar(cardId: string, rect: DOMRect) {
+    setEncaminhando({ cardId, rect });
+    if (destinos) return;
+    fetch("/api/funis/etapas")
+      .then((r) => (r.ok ? r.json() : []))
+      .then(setDestinos)
+      .catch((erro) => {
+        console.error("Falha ao carregar as etapas de destino:", erro);
+        setDestinos([]);
+      });
+  }
 
   async function criarFunil() {
     const nome = nomeDoFunil(sufixoNovoFunil);
@@ -1347,6 +1376,40 @@ function FunilPageInner() {
                       </span>
                     </span>
                   </div>
+                  {/*
+                    QUAL NÚMERO RESPONDE ESTA ETAPA.
+
+                    "Dentro de cada etapa, cada quadro, eu escolher qual número que vai responder
+                    aquele quadro. Por exemplo, no quadro de proposta é o closer: eu quero colocar
+                    o número do closer ali, que é ele que vai responder."
+
+                    Mora no cabeçalho da coluna, e não numa tela de configuração à parte, porque é
+                    aqui que a pergunta nasce — olhando o quadro e decidindo de quem ele é. Só
+                    aparece quando o funil tem MAIS DE UM número: com um só não há escolha, e um
+                    seletor que não escolhe ensina a desconfiar dos que escolhem.
+                  */}
+                  {funilAtivo && numerosDesteFunil.length > 1 ? (
+                    <select
+                      className="kcol-numero"
+                      value={coluna.contaCanal ?? ""}
+                      aria-label={`Número que responde a etapa ${coluna.titulo}`}
+                      title={traduzir(
+                        "Quem responder um lead desta etapa fala por este número. Sem escolher, a resposta sai pelo número por onde a conversa veio.",
+                      )}
+                      onChange={(e) =>
+                        void salvarAparenciaDaEtapa(funilAtivo.id, coluna.id, {
+                          contaCanal: e.target.value || null,
+                        })
+                      }
+                    >
+                      <option value="">{traduzir("Responde pelo número da conversa")}</option>
+                      {numerosDesteFunil.map((n) => (
+                        <option key={n.chave} value={n.chave}>
+                          {n.nome} · {traduzir(canalDoNumero(n.provedor))}
+                        </option>
+                      ))}
+                    </select>
+                  ) : null}
                   {funilAtivo ? (
                     <Link
                       href={`/automacoes?funil=${funilAtivo.id}&etapa=${coluna.id}${automacoesEtapa.length === 0 ? "&criar=1" : ""}`}
@@ -1404,6 +1467,43 @@ function FunilPageInner() {
                         title={traduzir("Abrir a conversa deste lead")}
                         style={{ cursor: "grab" }}
                       >
+                        {/*
+                          ENCAMINHAR PRA OUTRA ETAPA, sem precisar arrastar.
+
+                          "Vamos supor que o lead dele aceitou a proposta e quer fechar: ele pode
+                          ir lá nos três pontinhos e mandar para a etapa tal. E aí ele encaminha o
+                          lead dele e vai aparecer para o outro da equipe, lá no quadro dele."
+
+                          É o escape do recorte de etapas, e sem ele o recorte vira uma cela: quem
+                          só enxerga "Proposta" não enxerga "Fechado", logo não tem pra onde
+                          arrastar — o lead avança até a etapa dela e para ali. A lista de destinos
+                          vem de `/api/funis/etapas`, que de propósito NÃO aplica o recorte de
+                          etapas (ver o comentário lá).
+
+                          `<span role="button">` e não `<button>`: o cartão inteiro já é um botão,
+                          e botão dentro de botão é HTML inválido — o navegador desmonta a árvore e
+                          o clique de fora para de funcionar.
+                        */}
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          className="lead-encaminhar"
+                          aria-label={`Encaminhar ${card.nome} para outra etapa`}
+                          title={traduzir("Encaminhar para outra etapa")}
+                          draggable={false}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            abrirEncaminhar(card.id, e.currentTarget.getBoundingClientRect());
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key !== "Enter" && e.key !== " ") return;
+                            e.preventDefault();
+                            e.stopPropagation();
+                            abrirEncaminhar(card.id, e.currentTarget.getBoundingClientRect());
+                          }}
+                        >
+                          ⋯
+                        </span>
                         <span className="lr1">
                           {/* Sem clique próprio: o nome faz o mesmo que o resto do card, que é
                               abrir a conversa. Ter um comportamento no nome e outro dois
@@ -1707,6 +1807,42 @@ function FunilPageInner() {
           aoFechar={() => setConversaAberta(null)}
         />
       ) : null}
+
+      {/* O MENU DE ENCAMINHAR. No `body`, por portal: dentro da coluna ele seria cortado pelo
+          `overflow` do quadro, que é onde os cards de baixo moram. */}
+      <FloatingDropdown
+        anchorRect={encaminhando?.rect ?? null}
+        onClose={() => setEncaminhando(null)}
+        width={260}
+        align="right"
+      >
+        <div className="encaminhar-menu">
+          <p className="encaminhar-h">{traduzir("Encaminhar para a etapa")}</p>
+          {destinos === null ? (
+            <p className="hint">{traduzir("Carregando as etapas…")}</p>
+          ) : destinos.length === 0 ? (
+            <p className="hint">{traduzir("Nenhuma outra etapa disponível.")}</p>
+          ) : (
+            destinos.map((etapa) => (
+              <button
+                type="button"
+                key={etapa.id}
+                className="dropdown-item encaminhar-item"
+                onClick={() => {
+                  const cardId = encaminhando?.cardId;
+                  setEncaminhando(null);
+                  if (cardId) void moverNegocio({ cardId, etapaId: etapa.id });
+                }}
+              >
+                <span className="n">{etapa.titulo}</span>
+                {/* O nome do funil junto: numa conta com três quadros, "Proposta" aparece três
+                    vezes, e mandar pro quadro errado é silencioso. */}
+                <span className="s">{etapa.funilNome}</span>
+              </button>
+            ))
+          )}
+        </div>
+      </FloatingDropdown>
     </>
   );
 }

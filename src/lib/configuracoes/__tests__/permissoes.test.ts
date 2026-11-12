@@ -54,7 +54,31 @@ describe("os módulos", () => {
   });
 
   it("só WhatsApp e Funil têm recorte: são os que a pessoa pediu pra separar", () => {
-    expect(PERMISSOES_POR_MODULO.filter((m) => m.escopo).map((m) => m.modulo)).toEqual(["WhatsApp", "Funil"]);
+    expect(PERMISSOES_POR_MODULO.filter((m) => m.escopos?.length).map((m) => m.modulo)).toEqual([
+      "WhatsApp",
+      "Funil",
+    ]);
+  });
+
+  it("o Funil tem DOIS recortes: quais quadros, e quais colunas dentro deles", () => {
+    /*
+     * "Eu não quero que ele veja todo o processo do funil — novo, qualificado, proposta, fechado.
+     * Eu quero que ele tenha a visão apenas de proposta." São duas perguntas diferentes, e um
+     * campo só obrigaria a escolher entre elas.
+     */
+    const funil = PERMISSOES_POR_MODULO.find((m) => m.modulo === "Funil");
+    expect(funil?.escopos?.map((e) => e.prefixo)).toEqual(["funil_id", "funil_etapa"]);
+  });
+
+  it("os prefixos de recorte não se confundem entre si", () => {
+    // `funil_id` e `funil_etapa` começam igual. Se a leitura fosse por `startsWith("funil_")`, uma
+    // etapa marcada entraria na lista de funis permitidos e abriria um quadro inteiro por engano.
+    const prefixos = Object.values(ESCOPOS).map((e) => e.prefixo);
+    for (const a of prefixos) {
+      for (const b of prefixos) {
+        if (a !== b) expect(`${a}:`.startsWith(`${b}:`)).toBe(false);
+      }
+    }
   });
 });
 

@@ -953,6 +953,21 @@ model FunilEtapa {
   titulo String
   ordem  Int
 
+  /// QUAL NÚMERO RESPONDE ESTA ETAPA (`<provedor>:<identificador>`, formato de `Conversa.contaCanal`).
+  ///
+  /// "Dentro de cada etapa, cada quadro, eu escolher qual número que vai responder aquele quadro.
+  /// Por exemplo, no quadro de proposta é o closer: eu quero colocar o número do closer ali, que é
+  /// ele que vai responder."
+  ///
+  /// É o par que faltava. O funil já podia ter vários números (`FunilNumero`), mas nada dizia qual
+  /// deles atende cada altura do processo — e é justamente aí que a operação se divide: quem
+  /// qualifica não é quem fecha. Com esta coluna, mover o card pra "Proposta" passa a dizer, sem
+  /// ninguém combinar nada, que a resposta sai pelo número do closer.
+  ///
+  /// Nulo = a etapa não tem número próprio, e a resposta sai por onde a conversa veio — que é o
+  /// comportamento de sempre, e o de toda etapa que existe hoje.
+  contaCanal String?
+
   /// A COR DA ETAPA, como `#RRGGBB`. Nula = a cor automática, pela posição.
   ///
   /// Era só automática: a primeira etapa azul, a segunda vermelha, e assim por diante. Funciona
