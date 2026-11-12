@@ -5,14 +5,11 @@ import { useEffect, useMemo, useState } from "react";
 import { Modal } from "@/components/ui";
 import { useIdioma } from "@/lib/idioma-context";
 
-type Template = {
-  id: string;
-  nome: string;
-  idioma: string;
-  categoria: string;
-  status: string;
-  componentes: unknown;
-};
+import {
+  buscarModelos,
+  modelosEmCache,
+  type ModeloWhatsApp as Template,
+} from "@/lib/conversas/modelos-whatsapp";
 
 type ComponenteTemplate = { type?: string; text?: string; format?: string };
 
@@ -55,19 +52,25 @@ export function EnviarTemplateWhatsApp({
   aoEnviar: (texto: string, wamid?: string) => void;
 }) {
   const { t: traduzir } = useIdioma();
-  const [templates, setTemplates] = useState<Template[] | null>(null);
+  /*
+   * JÁ ABRE PREENCHIDA quando a lista foi aquecida.
+   *
+   * "Na hora que eu clico em escolher o modelo, já aparece, sem essa espera." O estado nasce com o
+   * que está no cache — então, no caso normal, não há um instante sequer de "Carregando seus
+   * modelos…": a janela abre com os modelos na tela. Ver `modelos-whatsapp.ts`.
+   */
+  const [templates, setTemplates] = useState<Template[] | null>(() => modelosEmCache());
   const [erro, setErro] = useState<string | null>(null);
   const [escolhido, setEscolhido] = useState<Template | null>(null);
   const [valores, setValores] = useState<string[]>([]);
   const [enviando, setEnviando] = useState(false);
 
   useEffect(() => {
-    fetch("/api/integracoes/meta/whatsapp/templates")
-      .then(async (r) => {
-        const dados = await r.json();
-        if (!r.ok) throw new Error((dados as { erro?: string }).erro ?? "Falha ao buscar os modelos.");
-        setTemplates(dados as Template[]);
-      })
+    /* Busca mesmo com cache quente: é barato (a ida é compartilhada e o cache vale por minutos) e
+       garante que um modelo aprovado agora apareça sem ninguém recarregar a página. O que a
+       pessoa vê não espera por isto — a lista já está na tela. */
+    buscarModelos()
+      .then(setTemplates)
       .catch((e: Error) => setErro(e.message));
   }, []);
 

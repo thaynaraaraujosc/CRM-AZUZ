@@ -39,6 +39,7 @@ import {
   type NumeroConectado,
 } from "@/lib/conversas/numeros-conectados";
 import { canalDaConexao, canalDeSaida } from "@/lib/conversas/canal-de-saida";
+import { aquecerModelos } from "@/lib/conversas/modelos-whatsapp";
 import { iniciaisExibidas, nomeExibido } from "@/lib/conversas/exibicao";
 import { valeBuscarNome } from "@/lib/conversas/nome-do-historico";
 import type { PreviaDaOrigem } from "@/lib/rastreio/tag-de-origem";
@@ -1498,6 +1499,24 @@ function ConversasPageInner() {
    */
   const canalDoNumeroEscolhido = canalDaConexao(numeroEscolhidoDaConversa());
 
+  /*
+   * HÁ UMA CONVERSA DE VERDADE ABERTA?
+   *
+   * "Primeiro aparece todas as mensagens, depois some e fica só a que você colocou. Esse bug que
+   * deu ali, tira."
+   *
+   * O pisca-pisca tinha uma causa só: enquanto a lista carrega, `aberta` é o objeto VAZIO — nome
+   * em branco. Aí a conferência "o número da URL é pra ESTA conversa?" falha (o nome não bate com
+   * nada), a tela conclui que ninguém escolheu número nenhum e desenha o compositor inteiro: o
+   * seletor de número, os dois chips e as duas frases. Um instante depois a conversa chega, a
+   * conferência passa, e tudo aquilo colapsa numa linha.
+   *
+   * Nada daquilo era resposta a uma pergunta de verdade: era o CRM falando sobre uma conversa que
+   * ainda não existia. Agora os controles de canal esperam a conversa existir — e, enquanto não
+   * existe, não há o que escolher nem o que dizer.
+   */
+  const conversaAbertaDeVerdade = aberta.id !== CONVERSA_VAZIA.id && !carregandoConversas;
+
   // Grupo aberto e ainda sem lista de participantes: pergunta à Evolution agora. Ver o comentário
   // de `gruposJaConsultados`, lá em cima, pro motivo de isto existir.
   useEffect(() => {
@@ -1813,6 +1832,23 @@ function ConversasPageInner() {
 
   /** Seletor de modelo aprovado: o único caminho pra falar primeiro, ou depois das 24h. */
   const [templateAberto, setTemplateAberto] = useState(false);
+
+  /*
+   * OS MODELOS SÃO BUSCADOS ANTES DE SEREM PEDIDOS.
+   *
+   * "Quando a gente vai escolher o modelo, carregar o modelo — tem alguma forma de já deixar
+   * pronto?"
+   *
+   * Tem, e a espera nunca precisou existir: quando o clique acontece, o CRM já sabia fazia tempo
+   * que ia precisar deles — o oficial está conectado e pelo oficial o modelo é o ÚNICO jeito de
+   * falar primeiro. Buscar aqui é buscar enquanto a pessoa lê a conversa.
+   *
+   * Sem conexão oficial não busca nada: a rota responderia erro, e um erro que ninguém pediu é
+   * ruído no console de quem só usa QR Code.
+   */
+  useEffect(() => {
+    if (metaWhatsappConectado) aquecerModelos();
+  }, [metaWhatsappConectado]);
   const [respondendoMensagem, setRespondendoMensagem] = useState<{
     autor: string;
     texto: string;
@@ -5176,7 +5212,10 @@ function ConversasPageInner() {
                          "828654933601920"): número que não significa nada pra quem atende e que a
                          pessoa nem pode usar pra achar o perfil. O @ já é o nome exibido acima,
                          então aqui fica só o canal. No WhatsApp, `contato` É o telefone: aí vale. */
-                      aberta.canal === "Instagram"
+                      /* E sem telefone não sobra o telefone: com a conversa ainda carregando,
+                         `contato` é nulo e isto escrevia, com todas as letras, "WhatsApp · null"
+                         embaixo do nome. */
+                      aberta.canal === "Instagram" || !aberta.contato
                       ? aberta.canal
                       : `${aberta.canal} · ${aberta.contato}`}
                 </p>
@@ -5580,6 +5619,7 @@ function ConversasPageInner() {
                     onde a mensagem sai; quem quiser trocar ainda tem o "+".
                   */}
                   {variosNumeros &&
+                  conversaAbertaDeVerdade &&
                   aberta.canal === "WhatsApp" &&
                   (seletorDeNumeroAberto ||
                     (numeroEscolhidoDaConversa() && conversaSemDono(aberta.nome) && !canalDoNumeroEscolhido)) ? (
@@ -5627,7 +5667,10 @@ function ConversasPageInner() {
                   {/* Também quando a escolha do número foi explícita: aí a conversa pode já ter
                       dono e mesmo assim a próxima mensagem sai pelo oficial, onde a primeira
                       mensagem precisa de modelo aprovado. */}
-                  {aberta.canal === "WhatsApp" && statusWhatsappPronto && conversaSemDono(aberta.nome) ? (
+                  {conversaAbertaDeVerdade &&
+                  aberta.canal === "WhatsApp" &&
+                  statusWhatsappPronto &&
+                  conversaSemDono(aberta.nome) ? (
                     <div className="chat-canal-escolha">
                       {/*
                         A ESCOLHA DA FICHA FECHA A PERGUNTA. Escolher o número JÁ escolheu o canal
