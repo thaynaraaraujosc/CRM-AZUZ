@@ -1103,11 +1103,31 @@ function ConversasPageInner() {
     numerosConectados.filter((n) => n.status === "conectado" && n.chave),
     funis,
   );
+  /*
+   * A ABA COMEÇA NO NÚMERO QUE VEIO NA URL, quando ele veio.
+   *
+   * "Na hora que eu selecionei, ele estava lá em cima na API oficial — foi para o QR Code."
+   *
+   * Vir da ficha do contato é uma navegação de página inteira, e o filtro de aba nasce em "Todos"
+   * a cada carregamento. Sem casar com nenhuma aba, ele caía na PRIMEIRA da lista — que na conta
+   * dela é a do QR Code. Ou seja: ela escolhia o oficial e a tela abria no outro, antes mesmo de
+   * qualquer envio. A escolha estava certa por dentro; a aba contava outra história.
+   *
+   * Só vale enquanto ninguém tocou nas abas (`numeroTopFiltro` ainda em "Todos"): depois disso a
+   * escolha dela ganha, como em qualquer filtro.
+   */
+  const numeroDaUrl = searchParams.get("numero");
+  const abaInicialDaUrl =
+    numeroTopFiltro === "Todos" && numeroDaUrl && numerosParaAba.some((n) => n.chave === numeroDaUrl)
+      ? numeroDaUrl
+      : null;
+
   const numeroAtivo = !variosNumeros
     ? "Todos"
-    : numerosParaAba.some((n) => n.chave === numeroTopFiltro) || numeroTopFiltro === SEM_NUMERO
-      ? numeroTopFiltro
-      : (numerosParaAba[0]?.chave ?? "Todos");
+    : (abaInicialDaUrl ??
+      (numerosParaAba.some((n) => n.chave === numeroTopFiltro) || numeroTopFiltro === SEM_NUMERO
+        ? numeroTopFiltro
+        : (numerosParaAba[0]?.chave ?? "Todos")));
 
   /*
    * AS CONVERSAS SEM MARCA DE NÚMERO ganham aba só quando existem.
@@ -4573,9 +4593,38 @@ function ConversasPageInner() {
           destinatario={destinatarioDoEnvio(false)}
           contatoNome={aberta.nome}
           aoFechar={() => setTemplateAberto(false)}
-          aoEnviar={(texto, wamid) =>
-            adicionarMensagem({ tipo: "out", texto, hora: horaAgora(), status: "enviado", wamid })
-          }
+          aoEnviar={(texto, wamid) => {
+            /*
+             * O MODELO TAMBÉM GUARDA POR ONDE SAIU — e era o único caminho de envio que não
+             * guardava.
+             *
+             * "Eu escolhi o modelo e mandei. Só que ele mandou na conversa da API não oficial, do
+             * QR Code. E ele também não ficou lá no WhatsApp da API oficial. Só que no meu celular
+             * a mensagem chegou como se fosse a API oficial."
+             *
+             * Ela descreveu o defeito inteiro. O ENVIO estava certo — saiu pela Cloud API e chegou
+             * do número oficial. Quem errou foi o ARQUIVAMENTO: esta linha gravava a bolha sem
+             * canal nenhum. Sem canal, a leitura da conversa cai nas mensagens anteriores (as do
+             * QR Code) e conclui que a thread continua sendo de lá — então a mensagem aparece na
+             * conversa errada e a conversa não muda de aba.
+             *
+             * `CANAL_OFICIAL` sem condição e sem palpite: modelo aprovado SÓ existe na Cloud API.
+             * Se esta mensagem saiu, ela saiu pelo oficial.
+             *
+             * Os dois caminhos de texto já faziam isto desde o conserto anterior ("A MENSAGEM
+             * GUARDA POR ONDE SAIU"); o do modelo ficou de fora, e por isso o sintoma só aparecia
+             * em quem começa conversa por modelo — que é exatamente quem usa o número novo.
+             */
+            adicionarMensagem({
+              tipo: "out",
+              texto,
+              hora: horaAgora(),
+              status: "enviado",
+              wamid,
+              canal: CANAL_OFICIAL,
+            });
+            mudarCasaDaConversaSeSaiuPorOutroNumero();
+          }}
         />
       ) : null}
       {/*
