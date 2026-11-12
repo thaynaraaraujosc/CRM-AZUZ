@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Performance de venda · CRM AZUZ" };
+import { MenuInteligencia } from "@/components/inteligencia/MenuInteligencia";
 
-export default function PerformanceVendasLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
-  return children;
+export const metadata: Metadata = { title: "Performance de vendas · CRM AZUZ" };
+
+/* A casca de Inteligência comercial: o menu fixo à esquerda, a tela à direita.
+   Ver `MenuInteligencia` — ela não mexe no conteúdo desta página. */
+export default function Layout({ children }: Readonly<{ children: React.ReactNode }>) {
+  return <MenuInteligencia>{children}</MenuInteligencia>;
 }
