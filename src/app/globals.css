@@ -19409,6 +19409,103 @@ table.tbl .name-cell .r {
   background: var(--danger-soft);
 }
 
+/* --------------------------------------------------- Importar vários templates
+   Duas colunas: do lado esquerdo o que foi colado, do direito o que o CRM entendeu. Lado a lado
+   de propósito — o leitor palpita (separar botão de última frase é palpite), e palpite só é
+   corrigível se estiver à vista enquanto ainda dá pra mexer no texto. */
+.imp-corpo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-5);
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .imp-corpo {
+    grid-template-columns: 1fr;
+  }
+}
+.imp-entrada {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.imp-entrada .field {
+  padding-left: 0;
+  padding-right: 0;
+}
+.imp-textarea {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 13px;
+  line-height: 1.6;
+  resize: vertical;
+}
+.imp-opcao {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--azul-claro-linha);
+  border-radius: var(--radius-md);
+  background: var(--azul-claro-2);
+  font-size: 14px;
+  cursor: pointer;
+}
+.imp-previa {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-height: 62vh;
+  overflow-y: auto;
+}
+.imp-cartao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--azul-claro-linha);
+  border-radius: var(--radius-lg);
+  background: var(--azul-claro-2);
+}
+/* Pendente no creme do dourado: é o mesmo aviso de "este aqui não vai", na mesma cor que o
+   template rejeitado usa nas outras duas telas. */
+.imp-cartao.pendente {
+  background: var(--ouro-soft);
+  border-color: var(--ouro-linha);
+}
+.imp-cartao-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.imp-problemas {
+  margin: 0;
+  padding-left: var(--space-4);
+  font-size: 13px;
+  color: var(--danger);
+}
+.imp-resultados {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.imp-resultado {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--azul-claro-linha);
+  border-radius: var(--radius-md);
+  background: var(--azul-claro-2);
+}
+.imp-resultado.erro {
+  background: var(--danger-soft);
+  border-color: color-mix(in srgb, var(--danger) 30%, transparent);
+}
+.imp-resultado .hint {
+  margin-left: auto;
+}
+
 /* Os filtros de canal, do tamanho de um botão de verdade. */
 .tpl-filtros .pill {
   font-size: 13px;

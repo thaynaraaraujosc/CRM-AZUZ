@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { AcoesNoTopo } from "@/lib/topo-da-pagina";
 import { EditorTemplate, type TemplateSalvo } from "@/components/automacoes/EditorTemplate";
+import { ImportarTemplates } from "@/components/automacoes/ImportarTemplates";
 import { PreviaMensagem } from "@/components/automacoes/PreviaMensagem";
 import { CANAIS_TEMPLATE_OFERECIDOS, LIMITES, STATUS_LABEL, type CanalTemplate } from "@/lib/templates/regras";
 import type { CanalDisponivel } from "@/app/api/canais/route";
@@ -28,6 +29,7 @@ export default function TemplatesPage() {
   const [templates, setTemplates] = useState<TemplateSalvo[] | null>(null);
   const [canais, setCanais] = useState<CanalDisponivel[]>([]);
   const [editando, setEditando] = useState<TemplateSalvo | null | "novo">(null);
+  const [importando, setImportando] = useState(false);
   const [filtroCanal, setFiltroCanal] = useState<CanalTemplate | "todos">("todos");
   const [aviso, setAviso] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState<string | null>(null);
@@ -77,6 +79,17 @@ export default function TemplatesPage() {
   return (
     <>
       <AcoesNoTopo>
+        {/* Importar fica ao lado de criar, como alternativa — não escondido num menu. Quem chega
+            com os modelos já escritos é justamente quem não quer abrir o editor sete vezes. */}
+        <button
+          type="button"
+          className="btn ghost"
+          onClick={() => setImportando(true)}
+          disabled={!algumCanal}
+          title={!algumCanal ? traduzir("Conecte um canal em Configurações → Outras integrações") : undefined}
+        >
+          {traduzir("Importar vários")}
+        </button>
         <button
           type="button"
           className="btn primary"
@@ -155,6 +168,16 @@ export default function TemplatesPage() {
           </div>
         )}
       </div>
+
+      {importando ? (
+        <ImportarTemplates
+          aoFechar={() => setImportando(false)}
+          aoConcluir={() => {
+            setImportando(false);
+            void recarregar();
+          }}
+        />
+      ) : null}
 
       {editando ? (
         <EditorTemplate
