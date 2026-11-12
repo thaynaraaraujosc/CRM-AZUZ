@@ -38,7 +38,7 @@ import {
   precisaEscolherNumero,
   type NumeroConectado,
 } from "@/lib/conversas/numeros-conectados";
-import { canalDeSaida } from "@/lib/conversas/canal-de-saida";
+import { canalDaConexao, canalDeSaida } from "@/lib/conversas/canal-de-saida";
 import { iniciaisExibidas, nomeExibido } from "@/lib/conversas/exibicao";
 import { valeBuscarNome } from "@/lib/conversas/nome-do-historico";
 import type { PreviaDaOrigem } from "@/lib/rastreio/tag-de-origem";
@@ -1220,6 +1220,7 @@ function ConversasPageInner() {
   });
 
 
+
   // Conversa de WhatsApp sem nenhum canal conectado (nem Meta, nem QR Code) some da lista. Volta a
   // aparecer sozinha quando reconectar (não apaga nada do banco, só deixa de mostrar; ver pedido
   // explícito: ao desconectar, nem a conversa aberta no momento pode continuar visível). Com só UMA
@@ -1477,6 +1478,25 @@ function ConversasPageInner() {
     conversasDestaTela.find((c) => c.id === selectedId) ?? conversasDestaTela[0];
   const aberta =
     abertaCandidata && !conversaEscondidaPeloWhatsapp(abertaCandidata) ? abertaCandidata : CONVERSA_VAZIA;
+
+  /*
+   * O CANAL QUE A ESCOLHA DE NÚMERO JÁ DEFINIU — só pro compositor.
+   *
+   * "Se eu escolhi lá em contatos que eu quero mandar pela API oficial, não precisa aparecer pra
+   * mim essas duas mensagens aqui. São três perguntas pra me falar que eu quero mandar por aqui."
+   *
+   * A chave da conexão já diz o canal (`meta_whatsapp:` ou `whatsapp_nao_oficial:`), e o envio já
+   * respeitava isso — ver `contatoUsaWhatsappNaoOficial`. Quem não respeitava era a TELA: ela
+   * continuava mostrando a preferência (QR Code, por padrão) e perguntando de novo. Quem
+   * escolhesse o número oficial na ficha via o compositor marcado como QR Code: não era só
+   * pergunta repetida, era a tela respondendo diferente do envio.
+   *
+   * NÃO entra em `canalEfetivo`, e isso é de propósito: aquele é lido pelo filtro da LISTA, que
+   * roda antes de existir conversa aberta. Misturar os dois foi a primeira tentativa, e o teste
+   * de ordem de declaração (`ordem-de-declaracao.test.ts`) a derrubou — era o ReferenceError que
+   * já derrubou a tela de Conversas duas vezes.
+   */
+  const canalDoNumeroEscolhido = canalDaConexao(numeroEscolhidoDaConversa());
 
   // Grupo aberto e ainda sem lista de participantes: pergunta à Evolution agora. Ver o comentário
   // de `gruposJaConsultados`, lá em cima, pro motivo de isto existir.
@@ -2687,10 +2707,11 @@ function ConversasPageInner() {
      * Sem escolha, nada muda: vale o histórico, que é a regra de sempre — a conversa pertence à
      * conexão por onde ela veio.
      */
-    const escolhido = numeroEscolhidoDaConversa();
-    if (escolhido) {
-      return escolhido.startsWith("whatsapp_nao_oficial:") || escolhido.startsWith("whatsapp_baileys:");
-    }
+    /* A leitura do prefixo mora em `canalDaConexao`, com teste: era a MESMA regra escrita aqui e
+       no compositor, e duas cópias de uma regra de canal é como o envio e a tela passam a dizer
+       coisas diferentes. */
+    const canalEscolhidoPeloNumero = canalDaConexao(numeroEscolhidoDaConversa());
+    if (canalEscolhidoPeloNumero) return canalEscolhidoPeloNumero === "whatsapp_nao_oficial";
     return conversaUsaWhatsappNaoOficial(aberta.nome);
   }
 
@@ -2718,6 +2739,22 @@ function ConversasPageInner() {
    *
    * Comparando aqui, a escolha simplesmente não vale pra outra conversa. Não há janela.
    */
+  /** A conexão escolhida, inteira — pra a linha poder dizer o apelido e o canal dela. */
+  function conexaoEscolhida(): NumeroConectado | null {
+    const chave = numeroEscolhidoDaConversa();
+    return chave ? (numerosConectados.find((n) => n.chave === chave) ?? null) : null;
+  }
+
+  /** O nome que a empresa deu ao número escolhido, ou o número legível. `null` = nenhum dos dois. */
+  function nomeDoNumeroEscolhido(): string | null {
+    const n = conexaoEscolhida();
+    return n ? (n.apelido?.trim() || n.numeroLegivel || n.nome || null) : null;
+  }
+
+  function provedorDoNumeroEscolhido(): string | null {
+    return conexaoEscolhida()?.provedor ?? null;
+  }
+
   function numeroEscolhidoDaConversa(): string | null {
     if (escolhaDeNumero && escolhaDeNumero.conversa === aberta.nome) return escolhaDeNumero.chave;
     /*
@@ -5530,9 +5567,22 @@ function ConversasPageInner() {
                   {/* Conversa que JÁ tem dono não pergunta mais nada: a escolha foi feita e a
                       mensagem seguinte segue por onde a anterior foi. Quem quiser trocar assim
                       mesmo abre pelo "+", que é a porta explícita. */}
+                  {/*
+                    E NÃO APARECE QUANDO A ESCOLHA JÁ FOI FEITA NA FICHA DO CONTATO.
+
+                    "Se eu escolhi lá em contatos que eu quero mandar pela API oficial, não precisa
+                    aparecer pra mim essas duas mensagens aqui. São três perguntas pra me falar que
+                    eu quero mandar por aqui. Eu só preciso daquela pergunta lá em contato."
+
+                    Era o caso em que a linha menos servia: ela nasceu pra DIZER que a mensagem vai
+                    sair de outro número, e quem acabou de escolher o número na ficha sabe disso —
+                    foi a última coisa que fez. `canalDoNumeroEscolhido` conta, logo abaixo, por
+                    onde a mensagem sai; quem quiser trocar ainda tem o "+".
+                  */}
                   {variosNumeros &&
                   aberta.canal === "WhatsApp" &&
-                  (seletorDeNumeroAberto || (numeroEscolhidoDaConversa() && conversaSemDono(aberta.nome))) ? (
+                  (seletorDeNumeroAberto ||
+                    (numeroEscolhidoDaConversa() && conversaSemDono(aberta.nome) && !canalDoNumeroEscolhido)) ? (
                     <div className="chat-canal-escolha">
                       <label className="chat-canal-rotulo" htmlFor="numero-de-saida">
                         {traduzir("Enviar pelo número")}
@@ -5579,9 +5629,23 @@ function ConversasPageInner() {
                       mensagem precisa de modelo aprovado. */}
                   {aberta.canal === "WhatsApp" && statusWhatsappPronto && conversaSemDono(aberta.nome) ? (
                     <div className="chat-canal-escolha">
-                      {/* Os dois chips só com os DOIS ligados: com um só não há o que escolher, e
-                          um botão que não escolhe ensina a desconfiar dos que escolhem. */}
-                      {metaWhatsappConectado && naoOficialConectado ? (
+                      {/*
+                        A ESCOLHA DA FICHA FECHA A PERGUNTA. Escolher o número JÁ escolheu o canal
+                        — a chave da conexão diz qual é. O que resta é informar, numa linha, por
+                        onde a mensagem vai sair. Perguntar de novo seria pedir que ela desfizesse
+                        a própria escolha sem saber que estava desfazendo.
+                      */}
+                      {canalDoNumeroEscolhido ? (
+                        <span className="chat-canal-rotulo">
+                          {traduzir("Enviando por")}:{" "}
+                          <b>{nomeDoNumeroEscolhido() ?? traduzir(canalDoNumero(provedorDoNumeroEscolhido() ?? ""))}</b>
+                          {nomeDoNumeroEscolhido()
+                            ? ` · ${traduzir(canalDoNumero(provedorDoNumeroEscolhido() ?? ""))}`
+                            : ""}
+                        </span>
+                      ) : /* Os dois chips só com os DOIS ligados: com um só não há o que escolher, e
+                            um botão que não escolhe ensina a desconfiar dos que escolhem. */
+                      metaWhatsappConectado && naoOficialConectado ? (
                         <>
                           <span className="chat-canal-rotulo">{traduzir("Enviar por")}</span>
                           <button
@@ -5627,12 +5691,19 @@ function ConversasPageInner() {
                       */}
                       {!contatoUsaWhatsappNaoOficial() ? (
                         <>
-                          <span className="chat-canal-aviso">
-                            {traduzir("Pelo oficial, a primeira mensagem precisa ser um modelo aprovado.")}
-                          </span>
+                          {/* A frase só quando a pessoa NÃO acabou de escolher o canal. Depois de
+                              escolher "API oficial" na ficha, ela já sabe onde está: a explicação
+                              vira a terceira linha de texto pra dizer o que o botão ao lado já
+                              diz. Fica no título do botão, pra quem nunca viu isto antes. */}
+                          {!canalDoNumeroEscolhido ? (
+                            <span className="chat-canal-aviso">
+                              {traduzir("Pelo oficial, a primeira mensagem precisa ser um modelo aprovado.")}
+                            </span>
+                          ) : null}
                           <button
                             type="button"
                             className="btn primary pequeno chat-canal-modelo"
+                            title={traduzir("Pelo oficial, a primeira mensagem precisa ser um modelo aprovado.")}
                             onClick={() => setTemplateAberto(true)}
                           >
                             {traduzir("Escolher modelo")}

@@ -38,3 +38,32 @@ export function canalDeSaida(
 export function primeiraMensagemPrecisaDeModelo(canal: CanalDeSaida): boolean {
   return canal === "whatsapp_oficial";
 }
+
+/**
+ * POR QUAL CANAL ESTA CONEXÃO FALA — derivado da conexão, não perguntado de novo.
+ *
+ * "Se eu escolhi lá em contatos que eu quero mandar mensagem pela API oficial, não precisa
+ * aparecer pra mim essas duas mensagens aqui. Tá redundante, são três perguntas pra me falar que
+ * eu quero mandar por aqui."
+ *
+ * Ela está certa, e havia um defeito escondido na redundância: escolher o NÚMERO na ficha do
+ * contato nunca definia o CANAL. A `chave` da conexão é `meta_whatsapp:<id>` ou
+ * `whatsapp_nao_oficial:<numero>` — ou seja, o canal já está decidido no instante em que o número
+ * é escolhido. Mesmo assim o compositor continuava com a preferência dele (QR Code, por padrão) e
+ * perguntava outra vez. Quem escolhia o número oficial na ficha podia cair num compositor marcado
+ * como QR Code: não era só uma pergunta repetida, era a tela respondendo diferente de si mesma.
+ *
+ * `null` quando não há conexão escolhida — aí vale `canalDeSaida`, a regra de sempre.
+ */
+export function canalDaConexao(chave: string | null | undefined): CanalDeSaida | null {
+  if (!chave) return null;
+  if (chave.startsWith("meta_whatsapp")) return "whatsapp_oficial";
+  if (chave.startsWith("whatsapp_nao_oficial")) return "whatsapp_nao_oficial";
+  /* `whatsapp_baileys` é o nome ANTIGO desta mesma conexão, e ele ainda está gravado em mensagem
+     de automação. Lido como "não é QR Code", ele mandaria pelo oficial uma conversa que corre pelo
+     aparelho — e pelo oficial, sem modelo aprovado, a Meta recusa. */
+  if (chave.startsWith("whatsapp_baileys")) return "whatsapp_nao_oficial";
+  // Conexão de um provedor que ainda não existia quando isto foi escrito: melhor não afirmar
+  // canal nenhum do que afirmar o errado — quem decide volta a ser `canalDeSaida`.
+  return null;
+}

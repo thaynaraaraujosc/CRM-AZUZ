@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { canalDeSaida, primeiraMensagemPrecisaDeModelo } from "../canal-de-saida";
+import { canalDaConexao, canalDeSaida, primeiraMensagemPrecisaDeModelo } from "../canal-de-saida";
 
 /**
  * "NÃO CONSEGUI CONVERSAR COM NINGUÉM PELA API OFICIAL."
@@ -54,5 +54,34 @@ describe("primeiraMensagemPrecisaDeModelo", () => {
   /* O QR Code é o mesmo aplicativo de sempre: não tem janela de 24h nem modelo no caminho. */
   it("o QR Code não exige", () => {
     expect(primeiraMensagemPrecisaDeModelo("whatsapp_nao_oficial")).toBe(false);
+  });
+});
+
+describe("canalDaConexao", () => {
+  /*
+   * O defeito que isto tranca: escolher o número na ficha do contato definia o número e NÃO o
+   * canal. Quem escolhia a conexão oficial caía num compositor que ainda se achava no QR Code —
+   * e o QR Code deixa escrever texto livre, que pelo oficial a Meta recusa.
+   */
+  it("a chave da conexão já diz o canal: não precisa perguntar de novo", () => {
+    expect(canalDaConexao("meta_whatsapp:123456789")).toBe("whatsapp_oficial");
+    expect(canalDaConexao("whatsapp_nao_oficial:5562994361377")).toBe("whatsapp_nao_oficial");
+  });
+
+  it("o nome antigo da conexão não oficial continua valendo", () => {
+    // `whatsapp_baileys` ainda está gravado em mensagem de automação. Lido como "não é QR Code",
+    // mandaria pelo oficial uma conversa que corre pelo aparelho — e lá, sem modelo aprovado, a
+    // Meta recusa.
+    expect(canalDaConexao("whatsapp_baileys:5562994361377")).toBe("whatsapp_nao_oficial");
+  });
+
+  it("sem conexão escolhida, quem decide continua sendo `canalDeSaida`", () => {
+    expect(canalDaConexao(null)).toBeNull();
+    expect(canalDaConexao(undefined)).toBeNull();
+    expect(canalDaConexao("")).toBeNull();
+  });
+
+  it("provedor desconhecido não vira palpite: afirmar o canal errado é pior do que não afirmar", () => {
+    expect(canalDaConexao("telegram:999")).toBeNull();
   });
 });
