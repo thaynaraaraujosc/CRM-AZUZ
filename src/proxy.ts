@@ -6,7 +6,7 @@ import { ehRotaPublica } from "@/lib/rotas-publicas";
 import { decidirAcesso } from "@/lib/assinatura/acesso";
 import { statusDaAssinatura } from "@/lib/assinatura/status-cache";
 import { ROTA_INICIAL, ROTA_SEM_PERMISSAO, primeiraRotaPermitida } from "@/lib/rota-inicial";
-import { permissaoDoEndereco } from "@/lib/permissao-da-rota";
+import { permissaoDoEndereco, permissaoFina } from "@/lib/permissao-da-rota";
 
 
 export default async function proxy(request: NextRequest) {
@@ -82,6 +82,28 @@ export default async function proxy(request: NextRequest) {
   if (!sessao.user.superAdmin && sessao.user.papelTipo !== "admin") {
     const rotaBase = "/" + pathname.split("/")[1];
     const permissaoNecessaria = permissaoDoEndereco(pathname);
+
+    /*
+     * A PERMISSÃO FINA, que depende do MÉTODO.
+     *
+     * Ver o módulo e poder mexer nele são duas perguntas. Quem tem só `wa_visualizar` continua
+     * abrindo a caixa de entrada e lendo tudo; o POST de enviar mensagem é que passa a pedir
+     * `wa_responder`. Ver `permissao-da-rota.ts`.
+     *
+     * Checada ANTES da do módulo porque é mais específica, e porque o 403 dela diz outra coisa:
+     * "você entra aqui, mas não faz isso".
+     */
+    const acaoNecessaria = permissaoFina(pathname, request.method);
+    if (acaoNecessaria && !sessao.user.permissoes.includes(acaoNecessaria)) {
+      if (pathname.startsWith("/api")) {
+        return NextResponse.json(
+          { erro: "Você não tem permissão para esta ação." },
+          { status: 403 },
+        );
+      }
+      return NextResponse.redirect(new URL(ROTA_SEM_PERMISSAO, request.url));
+    }
+
     if (permissaoNecessaria && !sessao.user.permissoes.includes(permissaoNecessaria)) {
       if (pathname.startsWith("/api")) {
         return NextResponse.json(

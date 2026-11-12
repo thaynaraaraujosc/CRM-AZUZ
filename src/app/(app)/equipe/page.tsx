@@ -6,14 +6,11 @@ import { useState } from "react";
 import { useContatos } from "@/lib/contatos-context";
 import { useEquipe } from "@/lib/equipe-context";
 import { IconClose } from "@/components/icons";
-import { PERMISSOES_POR_MODULO } from "@/lib/configuracoes/permissoes";
+import { PermissoesPorModulo } from "@/components/equipe/PermissoesPorModulo";
 import { Toggle, Topbar } from "@/components/ui";
 import { ehVazio } from "@/lib/vazio";
 import { useIdioma } from "@/lib/idioma-context";
 
-const LABEL_PERMISSAO: Record<string, string> = Object.fromEntries(
-  PERMISSOES_POR_MODULO.flatMap((grupo) => grupo.permissoes.map((p) => [p.id, `${grupo.modulo} · ${p.label}`])),
-);
 
 function classePapel(papel: string) {
   const slug = papel.toLowerCase().replace(/[^a-z]+/g, "-");
@@ -36,6 +33,31 @@ export default function EquipePage() {
   const [reenviando, setReenviando] = useState(false);
 
   const membro = equipe.find((m) => m.nome === selecionado) ?? null;
+
+  /*
+   * O RASCUNHO DAS PERMISSÕES, pra poder mexer antes de gravar.
+   *
+   * Reiniciado quando OUTRA pessoa é aberta, e por `key` no estado em vez de efeito: marcar e
+   * desmarcar caixinha é edição em andamento, e um efeito que observa `membro` jogaria fora o que
+   * está sendo editado a cada vez que a lista de equipe se atualiza sozinha (ela recarrega).
+   */
+  const [rascunho, setRascunho] = useState<{ de: string | null; permissoes: string[] }>({
+    de: null,
+    permissoes: [],
+  });
+  const [salvandoPermissoes, setSalvandoPermissoes] = useState(false);
+  if (membro && rascunho.de !== membro.id) {
+    setRascunho({ de: membro.id, permissoes: membro.permissoes });
+  }
+  const rascunhoPermissoes = rascunho.de === membro?.id ? rascunho.permissoes : (membro?.permissoes ?? []);
+  function setRascunhoPermissoes(novas: string[]) {
+    if (membro) setRascunho({ de: membro.id, permissoes: novas });
+  }
+  /* Comparação por conjunto: a ordem em que as caixinhas foram marcadas não é mudança. */
+  const permissoesSujas =
+    membro !== null &&
+    (rascunhoPermissoes.length !== membro.permissoes.length ||
+      rascunhoPermissoes.some((p) => !membro.permissoes.includes(p)));
   const leadsDoMembro = membro
     ? contatos.filter((c) => c.responsavel === membro.nome)
     : [];
@@ -359,24 +381,47 @@ export default function EquipePage() {
                   )}
                 </div>
 
-                <div className="panel-h divided">
-                  <h4>{traduzir("O que ela pode ver")}</h4>
-                </div>
-                {membro.permissoes.length === 0 ? (
-                  <p className="hint">
-                    Nenhuma permissão de CRM ligada a esse papel. {membro.enxerga.toLowerCase()}.
-                  </p>
-                ) : (
-                  membro.permissoes.map((permissao) => (
-                    <div className="stat-row" key={permissao}>
-                      <span className="sl">{LABEL_PERMISSAO[permissao] ?? permissao}</span>
-                    </div>
-                  ))
-                )}
               </div>
 
               <div>
+                {/*
+                  AS PERMISSÕES AGORA SÃO EDITÁVEIS, E FICAM DESTE LADO.
+
+                  "Preciso ter a opção de alterar as permissões concedidas. Pode ficar do lado
+                  direito mesmo, do jeito que é. Não precisa vir aqui pra baixo, porque ficou muito
+                  feio."
+
+                  Eram uma LISTA SÓ DE LEITURA empilhada embaixo dos dados de acesso: quarenta e
+                  poucas linhas de uma coluna só, e nenhum jeito de mudar nada. Pra tirar um acesso
+                  concedido por engano só havia um caminho — excluir a pessoa e convidar de novo,
+                  perdendo o histórico dela.
+
+                  É o MESMO componente da tela de convite (`PermissoesPorModulo`), e isso importa:
+                  conceder e revisar passam a mostrar exatamente a mesma coisa, com os mesmos
+                  módulos e os mesmos recortes. Duas telas desenhadas em separado para a mesma
+                  decisão é como se chega numa que diz uma coisa e noutra que faz outra.
+                */}
                 <div className="panel-h">
+                  <h4>{traduzir("O que ela pode ver e fazer")}</h4>
+                  {permissoesSujas ? (
+                    <button
+                      type="button"
+                      className="btn primary"
+                      disabled={salvandoPermissoes}
+                      onClick={async () => {
+                        setSalvandoPermissoes(true);
+                        editarMembro(membro.id, { permissoes: rascunhoPermissoes });
+                        setSalvandoPermissoes(false);
+                      }}
+                    >
+                      {salvandoPermissoes ? traduzir("Salvando…") : traduzir("Salvar permissões")}
+                    </button>
+                  ) : null}
+                </div>
+
+                <PermissoesPorModulo selecionadas={rascunhoPermissoes} onChange={setRascunhoPermissoes} />
+
+                <div className="panel-h divided">
                   <h4>{traduzir("Leads atribuídos")}</h4>
                 </div>
                 {leadsDoMembro.length === 0 ? (
