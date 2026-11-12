@@ -15,6 +15,8 @@ export type LinhaPorCampanha = {
   esperaMediana: number | null;
   /** Leads dela que escreveram e ainda não foram respondidos. */
   semResposta: number;
+  /** Leads dela que chegaram preenchendo um formulário (instantâneo da Meta ou do CRM). */
+  formularios: number;
 };
 
 /**

@@ -74,24 +74,41 @@ export async function GET() {
      * campanha, uma conta com vinte campanhas vira vinte idas à Graph só pra desenhar vinte
      * quadradinhos — e a tela passa a demorar em proporção ao tamanho da conta de quem a usa.
      *
-     * A miniatura é a do PRIMEIRO anúncio que a campanha devolver. Campanha tem vários anúncios e
-     * escolher "o principal" exigiria gasto por anúncio, que é mais uma consulta. Na lista, o
-     * quadradinho responde "qual é essa campanha?" — e pra isso qualquer peça dela serve.
+     * TODAS AS PEÇAS, e não só a primeira. "Eu tenho alguns conjuntos lá, cada conjunto tem 3
+     * criativos, aí aqui só tá mostrando o primeiro. Tem como eu passar o mouse por cima e ele
+     * mostrar as miniaturas de todos que tem?"
+     *
+     * Tem, e sem custo nenhum: esta chamada JÁ devolvia todos os anúncios da conta — o código é
+     * que jogava fora tudo menos o primeiro de cada campanha. Agora guarda a lista, e a tela
+     * mostra a primeira na linha e as demais ao passar o mouse.
+     *
+     * O TETO DE 12 POR CAMPANHA é pra não transformar um painel de hover numa galeria: campanha
+     * com cinquenta anúncios faria a tela baixar cinquenta imagens pra mostrar uma parede de
+     * quadradinhos que ninguém lê. Doze cabem no painel e já respondem "quais peças estão
+     * rodando aqui".
      *
      * FALHA SOZINHA, sem derrubar a tela. É enfeite com função, não dado: se a Graph negar este
      * pedido (acontece quando o acesso tem `ads_read` mas não `ads_management`), a tabela aparece
      * inteira, só sem as fotos. Deixar o erro subir trocaria a tela toda por uma mensagem.
      */
-    const miniaturas = new Map<string, string>();
+    const TETO_DE_CRIATIVOS = 12;
+    const criativosPorCampanha = new Map<string, { url: string; nome: string }[]>();
     try {
       const anuncios = await graphGet<{
-        data: { campaign_id: string; creative?: { thumbnail_url?: string } }[];
+        data: { campaign_id: string; name?: string; creative?: { thumbnail_url?: string } }[];
       }>(
-        `/${adAccountId}/ads?fields=campaign_id,creative{thumbnail_url}&limit=200&access_token=${accessToken}`,
+        `/${adAccountId}/ads?fields=campaign_id,name,creative{thumbnail_url}&limit=300&access_token=${accessToken}`,
       );
       for (const anuncio of anuncios.data ?? []) {
         const url = anuncio.creative?.thumbnail_url;
-        if (url && !miniaturas.has(anuncio.campaign_id)) miniaturas.set(anuncio.campaign_id, url);
+        if (!url) continue;
+        const lista = criativosPorCampanha.get(anuncio.campaign_id) ?? [];
+        if (lista.length >= TETO_DE_CRIATIVOS) continue;
+        // A mesma peça aparece em mais de um anúncio quando o conjunto foi duplicado. Repetir o
+        // quadradinho faria parecer que há mais criativo do que existe.
+        if (lista.some((c) => c.url === url)) continue;
+        lista.push({ url, nome: anuncio.name ?? "" });
+        criativosPorCampanha.set(anuncio.campaign_id, lista);
       }
     } catch {
       // Sem miniatura. A tabela não depende dela.
@@ -112,7 +129,7 @@ export async function GET() {
           vendas,
           roas,
           pausada: c.status !== "ACTIVE",
-          miniatura: miniaturas.get(c.id) ?? null,
+          criativos: criativosPorCampanha.get(c.id) ?? [],
           /* O estado CRU da Meta, e não só "pausada sim/não". `WITH_ISSUES` (rejeitada ou sem
              forma de pagamento) e `IN_PROCESS` (em análise) são os dois casos em que a campanha
              existe, aparece na lista e NÃO ENTREGA — e, sem o rótulo, ler "pausada" ali seria
@@ -149,7 +166,7 @@ export async function GET() {
       barra: Math.round((i.spend / maiorSpend) * 100),
       vendas: i.vendas,
       pausada: i.pausada,
-      miniatura: i.miniatura,
+      criativos: i.criativos,
       situacao: i.situacao,
     }));
 

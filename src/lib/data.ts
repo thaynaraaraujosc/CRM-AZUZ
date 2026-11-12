@@ -1335,8 +1335,11 @@ export type Campanha = {
   /** Só vêm da rota real do Meta Ads; o mock não tem esses campos. */
   vendas?: number;
   pausada?: boolean;
-  /** A foto do criativo do primeiro anúncio da campanha. `null` quando a Graph não deixou ler. */
-  miniatura?: string | null;
+  /**
+   * As peças que estão rodando nesta campanha, até doze. A primeira aparece na linha da tabela;
+   * as demais, ao passar o mouse nela. Lista vazia quando a Graph não deixou ler os criativos.
+   */
+  criativos?: { url: string; nome: string }[];
   /**
    * O estado cru da Meta: ACTIVE, PAUSED, IN_PROCESS (em análise), WITH_ISSUES (rejeitada ou sem
    * forma de pagamento válida). Guardado além de `pausada` porque "não está entregando" tem causas

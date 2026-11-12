@@ -164,17 +164,35 @@ export type EtapaFunilVisual = {
   href?: string;
 };
 
-/** Funil vertical com quantidade, percentual em relação à etapa anterior e perda entre etapas. */
+/**
+ * Funil vertical: quantidade por etapa e quanto dela sobrou da etapa anterior.
+ *
+ * DUAS LINHAS POR ETAPA, NÃO TRÊS. "Essa parte do funil tá tomando muito espaço. Olha a distância
+ * de uma linha para outra, não tem necessidade disso."
+ *
+ * Cada etapa gastava três linhas: rótulo e número em cima, a barra, e embaixo uma frase solta com
+ * a retenção. Seis etapas viravam uma tela inteira pra mostrar seis números. A retenção subiu pra
+ * linha do rótulo, que é onde ela se lê junto do que descreve, e a etapa passou a caber em duas.
+ *
+ * E A FRASE FICOU ESPECÍFICA. Era "100% da etapa anterior" — e era isso mesmo que estava escrito
+ * seis vezes seguidas na conta dela, porque TODAS as etapas estavam zeradas e `0/0` virava 100%.
+ * Dizer "100% da etapa anterior" sobre nada é a pior combinação possível: parece um resultado
+ * ótimo. Agora a etapa anterior é chamada pelo nome ("75% de Novo"), e quando não há ninguém na
+ * anterior não há retenção nenhuma pra mostrar — a frase some em vez de inventar 100%.
+ */
 export function FunnelSteps({ etapas, onClickEtapa }: { etapas: EtapaFunilVisual[]; onClickEtapa?: (chave: string) => void }) {
   const maior = Math.max(1, ...etapas.map((e) => e.quantidade));
   return (
     <div className="funnel-steps">
       {etapas.map((e, i) => {
-        const anterior = i > 0 ? etapas[i - 1].quantidade : e.quantidade;
-        const percentualAnterior = anterior > 0 ? Math.round((e.quantidade / anterior) * 100) : 100;
-        const perda = i > 0 ? Math.max(0, anterior - e.quantidade) : 0;
+        const etapaAnterior = i > 0 ? etapas[i - 1] : null;
+        const anterior = etapaAnterior?.quantidade ?? e.quantidade;
+        const percentualAnterior = anterior > 0 ? Math.round((e.quantidade / anterior) * 100) : 0;
+        const perda = etapaAnterior ? Math.max(0, anterior - e.quantidade) : 0;
         const largura = Math.max(8, (e.quantidade / maior) * 100);
         const Wrapper: "button" | "div" = onClickEtapa ? "button" : "div";
+        // Sem ninguém na etapa anterior não há o que reter: a retenção some em vez de virar 100%.
+        const mostrarRetencao = etapaAnterior !== null && anterior > 0;
         return (
           <div className="funnel-step" key={e.chave}>
             <Wrapper
@@ -185,6 +203,19 @@ export function FunnelSteps({ etapas, onClickEtapa }: { etapas: EtapaFunilVisual
             >
               <div className="funnel-step-top">
                 <span className="funnel-step-label">{e.label}</span>
+                {mostrarRetencao && etapaAnterior ? (
+                  <span
+                    className="funnel-step-retencao"
+                    data-retencao={percentualAnterior >= 70 ? "boa" : percentualAnterior >= 40 ? "atencao" : "critica"}
+                    /* A frase inteira no título: na linha fica o resumo, aqui fica a conta. */
+                    title={`${e.quantidade} dos ${anterior} que estavam em "${etapaAnterior.label}" chegaram a "${e.label}"${
+                      perda > 0 ? `; ${perda} não avançaram` : ""
+                    }`}
+                  >
+                    {percentualAnterior}% de {etapaAnterior.label}
+                    {perda > 0 ? ` · −${perda}` : ""}
+                  </span>
+                ) : null}
                 <span className="funnel-step-qtd">
                   {e.quantidade}
                   {e.valorLabel ? ` · ${e.valorLabel}` : ""}
@@ -205,12 +236,6 @@ export function FunnelSteps({ etapas, onClickEtapa }: { etapas: EtapaFunilVisual
                 />
               </div>
             </Wrapper>
-            {i > 0 ? (
-              <p className="funnel-step-perda">
-                {percentualAnterior}% da etapa anterior
-                {perda > 0 ? ` · perda de ${perda}` : ""}
-              </p>
-            ) : null}
           </div>
         );
       })}
@@ -332,7 +357,10 @@ export function ChartCard({ title, action, children }: { title: string; action?:
         <h4>{title}</h4>
         {action}
       </div>
-      <div style={{ padding: 17 }}>{children}</div>
+      {/* A padding saiu do `style` inline pra uma classe: inline não dá pra ajustar por tela, e
+          as telas de Inteligência comercial precisam de outro recuo depois que o contorno dos
+          blocos saiu. Mesmos 17px em todo lugar que não ajustar. */}
+      <div className="chart-card-corpo">{children}</div>
     </div>
   );
 }

@@ -13,6 +13,7 @@ import { useFunis } from "@/lib/funis-context";
 import { useIntegracaoMeta } from "@/components/configuracoes/useIntegracaoMeta";
 import { useGoogleAds } from "@/components/trafego/useGoogleAds";
 import { SeletorDeContaDeAnuncios } from "@/components/trafego/SeletorDeContaDeAnuncios";
+import { CriativosDaCampanha } from "@/components/trafego/CriativosDaCampanha";
 import { acharNoCrm, normalizarNome, usePorCampanha } from "@/components/trafego/usePorCampanha";
 import { Ajuda, FilterBar, KpiCard, PERIODO_PADRAO, type PeriodoValor } from "@/components/ui";
 import { ChartCard, FunnelSteps } from "@/components/charts";
@@ -259,6 +260,7 @@ export default function TrafegoPage() {
       // A espera vem do CRM, não da plataforma: só o CRM sabe quando alguém respondeu.
       const esperaMediana = crm?.esperaMediana ?? null;
       const semResposta = crm?.semResposta ?? 0;
+      const formularios = crm?.formularios ?? 0;
       return {
         ...c,
         leads,
@@ -276,6 +278,7 @@ export default function TrafegoPage() {
         cplCrm: leadsCrm > 0 ? investido / leadsCrm : 0,
         esperaMediana,
         semResposta,
+        formularios,
         semPlataforma,
       };
     });
@@ -705,44 +708,39 @@ export default function TrafegoPage() {
         </div>
         )}
 
-        <ChartCard title={traduzir("Funil de tráfego")}>
+        <ChartCard
+          title={traduzir("Funil de tráfego")}
+          action={
+            /* "Tira aquela frase que tem lá no final... coloca isso em outro lugar." Mesmo
+               destino das outras: o balão de "?", que é onde o CRM guarda explicação. */
+            <Ajuda
+              texto={traduzir(
+                "As barras contam negócios cuja origem está marcada como anúncio pago (Meta Ads, Google Ads, TikTok), somando todos os funis da conta — cada funil é de um número de WhatsApp, e esta tela junta todos, porque anúncio não é comprado por número. Etapas com o mesmo nome em funis diferentes somam na mesma barra, e o valor na última etapa é a receita só desses negócios. Quem entrou por indicação, formulário ou mensagem direta aparece no Funil, mas não aqui: não custou mídia. Dá pra marcar a origem à mão na ficha do contato, em “De onde veio” — inclusive de quem viu o anúncio e mandou mensagem por fora.",
+              )}
+            />
+          }
+        >
           {funilSteps.length === 0 ? (
             <p className="hint trafego-aviso">{traduzir("Crie um funil com etapas pra ver essa visão aqui.")}</p>
           ) : (
             <>
               <FunnelSteps etapas={funilSteps} />
               {/*
-                A TELA DIZ O QUE ESTÁ CONTANDO.
+                A EXPLICAÇÃO FOI PRO "?", e aqui fica só o que MUDA.
 
-                "Por exemplo, o novo, dois novos. Aonde foi esses dois novos? Da onde que ele está
-                pegando essas informações?"
-
-                Gráfico que não diz de onde tirou o número obriga quem olha a confiar ou a
-                desconfiar, e nenhuma das duas é trabalho. Uma linha embaixo resolve: o que entra,
-                de onde vem, e o que não entra.
+                Eram cinco linhas de texto embaixo das barras, repetindo a cada visita o que se
+                lê uma vez na vida. O que não dá pra tirar é o aviso de funil vazio: zero em todas
+                as barras tem duas causas muito diferentes — ninguém veio de anúncio, ou ninguém
+                MARCOU de onde veio —, e sem essa frase as duas parecem a mesma coisa.
               */}
-              <p className="hint trafego-aviso">
-                {totalPagos === 0 ? (
-                  <>
-                    {traduzir("Nenhum negócio com origem de anúncio ainda.")}{" "}
-                    {traduzir(
-                      "As barras contam negócios cuja origem está marcada como anúncio pago; os que vieram por indicação, formulário do site ou mensagem direta aparecem no Funil, mas não aqui.",
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <strong>
-                      {totalPagos} {totalPagos === 1 ? traduzir("negócio") : traduzir("negócios")}
-                    </strong>{" "}
-                    {traduzir("com origem em")}{" "}
-                    <strong>{origemFiltrada ?? traduzir("anúncio pago (Meta Ads, Google Ads, TikTok)")}</strong>
-                    {traduzir(", somando todos os funis da conta. Etapas com o mesmo nome em funis diferentes somam na mesma barra, e o valor na última etapa é a receita só desses negócios.")}{" "}
-                    {traduzir(
-                      "Negócio que entrou por indicação, formulário ou mensagem direta não conta aqui — ele não custou mídia. E soma os seus números de WhatsApp: cada funil é de um número, e esta tela junta todos, porque anúncio não é comprado por número.",
-                    )}
-                  </>
-                )}
-              </p>
+              {totalPagos === 0 ? (
+                <p className="hint trafego-aviso">
+                  {traduzir("Nenhum negócio marcado como vindo de anúncio ainda.")}{" "}
+                  {traduzir(
+                    "Se você já tem leads de campanha, marque a origem deles na ficha do contato, em “De onde veio” — é de lá que estas barras saem.",
+                  )}
+                </p>
+              ) : null}
             </>
           )}
         </ChartCard>
@@ -805,6 +803,11 @@ export default function TrafegoPage() {
                   <th style={{ cursor: "pointer" }} onClick={() => alternarOrdenacao("roas")}>
                     ROAS {ordenarPor === "roas" ? (ordemDesc ? "↓" : "↑") : ""}
                   </th>
+                  {/* FORMULÁRIOS PREENCHIDOS. "Quantas pessoas preencheram o formulário naquela
+                      campanha, e o custo por formulário preenchido." Conta o instantâneo da Meta
+                      e os formulários do CRM juntos: a pergunta de quem anuncia é quanta gente se
+                      deu ao trabalho de preencher, não onde o formulário estava hospedado. */}
+                  <th className="trafego-col-crm">{traduzir("Formulários")}</th>
                   <th className="trafego-col-crm">{traduzir("Leads no CRM")}</th>
                   <th className="trafego-col-crm">{traduzir("Vendas no CRM")}</th>
                   <th className="trafego-col-crm">{traduzir("ROAS real")}</th>
@@ -824,7 +827,7 @@ export default function TrafegoPage() {
               <tbody>
                 {linhasCampanha.length === 0 ? (
                   <tr>
-                    <td colSpan={13}>
+                    <td colSpan={14}>
                       {/*
                         "Esse desempenho por campanha. Não tá mostrando nada aqui por quê?"
 
@@ -858,23 +861,11 @@ export default function TrafegoPage() {
                     </td>
                     <td className="trafego-col-foto">
                       {/*
-                        A MINIATURA DO CRIATIVO. "Se tem como colocar a miniatura ali da campanha,
-                        se dá para fazer, então faz."
-
-                        Nome de campanha é código interno — "[11/11] - [Leads] - [Formulário]" não
-                        diz qual peça está rodando. A foto diz, e é o jeito de reconhecer a
-                        campanha sem abrir o Gerenciador.
-
-                        `<img>` cru e não `next/image`: a URL é de um domínio da Meta que muda e
-                        expira, e o otimizador do Next exigiria cadastrar o domínio e ficaria
-                        quebrando quando ele mudasse.
+                        AS PEÇAS DA CAMPANHA. Nome de campanha é código interno —
+                        "[11/11] - [Leads] - [Formulário]" não diz qual peça está rodando. A foto
+                        diz, e o painel de hover mostra todas. Ver `CriativosDaCampanha`.
                       */}
-                      {c.miniatura ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img className="trafego-foto" src={c.miniatura} alt="" loading="lazy" />
-                      ) : (
-                        <span className="trafego-foto trafego-foto-vazia" aria-hidden="true" />
-                      )}
+                      <CriativosDaCampanha criativos={c.criativos ?? []} campanha={c.nome} />
                     </td>
                     <td>{rotuloPlataforma(c.plataforma)}</td>
                     <td className="trafego-col-nome">
@@ -901,6 +892,22 @@ export default function TrafegoPage() {
                     <td>{c.semPlataforma ? "—" : c.vendas}</td>
                     <td>{c.semPlataforma ? "—" : formatarMoeda(c.cpl)}</td>
                     <td>{c.semPlataforma ? "—" : c.roas}</td>
+                    <td className="trafego-col-crm">
+                      {c.formularios > 0 ? (
+                        <>
+                          {c.formularios}
+                          {/* Custo por formulário só existe com os dois lados: o gasto é da
+                              plataforma, a contagem é daqui. Sem gasto, mostra só a contagem. */}
+                          {!c.semPlataforma && c.investido > 0 ? (
+                            <span className="trafego-cpl-crm">
+                              {formatarMoeda(c.investido / c.formularios)}/form
+                            </span>
+                          ) : null}
+                        </>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
                     <td className="trafego-col-crm">
                       {c.leadsCrm}
                       {c.leadsCrm > 0 && !c.semPlataforma ? (

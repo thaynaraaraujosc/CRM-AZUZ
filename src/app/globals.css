@@ -1796,6 +1796,13 @@ table {
   padding-bottom: 4px;
 }
 
+/* O corpo do `ChartCard`. Era `style={{ padding: 17 }}` inline — mesmo valor, agora numa classe,
+   porque inline não dá pra ajustar por tela e as telas de Inteligência comercial precisam de
+   outro recuo depois que o contorno dos blocos saiu. */
+.chart-card-corpo {
+  padding: 17px;
+}
+
 /* Multi-tenancy Fase 1: telas de /login e /cadastro, fora do shell (sidebar/header) do app.
    Reestruturação de design: visual futurista fixo (gradientes radiais + grade), igual à landing
    page pública (`src/app/page.tsx`), independente do tema claro/escuro salvo pelo usuário (essas
@@ -35131,9 +35138,9 @@ td.trafego-col-crm:first-of-type {
   gap: var(--space-2);
 }
 
-/* A MARGEM. A tabela começava colada na borda esquerda do cartão. */
+/* A tabela não precisa mais de recuo lateral: o contorno do bloco saiu, e ela passou a se alinhar
+   com o título e com os indicadores lá de cima — que é o alinhamento que a tela toda segue. */
 .trafego-view .table-wrap {
-  padding-inline: var(--space-5);
   padding-bottom: var(--space-3);
 }
 
@@ -35296,4 +35303,231 @@ td.trafego-col-crm:first-of-type {
   font-weight: var(--fw-semibold);
   color: var(--danger);
   cursor: help;
+}
+
+/* ==========================================================================
+   MENOS RETÂNGULO
+
+   "Tira esses retângulos, deixa solto dentro da página. É igual lá no menu lateral: não precisa
+   daquele retângulo ao redor do menu lateral, deixa só as opções, isso fica ocupando espaço."
+
+   Ela tem razão, e o motivo é de contagem: a tela de Tráfego tinha o contorno da página, mais o
+   contorno de cada bloco, mais o fundo das linhas da tabela dentro do bloco. Três molduras pra
+   separar coisas que o espaço em branco já separava. Cada moldura cobra 1px de borda, uma sombra
+   e ~34px de recuo — e, somadas, elas empurram o conteúdo pra baixo da dobra.
+
+   O que separa agora é o TÍTULO e o ESPAÇO. É o mesmo caminho que a faixa superior já tomou
+   quando o fio embaixo dela saiu.
+   ========================================================================== */
+
+/* O MENU LATERAL vira lista solta: sem caixa, sem sombra, sem recuo próprio. A divisa com o
+   conteúdo já é a borda da coluna. */
+.int-menu .config-nav {
+  background: none;
+  border: none;
+  padding: 0;
+  border-radius: 0;
+  overflow: visible;
+}
+
+/* OS BLOCOS: o conteúdo passa a morar na página. */
+.int-paginas .content > .card {
+  background: none;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  /* `mb14` vinha de quando cada bloco era uma caixa e precisava da própria folga. O ritmo entre
+     blocos já é dado pela regra `.card + .card` logo abaixo; somados, os dois abriam um vão de
+     cinquenta e tantos pixels entre uma coisa e a seguinte. */
+  margin-bottom: 0;
+}
+
+/* Sem a caixa, o cabeçalho do bloco não precisa do recuo que existia pra não encostar nela. */
+.int-paginas .content > .card > .panel-h {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.int-paginas .content > .card > .chart-card-corpo {
+  padding-left: 0;
+  padding-right: 0;
+  padding-top: var(--space-2);
+}
+
+.int-paginas .content > .card > .table-wrap {
+  padding-inline: 0;
+}
+
+.int-paginas .content > .card > .hint,
+.int-paginas .content > .card > .trafego-detalhe-corpo {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* ==========================================================================
+   AS LINHAS DAS TABELAS, SEPARADAS
+
+   "Pô, design não tá legal. A gente pode fazer botões ali separados, não ficar muito junto.
+   Porque tá tudo muito junto. Deixa os botões, tipo o modelo botões, só que separado um pouquinho
+   do outro."
+
+   As faixas das linhas se encostavam e viravam um bloco cinza só: dava pra ver que havia linhas,
+   não dava pra ver ONDE uma acabava. `border-spacing` vertical as separa de verdade — e, com as
+   pontas arredondadas, cada linha passa a ser uma peça, que é como ela se lê.
+   ========================================================================== */
+
+.trafego-view .tbl {
+  border-spacing: 0 6px;
+}
+
+.trafego-view .tbl tbody tr > td {
+  background: var(--navy-raised);
+  border-top: 1px solid transparent;
+  border-bottom: 1px solid transparent;
+}
+
+.trafego-view .tbl tbody tr > td:first-child {
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
+}
+
+.trafego-view .tbl tbody tr > td:last-child {
+  border-top-right-radius: 10px;
+  border-bottom-right-radius: 10px;
+}
+
+/* No hover a peça inteira acende e ganha contorno: sem o contorno, o realce some nas linhas
+   vizinhas quando a tabela tem muitas. */
+.trafego-view .tbl tbody tr:hover > td {
+  background: var(--conversa-topo);
+  border-color: color-mix(in srgb, var(--navy-marca) 12%, transparent);
+}
+
+/* ==========================================================================
+   O FUNIL EM DUAS LINHAS
+
+   "Olha a distância de uma linha para outra, não tem necessidade disso."
+   ========================================================================== */
+
+.int-paginas .funnel-steps {
+  gap: var(--space-2);
+}
+
+.int-paginas .funnel-step-top {
+  margin-bottom: 3px;
+}
+
+/* A retenção entra ENTRE o rótulo e o número, e empurra os dois pras pontas. */
+.funnel-step-retencao {
+  margin-right: auto;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  white-space: nowrap;
+  cursor: help;
+}
+
+.funnel-step-retencao[data-retencao="boa"] {
+  background: color-mix(in srgb, #16a34a 12%, transparent);
+  color: #15803d;
+}
+
+.funnel-step-retencao[data-retencao="atencao"] {
+  background: color-mix(in srgb, var(--warning) 18%, transparent);
+  color: #b45309;
+}
+
+.funnel-step-retencao[data-retencao="critica"] {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
+}
+
+/* A barra não precisa de 10px pra dizer o que diz. */
+.int-paginas .funnel-step-track {
+  height: 8px;
+}
+
+/* ==========================================================================
+   AS PEÇAS DA CAMPANHA, NO HOVER
+
+   "Eu tenho alguns conjuntos lá, cada conjunto tem 3 criativos, aí aqui só tá mostrando o
+   primeiro. Tem como eu passar o mouse por cima e ele mostrar as miniaturas de todos que tem?"
+
+   Na linha continua um quadradinho só — doze imagens por linha viraria uma parede. O número no
+   canto diz quantas existem, que é o que faz alguém passar o mouse pra ver o resto.
+   ========================================================================== */
+
+.trafego-criativos {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+  cursor: zoom-in;
+}
+
+.trafego-criativos:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+  border-radius: var(--radius-md);
+}
+
+.trafego-criativos-conta {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--navy-marca);
+  color: #fff;
+  font-size: 10px;
+  font-weight: var(--fw-semibold);
+  line-height: 16px;
+  text-align: center;
+}
+
+.trafego-criativos-painel {
+  position: fixed;
+  z-index: 400;
+  display: block;
+  width: 268px;
+  padding: 10px;
+  border-radius: var(--radius-lg);
+  background: var(--surface-elevated);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-lg);
+  pointer-events: none;
+  animation: modal-fade-in var(--transition-fast);
+}
+
+/* `top` é a borda de BAIXO do painel quando ele abre pra cima: o deslocamento é o que faz a conta
+   de posição não precisar saber a altura dele, que só o navegador sabe. Mesmo truque do balão de
+   ajuda. */
+.trafego-criativos-painel:not(.abaixo) {
+  transform: translateY(-100%);
+}
+
+.trafego-criativos-h {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+
+.trafego-criativos-grade {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.trafego-criativos-grade img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--navy-raised);
 }

@@ -47,6 +47,16 @@ type LinhaPorCampanha = {
   esperaMediana: number | null;
   /** Quantos leads dela ainda não receberam nenhuma resposta. Anda junto da mediana, sempre. */
   semResposta: number;
+  /**
+   * Quantos leads dela chegaram PREENCHENDO UM FORMULÁRIO — o instantâneo da Meta ou um do CRM.
+   *
+   * "Se tiver como colocar quantas pessoas preencheram o formulário naquela campanha, fica legal
+   * também. O custo por formulário preenchido."
+   *
+   * Os dois tipos contam juntos porque a pergunta de quem anuncia é uma só: quanta gente se deu
+   * ao trabalho de preencher. Onde o formulário estava hospedado é detalhe de implementação.
+   */
+  formularios: number;
 };
 
 /** "R$ 2.100,50" -> 2100.5. Mesma regra de `metrics.ts`, pra os dois números baterem na tela. */
@@ -68,6 +78,10 @@ export async function GET() {
       campanhaId: true,
       campanhaNome: true,
       utmCampaign: true,
+      /* Os dois jeitos de ter preenchido um formulário: `leadgenId` é o instantâneo da Meta (o
+         que abre dentro do próprio app), `formularioId` é um formulário feito aqui no CRM. */
+      leadgenId: true,
+      formularioId: true,
     },
   });
 
@@ -200,9 +214,11 @@ export async function GET() {
         vendasAssistidas: 0,
         esperaMediana: null,
         semResposta: 0,
+        formularios: 0,
       } satisfies LinhaPorCampanha);
 
     linha.leads += 1;
+    if (origem.leadgenId || origem.formularioId) linha.formularios += 1;
     const nomeDoContato = nomePorContato.get(origem.contatoId) ?? "";
     const venda = vendaPorNome.get(nomeDoContato);
     if (venda) {
@@ -264,6 +280,7 @@ export async function GET() {
         vendasAssistidas: 1,
         esperaMediana: null,
         semResposta: 0,
+        formularios: 0,
       });
     }
   }
