@@ -692,6 +692,7 @@ model Workspace {
   tarefaEtapas          TarefaEtapa[]
   tarefaCards           TarefaCard[]
   funis                 Funil[]
+  funilNumeros          FunilNumero[]
   funilEtapas           FunilEtapa[]
   negocioCards          NegocioCard[]
   preferencias          Preferencia[]
@@ -891,10 +892,52 @@ model Funil {
   /// sozinha antes de alguém arrastar o primeiro.
   ordem Int @default(0)
 
-  etapas FunilEtapa[]
+  etapas  FunilEtapa[]
+  numeros FunilNumero[]
 
   @@index([workspaceId])
   @@index([workspaceId, contaCanal])
+}
+
+/// OS NÚMEROS DE WHATSAPP QUE ALIMENTAM UM FUNIL.
+///
+/// "A gente poderia ter a opção de criar um funil onde a gente pode colocar tipo até 10 números.
+/// Às vezes o cara quer só um funil porque ele quer organizar — entrada, financeiro — e aí ele
+/// quer que todos os números vejam aquele mesmo funil e cada um fique responsável pelo seu quadro."
+///
+/// ISTO AFROUXA UMA REGRA QUE ERA DELA, e vale dizer por que dá pra afrouxar. A regra antiga era
+/// "um funil, um número", e existia por um motivo concreto: misturar duas caixas de entrada num
+/// quadro só seria irreversível, porque "desfazer isso depois seria adivinhar de qual número era
+/// cada card". Só que o card JÁ GRAVA de qual conexão veio (`NegocioCard.contaCanal`, que nasceu
+/// pra outra coisa — esconder negócio de canal desconectado). Com essa coluna, a mistura deixa de
+/// ser irreversível: dá pra ver, filtrar e separar por número a qualquer momento. O motivo caiu, a
+/// regra cai junto.
+///
+/// O QUE NÃO MUDA: um número continua pertencendo a NO MÁXIMO UM funil. Essa metade da regra não
+/// era preferência, é física — a mensagem que chega precisa cair num lugar só, e dois funis
+/// disputando o mesmo número fariam metade dos leads sumir de um deles sem explicação. É o que a
+/// chave única `[workspaceId, contaCanal]` garante no formato do dado, não na lembrança de alguém.
+///
+/// `Funil.contaCanal` continua existindo e continua valendo: é o número dos funis criados antes
+/// desta tabela. Ler os dois juntos é o que deixa esta mudança não exigir migração de dado nenhuma
+/// — ver `numerosDoFunil`.
+model FunilNumero {
+  id String @id
+
+  funilId String
+  funil   Funil  @relation(fields: [funilId], references: [id], onDelete: Cascade)
+
+  /// Denormalizado, mesmo motivo de `FunilEtapa`: a chave única é por workspace, e a reconciliação
+  /// apaga por workspace sem depender de join.
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  /// `<provedor>:<identificador>`, o mesmo formato de `Conversa.contaCanal`.
+  contaCanal String
+
+  /// UM NÚMERO, UM FUNIL. A metade da regra antiga que continua de pé, escrita no banco.
+  @@unique([workspaceId, contaCanal])
+  @@index([funilId])
 }
 
 model FunilEtapa {

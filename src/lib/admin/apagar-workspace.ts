@@ -38,6 +38,9 @@ export const ORDEM_DE_EXCLUSAO = [
   "negocioCard",
   "tarefaCard",
   "funilEtapa",
+  /* Os números de um funil. Antes de `funil` e depois de `funilEtapa`: é filho do funil, e a
+     ordem aqui é a das dependências — apagar o pai primeiro deixaria a linha órfã. */
+  "funilNumero",
   "tarefaEtapa",
   "funil",
   "fluxoAutomacao",

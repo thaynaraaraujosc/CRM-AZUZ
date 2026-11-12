@@ -9,8 +9,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  */
 
 let conexoes: { provedor: string; metadados: unknown }[] = [];
-/** Os funis da empresa, com o número de cada um. Ver `Funil.contaCanal`. */
+/** Os funis da empresa no formato ANTIGO, um número na coluna. Ver `Funil.contaCanal`. */
 let funis: { id: string; contaCanal: string | null }[] = [];
+/** Os vínculos do formato NOVO, em que um funil pode ter vários números. Ver `FunilNumero`. */
+let vinculos: { funilId: string; contaCanal: string }[] = [];
 
 vi.mock("@/lib/integracoes/conexoes-cache", () => ({
   conexoesDeConversa: async () => conexoes,
@@ -18,6 +20,10 @@ vi.mock("@/lib/integracoes/conexoes-cache", () => ({
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
+    funilNumero: {
+      findUnique: async ({ where }: { where: { workspaceId_contaCanal: { contaCanal: string } } }) =>
+        vinculos.find((v) => v.contaCanal === where.workspaceId_contaCanal.contaCanal) ?? null,
+    },
     funil: {
       findFirst: async ({ where }: { where: { contaCanal: string } }) =>
         funis.find((f) => f.contaCanal === where.contaCanal) ?? null,
@@ -29,6 +35,7 @@ const { destinoDoNumero } = await import("../destino-do-numero");
 
 beforeEach(() => {
   funis = [];
+  vinculos = [];
   conexoes = [
     {
       provedor: "meta_whatsapp",
@@ -39,6 +46,34 @@ beforeEach(() => {
       metadados: { numero: "5511977776666", funilId: "funil-closer", responsavel: "João" },
     },
   ];
+});
+
+describe("um funil com vários números", () => {
+  /*
+   * A regra nova: "às vezes o cara quer só um funil porque ele quer organizar — entrada,
+   * financeiro — e aí ele quer que todos os números vejam aquele mesmo funil".
+   */
+  it("dois números diferentes caem no MESMO funil", async () => {
+    vinculos = [
+      { funilId: "funil-unico", contaCanal: "meta_whatsapp:109876543210" },
+      { funilId: "funil-unico", contaCanal: "whatsapp_nao_oficial:5511977776666" },
+    ];
+    expect((await destinoDoNumero("w1", "meta_whatsapp:109876543210")).funilId).toBe("funil-unico");
+    expect((await destinoDoNumero("w1", "whatsapp_nao_oficial:5511977776666")).funilId).toBe("funil-unico");
+  });
+
+  it("o vínculo novo ganha da coluna antiga do funil", async () => {
+    // Acontece quando um funil antigo é apagado e o número é dado a um funil novo: a coluna velha
+    // de outro funil não pode continuar roubando o lead.
+    funis = [{ id: "funil-velho", contaCanal: "meta_whatsapp:109876543210" }];
+    vinculos = [{ funilId: "funil-novo", contaCanal: "meta_whatsapp:109876543210" }];
+    expect((await destinoDoNumero("w1", "meta_whatsapp:109876543210")).funilId).toBe("funil-novo");
+  });
+
+  it("sem vínculo novo, a coluna antiga continua valendo — funil criado antes desta mudança", async () => {
+    funis = [{ id: "funil-velho", contaCanal: "meta_whatsapp:109876543210" }];
+    expect((await destinoDoNumero("w1", "meta_whatsapp:109876543210")).funilId).toBe("funil-velho");
+  });
 });
 
 describe("de qual número veio, pra onde vai", () => {

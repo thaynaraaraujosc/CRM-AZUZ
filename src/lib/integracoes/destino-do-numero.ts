@@ -41,10 +41,21 @@ export async function destinoDoNumero(
    *
    * Uma consulta por lead novo, com índice em `[workspaceId, contaCanal]`.
    */
-  const funil = await prisma.funil.findFirst({
-    where: { workspaceId, contaCanal: alvo },
-    select: { id: true },
+  /*
+   * DUAS FONTES, PORQUE UM FUNIL PODE TER VÁRIOS NÚMEROS AGORA.
+   *
+   * `FunilNumero` é o formato novo; `Funil.contaCanal` é o dos funis criados antes dele. A busca
+   * nova vem PRIMEIRO porque é a que a pessoa acabou de configurar — e, com a chave única
+   * `[workspaceId, contaCanal]`, ela devolve no máximo uma linha: um número continua pertencendo a
+   * um funil só. Ver `numeros-do-funil.ts`.
+   */
+  const vinculo = await prisma.funilNumero.findUnique({
+    where: { workspaceId_contaCanal: { workspaceId, contaCanal: alvo } },
+    select: { funilId: true },
   });
+  const funil = vinculo
+    ? { id: vinculo.funilId }
+    : await prisma.funil.findFirst({ where: { workspaceId, contaCanal: alvo }, select: { id: true } });
 
   // O RESPONSÁVEL continua vindo da conexão: ele é de quem atende por aquele número, e não do
   // quadro. A leitura passa pelo cache de conexões (poucos segundos de memória) porque isto roda a

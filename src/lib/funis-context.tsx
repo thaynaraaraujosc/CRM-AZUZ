@@ -304,8 +304,11 @@ export function FunisProvider({ children }: { children: ReactNode }) {
           id: funil.id,
           nome: funil.nome,
           responsavel: funil.responsavel ?? null,
-          // De qual número é o funil. Só vai na criação: não existe rota que o altere.
+          // Os números do funil. Só vão na criação: não existe rota que os altere. O primeiro
+          // segue em `contaCanal` pro que ainda lê um número só; a lista inteira vai em
+          // `contaCanais`. Ver `numerosDoFunil`.
           contaCanal: funil.contaCanal ?? null,
+          contaCanais: funil.contaCanais ?? null,
           etapas: funil.colunas.map((c) => ({ id: c.id, titulo: c.titulo })),
         }),
       });

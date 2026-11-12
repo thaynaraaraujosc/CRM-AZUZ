@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { lerCorDaEtapa, lerDicas } from "@/lib/funil/etapa-aparencia";
 import { numerosDeWhatsApp } from "@/lib/integracoes/numeros-de-whatsapp";
+import { porQueNaoPodeUsarEstesNumeros } from "@/lib/funis/numeros-do-funil";
 
 /**
  * Criar e apagar funil/etapa: gravado na hora, e não pelo PUT de estado inteiro.
@@ -31,8 +32,10 @@ export async function POST(request: Request) {
     id?: string;
     nome?: string;
     responsavel?: string | null;
-    /** De qual número é este funil. Só na CRIAÇÃO: não há rota que o altere. */
+    /** De qual número é este funil. Formato antigo, de um número só. Ainda aceito. */
     contaCanal?: string | null;
+    /** OS NÚMEROS deste funil. Vários, desde que cada um não seja de outro funil. */
+    contaCanais?: string[] | null;
     funilId?: string;
     etapas?: { id: string; titulo: string }[];
     /** Onde a etapa entra. Ausente = no fim, que é como sempre foi. */
@@ -56,25 +59,30 @@ export async function POST(request: Request) {
      * Conferido contra as conexões DESTA empresa: um `contaCanal` qualquer vindo do corpo faria o
      * funil dizer que é de uma conexão que não existe, e nada cairia nele.
      */
-    let contaCanal: string | null = null;
-    if (corpo.contaCanal) {
-      const chavesConectadas = new Set(
-        (await numerosDeWhatsApp(workspaceId)).map((n) => n.chave).filter(Boolean),
-      );
-      if (!chavesConectadas.has(corpo.contaCanal)) {
-        return NextResponse.json({ erro: "Esse número não está conectado nesta conta." }, { status: 400 });
-      }
-      const jaTem = await prisma.funil.findFirst({
-        where: { workspaceId, contaCanal: corpo.contaCanal },
-        select: { nome: true },
+    const escolhidos = [...new Set([...(corpo.contaCanais ?? []), ...(corpo.contaCanal ? [corpo.contaCanal] : [])])];
+
+    if (escolhidos.length > 0) {
+      const numeros = await numerosDeWhatsApp(workspaceId);
+      /*
+       * Os funis existentes, com os números dos DOIS formatos — o da coluna antiga e o da tabela
+       * nova. Conferir só um deixaria passar justamente o conflito que esta checagem existe pra
+       * pegar.
+       */
+      const funisAtuais = await prisma.funil.findMany({
+        where: { workspaceId },
+        select: { id: true, nome: true, contaCanal: true, numeros: { select: { contaCanal: true } } },
       });
-      if (jaTem) {
-        return NextResponse.json(
-          { erro: `Esse número já é do funil "${jaTem.nome}". Cada número tem um funil só.` },
-          { status: 409 },
-        );
-      }
-      contaCanal = corpo.contaCanal;
+      const motivo = porQueNaoPodeUsarEstesNumeros(
+        escolhidos,
+        numeros.map((n) => ({ chave: n.chave, nome: n.nome, provedor: n.provedor, status: n.status })),
+        funisAtuais.map((f) => ({
+          id: f.id,
+          nome: f.nome,
+          contaCanal: f.contaCanal,
+          contaCanais: f.numeros.map((n) => n.contaCanal),
+        })),
+      );
+      if (motivo) return NextResponse.json({ erro: motivo }, { status: 409 });
     }
 
     await prisma.funil.create({
@@ -83,7 +91,22 @@ export async function POST(request: Request) {
         workspaceId,
         nome: corpo.nome,
         responsavel: corpo.responsavel ?? null,
-        contaCanal,
+        /*
+         * A COLUNA ANTIGA CONTINUA SENDO ESCRITA, com o primeiro número.
+         *
+         * Não é redundância por descuido: tudo que ainda lê `Funil.contaCanal` (a ordem das abas
+         * da caixa de entrada, a tela de Configurações, o roteamento de reserva) continua
+         * funcionando sem precisar ser reescrito no mesmo dia. Os outros números vão pra tabela
+         * nova, e quem lê os dois junto é `numerosDoFunil`.
+         */
+        contaCanal: escolhidos[0] ?? null,
+        numeros: {
+          create: escolhidos.map((contaCanal) => ({
+            id: `${corpo.id}-${contaCanal}`.slice(0, 190),
+            workspaceId,
+            contaCanal,
+          })),
+        },
         etapas: {
           create: (corpo.etapas ?? []).map((etapa, ordem) => ({
             id: etapa.id,

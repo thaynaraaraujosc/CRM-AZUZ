@@ -5,6 +5,7 @@ import type { Funil } from "@/lib/data";
 import { auth } from "@/lib/auth";
 import { lerDicas } from "@/lib/funil/etapa-aparencia";
 import { ESCOPOS, escopoPermitido } from "@/lib/configuracoes/permissoes";
+import { numerosDoFunil } from "@/lib/funis/numeros-do-funil";
 import { montarFunilPadrao } from "@/lib/funil/funil-padrao";
 import { dispararGatilhosDaEtapa } from "@/lib/funil/gatilhos-etapa";
 import { emSegundoPlano } from "@/lib/automacoes/segundo-plano";
@@ -94,6 +95,7 @@ export async function GET() {
     // com a mesma `ordem` trocariam de lugar entre carregamentos, sem ninguém ter mexido.
     orderBy: [{ ordem: "asc" }, { id: "asc" }],
     include: {
+      numeros: { select: { contaCanal: true } },
       etapas: {
         orderBy: { ordem: "asc" },
         include: { cards: { where: filtroConexaoDeNegocio(provedores), orderBy: { ordem: "asc" } } },
@@ -105,8 +107,16 @@ export async function GET() {
     id: f.id,
     nome: f.nome,
     responsavel: f.responsavel ?? undefined,
-    // De qual número é este funil. A tela mostra como texto fixo: não há como trocar depois.
+    // O primeiro número do funil, pro que ainda lê um só.
     contaCanal: f.contaCanal,
+    // TODOS os números dele, já com o antigo incluído: a tela não precisa saber que há dois
+    // formatos guardados. Ver `numerosDoFunil`.
+    contaCanais: numerosDoFunil({
+      id: f.id,
+      nome: f.nome,
+      contaCanal: f.contaCanal,
+      contaCanais: f.numeros.map((n) => n.contaCanal),
+    }),
     colunas: f.etapas.map((e) => ({
       id: e.id,
       titulo: e.titulo,

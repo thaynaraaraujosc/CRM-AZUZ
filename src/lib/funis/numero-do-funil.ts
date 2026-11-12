@@ -17,6 +17,13 @@
  * Função pura, sem rede: é regra, e regra tem teste.
  */
 
+import {
+  funilDoNumero as acharFunilDoNumero,
+  numerosDisponiveis as disponiveis,
+  numerosDoFunil,
+  type FunilComNumeros,
+} from "@/lib/funis/numeros-do-funil";
+
 /** O prefixo fixo do nome. O resto quem escreve é a pessoa — ver `nomeDoFunil`. */
 export const PREFIXO_DO_NOME = "Funil - ";
 
@@ -30,7 +37,7 @@ export type NumeroParaFunil = {
 };
 
 /** O que esta regra precisa saber de um funil. */
-export type FunilComNumero = { id: string; nome: string; contaCanal?: string | null };
+export type FunilComNumero = FunilComNumeros;
 
 /**
  * O funil que já é deste número, se houver.
@@ -40,8 +47,10 @@ export type FunilComNumero = { id: string; nome: string; contaCanal?: string | n
  * explicação nenhuma.
  */
 export function funilDoNumero<T extends FunilComNumero>(funis: T[], chave: string): T | null {
-  if (!chave) return null;
-  return funis.find((f) => f.contaCanal === chave) ?? null;
+  // A regra mora em `numeros-do-funil.ts` desde que um funil passou a poder ter vários números.
+  // Este nome continua aqui porque três telas o importam, e porque a pergunta que ele responde não
+  // mudou: "de quem é este número?".
+  return acharFunilDoNumero(funis, chave);
 }
 
 /**
@@ -54,8 +63,9 @@ export function funilDoNumero<T extends FunilComNumero>(funis: T[], chave: strin
 export function numerosDisponiveis<T extends NumeroParaFunil>(
   numeros: T[],
   funis: FunilComNumero[],
+  funilAtual?: string | null,
 ): T[] {
-  return numeros.filter((n) => n.chave && n.status === "conectado" && !funilDoNumero(funis, n.chave));
+  return disponiveis(numeros, funis, funilAtual);
 }
 
 /**
@@ -68,8 +78,20 @@ export function numeroDoFunil<T extends NumeroParaFunil>(
   numeros: T[],
   funil: FunilComNumero | null | undefined,
 ): T | null {
-  if (!funil?.contaCanal) return null;
-  return numeros.find((n) => n.chave === funil.contaCanal) ?? null;
+  const primeiro = funil ? numerosDoFunil(funil)[0] : null;
+  if (!primeiro) return null;
+  return numeros.find((n) => n.chave === primeiro) ?? null;
+}
+
+/** TODOS os números deste funil, como aparecem na tela. Vazio = funil sem número. */
+export function numerosDoFunilNaTela<T extends NumeroParaFunil>(
+  numeros: T[],
+  funil: FunilComNumero | null | undefined,
+): T[] {
+  if (!funil) return [];
+  return numerosDoFunil(funil)
+    .map((chave) => numeros.find((n) => n.chave === chave))
+    .filter((n): n is T => Boolean(n));
 }
 
 /**

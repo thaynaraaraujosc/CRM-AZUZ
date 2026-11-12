@@ -35601,3 +35601,63 @@ td.trafego-col-crm:first-of-type {
     animation: none;
   }
 }
+
+/* ==========================================================================
+   OS NÚMEROS DE UM FUNIL
+
+   "A gente poderia ter a opção de criar um funil onde a gente pode colocar tipo até 10 números.
+   Às vezes o cara quer só um funil porque ele quer organizar — entrada, financeiro — e aí ele
+   quer que todos os números vejam aquele mesmo funil."
+
+   Caixas, e não um seletor de uma opção: o seletor dizia pela forma que só cabia um. A lista
+   mostra de uma vez todos os números livres e quais estão marcados, que é a pergunta de quem está
+   montando o quadro.
+   ========================================================================== */
+
+.funil-numeros-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 232px;
+  overflow-y: auto;
+}
+
+.funil-numero-opcao {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 8px var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.funil-numero-opcao:hover {
+  border-color: var(--line-strong);
+}
+
+/* Marcado em azul claro com tinta navy: a mesma leitura aprovada que a ficha do contato usa pra
+   "esta é a escolha", e 13,4:1 de contraste. */
+.funil-numero-opcao.on {
+  border-color: var(--navy-marca);
+  background: var(--conversa-topo);
+}
+
+.funil-numero-nome {
+  font-size: 13px;
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.funil-numero-canal {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}

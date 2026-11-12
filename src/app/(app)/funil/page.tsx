@@ -238,7 +238,13 @@ function FunilPageInner() {
   const [atendenteNovoFunil, setAtendenteNovoFunil] = useState("");
   /** Só o que vem DEPOIS de "Funil - ". Ver `nomeDoFunil`. */
   const [sufixoNovoFunil, setSufixoNovoFunil] = useState("");
-  const [numeroNovoFunil, setNumeroNovoFunil] = useState("");
+  /*
+   * OS NÚMEROS DO FUNIL NOVO — plural desde que um funil passou a poder ter vários.
+   *
+   * "Às vezes o cara quer só um funil porque ele quer organizar — entrada, financeiro — e aí ele
+   * quer que todos os números vejam aquele mesmo funil."
+   */
+  const [numerosNovoFunil, setNumerosNovoFunil] = useState<string[]>([]);
   const [criandoFunil, setCriandoFunil] = useState(false);
   const [erroNovoFunil, setErroNovoFunil] = useState<string | null>(null);
 
@@ -523,7 +529,7 @@ function FunilPageInner() {
 
   async function criarFunil() {
     const nome = nomeDoFunil(sufixoNovoFunil);
-    if (!nome || !numeroNovoFunil || criandoFunil) return;
+    if (!nome || numerosNovoFunil.length === 0 || criandoFunil) return;
 
     setCriandoFunil(true);
     setErroNovoFunil(null);
@@ -534,7 +540,10 @@ function FunilPageInner() {
       // Vazio vira `undefined`: "ninguém em especial" é uma escolha, e gravar string vazia faria
       // o filtro por responsável enxergar um atendente chamado "".
       responsavel: atendenteNovoFunil.trim() || undefined,
-      contaCanal: numeroNovoFunil,
+      /* O primeiro continua indo em `contaCanal` pro que ainda lê um número só; a lista inteira
+         vai em `contaCanais`. Ver `numerosDoFunil`. */
+      contaCanal: numerosNovoFunil[0],
+      contaCanais: numerosNovoFunil,
       colunas: [
         { id: `novo-${carimbo}`, titulo: "Novo", total: 0, cards: [] },
         { id: `qualificado-${carimbo}`, titulo: "Qualificado", total: 0, cards: [] },
@@ -555,7 +564,7 @@ function FunilPageInner() {
     setFunilAtivoId(novo.id);
     setAtendenteNovoFunil("");
     setSufixoNovoFunil("");
-    setNumeroNovoFunil("");
+    setNumerosNovoFunil([]);
     setNovoFunilAberto(false);
 
     /*
@@ -980,37 +989,58 @@ function FunilPageInner() {
               escrever e depois descobrir que o número que ela queria já tem quadro.
             */}
             <div className="field">
-              <label>{traduzir("Número deste funil")}</label>
-              <select
-                className="input"
-                style={{ width: "100%", cursor: "pointer" }}
-                value={numeroNovoFunil}
-                onChange={(e) => {
-                  const chave = e.target.value;
-                  setNumeroNovoFunil(chave);
-                  setErroNovoFunil(null);
-                  // O nome segue o número ENQUANTO ninguém escreveu nada. Depois de digitar, a
-                  // escolha é dela: trocar o número não pode apagar o nome que ela deu.
-                  if (!sufixoNovoFunil.trim()) {
-                    setSufixoNovoFunil(sufixoSugerido(numerosLivres.find((n) => n.chave === chave)));
-                  }
-                }}
-              >
-                <option value="">{traduzir("Escolha o número…")}</option>
-                {numerosLivres.map((n) => (
-                  <option key={n.chave} value={n.chave}>
-                    {n.nome} · {traduzir(canalDoNumero(n.provedor))}
-                  </option>
-                ))}
-              </select>
+              <label>{traduzir("Números deste funil")}</label>
+              {/*
+                CAIXAS, E NÃO UMA LISTA DE ESCOLHA ÚNICA.
+
+                O seletor de uma opção dizia, pela própria forma, que só cabia um — e cabia mesmo,
+                até agora. Com vários, a lista de caixas mostra de uma vez TODOS os números livres
+                e quais estão marcados, que é a pergunta que a pessoa tem na cabeça ("quais entram
+                neste quadro?"). Num `<select multiple>` ela precisaria segurar Ctrl pra marcar o
+                segundo, e quem não sabe disso conclui que continua cabendo um só.
+              */}
+              <div className="funil-numeros-lista">
+                {numerosLivres.map((n) => {
+                  const marcado = numerosNovoFunil.includes(n.chave);
+                  return (
+                    <label key={n.chave} className={`funil-numero-opcao${marcado ? " on" : ""}`}>
+                      <input
+                        type="checkbox"
+                        checked={marcado}
+                        onChange={() => {
+                          setErroNovoFunil(null);
+                          setNumerosNovoFunil((atuais) => {
+                            const novos = marcado
+                              ? atuais.filter((c) => c !== n.chave)
+                              : [...atuais, n.chave];
+                            /* O nome segue o PRIMEIRO número enquanto ninguém escreveu nada.
+                               Depois de digitar, a escolha é dela: marcar outro número não pode
+                               apagar o nome que ela deu. */
+                            if (!sufixoNovoFunil.trim()) {
+                              setSufixoNovoFunil(
+                                sufixoSugerido(numerosLivres.find((x) => x.chave === novos[0])),
+                              );
+                            }
+                            return novos;
+                          });
+                        }}
+                      />
+                      <span className="funil-numero-nome">{n.nome}</span>
+                      <span className="funil-numero-canal">{traduzir(canalDoNumero(n.provedor))}</span>
+                    </label>
+                  );
+                })}
+              </div>
               <p className="hint" style={{ marginTop: 6 }}>
                 {numerosDeWhats === null
                   ? traduzir("Carregando os números conectados…")
                   : numerosLivres.length === 0
                     ? traduzir(
-                        "Todos os números conectados já têm funil. Cada número tem um só — apague um funil para liberar o número dele.",
+                        "Todos os números conectados já têm funil. Um número alimenta um funil só — apague um funil para liberar o número dele.",
                       )
-                    : traduzir("Escolhido agora e fixo: para trocar, é preciso criar outro funil.")}
+                    : traduzir(
+                        "Pode marcar quantos quiser: tudo que chegar por eles cai neste mesmo quadro. Um número alimenta um funil só, então os que já têm quadro não aparecem aqui.",
+                      )}
               </p>
             </div>
 
@@ -1063,7 +1093,7 @@ function FunilPageInner() {
               <button
                 type="button"
                 className="btn primary block"
-                disabled={criandoFunil || !numeroNovoFunil || !nomeDoFunil(sufixoNovoFunil)}
+                disabled={criandoFunil || numerosNovoFunil.length === 0 || !nomeDoFunil(sufixoNovoFunil)}
                 onClick={() => void criarFunil()}
               >
                 {criandoFunil ? traduzir("Criando e trazendo as conversas…") : traduzir("Criar funil")}

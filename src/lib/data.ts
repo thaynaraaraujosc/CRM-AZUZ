@@ -383,6 +383,15 @@ export type Funil = {
    * próprio.
    */
   contaCanal?: string | null;
+  /**
+   * TODOS os números deste funil. Um funil pode ter vários; um número, um funil só.
+   *
+   * `contaCanal` acima continua sendo o primeiro deles, pro que ainda lê um número só (a ordem das
+   * abas da caixa de entrada, a tela de Configurações). Quem precisa da lista inteira usa
+   * `numerosDoFunil`, que lê os dois campos juntos — é o que faz o funil criado antes desta
+   * mudança continuar valendo sem migração de dado.
+   */
+  contaCanais?: string[];
 };
 
 /** Modelo pré-pronto usado ao criar um funil novo. */
