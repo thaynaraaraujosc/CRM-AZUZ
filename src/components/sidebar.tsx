@@ -6,8 +6,6 @@ import { signOut, useSession } from "next-auth/react";
 import { useIdioma } from "@/lib/idioma-context";
 import { createPortal } from "react-dom";
 import {
-  useEffect,
-  useRef,
   useState,
   type ComponentType,
   type SVGProps,
@@ -97,31 +95,6 @@ export const navEntries: NavEntry[] = [
   { href: "/configuracoes", label: "Configurações", Icon: IconConfiguracoes },
 ];
 
-/**
- * Posiciona um popover flutuante ao lado do elemento que o abriu, sempre
- * dentro dos limites da tela. Vira pra esquerda se não couber à direita e
- * nunca deixa o topo/base vazar pra fora da viewport (funciona em qualquer
- * tamanho de tela, do desktop ao tablet).
- */
-function posicionarFlyoutLateral(
-  rect: DOMRect,
-  width: number,
-  alturaEstimada: number,
-) {
-  const margem = 12;
-  let left = rect.right + 8;
-  if (left + width > window.innerWidth - margem) {
-    left = rect.left - width - 8;
-  }
-  left = Math.min(Math.max(left, margem), Math.max(margem, window.innerWidth - width - margem));
-
-  const alturaMax = Math.min(alturaEstimada, window.innerHeight - margem * 2);
-  let top = rect.top;
-  top = Math.min(top, window.innerHeight - alturaMax - margem);
-  top = Math.max(top, margem);
-
-  return { top, left };
-}
 
 /*
  * CHAVE NOVA, DE PROPÓSITO.
@@ -280,65 +253,21 @@ export function Sidebar() {
     equipe.find((m) => m.nome === currentUser.name)?.papelTipo === "admin";
   const outrosMembros = equipe.filter((m) => m.nome !== currentUser.name);
 
-  const [gestaoAtividadeAberta, setGestaoAtividadeAberta] = useState(false);
-  const gestaoAtividadeBtnRef = useRef<HTMLDivElement>(null);
-  const [gestaoAtividadePos, setGestaoAtividadePos] = useState({ top: 0, left: 0 });
-  const gestaoAtividadeFecharRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /*
+   * O SUBMENU FLUTUANTE DE INTELIGÊNCIA COMERCIAL SAIU, em 12/11/2026.
+   *
+   * "Quando eu abro inteligência comercial, aparece a pop-up lateral e também entra lá dentro tem
+   * o menu lateral. É pra deixar só o menu lateral, tira essa pop-up."
+   *
+   * Ela estava certa e o erro foi meu: eu troquei o botão por um link pra Tráfego e construí a
+   * coluna fixa lá dentro, mas deixei o voo no hover "como atalho". Resultado: passar o mouse
+   * abria uma lista flutuante por cima da MESMA lista que já estava na tela, a um palmo de
+   * distância. Duas navegações para o mesmo lugar, uma delas tapando a outra.
+   *
+   * Com ela saem o estado, os dois temporizadores, os dois refs, o posicionador e os ouvintes de
+   * clique-fora e Esc — tudo existia só para manter aquela caixa de pé.
+   */
 
-  function cancelarFechamentoGestaoAtividade() {
-    if (gestaoAtividadeFecharRef.current) {
-      clearTimeout(gestaoAtividadeFecharRef.current);
-      gestaoAtividadeFecharRef.current = null;
-    }
-  }
-
-  function abrirGestaoAtividade() {
-    cancelarFechamentoGestaoAtividade();
-    if (!gestaoAtividadeBtnRef.current) return;
-    const rect = gestaoAtividadeBtnRef.current.getBoundingClientRect();
-    const alturaEstimada = gestaoAtividadeItens.length * 46;
-    setGestaoAtividadePos(posicionarFlyoutLateral(rect, 240, alturaEstimada));
-    setGestaoAtividadeAberta(true);
-  }
-
-  /** Dá uma folga bem curta antes de fechar, só pra não fechar se o mouse passar rapidinho pelo
-   * vão até o submenu: 2s (valor anterior) dava a sensação de "não fecha nunca" quando o mouse
-   * saía de vez da sidebar. */
-  function agendarFechamentoGestaoAtividade() {
-    cancelarFechamentoGestaoAtividade();
-    gestaoAtividadeFecharRef.current = setTimeout(() => {
-      setGestaoAtividadeAberta(false);
-    }, 200);
-  }
-
-  /** Se o mouse for direto pra outro item do menu (não pro submenu), fecha na hora. */
-  function fecharGestaoAtividadeNaHora() {
-    if (!gestaoAtividadeAberta) return;
-    cancelarFechamentoGestaoAtividade();
-    setGestaoAtividadeAberta(false);
-  }
-
-  useEffect(() => cancelarFechamentoGestaoAtividade, []);
-
-  const gestaoAtividadePopRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!gestaoAtividadeAberta) return;
-    function aoClicarFora(e: MouseEvent) {
-      const alvo = e.target as Node;
-      if (gestaoAtividadeBtnRef.current?.contains(alvo)) return;
-      if (gestaoAtividadePopRef.current?.contains(alvo)) return;
-      setGestaoAtividadeAberta(false);
-    }
-    function aoTeclarEsc(e: KeyboardEvent) {
-      if (e.key === "Escape") setGestaoAtividadeAberta(false);
-    }
-    document.addEventListener("mousedown", aoClicarFora);
-    document.addEventListener("keydown", aoTeclarEsc);
-    return () => {
-      document.removeEventListener("mousedown", aoClicarFora);
-      document.removeEventListener("keydown", aoTeclarEsc);
-    };
-  }, [gestaoAtividadeAberta]);
 
   return (
     <aside
@@ -474,12 +403,7 @@ export function Sidebar() {
               (i) => pathname === i.href || pathname.startsWith(`${i.href}/`),
             );
             return (
-              <div
-                key="gestao-atividade"
-                ref={gestaoAtividadeBtnRef}
-                onMouseEnter={abrirGestaoAtividade}
-                onMouseLeave={agendarFechamentoGestaoAtividade}
-              >
+              <div key="gestao-atividade">
                 {/*
                   CLICAR ABRE A TELA, em vez de abrir um menu flutuante.
 
@@ -514,7 +438,7 @@ export function Sidebar() {
           }
           const active = pathname === href || pathname.startsWith(`${href}/`);
           return (
-            <div key={href} onMouseEnter={fecharGestaoAtividadeNaHora}>
+            <div key={href}>
               <Link
                 href={href}
                 /* Sem isto, o padrão em rota dinâmica prefetcha só a casca até o `loading.tsx`, e o
@@ -583,61 +507,6 @@ export function Sidebar() {
         })}
       </nav>
 
-      {gestaoAtividadeAberta && typeof document !== "undefined"
-        ? createPortal(
-            <div
-              ref={gestaoAtividadePopRef}
-              className="dropdown-pop"
-              style={{
-                position: "fixed",
-                top: gestaoAtividadePos.top,
-                left: gestaoAtividadePos.left,
-                width: 240,
-                padding: "4px 0",
-                zIndex: 210,
-              }}
-              onMouseEnter={cancelarFechamentoGestaoAtividade}
-              onMouseLeave={agendarFechamentoGestaoAtividade}
-            >
-              {gestaoAtividadeItens.map((item) => {
-                const subAtivo =
-                  pathname === item.href || pathname.startsWith(`${item.href}/`);
-                if (item.href === "/crm-live") {
-                  return (
-                    <a
-                      key={item.href}
-                      href={item.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="dropdown-item"
-                      style={{ width: "100%", textAlign: "left" }}
-                      title={traduzir("Abre numa aba nova: telão pra projetar no escritório")}
-                    >
-                      <span className="n">{traduzir(item.label)}</span>
-                      <span className="r">{traduzir("TV")}</span>
-                    </a>
-                  );
-                }
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    /* Só entram em viewport quando o menu abre, então o prefetch acontece no
-                       momento em que a pessoa demonstra intenção, não no carregamento da página. */
-                    prefetch
-                    className="dropdown-item"
-                    style={{ width: "100%", textAlign: "left" }}
-                    onClick={() => setGestaoAtividadeAberta(false)}
-                  >
-                    <span className="n">{traduzir(item.label)}</span>
-                    {subAtivo ? <span className="r">●</span> : null}
-                  </Link>
-                );
-              })}
-            </div>,
-            document.body,
-          )
-        : null}
 
       <div className="sb-foot">
         <button

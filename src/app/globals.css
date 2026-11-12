@@ -34404,23 +34404,309 @@ td.trafego-col-crm:first-of-type {
    seis telas — cada uma continua desenhando o próprio título e o próprio `.content`.
    ========================================================================== */
 
+/*
+ * A PELE FUTURISTA, e de onde ela veio.
+ *
+ * "Eu queria que você fizesse algo bem parecido com a nossa página, o nosso site. O nosso site é
+ * bem futurístico. Essa parte de inteligência comercial, desde o tráfego até o CRM Live, fica bem
+ * diferente do resto do CRM."
+ *
+ * O site dela não abre desta sessão (o domínio está fora da rede permitida), mas a fonte certa
+ * estava aqui dentro: a landing page pública do próprio produto
+ * (`src/components/landing/PaginaInicial.tsx`) já tem esse sistema inteiro — fundo quase preto
+ * azulado, malha fina, aurora azul respirando atrás do topo, superfícies de vidro e o oceano
+ * #2e6bff como único acento. Os valores abaixo são os mesmos de lá, não uma imitação de memória.
+ *
+ * A TÉCNICA É A MESMA DO MENU E DAS TELAS DE LOGIN: em vez de reescrever sete telas, os TOKENS do
+ * CRM são redefinidos para dentro de `.int-casca`. `.card`, `.kpi`, `.input`, `.btn`, a tabela e o
+ * resto continuam escritos como sempre e herdam a pele inteira. É o que permitiu virar o visual de
+ * sete telas sem tocar no conteúdo de nenhuma — e o que permite desfazer removendo um bloco.
+ */
 .int-casca {
   display: flex;
   flex: 1;
   min-height: 0;
+  position: relative;
+  isolation: isolate;
+
+  /* A escada de superfícies, invertida: o piso é o quase-preto e o que sobe é vidro branco. */
+  --navy: transparent;
+  --navy-raised: rgba(255, 255, 255, 0.04);
+  --navy-raised-2: rgba(255, 255, 255, 0.07);
+  --navy-deep: transparent;
+  /* VIDRO ESCURO, e não o branco 5% da landing. Lá a aurora fica só atrás do topo e o branco
+     diluído funciona; aqui ela passa POR BAIXO dos cartões, e branco sobre luz azul vira painel
+     claro — os rótulos sumiam. O azul profundo da landing (`--lp-bg-2`) com transparência deixa a
+     luz atravessar e continua sendo superfície escura. */
+  --surface-elevated: rgba(11, 21, 51, 0.62);
+  --surface: rgba(11, 21, 51, 0.62);
+  --surface-hover: rgba(255, 255, 255, 0.08);
+  --surface-active: rgba(255, 255, 255, 0.12);
+
+  --ink: #ffffff;
+  --ink-nome: #ffffff;
+  --text-muted: rgba(255, 255, 255, 0.68);
+  --text-faint: rgba(255, 255, 255, 0.46);
+
+  --line: rgba(255, 255, 255, 0.1);
+  --line-soft: rgba(255, 255, 255, 0.06);
+  --line-strong: rgba(255, 255, 255, 0.24);
+
+  /* O oceano da landing é o único acento. No resto do CRM `--blue` é o navy da marca; aqui ele é
+     o azul que a página pública usa, porque é ele que dá a temperatura "futurista". */
+  --blue: #2e6bff;
+  --blue-soft: rgba(46, 107, 255, 0.2);
+  --blue-soft-2: rgba(46, 107, 255, 0.1);
+  --blue-strong: #7ea2ff;
+  --acao: #2e6bff;
+  --conversa-topo: rgba(46, 107, 255, 0.18);
+  --cfg-azul-raso: rgba(46, 107, 255, 0.12);
+  --cfg-azul-raso-forte: rgba(46, 107, 255, 0.2);
+  --cfg-azul-traco: rgba(126, 162, 255, 0.4);
+  --cfg-sombra: none;
+
+  /* Sombra não existe sobre fundo escuro: o que separa é a borda clara e o vidro. */
+  --shadow-xs: none;
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.5);
+
+  --grid-line: transparent;
+  --barra-rolagem: rgba(255, 255, 255, 0.18);
+  --barra-rolagem-forte: rgba(255, 255, 255, 0.34);
+
+  background: #060b1a;
+  color: var(--ink);
+  /* Sem isto o navegador de quem usa no tema claro pinta barra de rolagem e autofill como se a
+     área fosse clara, e elas aparecem como manchas brancas. É o mesmo motivo da landing. */
+  color-scheme: dark;
+}
+
+/* A MALHA: o traço "tecnológico" sem virar mais um elemento. Some antes do conteúdo, pela
+   máscara — a mesma de `.lp-grid`. */
+.int-casca::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: radial-gradient(ellipse 65% 42% at 50% 0%, #000 30%, transparent 100%);
+}
+
+/* A AURORA: duas manchas de azul muito diluídas que respiram devagar, atrás de tudo. É o que dá
+   profundidade sem acender neon em cima do texto. Mesmos valores e mesmo ciclo da landing. */
+.int-casca::after {
+  content: "";
+  position: absolute;
+  inset: -24% -10% auto;
+  height: 620px;
+  z-index: -1;
+  pointer-events: none;
+  /* Mais diluída que na landing: lá ela compete com um título de 64px, aqui com números que
+     precisam ser lidos. Luz de fundo, não holofote. */
+  background:
+    radial-gradient(ellipse 42% 38% at 28% 32%, rgba(46, 107, 255, 0.22), transparent 70%),
+    radial-gradient(ellipse 38% 34% at 74% 20%, rgba(126, 162, 255, 0.12), transparent 72%);
+  filter: blur(28px);
+  animation: lp-respirar 18s ease-in-out infinite;
+}
+
+@keyframes lp-respirar {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: translate3d(-2%, 2%, 0) scale(1.08);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .int-casca::after {
+    animation: none;
+  }
+}
+
+/*
+ * O QUE ESCREVE COR NA MARRA, e por isso não herda os tokens.
+ *
+ * `.topbar` e `.input` trazem `background: #fff` literal — escrito quando branco era a única
+ * superfície que existia. Sobre o fundo escuro viravam duas faixas brancas atravessando a tela.
+ */
+.int-casca .topbar {
+  background: transparent;
+  border-bottom-color: var(--line);
+}
+
+/* `.config-nav` traz `background: #ffffff` literal — o cartão branco do menu de Configurações.
+   Aqui ele virava um bloco branco com texto branco dentro: a lista inteira sumia. */
+.int-casca .config-nav {
+  background: transparent;
+  border-color: transparent;
+}
+
+.int-casca .config-nav-item {
+  color: var(--text-muted);
+}
+
+.int-casca .config-nav-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ink);
+}
+
+.int-casca .config-nav-item.active {
+  background: var(--blue-soft);
+  color: #ffffff;
+  box-shadow: inset 2px 0 0 0 var(--blue);
+}
+
+/* O botão apagado (`ghost`) é texto sobre nada: sobre o escuro ele precisa da borda pra existir. */
+.int-casca .btn.ghost {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--line-strong);
+  color: var(--ink);
+}
+
+.int-casca .btn.ghost:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* A pílula de filtro, mesma história. */
+.int-casca .fchip {
+  border-color: var(--line-strong);
+  color: var(--text-muted);
+}
+
+.int-casca .fchip.active {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #ffffff;
+}
+
+.int-casca .input,
+.int-casca .search {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.int-casca .input::placeholder {
+  color: var(--text-faint);
+}
+
+/*
+ * O QUADRO DE INDICADOR tem cor PRÓPRIA (`.kpi { background: var(--cyan-soft-2) }`, um azul quase
+ * branco) e não herda `--surface-elevated` — por isso os seis números do topo apareciam como
+ * blocos brancos com texto branco dentro, ilegíveis. Dos defeitos desta pele, foi o pior.
+ */
+.int-casca .card,
+.int-casca .kpi {
+  /* Vidro: o fundo semitransparente deixa a aurora passar por baixo, que é o que faz o cartão
+     parecer sobre a página em vez de recortado dela. */
+  backdrop-filter: blur(10px);
+}
+
+.int-casca .kpi {
+  background: var(--surface-elevated);
+  border-color: var(--line);
+  box-shadow: none;
+}
+
+.int-casca .kpi:hover,
+.int-casca .trafego-view .kpi:hover {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 1px rgba(46, 107, 255, 0.4);
+}
+
+/* O número grande é o que a tela existe pra mostrar: ele fica branco cheio, e o rótulo apagado. */
+.int-casca .kpi .n {
+  color: #ffffff;
+}
+
+.int-casca table thead th {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+}
+
+.int-casca tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* O botão de ação principal fica no oceano, e não no navy: sobre fundo escuro o navy da marca
+   desaparece (1,19:1), que é a mesma razão de o tema escuro do CRM usar o dourado. */
+.int-casca .btn.primary,
+.int-casca .btn:not(.ghost):not(.danger) {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #ffffff;
 }
 
 .int-menu {
+  /*
+   * A MARGEM, que estava colada. "O menu lateral está colado na linha que separa. Padroniza as
+   * margens." Estava mesmo: a folga existia só do lado de fora (`padding-left`), e do lado da
+   * divisa o item encostava no fio. Agora a folga é igual dos dois lados, e o fio fica com ar.
+   */
   flex: 0 0 236px;
   width: 236px;
   min-width: 0;
   overflow-y: auto;
-  padding: var(--space-5) 0 var(--space-5) var(--space-5);
-  border-right: 1px solid var(--line-soft);
+  padding: var(--space-5) var(--space-4);
+  border-right: 1px solid var(--line);
 }
 
 .int-menu .config-nav-grupo-h {
   padding-left: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+/* A etiqueta "TV" do CRM Live: diz que aquele item abre uma janela nova antes de alguém clicar. */
+/* O cabeçalho sobre as telas de Inteligência comercial: mesma pele, pra não sobrar uma faixa
+   branca atravessando o topo do escuro. Os tokens vão PARA DENTRO dele, como em todo o resto. */
+.app-header-escuro {
+  background: #060b1a;
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+  color-scheme: dark;
+
+  --ink: #ffffff;
+  --ink-nome: #ffffff;
+  --text-muted: rgba(255, 255, 255, 0.68);
+  --text-faint: rgba(255, 255, 255, 0.46);
+  --line: rgba(255, 255, 255, 0.1);
+  --line-soft: rgba(255, 255, 255, 0.06);
+  --line-strong: rgba(255, 255, 255, 0.24);
+  --navy-raised: rgba(255, 255, 255, 0.06);
+  --navy-raised-2: rgba(255, 255, 255, 0.1);
+  --surface-elevated: rgba(255, 255, 255, 0.06);
+  --surface-hover: rgba(255, 255, 255, 0.1);
+  --blue: #2e6bff;
+}
+
+.app-header-escuro .search {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: var(--ink);
+}
+
+.app-header-escuro .search input {
+  color: var(--ink);
+}
+
+.int-menu-tv {
+  margin-left: auto;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  font-size: 10px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--track-wide);
+  color: var(--text-faint);
 }
 
 .int-paginas {
