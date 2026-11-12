@@ -4,7 +4,6 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 
 import {
   canalDoNumero,
-  etiquetaDoNumero,
   precisaEscolherNumero,
   type NumeroConectado,
 } from "@/lib/conversas/numeros-conectados";
@@ -26,7 +25,10 @@ import { gerarLinhaDoTempo } from "@/lib/timeline";
 import { rotuloDeAtividade } from "@/lib/funis/atividade";
 import { VAZIO, ehVazio } from "@/lib/vazio";
 import { ORDENS, ordenarContatos, origemNoFiltro, type OrdemContatos } from "@/lib/contatos/ordenacao";
-import { contatoFoiSalvo } from "@/lib/contatos/salvos";
+import { contatoApareceEmContatos, contatoEsperaNome } from "@/lib/contatos/salvos";
+
+/** O rótulo da aba de quem conversou e ainda não tem nome. Ver `contatoEsperaNome`. */
+const FILTRO_SEM_NOME = "Sem nome";
 import { formatarTelefoneParaExibicao } from "@/lib/telefone";
 import { useIdioma } from "@/lib/idioma-context";
 
@@ -258,25 +260,40 @@ function ContatosPageInner() {
    * A busca olha nome, @ do Instagram, WhatsApp e e-mail. Telefone é comparado só por dígito, pra
    * "9 8888-7777", "988887777" e "+55 11 98888-7777" acharem a mesma pessoa.
    */
+  // Quantos estão esperando nome. Fica fora do `useMemo` do filtro porque não depende dele: é a
+  // conta da aba, e ela precisa estar certa mesmo quando a aba aberta é outra.
+  const esperandoNome = useMemo(() => contatos.filter(contatoEsperaNome).length, [contatos]);
+
+  /* A aba só existe enquanto há fila. Esvaziou com ela aberta (alguém batizou o último número),
+     a tela volta pra "Todos" — senão ficaria uma lista vazia sem nenhuma aba acesa, e sem nada
+     explicando por quê. Ajustado na renderização, não num efeito. */
+  if (filtroOrigem === FILTRO_SEM_NOME && esperandoNome === 0) setFiltroOrigem(filtrosContatos[0]);
+
   const contatosFiltrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
     const digitos = termo.replace(/\D/g, "");
 
     const filtrados = contatos.filter((c) => {
       /**
-       * CONTATOS É O QUE A EQUIPE GUARDOU DE PROPÓSITO.
+       * CONTATOS É A LISTA DE DISPARO.
        *
-       * A tela mostrava todo registro de contato, e a maioria nasce sozinha quando chega uma
-       * mensagem: eram 191 linhas, quase todas um `@usuario` ou um número solto, sem nome e sem
-       * nada que permitisse reconhecer a pessoa. Agenda em que não se reconhece ninguém não é
-       * agenda.
+       * "Os contatos que entram em contato com a gente, as pessoas que conversam com a gente, os
+       * números que a gente salva manualmente, tudo tem que aparecer aqui, porque é as pessoas
+       * que a gente vai fazer disparo. A Lidiane mandou mensagem, já salva o número dela."
        *
-       * Quem ainda não foi salvo continua inteiro em Conversas, no WhatsApp, no Instagram e no
-       * funil — que é onde se atende. O registro automático segue existindo e segue ligando
-       * conversa, card e automação à mesma pessoa; ele só deixa de se apresentar como contato.
+       * Duas condições, as duas dela: tem telefone (senão não recebe disparo — "apenas os números
+       * de WhatsApp") e tem nome (senão "a gente não sabe pra quem tá enviando"). A regra mora em
+       * `salvos.ts`, com teste; aqui só se aplica.
+       *
+       * A ABA "SEM NOME" é a exceção, e existe pra número nenhum sumir em silêncio: quem conversou
+       * mas o WhatsApp não deu nome de perfil fica ali, esperando batismo.
        */
-      if (!contatoFoiSalvo(c)) return false;
-      if (!(filtroOrigem === "Todos" || origemNoFiltro(c.origem) === filtroOrigem)) return false;
+      if (filtroOrigem === FILTRO_SEM_NOME) {
+        if (!contatoEsperaNome(c)) return false;
+      } else {
+        if (!contatoApareceEmContatos(c)) return false;
+        if (!(filtroOrigem === "Todos" || origemNoFiltro(c.origem) === filtroOrigem)) return false;
+      }
       if (!termo) return true;
 
       const campos = [c.nome, c.instagram, c.email].filter(Boolean).map((t) => String(t).toLowerCase());
@@ -446,7 +463,19 @@ function ContatosPageInner() {
         <RenomearOrigem aoRenomear={() => window.location.reload()} />
 
         <div className="contatos-barra">
-          <ChipFilters options={filtrosContatos} initial={0} onChange={(v) => setFiltroOrigem(v)} />
+          {/*
+            A FILA DE BATISMO ENTRA COMO ABA, com a conta na frente.
+
+            "Se não tiver nome, não coloque aqui em contato." Tirar da lista é o pedido — mas
+            apagar da tela seria outra coisa: o número existe, conversou, e vai ser preciso um dia.
+            Como aba ele fica fora da lista de disparo e a um clique de ganhar nome. A aba só
+            aparece quando há alguém nela: aba vazia é ruído permanente.
+          */}
+          <ChipFilters
+            options={esperandoNome > 0 ? [...filtrosContatos, `${FILTRO_SEM_NOME} (${esperandoNome})`] : filtrosContatos}
+            initial={0}
+            onChange={(v) => setFiltroOrigem(v.startsWith(FILTRO_SEM_NOME) ? FILTRO_SEM_NOME : v)}
+          />
           <label className="contatos-ordenar">
             <span>{traduzir("Ordenar por")}</span>
             <select className="input" value={ordem} onChange={(e) => setOrdem(e.target.value as OrdemContatos)}>
@@ -477,7 +506,11 @@ function ContatosPageInner() {
                   <tr>
                     <td colSpan={6}>
                       <p className="hint" style={{ padding: 17 }}>
-                        {busca.trim() ? traduzir("Nenhum contato encontrado com esse termo.") : "Nenhum contato nessa origem ainda."}
+                        {busca.trim()
+                          ? traduzir("Nenhum contato encontrado com esse termo.")
+                          : filtroOrigem === FILTRO_SEM_NOME
+                            ? traduzir("Nenhum número esperando nome. Todo mundo que conversou já está identificado.")
+                            : traduzir("Nenhum contato nessa origem ainda.")}
                       </p>
                     </td>
                   </tr>

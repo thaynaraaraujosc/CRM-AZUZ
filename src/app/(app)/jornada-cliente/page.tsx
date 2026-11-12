@@ -11,7 +11,7 @@ import {
   type Contato,
 } from "@/lib/data";
 import { useContatos } from "@/lib/contatos-context";
-import { contatoFoiSalvo } from "@/lib/contatos/salvos";
+import { contatoApareceEmContatos } from "@/lib/contatos/salvos";
 import { useConversas } from "@/lib/conversas-context";
 import { useMensagensExtra } from "@/lib/mensagens-extra-context";
 import { useEquipe } from "@/lib/equipe-context";
@@ -96,7 +96,11 @@ function JornadaClientePageInner() {
    *
    * Mesma regra da tela de Contatos, no mesmo lugar: quem a equipe guardou de propósito.
    */
-  const contatos = useMemo(() => todosOsContatos.filter(contatoFoiSalvo), [todosOsContatos]);
+  /* A MESMA REGRA DE CONTATOS, e não uma parecida. Esta tela listava "quem a equipe guardou de
+     propósito" enquanto Contatos passou a listar "quem dá pra identificar e alcançar": duas telas
+     com o mesmo nome de coisa e listas diferentes é o começo de alguém perder a confiança nas
+     duas. Ver `salvos.ts`. */
+  const contatos = useMemo(() => todosOsContatos.filter(contatoApareceEmContatos), [todosOsContatos]);
   const { conversas } = useConversas();
   const { mensagensExtraPorContato } = useMensagensExtra();
   const { funis } = useFunis();
