@@ -8,6 +8,7 @@ import { IconClose } from "@/components/icons";
 import { useContatos } from "@/lib/contatos-context";
 import { ORIGENS_PAGAS } from "@/lib/contatos/origem-do-lead";
 import { situacaoDaCampanha } from "@/lib/integracoes/conta-de-anuncios";
+import { formatarEspera, tomDaEspera } from "@/lib/trafego/tempo-de-resposta";
 import { useFunis } from "@/lib/funis-context";
 import { useIntegracaoMeta } from "@/components/configuracoes/useIntegracaoMeta";
 import { useGoogleAds } from "@/components/trafego/useGoogleAds";
@@ -255,6 +256,9 @@ export default function TrafegoPage() {
       const semPlataforma = (c as Campanha & { semPlataforma?: boolean }).semPlataforma === true;
       const receitaCrm = crm?.receita ?? 0;
       const leadsCrm = crm?.leads ?? 0;
+      // A espera vem do CRM, não da plataforma: só o CRM sabe quando alguém respondeu.
+      const esperaMediana = crm?.esperaMediana ?? null;
+      const semResposta = crm?.semResposta ?? 0;
       return {
         ...c,
         leads,
@@ -270,6 +274,8 @@ export default function TrafegoPage() {
         // Só a plataforma sabe o gasto e só o CRM sabe a venda; é o cruzamento que produz o número.
         roasCrm: investido > 0 ? receitaCrm / investido : 0,
         cplCrm: leadsCrm > 0 ? investido / leadsCrm : 0,
+        esperaMediana,
+        semResposta,
         semPlataforma,
       };
     });
@@ -757,7 +763,7 @@ export default function TrafegoPage() {
               {traduzir("Desempenho por campanha")}
               <Ajuda
                 texto={traduzir(
-                  "As colunas da esquerda são o que a plataforma de anúncio informa: ela só enxerga o que acontece dentro dela. As três da direita são o que o CRM registrou de verdade — lead que virou contato e negócio marcado como ganho no funil. O ROAS real cruza os dois: receita do seu funil dividida pelo que a plataforma cobrou. Assistida é venda em que a campanha participou sem ter trazido o lead: a pessoa viu o anúncio, não comprou, e voltou por outro caminho. Desligar uma campanha com muitas assistidas costuma derrubar junto a que estava fechando.",
+                  "As colunas da esquerda são o que a plataforma de anúncio informa: ela só enxerga o que acontece dentro dela. As três da direita são o que o CRM registrou de verdade — lead que virou contato e negócio marcado como ganho no funil. O ROAS real cruza os dois: receita do seu funil dividida pelo que a plataforma cobrou. Assistida é venda em que a campanha participou sem ter trazido o lead: a pessoa viu o anúncio, não comprou, e voltou por outro caminho. Desligar uma campanha com muitas assistidas costuma derrubar junto a que estava fechando. A última coluna não fala do anúncio: é quanto tempo um lead desta campanha normalmente espera até alguém responder, contado da primeira mensagem dele até a primeira resposta de vocês. É mediana, não média, pra um lead de sexta à noite respondido na segunda não contaminar o número — e quem nunca foi respondido aparece em separado, porque ele não espera, ele desiste.",
                 )}
               />
             </h4>
@@ -802,12 +808,23 @@ export default function TrafegoPage() {
                   <th className="trafego-col-crm">{traduzir("Leads no CRM")}</th>
                   <th className="trafego-col-crm">{traduzir("Vendas no CRM")}</th>
                   <th className="trafego-col-crm">{traduzir("ROAS real")}</th>
+                  {/*
+                    A ÚNICA COLUNA DESTA TELA QUE NÃO FALA DO ANÚNCIO.
+
+                    "Campanha que traz lead bom e demora 40 minutos pra ser atendida perde venda
+                    por operação, não por mídia — e isso hoje fica invisível, aparecendo só como
+                    'campanha ruim'."
+
+                    Fica na ponta direita, depois do que o CRM registrou, porque é da mesma
+                    natureza: é o que acontece DEPOIS que o anúncio fez a parte dele.
+                  */}
+                  <th className="trafego-col-crm">{traduzir("Espera p/ responder")}</th>
                 </tr>
               </thead>
               <tbody>
                 {linhasCampanha.length === 0 ? (
                   <tr>
-                    <td colSpan={12}>
+                    <td colSpan={13}>
                       {/*
                         "Esse desempenho por campanha. Não tá mostrando nada aqui por quê?"
 
@@ -912,6 +929,37 @@ export default function TrafegoPage() {
                       ) : (
                         "—"
                       )}
+                    </td>
+                    <td className="trafego-col-crm">
+                      {(() => {
+                        const tom = tomDaEspera(c.esperaMediana);
+                        return (
+                          <>
+                            <span className={tom ? `trafego-espera ${tom}` : undefined}>
+                              {formatarEspera(c.esperaMediana)}
+                            </span>
+                            {/*
+                              OS DOIS NÚMEROS ANDAM JUNTOS, SEMPRE.
+
+                              Lead sem resposta não entra na mediana — senão um lead ignorado
+                              viraria "espera infinita" e arrastaria a campanha inteira. Mas
+                              escondê-lo seria pior: uma campanha com dez leads e nove ignorados
+                              mostraria a espera ótima do único que alguém respondeu, e passaria
+                              por bem atendida. Por isso o "sem resposta" fica colado na mediana.
+                            */}
+                            {c.semResposta > 0 ? (
+                              <span
+                                className="trafego-sem-resposta"
+                                title={traduzir(
+                                  "Leads desta campanha que escreveram e ainda não receberam nenhuma resposta. Eles não entram na mediana ao lado.",
+                                )}
+                              >
+                                {c.semResposta} {traduzir("sem resposta")}
+                              </span>
+                            ) : null}
+                          </>
+                        );
+                      })()}
                     </td>
                   </tr>
                 ))}

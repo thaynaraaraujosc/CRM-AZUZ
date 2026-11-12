@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { medianaDeMinutos } from "@/lib/trafego/tempo-de-resposta";
 
 /**
  * Quantos leads e quanta venda cada CAMPANHA trouxe, segundo o CRM.
@@ -39,6 +40,13 @@ type LinhaPorCampanha = {
    * derrubaria a campanha do Google junto, porque era ela que estava alimentando.
    */
   vendasAssistidas: number;
+  /**
+   * Quanto um lead desta campanha NORMALMENTE espera até alguém responder, em minutos. Mediana,
+   * nunca média — ver `tempo-de-resposta.ts`. `null` quando nenhum lead dela foi respondido.
+   */
+  esperaMediana: number | null;
+  /** Quantos leads dela ainda não receberam nenhuma resposta. Anda junto da mediana, sempre. */
+  semResposta: number;
 };
 
 /** "R$ 2.100,50" -> 2100.5. Mesma regra de `metrics.ts`, pra os dois números baterem na tela. */
@@ -108,6 +116,63 @@ export async function GET() {
           select: { contatoId: true, plataforma: true, campanhaId: true, campanhaNome: true },
         });
 
+  /*
+   * ==========================================================================
+   * QUANTO O LEAD ESPERA ATÉ ALGUÉM RESPONDER.
+   *
+   * "Campanha que traz lead bom e demora 40 minutos pra ser atendida perde venda por operação,
+   * não por mídia."
+   *
+   * DUAS CONSULTAS AGREGADAS, e não o histórico de mensagens inteiro. A conta pede dois instantes
+   * por contato — a primeira mensagem dele e a primeira resposta da empresa. Baixar todas as
+   * mensagens de todos os leads pra achar dois carimbos seriam dezenas de milhares de linhas a
+   * cada abertura da tela (esta rota é `force-dynamic`), pra usar duas. O banco já sabe responder
+   * "o menor carimbo por contato": é um `groupBy` em cima do índice `[workspaceId, contato]`.
+   *
+   * QUAL CARIMBO. `gravadoEm` é o nosso relógio, nos dois sentidos, e é o que o schema manda usar
+   * pra medir. `criadoEm` entra só como reserva, pras linhas anteriores àquela coluna: ali o
+   * carimbo da mensagem recebida vem do aparelho de quem escreveu, então pode variar alguns
+   * segundos. Numa mediana contada em minutos, segundos não mudam decisão nenhuma — e a
+   * alternativa seria a coluna aparecer vazia pra toda conversa antiga.
+   *
+   * O CASO QUE ESTA CONTA NÃO PEGA: empresa que escreveu primeiro. `_min` devolve o primeiro
+   * "out" da conversa, e não o primeiro depois da entrada do lead. Quando o primeiro "out" é
+   * anterior à primeira mensagem do lead, a espera fica em `null` em vez de virar um número
+   * errado — disparo ativo não é lead de anúncio esperando atendimento. Ver a mesma regra, com
+   * teste, em `minutosAtePrimeiraResposta`.
+   * ==========================================================================
+   */
+  const nomesDosLeads = [...nomePorContato.values()];
+  const [entradas, saidas] = await Promise.all([
+    prisma.mensagemExtra.groupBy({
+      by: ["contato"],
+      where: { workspaceId, contato: { in: nomesDosLeads }, tipo: "in" },
+      _min: { gravadoEm: true, criadoEm: true },
+    }),
+    prisma.mensagemExtra.groupBy({
+      by: ["contato"],
+      where: { workspaceId, contato: { in: nomesDosLeads }, tipo: "out" },
+      _min: { gravadoEm: true, criadoEm: true },
+    }),
+  ]);
+
+  const quando = (linha: { _min: { gravadoEm: Date | null; criadoEm: Date | null } }): Date | null =>
+    linha._min.gravadoEm ?? linha._min.criadoEm ?? null;
+  const primeiraEntradaPorNome = new Map(entradas.map((e) => [e.contato, quando(e)]));
+  const primeiraSaidaPorNome = new Map(saidas.map((e) => [e.contato, quando(e)]));
+
+  /** A espera deste lead, em minutos. `null` = não dá pra medir (ver o bloco acima). */
+  function esperaDoLead(nomeDoContato: string): number | null {
+    const entrada = primeiraEntradaPorNome.get(nomeDoContato);
+    const saida = primeiraSaidaPorNome.get(nomeDoContato);
+    if (!entrada || !saida) return null;
+    if (saida.getTime() <= entrada.getTime()) return null;
+    return Math.round((saida.getTime() - entrada.getTime()) / 60_000);
+  }
+
+  /** As esperas de cada campanha, guardadas cruas pra a mediana ser tirada no fim. */
+  const esperasPorChave = new Map<string, number[]>();
+
   const porCampanha = new Map<string, LinhaPorCampanha>();
   let leadsSemCampanha = 0;
 
@@ -133,14 +198,36 @@ export async function GET() {
         vendas: 0,
         receita: 0,
         vendasAssistidas: 0,
+        esperaMediana: null,
+        semResposta: 0,
       } satisfies LinhaPorCampanha);
 
     linha.leads += 1;
-    const venda = vendaPorNome.get(nomePorContato.get(origem.contatoId) ?? "");
+    const nomeDoContato = nomePorContato.get(origem.contatoId) ?? "";
+    const venda = vendaPorNome.get(nomeDoContato);
     if (venda) {
       linha.vendas += venda.vendas;
       linha.receita += venda.receita;
     }
+
+    /*
+     * O lead sem resposta não entra na mediana E é contado à parte.
+     *
+     * Jogá-lo como "espera infinita" distorceria o número; deixá-lo de fora em silêncio seria
+     * pior: uma campanha com dez leads e nove ignorados mostraria a espera ótima do único que
+     * alguém respondeu, e passaria por bem atendida. Os dois números só dizem a verdade juntos.
+     */
+    const espera = esperaDoLead(nomeDoContato);
+    if (espera === null) {
+      // Só conta como "sem resposta" quem de fato escreveu e não foi respondido. Lead que nunca
+      // mandou mensagem (veio por formulário, por exemplo) não está esperando nada.
+      if (primeiraEntradaPorNome.get(nomeDoContato)) linha.semResposta += 1;
+    } else {
+      const lista = esperasPorChave.get(chave) ?? [];
+      lista.push(espera);
+      esperasPorChave.set(chave, lista);
+    }
+
     porCampanha.set(chave, linha);
   }
 
@@ -175,8 +262,17 @@ export async function GET() {
         vendas: 0,
         receita: 0,
         vendasAssistidas: 1,
+        esperaMediana: null,
+        semResposta: 0,
       });
     }
+  }
+
+  // A mediana só no fim, com todas as esperas da campanha na mão: tirar "a mediana até agora" a
+  // cada lead daria um número que depende da ordem em que o banco devolveu as linhas.
+  for (const [chave, esperas] of esperasPorChave) {
+    const linha = porCampanha.get(chave);
+    if (linha) linha.esperaMediana = medianaDeMinutos(esperas);
   }
 
   const linhas = [...porCampanha.values()].sort((a, b) => b.leads - a.leads);

@@ -11,6 +11,10 @@ export type LinhaPorCampanha = {
   receita: number;
   /** Vendas em que a campanha encostou sem levar o crédito do primeiro toque. */
   vendasAssistidas: number;
+  /** Mediana, em minutos, da espera do lead até a primeira resposta. `null` = nada a medir. */
+  esperaMediana: number | null;
+  /** Leads dela que escreveram e ainda não foram respondidos. */
+  semResposta: number;
 };
 
 /**

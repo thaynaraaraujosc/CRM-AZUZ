@@ -35252,3 +35252,48 @@ td.trafego-col-crm:first-of-type {
   background: color-mix(in srgb, var(--danger) 14%, transparent);
   color: var(--danger);
 }
+
+/* ==========================================================================
+   ESPERA ATÉ A PRIMEIRA RESPOSTA
+
+   A única coluna da tela que não fala do anúncio: fala de quem atende o anúncio. Por isso ela é a
+   única com cor de juízo — "12 min" e "3h40" numa tabela de treze colunas ninguém compara de
+   relance, e comparar de relance é o trabalho inteiro dela.
+
+   Os cortes (5 min, 1 hora) estão em `tempo-de-resposta.ts`, com teste, junto da razão de serem
+   esses.
+   ========================================================================== */
+
+.trafego-espera {
+  font-weight: var(--fw-semibold);
+}
+
+.trafego-espera.bom {
+  color: #16a34a;
+}
+
+/* Âmbar e não vermelho: entre cinco minutos e uma hora ainda dá pra recuperar a conversa. Vermelho
+   aqui gastaria o alarme no caso que ainda tem conserto, e aí o de uma hora não assustaria mais. */
+.trafego-espera.atencao {
+  color: #b45309;
+}
+
+.trafego-espera.ruim {
+  color: var(--danger);
+}
+
+/*
+ * O "sem resposta" colado embaixo da mediana, na mesma célula.
+ *
+ * Em coluna separada ele seria lido como mais um número entre treze; colado, ele é lido como
+ * ressalva do número de cima — que é o que ele é. Uma campanha que mostra "4 min · 9 sem
+ * resposta" se explica sozinha, e nenhuma das duas metades faz isso sozinha.
+ */
+.trafego-sem-resposta {
+  display: block;
+  margin-top: 1px;
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  color: var(--danger);
+  cursor: help;
+}
