@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import type { Prisma } from "@/generated/prisma/client";
+import { mensagemEhDaConexao } from "@/lib/conversas/mensagem-da-conexao";
 import type { ConvMensagem } from "@/lib/data";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -186,6 +187,27 @@ export async function PUT(request: Request) {
     : [];
   const contaCanalPorConversa = new Map(conversas.map((c) => [c.nome, c.contaCanal]));
 
+  /**
+   * A CONVERSA SÓ MARCA A MENSAGEM QUANDO O CANAL DELA CONCORDA.
+   *
+   * O `contaCanal` vinha da conversa e mais nada. Mas a conversa MUDA DE CASA no mesmo instante em
+   * que alguém manda por outro número, e este PUT chega com atraso (o sincronismo da tela junta as
+   * mensagens antes de mandar). Nessa fresta, a mensagem que saiu pelo oficial era gravada com a
+   * conexão do QR Code — uma linha que diz, ela mesma, duas coisas diferentes: `canal` oficial,
+   * `contaCanal` do QR Code.
+   *
+   * E uma linha contraditória não é só feia: era ela que fazia a mensagem recém-enviada sumir da
+   * thread onde a pessoa acabou de escrevê-la.
+   *
+   * Discordando, grava sem marca. É o estado que a regra de leitura trata como "não sei": a
+   * mensagem continua visível e o `canal` — escrito na hora do envio, sem corrida nenhuma — faz a
+   * separação. Inventar uma conexão que o servidor não viu seria pior do que admitir que não sabe.
+   */
+  const marcaDaConversa = (contato: string, canal: string | null | undefined) => {
+    const daConversa = contaCanalPorConversa.get(contato) ?? null;
+    return mensagemEhDaConexao({ canal }, daConversa) ? daConversa : null;
+  };
+
   const preparados = await Promise.all(
     upserts.map(async ({ contato, idFinal, mensagem }) => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars -- só pra excluir `id` de `extras`, já vira a coluna própria
@@ -202,7 +224,7 @@ export async function PUT(request: Request) {
           status: status ?? null,
           canal: canal ?? null,
           wamid: wamid ?? null,
-          contaCanal: contaCanalPorConversa.get(contato) ?? null,
+          contaCanal: marcaDaConversa(contato, canal),
           extras: (await guardarMidiasDosExtras(preservados, workspaceId)) as Prisma.InputJsonValue,
         },
       };

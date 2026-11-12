@@ -35,6 +35,7 @@ import {
 import { canalDaConexao, canalDeSaida } from "@/lib/conversas/canal-de-saida";
 import { numeroQueResponde, porQueEsteNumero } from "@/lib/funis/numero-que-responde";
 import { janelaAbertaPelasMensagens } from "@/lib/integracoes/janela-do-oficial";
+import { mensagemEhDaConexao, quantasDeOutraConexao } from "@/lib/conversas/mensagem-da-conexao";
 import { aquecerModelos } from "@/lib/conversas/modelos-whatsapp";
 import { iniciaisExibidas, nomeExibido } from "@/lib/conversas/exibicao";
 import { valeBuscarNome } from "@/lib/conversas/nome-do-historico";
@@ -1659,6 +1660,14 @@ function ConversasPageInner() {
   // gigante, cada bolha com menu/portal próprio). Mostra só as últimas por padrão, com botão pra
   // carregar mais sob demanda. Reseta pro padrão sempre que troca de conversa.
   const [limiteMensagensVisiveis, setLimiteMensagensVisiveis] = useState(200);
+  /**
+   * A pessoa pediu pra ver TAMBÉM o que foi falado pelo outro número desta mesma pessoa.
+   *
+   * Desligado por padrão: a thread mostra só a conexão em que ela está. Ligado, volta tudo. É o
+   * que impede a separação de virar sumiço — esconder sem dizer o quanto, e sem caminho de volta,
+   * é a mesma perda de conversa com outra aparência.
+   */
+  const [verDoOutroNumero, setVerDoOutroNumero] = useState(false);
   // Mensagem de texto muito longa (mais comum em grupo grande, tipo aviso de condomínio) tomava a
   // tela inteira de rolagem: trunca com "Ler mais/menos", igual qualquer app de mensagem faz.
   const [mensagensExpandidas, setMensagensExpandidas] = useState<Set<string>>(() => new Set());
@@ -1668,7 +1677,41 @@ function ConversasPageInner() {
   if (idConversaAnteriorRef.current !== aberta.id) {
     idConversaAnteriorRef.current = aberta.id;
     setLimiteMensagensVisiveis(200);
+    setVerDoOutroNumero(false);
   }
+
+  /*
+   * AS MENSAGENS DESTA CONVERSA, SEPARADAS POR CONEXÃO.
+   *
+   * "Eu nunca tinha mandado mensagem para esse número, e ele está puxando as mensagens do número
+   * do QR Code. Está parecendo como se eu já tivesse conversado com esse contato antes."
+   *
+   * O CRM guarda uma conversa por PESSOA; o WhatsApp tem uma por PAR DE NÚMEROS. No aparelho de
+   * quem recebe, o número oficial abriu um chat vazio — e a tela aqui mostrava, acima da primeira
+   * mensagem, meses de conversa que aquela pessoa não tem na frente dela. Quem atende lê a thread
+   * pra saber o que já foi dito; lendo o histórico errado, responde "como combinamos ontem" pra
+   * alguém que, naquele número, nunca combinou nada.
+   *
+   * A regra está em `mensagem-da-conexao.ts`, com teste, e é conservadora: só sai da vista o que
+   * se SABE ser de outra conexão.
+   *
+   * O ÍNDICE ORIGINAL ANDA JUNTO, e não é detalhe: a "chave" de cada mensagem é `id ?? extra-<i>`,
+   * contada na lista INTEIRA, e é por ela que menu, estrela, reação e apagar encontram a mensagem
+   * depois. Filtrar renumerando trocaria as chaves — e o clique cairia em outra mensagem.
+   */
+  const mensagensDaAberta = useMemo(() => mensagensExtraPorContato[aberta.nome] ?? [], [mensagensExtraPorContato, aberta.nome]);
+  const mensagensVisiveis = useMemo(
+    () =>
+      mensagensDaAberta
+        .map((msg, i) => ({ msg, i }))
+        .filter(({ msg }) => verDoOutroNumero || mensagemEhDaConexao(msg, aberta.contaCanal)),
+    [mensagensDaAberta, aberta.contaCanal, verDoOutroNumero],
+  );
+  const ocultasDeOutroNumero = useMemo(
+    () => quantasDeOutraConexao(mensagensDaAberta, aberta.contaCanal),
+    [mensagensDaAberta, aberta.contaCanal],
+  );
+
   const localizacao = localizarNoFunil(funis, aberta.nome);
 
   /*
@@ -2169,7 +2212,7 @@ function ConversasPageInner() {
    */
   const fimDasMensagensRef = useRef<HTMLDivElement>(null);
   const conversaAnteriorRef = useRef<string | null>(null);
-  const quantidadeDeMensagens = (mensagensExtraPorContato[aberta.nome] ?? []).length;
+  const quantidadeDeMensagens = mensagensVisiveis.length;
 
   useEffect(() => {
     const trocouDeConversa = conversaAnteriorRef.current !== aberta.id;
@@ -5459,9 +5502,32 @@ function ConversasPageInner() {
                 ⚠ {erroCurtir}
               </button>
             ) : null}
+            {ocultasDeOutroNumero > 0 ? (
+              /*
+               * A SEPARAÇÃO DITA EM VOZ ALTA, com caminho de volta.
+               *
+               * Esta conversa aconteceu também por outro número seu. Lá, do lado de quem recebe, é
+               * outro chat — por isso não entra na thread. Mas o histórico existe e continua a ser
+               * desta mesma pessoa, então ele é dito, contado e devolvido num clique. Esconder em
+               * silêncio seria trocar um defeito visível por um invisível.
+               */
+              <button
+                type="button"
+                className="btn ghost"
+                style={{ display: "block", margin: "8px auto", fontSize: 12 }}
+                onClick={() => setVerDoOutroNumero((v) => !v)}
+              >
+                {verDoOutroNumero
+                  ? traduzir("Ocultar as mensagens do outro número")
+                  : `${ocultasDeOutroNumero} ${
+                      ocultasDeOutroNumero === 1
+                        ? traduzir("mensagem com esta pessoa por outro número")
+                        : traduzir("mensagens com esta pessoa por outro número")
+                    } · ${traduzir("Ver")}`}
+              </button>
+            ) : null}
             {(() => {
-              const todasDaConversa = mensagensExtraPorContato[aberta.nome] ?? [];
-              const ocultas = todasDaConversa.length - limiteMensagensVisiveis;
+              const ocultas = mensagensVisiveis.length - limiteMensagensVisiveis;
               return ocultas > 0 ? (
                 <button
                   type="button"
@@ -5473,8 +5539,7 @@ function ConversasPageInner() {
                 </button>
               ) : null;
             })()}
-            {(mensagensExtraPorContato[aberta.nome] ?? []).slice(-limiteMensagensVisiveis).map((msg, iRelativo, arr) => {
-              const i = (mensagensExtraPorContato[aberta.nome]?.length ?? arr.length) - arr.length + iRelativo;
+            {mensagensVisiveis.slice(-limiteMensagensVisiveis).map(({ msg, i }, iRelativo, arr) => {
               const chave = msg.id ?? `extra-${i}`;
               if (mensagensApagadas.has(chave)) return null;
               if (msg.apagadaParaTodos) {
@@ -5555,7 +5620,7 @@ function ConversasPageInner() {
               // pra saber onde termina um dia e começa o outro, que é justamente o que se procura
               // ao reler um atendimento.
               const diaDesta = rotuloDoDiaEmBrasilia(msg.criadoEm, traduzir, localeNumero);
-              const diaDaAnterior = iRelativo > 0 ? rotuloDoDiaEmBrasilia(arr[iRelativo - 1].criadoEm, traduzir, localeNumero) : null;
+              const diaDaAnterior = iRelativo > 0 ? rotuloDoDiaEmBrasilia(arr[iRelativo - 1].msg.criadoEm, traduzir, localeNumero) : null;
               const mudouDeDia = Boolean(diaDesta) && diaDesta !== diaDaAnterior;
 
               return (
