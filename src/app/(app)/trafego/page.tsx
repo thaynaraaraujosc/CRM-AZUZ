@@ -408,6 +408,20 @@ export default function TrafegoPage() {
                       campanha — dizer "conecte" aqui manda a pessoa refazer algo que já está
                       feito. */}
                   <strong>{traduzir("Conectado, mas o Meta não devolveu nenhuma campanha.")}</strong>
+                  {/*
+                    QUAL CONTA DE ANÚNCIOS ESTÁ LIGADA — dita na tela, e não só guardada.
+
+                    Com a consulta funcionando e voltando vazia, a causa quase certa é a conexão
+                    estar apontando pra OUTRA conta de anúncios (quem administra várias tem isso o
+                    tempo todo). Mostrar o id aqui transforma "não aparece nada" em "ah, é a conta
+                    errada" sem precisar abrir o Gerenciador pra conferir.
+                  */}
+                  {typeof adsIntegracao?.metadados?.adAccountId === "string" ? (
+                    <span>
+                      {traduzir("Conta de anúncios ligada:")}{" "}
+                      <b>{adsIntegracao.metadados.adAccountId}</b>
+                    </span>
+                  ) : null}
                   <span>
                     {traduzir(
                       "O CRM busca as campanhas ativas e as pausadas que gastaram nos últimos 30 dias, da conta de anúncios escolhida na conexão. Se as suas campanhas estão em outra conta de anúncios, é só trocar a conta em Configurações › Outras integrações › Meta Ads.",

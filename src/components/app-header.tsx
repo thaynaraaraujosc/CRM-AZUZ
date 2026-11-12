@@ -12,6 +12,7 @@ import { useEquipe } from "@/lib/equipe-context";
 import { useNotificacoes } from "@/lib/notificacoes-context";
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
 import { MarcaDoTopo } from "@/components/marca-do-topo";
+import { ITENS_INTELIGENCIA } from "@/lib/inteligencia/estrutura";
 import { IconBell, IconSearch } from "@/components/icons";
 import { navEntries } from "@/components/sidebar";
 import { SeletorIdioma } from "@/components/seletor-idioma";
@@ -171,6 +172,16 @@ export function AppHeader() {
   // (`.main-inicio`, ver globals.css): a busca acompanha, ficando transparente em cima desse
   // fundo em vez de manter a faixa branca com linha embaixo.
   const naTelaInicio = pathname === "/inicio";
+  /*
+   * O CABEÇALHO ACOMPANHA A PELE ESCURA DE INTELIGÊNCIA COMERCIAL.
+   *
+   * Ele é branco e vive fora de `.int-casca`, então sobre aquelas telas sobrava uma faixa branca
+   * atravessando o topo do escuro — uma emenda, não uma divisa. "Fica bem diferente do resto do
+   * CRM" vale pra tela inteira, e o cabeçalho é parte dela.
+   */
+  const naInteligencia = ITENS_INTELIGENCIA.some(
+    (i) => !i.telaCheia && (pathname === i.href || pathname.startsWith(`${i.href}/`)),
+  );
 
   /*
    * O CABEÇALHO GLOBAL SOME NA TELA DE CONVERSAS.
@@ -200,7 +211,11 @@ export function AppHeader() {
   if (pathname?.startsWith("/automacoes/editor/")) return null;
 
   return (
-    <header className={`app-header${naTelaInicio ? " app-header-transparente" : ""}`}>
+    <header
+      className={`app-header${naTelaInicio ? " app-header-transparente" : ""}${
+        naInteligencia ? " app-header-escuro" : ""
+      }`}
+    >
       {/*
         A MARCA, SÓ NO CELULAR.
         

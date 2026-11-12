@@ -28,15 +28,45 @@ export function MenuInteligencia({ children }: { children: ReactNode }) {
         <div className="config-nav">
           {ITENS_INTELIGENCIA.map((item) => {
             const ativo = pathname === item.href || pathname.startsWith(`${item.href}/`);
+
+            /*
+             * O CRM LIVE ABRE NUMA JANELA PRÓPRIA.
+             *
+             * "Ele tem que abrir em outra janela, porque é como se fosse algo que vai ficar aberto
+             * dentro de uma empresa. Enquanto o cara tá mexendo no CRM, o CRM Live tá aberto lá."
+             *
+             * É o único item daqui que não é uma tela pra visitar: é um painel pra DEIXAR ABERTO,
+             * na TV da sala. Abrir no lugar do CRM tiraria da pessoa a tela em que ela estava
+             * trabalhando pra mostrar um painel que ela não ia ficar olhando.
+             *
+             * Tag `<a>` e não `<Link>`: ele vive fora da casca do app, e o roteador do Next não
+             * tem o que pré-carregar de uma janela nova.
+             */
+            if (item.telaCheia) {
+              return (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="config-nav-item"
+                  title={traduzir("Abre numa janela nova, pra deixar na TV da sala")}
+                >
+                  <item.Icon width={16} height={16} aria-hidden="true" style={{ color: item.cor }} />
+                  <span>{traduzir(item.label)}</span>
+                  <span className="int-menu-tv">{traduzir("TV")}</span>
+                </a>
+              );
+            }
+
             return (
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch
                 className={`config-nav-item${ativo ? " active" : ""}`}
                 aria-current={ativo ? "page" : undefined}
                 title={traduzir(item.descricao)}
-                /* O CRM Live mora fora da casca do app (tela cheia, pra TV). `target` não: trocar
-                   de aba sem avisar é o tipo de coisa que faz a pessoa achar que perdeu a tela. */
               >
                 <item.Icon width={16} height={16} aria-hidden="true" style={{ color: item.cor }} />
                 <span>{traduzir(item.label)}</span>
