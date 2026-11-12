@@ -126,6 +126,26 @@
   --blue: #002037;
   --blue-soft: #e6ebef;
   --blue-soft-2: #f2f5f7;
+
+  /* -------------------------------------------------------------------------
+     O AZUL CLARO DE VERDADE.
+
+     `--blue-soft` (#e6ebef) e `--blue-soft-2` (#f2f5f7) são CINZAS com um sopro de azul: nasceram
+     pra serem fundo de item selecionado, onde quase não se percebem — e é isso que se quer ali.
+     Usados como fundo de um cartão inteiro, eles leem como branco sujo. "Tá tudo branco com
+     cinza."
+
+     E `--blue` não é azul nenhum: é o navy #002037. De filete lateral, ele vira uma faixa preta.
+
+     Então o azul claro da marca ganha nome próprio, em vez de continuar sendo adivinhado a cada
+     tela. O valor é o mesmo que a caixa de entrada já usa há tempos (`--conversa-topo`), que é
+     onde ele foi provado: navy por cima dá 13,4:1.
+
+     No escuro ele vira superfície escura, pelo mesmo motivo de lá: o que separa é a claridade. */
+  --azul-claro: #dcebf6;
+  /* Um degrau acima, pra área grande não pesar. */
+  --azul-claro-2: #eef5fb;
+  --azul-claro-linha: #bcd9ee;
   /* Azul mais escuro que --blue. Usado onde o azul vibrante padrão fica claro demais pra servir
      de "ligado"/confirmação (ex.: toggle ativo). */
   --blue-strong: #001726;
@@ -479,6 +499,14 @@
   --blue: #D2A366;
   --blue-soft: rgba(210, 163, 102, 0.18);
   --blue-soft-2: rgba(210, 163, 102, 0.09);
+
+  /* O azul claro no escuro é superfície, não cor de frente: pintar de #dcebf6 aqui seria uma
+     mancha acesa no meio do escuro. Mas ele é um degrau ACIMA do fundo da página (`--navy`), não
+     abaixo — cartão mais escuro que a página se lê como buraco, não como cartão. É a mesma escada
+     de `--navy-raised-2`, que existe exatamente pra isto. */
+  --azul-claro: #002B49;
+  --azul-claro-2: #00253D;
+  --azul-claro-linha: #003053;
 
   --cyan: #D2A366;
   --cyan-soft: rgba(210, 163, 102, 0.14);
@@ -19339,26 +19367,33 @@ table.tbl .name-cell .r {
   align-items: stretch;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
 }
+/* SEM FILETE NA LATERAL. Ele era `3px solid var(--blue)` — e `--blue` é o navy #002037, então o
+   que apareceu na tela foi uma faixa preta na beira de cada cartão. "Tira essa faixa preta."
+   O estado já é dito pela etiqueta e pelo fundo; a faixa só acrescentava peso. */
 .tpl-grade-cards .tpl-card {
   height: 100%;
-  border-left: 3px solid var(--line);
-  transition: border-color 0.12s ease;
+  background: var(--azul-claro-2);
+  border-color: var(--azul-claro-linha);
+  transition: background 0.12s ease, border-color 0.12s ease;
 }
 .tpl-grade-cards .tpl-card:hover {
-  border-color: var(--blue);
+  background: var(--azul-claro);
 }
-/* A MESMA LINGUAGEM DE COR DO DISPARO: aprovado em azul claro, rejeitado em dourado. As duas
-   telas falam do mesmo modelo; cores diferentes pro mesmo estado fariam parecer dois assuntos. */
+/* A MESMA LINGUAGEM DE COR DO DISPARO: aprovado em azul claro, rejeitado no creme do dourado. As
+   duas telas falam do mesmo modelo; cores diferentes pro mesmo estado fariam parecer dois
+   assuntos. O creme é `--ouro-soft`, que já existe e foi calibrado justamente pra fundo. */
 .tpl-grade-cards .tpl-card-aprovado {
-  border-left-color: var(--blue);
-  background: var(--blue-soft-2);
+  background: var(--azul-claro-2);
 }
 .tpl-grade-cards .tpl-card-rejeitado {
-  border-left-color: var(--acao);
-  background: var(--warning-soft);
+  background: var(--ouro-soft);
+  border-color: var(--ouro-linha);
+}
+.tpl-grade-cards .tpl-card-rejeitado:hover {
+  background: var(--ouro-soft);
 }
 .tpl-grade-cards .tpl-card-em_analise {
-  border-left-color: var(--warning);
+  background: var(--warning-soft);
 }
 /* As ações eram quatro botões fantasma iguais, sem hierarquia: editar, mandar pra Meta, duplicar
    e EXCLUIR pesavam o mesmo. O excluir já ficava à direita; agora ele também se lê como o que é. */
@@ -19696,14 +19731,15 @@ table.tbl .name-cell .r {
   transition: border-color 0.12s ease, background 0.12s ease;
 }
 .disp-numero:hover:not(:disabled):not(.disp-numero-off) {
-  border-color: var(--blue);
-  background: var(--blue-soft-2);
+  border-color: var(--azul-claro-linha);
+  background: var(--azul-claro-2);
 }
-/* Escolhido: o azul claro da casa. Em tema escuro o mesmo token vira o dourado da marca, então a
-   seleção continua legível sem uma segunda regra de cor. */
+/* Escolhido: o azul claro da casa, com o dourado marcando a escolha. Dois tokens porque eles
+   fazem trabalhos diferentes — o azul é superfície, o dourado é o "foi este". */
 .disp-numero.on {
-  border-color: var(--blue);
-  background: var(--blue-soft);
+  border-color: var(--ouro);
+  background: var(--azul-claro);
+  box-shadow: 0 0 0 1px var(--ouro) inset;
 }
 .disp-numero-topo {
   display: flex;
@@ -19774,9 +19810,9 @@ table.tbl .name-cell .r {
 .disp-regra-canal {
   margin: var(--space-4) 0 0;
   padding: var(--space-3) var(--space-4);
-  border-left: 3px solid var(--blue);
-  border-radius: 0 var(--radius-md) var(--radius-md) 0;
-  background: var(--blue-soft-2);
+  border: 1px solid var(--azul-claro-linha);
+  border-radius: var(--radius-md);
+  background: var(--azul-claro-2);
   font-size: 13px;
   color: var(--text-muted);
 }
@@ -19825,7 +19861,6 @@ table.tbl .name-cell .r {
   padding: var(--space-4);
   text-align: left;
   border: 1px solid var(--line);
-  border-left: 3px solid var(--line);
   border-radius: var(--radius-lg);
   background: var(--surface);
   color: var(--ink);
@@ -19851,25 +19886,25 @@ table.tbl .name-cell .r {
 }
 /* Aprovado: azul claro, e é o único que dá pra escolher. */
 .disp-template.aprovado {
-  border-left-color: var(--blue);
-  background: var(--blue-soft-2);
+  background: var(--azul-claro-2);
+  border-color: var(--azul-claro-linha);
 }
 .disp-template.aprovado:hover {
-  background: var(--blue-soft);
+  background: var(--azul-claro);
 }
 .disp-template.escolhido {
-  border-color: var(--blue);
-  background: var(--blue-soft);
-  box-shadow: 0 0 0 1px var(--blue) inset;
+  border-color: var(--ouro);
+  background: var(--azul-claro);
+  box-shadow: 0 0 0 1px var(--ouro) inset;
 }
-/* Rejeitado: dourado. A barra da esquerda é o que se lê de longe; a etiqueta diz o resto. */
+/* Rejeitado: o creme do dourado. */
 .disp-template.rejeitado {
-  border-left-color: var(--acao);
-  background: var(--warning-soft);
+  background: var(--ouro-soft);
+  border-color: var(--ouro-linha);
   opacity: 0.85;
 }
 .disp-template.em_analise {
-  border-left-color: var(--warning);
+  background: var(--warning-soft);
 }
 
 /* Ritmo e limite, no passo "Quando". Caixa própria porque aqui mora a resposta de "de onde vem
@@ -19879,10 +19914,9 @@ table.tbl .name-cell .r {
   flex-direction: column;
   gap: var(--space-2);
   padding: var(--space-4);
-  border: 1px solid var(--line-soft);
-  border-left: 3px solid var(--blue);
+  border: 1px solid var(--azul-claro-linha);
   border-radius: var(--radius-lg);
-  background: var(--blue-soft-2);
+  background: var(--azul-claro-2);
 }
 .disp-ritmo p {
   margin: 0;
@@ -20025,15 +20059,21 @@ table.tbl .name-cell .r {
   flex-direction: column;
   gap: var(--space-3);
 }
+/* O CARTÃO É O RETÂNGULO AZUL CLARO. Era isso o pedido, e eu tinha entendido como barra: "eu pedi
+   pra você colocar esse retângulo com fundo azul claro, pra se destacar ali no branco, porque tá
+   tudo branco". Cartão branco sobre página branca não é um cartão, é um texto com borda. */
 .disp-item {
   display: block;
   padding: var(--space-4);
   text-decoration: none;
   color: inherit;
-  transition: border-color 0.12s ease;
+  background: var(--azul-claro-2);
+  border-color: var(--azul-claro-linha);
+  transition: background 0.12s ease, border-color 0.12s ease;
 }
 .disp-item:hover {
-  border-color: var(--blue);
+  background: var(--azul-claro);
+  border-color: var(--azul-claro-linha);
 }
 
 /* A linha de baixo do cartão: canal, número, público e data. Era uma frase corrida com pontos no
@@ -20062,18 +20102,21 @@ table.tbl .name-cell .r {
   text-decoration: none;
   color: inherit;
 }
+/* O enchimento era `var(--blue)`: o navy ocupando a largura toda virou um traço preto grosso
+   atravessando o cartão. O dourado da marca é o que diz "andou até aqui" sem pesar, e o trilho
+   agora é o azul claro em vez de cinza. */
 .disp-barra {
   flex: 1;
   height: 6px;
   border-radius: 999px;
-  background: var(--gray-100);
+  background: var(--azul-claro-linha);
   overflow: hidden;
 }
 .disp-barra-cheia {
   display: block;
   height: 100%;
   border-radius: 999px;
-  background: var(--blue);
+  background: var(--ouro);
   transition: width 0.3s ease;
 }
 .disp-item-andamento .hint {
@@ -20089,7 +20132,7 @@ table.tbl .name-cell .r {
   margin: var(--space-4) 0 0;
   padding: var(--space-4);
   border-radius: var(--radius-lg);
-  background: var(--blue-soft-2);
+  background: var(--azul-claro);
 }
 .disp-ficha dt {
   font-size: 11px;
@@ -20193,6 +20236,57 @@ table.tbl .name-cell .r {
 }
 .disp-metrica.destaque strong {
   color: var(--danger);
+}
+
+/* -------------------------------------------------- Dentro do disparo
+   "Tá até legal, mas tá tudo branco com cinza. Vamos usar o nosso dourado, vamos usar o azul."
+
+   As sete contagens eram sete números soltos sobre branco, do mesmo tamanho e da mesma cor, sem
+   nada dizendo qual delas importa. Cada uma vira um bloco no azul claro da casa, e as duas que
+   pedem ação ganham cor: o dourado em quem respondeu (é o resultado que se quer) e o vermelho em
+   quem falhou (é o que precisa de conserto). */
+.disp-detalhe-resumo .disp-metricas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+.disp-detalhe-resumo .disp-metrica {
+  gap: 2px;
+  padding: var(--space-3);
+  border: 1px solid var(--azul-claro-linha);
+  border-radius: var(--radius-md);
+  background: var(--azul-claro-2);
+}
+.disp-detalhe-resumo .disp-metrica strong {
+  font-size: 22px;
+  letter-spacing: -0.01em;
+}
+.disp-detalhe-resumo .disp-metrica.respondidas {
+  background: var(--ouro-soft);
+  border-color: var(--ouro-linha);
+}
+.disp-detalhe-resumo .disp-metrica.destaque {
+  background: var(--danger-soft);
+  border-color: color-mix(in srgb, var(--danger) 30%, transparent);
+}
+
+/* A tabela de destinatários: cabeçalho no azul claro, pra separar do corpo sem mais uma linha
+   cinza, e a linha que falhou marcada no tom do erro em vez de só com texto. */
+.disp-destinatarios .disp-tabela th {
+  background: var(--azul-claro);
+  border-bottom-color: var(--azul-claro-linha);
+}
+.disp-destinatarios .disp-tabela th:first-child {
+  border-top-left-radius: var(--radius-md);
+  border-bottom-left-radius: var(--radius-md);
+}
+.disp-destinatarios .disp-tabela th:last-child {
+  border-top-right-radius: var(--radius-md);
+  border-bottom-right-radius: var(--radius-md);
+}
+.disp-destinatarios .disp-tabela tbody tr:hover td {
+  background: var(--azul-claro-2);
 }
 .disp-controles {
   display: flex;

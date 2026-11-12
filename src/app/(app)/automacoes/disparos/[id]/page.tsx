@@ -205,7 +205,7 @@ export default function DetalheDisparoPage() {
                 <Metrica valor={resumo.enviadas} label={traduzir("enviadas")} />
                 <Metrica valor={resumo.entregues} label={traduzir("entregues")} />
                 <Metrica valor={resumo.lidas} label={traduzir("lidas")} />
-                <Metrica valor={resumo.respondidas} label={traduzir("respondidas")} />
+                <Metrica valor={resumo.respondidas} label={traduzir("respondidas")} realce="respondidas" />
                 <Metrica valor={resumo.falhas} label={traduzir("falhas")} destaque={resumo.falhas > 0} />
                 <Metrica valor={resumo.pendentes} label={traduzir("na fila")} />
               </div>
@@ -275,9 +275,21 @@ export default function DetalheDisparoPage() {
   );
 }
 
-function Metrica({ valor, label, destaque }: { valor: number; label: string; destaque?: boolean }) {
+function Metrica({
+  valor,
+  label,
+  destaque,
+  realce,
+}: {
+  valor: number;
+  label: string;
+  /** Precisa de conserto: vermelho. */
+  destaque?: boolean;
+  /** É o resultado que se quer: dourado. */
+  realce?: string;
+}) {
   return (
-    <div className={`disp-metrica${destaque ? " destaque" : ""}`}>
+    <div className={`disp-metrica${destaque ? " destaque" : ""}${realce ? ` ${realce}` : ""}`}>
       <strong>{valor}</strong>
       <span>{label}</span>
     </div>
