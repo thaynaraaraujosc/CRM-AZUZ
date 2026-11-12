@@ -32,6 +32,22 @@ export type ConfiguracaoDaAgenda = {
   janelaDias: number;
   /** Antecedência mínima, em horas: ninguém marca pra daqui a dez minutos. */
   antecedenciaHoras: number;
+  /**
+   * O ENDEREÇO DA SALA ONDE A REUNIÃO ACONTECE. Vazio = reunião sem link.
+   *
+   * "Normalmente ele manda o link também da reunião." E não mandava: o formulário marcava a
+   * reunião na Agenda com `local: null`, de propósito — estava escrito no código que "o formulário
+   * do CRM não tem link de reunião". Então a variável `{{link}}` não tinha de onde sair, e num
+   * modelo da API oficial variável vazia não é frase com buraco: é a Meta recusando o envio
+   * INTEIRO.
+   *
+   * É uma SALA FIXA, não um link por reunião. Gerar um link novo a cada agendamento exigiria
+   * conectar o Google Calendar (OAuth, consentimento, uma integração inteira); uma sala
+   * permanente é como a maioria das agências já trabalha, e resolve hoje o que ela pediu.
+   *
+   * Guardado aqui, junto dos horários, porque é a mesma pergunta: "como esta reunião acontece".
+   */
+  link?: string;
 };
 
 /** Um horário de manhã e um de tarde, em dia útil: o suficiente pro campo funcionar assim que é
@@ -60,7 +76,24 @@ export function lerConfiguracao(valor: unknown): ConfiguracaoDaAgenda {
     janelaDias: inteiro(bruto.janelaDias, 1, 180) ?? AGENDA_PADRAO.janelaDias,
     // Zero é uma escolha válida ("pode marcar pra já"), então o piso é 0 e não 1.
     antecedenciaHoras: inteiro(bruto.antecedenciaHoras, 0, 720) ?? AGENDA_PADRAO.antecedenciaHoras,
+    link: linkDeReuniao(bruto.link),
   };
+}
+
+/**
+ * O link só vale se for um endereço de verdade.
+ *
+ * "meet.google.com/abc" sem o `https://` não abre ao ser tocado no WhatsApp — vira texto. E quem
+ * lê a variável depois (`linkDe`, em `proxima-reuniao.ts`) descarta tudo que não começa com
+ * http, então um link meio escrito viraria silêncio lá na frente, no envio, longe de onde foi
+ * digitado. Completar aqui é mais honesto do que recusar: a intenção é óbvia.
+ */
+export function linkDeReuniao(valor: unknown): string | undefined {
+  const texto = typeof valor === "string" ? valor.trim() : "";
+  if (!texto) return undefined;
+  if (/^https?:\/\//i.test(texto)) return texto;
+  // Sem esquema, mas com cara de endereço: completa. Qualquer outra coisa não é link.
+  return /^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(texto) ? `https://${texto}` : undefined;
 }
 
 /**

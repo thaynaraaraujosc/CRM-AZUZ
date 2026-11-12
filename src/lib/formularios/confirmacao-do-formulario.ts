@@ -80,7 +80,8 @@ export async function confirmarReuniaoDoFormulario(params: {
    * São duas coisas diferentes. "Não quero mandar mensagem sozinha" não é "não quero a reunião na
    * minha agenda".
    */
-  await garantirCompromisso({ ...params, contatoId: contato?.id ?? null });
+  const linkDaSala = agendaDoFormulario({ paginas: params.paginas })?.link;
+  await garantirCompromisso({ ...params, contatoId: contato?.id ?? null, link: linkDaSala });
 
   // Daqui pra baixo é só a confirmação por WhatsApp, que precisa de número e de a empresa ter
   // ligado o aviso. Desligada é silêncio: foi uma escolha, não uma falha pra registrar em cada
@@ -180,8 +181,9 @@ export async function confirmarReuniaoDoFormulario(params: {
   const texto = montarTextoDaConfirmacao(confirmacao.texto, {
     primeiroNome: lead.nome,
     inicio: lead.reuniao,
-    // O formulário do CRM não tem link de reunião: a linha do `{{link}}`, sozinha, some inteira.
-    link: null,
+    // Sem sala configurada o link continua nulo, e a linha do `{{link}}`, sozinha, some inteira —
+    // que é o certo: melhor a frase sem a linha do que uma linha com "undefined" no meio.
+    link: linkDaSala ?? null,
     empresa: empresa?.nome ?? "",
   });
 
@@ -222,6 +224,8 @@ async function garantirCompromisso(params: {
   respostaId: string;
   contatoId: string | null;
   lead: LeadDaResposta;
+  /** A sala onde a reunião acontece, configurada no campo de agendamento. */
+  link?: string;
 }): Promise<void> {
   const { workspaceId, lead } = params;
   if (!lead.reuniao || !lead.nome) return;
@@ -241,7 +245,15 @@ async function garantirCompromisso(params: {
         horaFim: null,
         tipo: "Reunião",
         descricao: `Agendada no formulário ${params.formularioNome}`,
-        local: null,
+        /*
+         * O LINK VIVE EM `local`, e não numa coluna nova.
+         *
+         * É onde a Agenda já guarda "onde é" — e `proxima-reuniao.ts` já lê dali pra variável
+         * `{{link}}`, aceitando o valor só quando ele começa com http. Os dois lados do caminho
+         * já existiam; o que faltava era alguém escrever. Aqui ficava `null`, com o comentário
+         * dizendo que o formulário do CRM não tinha link. Agora tem.
+         */
+        local: params.link ?? null,
         status: "agendado",
         origem: "formulario",
       },

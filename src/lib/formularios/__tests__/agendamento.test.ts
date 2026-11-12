@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { AGENDA_PADRAO, conflita, horarioValido, horariosLivres, lerConfiguracao } from "../agendamento";
+import {
+  AGENDA_PADRAO,
+  conflita,
+  horarioValido,
+  horariosLivres,
+  lerConfiguracao,
+  linkDeReuniao,
+} from "../agendamento";
 
 /**
  * O erro que estes testes prendem é invisível pra quem monta o formulário e caro pra quem
@@ -156,5 +163,39 @@ describe("horarioValido", () => {
 
   it("recusa texto que não é instante, sem explodir", () => {
     expect(horarioValido({ ...base, ocupados: [], inicio: "amanhã de manhã" }).ok).toBe(false);
+  });
+});
+
+describe("linkDeReuniao", () => {
+  /*
+   * O link vive em `Compromisso.local`, e quem o lê pra variável (`linkDe`, em
+   * `proxima-reuniao.ts`) DESCARTA tudo que não começa com http. Então um link meio escrito não
+   * dá erro aqui: ele vira silêncio lá na frente, na hora do envio, longe de onde foi digitado —
+   * e num modelo da API oficial, variável vazia é a Meta recusando o envio inteiro.
+   */
+  it("aceita o endereço completo", () => {
+    expect(linkDeReuniao("https://meet.google.com/abc-defg-hij")).toBe("https://meet.google.com/abc-defg-hij");
+  });
+
+  it("completa quem digitou sem o https — a intenção é óbvia", () => {
+    expect(linkDeReuniao("meet.google.com/abc-defg-hij")).toBe("https://meet.google.com/abc-defg-hij");
+    expect(linkDeReuniao("  zoom.us/j/123456  ")).toBe("https://zoom.us/j/123456");
+  });
+
+  it("http continua valendo: nem toda sala interna tem certificado", () => {
+    expect(linkDeReuniao("http://sala.interna/reuniao")).toBe("http://sala.interna/reuniao");
+  });
+
+  it("texto que não é endereço não vira link", () => {
+    // "Sala 2" virando "https://Sala 2" mandaria um link quebrado pro cliente tocar.
+    expect(linkDeReuniao("Sala 2 do escritório")).toBeUndefined();
+    expect(linkDeReuniao("")).toBeUndefined();
+    expect(linkDeReuniao(null)).toBeUndefined();
+    expect(linkDeReuniao(42)).toBeUndefined();
+  });
+
+  it("a configuração lida devolve o link já completo", () => {
+    expect(lerConfiguracao({ link: "meet.google.com/xyz" }).link).toBe("https://meet.google.com/xyz");
+    expect(lerConfiguracao({}).link).toBeUndefined();
   });
 });

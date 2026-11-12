@@ -226,6 +226,8 @@ export type PerguntaFormulario = {
     duracao?: number;
     janelaDias?: number;
     antecedenciaHoras?: number;
+    /** A sala onde a reunião acontece. Vai pro `{{link}}` da confirmação e pro "onde é" da Agenda. */
+    link?: string;
   };
   /** Aparência individual: sem valor definido, cada propriedade cai no visual padrão do tema do formulário. */
   estilo?: {

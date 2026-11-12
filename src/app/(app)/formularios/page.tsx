@@ -2323,6 +2323,26 @@ function PainelDaAgenda({
           onChange={(e) => onAtualizar({ ...agenda, janelaDias: Number(e.target.value) })}
         />
       </div>
+
+      {/* O LINK DA SALA. É ele que preenche o `{{link}}` da confirmação — e, num modelo da API
+          oficial, variável vazia não é frase com buraco: é a Meta recusando o envio inteiro. */}
+      <div className="field">
+        <label>Link da reunião</label>
+        <input
+          className="input"
+          style={{ width: "100%" }}
+          type="url"
+          inputMode="url"
+          placeholder="https://meet.google.com/abc-defg-hij"
+          value={agenda.link ?? ""}
+          onChange={(e) => onAtualizar({ ...agenda, link: e.target.value })}
+        />
+        <p className="hint">
+          A sala onde as reuniões deste formulário acontecem. Vai junto na confirmação, na variável{" "}
+          <code>{"{{link}}"}</code>, e fica gravado em &quot;onde é&quot; na Agenda. É uma sala fixa: sem link,
+          a confirmação sai sem essa linha.
+        </p>
+      </div>
     </>
   );
 }
