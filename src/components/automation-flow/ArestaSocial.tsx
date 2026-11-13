@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { BaseEdge, EdgeLabelRenderer, getBezierPath, type EdgeProps } from "@xyflow/react";
+import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath, type EdgeProps } from "@xyflow/react";
 
 import { IconLixeira } from "@/components/icons";
 import { useIdioma } from "@/lib/idioma-context";
@@ -31,20 +31,31 @@ export function ArestaSocial({
   const { t: traduzir } = useIdioma();
   const [sobre, setSobre] = useState(false);
   /*
-   * CURVA, E NÃO DEGRAU.
+   * DEGRAU DE CANTO SUAVE — nem a curva inteira, nem o ângulo reto.
    *
-   * Era `getSmoothStepPath`: a linha saía reta, dobrava em ângulo e entrava reta — o desenho de um
-   * diagrama de circuito. A Thaynara apontou o ManyChat, e a diferença que ela viu é essa: lá a
-   * ligação é uma curva contínua, que atravessa o espaço entre os dois blocos como um traço só.
-   * Num canvas com oito blocos, curva se segue com o olho; degrau obriga a acompanhar cada canto.
+   * "A linha que liga ficou meio redonda, meio estranha."
+   *
+   * Três desenhos possíveis, e já passamos por dois. O ângulo reto (`borderRadius: 0`) é o
+   * diagrama de circuito: cada canto é uma quina, e num quadro com oito blocos o olho tropeça em
+   * todas. A curva inteira (`getBezierPath`) resolve isso e traz outro problema — ela sai do
+   * bloco em diagonal, abaúla no meio e chega torta, e entre dois blocos próximos vira um S que
+   * não tem a ver com o caminho que descreve.
+   *
+   * O degrau de canto suave é o meio: sai reto, dobra uma vez com o canto arredondado e entra
+   * reto. A linha continua ortogonal — o que casa com o quadro de cantos retos do resto do CRM —
+   * e o arredondado tira a quina sem inventar curva nenhuma.
+   *
+   * 8px é o mesmo raio das bordas pequenas do produto. Maior começa a parecer curva de novo;
+   * menor não se vê.
    */
-  const [caminho, meioX, meioY] = getBezierPath({
+  const [caminho, meioX, meioY] = getSmoothStepPath({
     sourceX,
     sourceY,
     targetX,
     targetY,
     sourcePosition,
     targetPosition,
+    borderRadius: 8,
   });
 
   const aoApagar = (data as { aoApagar?: (id: string) => void } | undefined)?.aoApagar;
