@@ -70,8 +70,26 @@ export async function DELETE(request: Request, ctx: RouteContext<"/api/conversas
   });
   if (!conversa) return NextResponse.json({ erro: "Conversa não encontrada" }, { status: 404 });
 
+  /*
+   * APAGAR A CONVERSA APAGA O CARD DO FUNIL. "Tudo é interligado."
+   *
+   * A conversa saía e o negócio ficava. Quem limpa a caixa de entrada vê a lista esvaziar e,
+   * minutos depois, encontra o funil com as MESMAS pessoas — vinte e oito cartões de telefone sem
+   * nome numa coluna só, cada um prometendo uma conversa que não existe mais. Clicar em "chat" ali
+   * abre o nada.
+   *
+   * O casamento é pelo NOME, como em todo o resto do CRM (`MensagemExtra.contato`,
+   * `NegocioCard.nome`) — é a mesma chave que `renomearConversa` já move dos dois lados pelo mesmo
+   * motivo: deixar um sem o outro faz as duas telas falarem de pessoas diferentes.
+   *
+   * O CONTATO FICA, e isso é deliberado. Ele é a agenda da empresa: carrega etiqueta, campo
+   * próprio, origem e o histórico de quem já recebeu disparo. Apagar a conversa é dizer "não falo
+   * mais com essa pessoa aqui"; não é dizer "essa pessoa nunca existiu". Quem quer tirá-la de vez
+   * tem a tela de Contatos, onde a decisão é explícita.
+   */
   await prisma.$transaction([
     prisma.mensagemExtra.deleteMany({ where: { workspaceId: sessao.user.workspaceId, contato: conversa.nome } }),
+    prisma.negocioCard.deleteMany({ where: { workspaceId: sessao.user.workspaceId, nome: conversa.nome } }),
     prisma.conversa.delete({ where: { id } }),
   ]);
 

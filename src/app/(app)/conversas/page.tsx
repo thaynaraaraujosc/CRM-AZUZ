@@ -5362,7 +5362,16 @@ function ConversasPageInner() {
                         className="dropdown-item"
                         style={{ width: "100%", textAlign: "left", color: "var(--danger)" }}
                         onClick={() => {
-                          if (window.confirm(traduzir("Excluir a conversa com {nome}? Isso apaga as mensagens dela também. Não dá pra desfazer.", { nome: c.nome }))) {
+                          /* O aviso diz TUDO que some. Antes falava só das mensagens, e o card do
+                             funil ia junto sem ninguém ser avisado — ou, pior, ficava. */
+                          if (
+                            window.confirm(
+                              traduzir(
+                                "Excluir a conversa com {nome}? Some a conversa, as mensagens dela e o card desta pessoa no funil. O contato continua em Contatos. Não dá pra desfazer.",
+                                { nome: c.nome },
+                              ),
+                            )
+                          ) {
                             excluirConversa(c.id);
                           }
                           setRowMenuAberto(null);
