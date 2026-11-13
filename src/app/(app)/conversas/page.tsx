@@ -5176,82 +5176,19 @@ function ConversasPageInner() {
                       <span className="wa-unread-badge">{c.naoLidas}</span>
                     ) : null}
                   </span>
-                  <span className="cr3">
-                    {/*
-                      O ESTADO SÓ FALA QUANDO TEM O QUE DIZER.
+                  {/*
+                    AS ETIQUETAS SAÍRAM DA LINHA. "Tire essas tags daqui do chat e coloca na barra
+                    onde fica o nome."
 
-                      "Tira pra mim esse 'não respondido'. Não precisa colocar esse 'não
-                      respondido'."
+                    Elas eram três por linha — estado, origem e etapa do funil — repetidas em vinte
+                    linhas, e nenhuma delas é sobre a conversa que se está procurando: são sobre a
+                    PESSOA. Numa lista, o que se lê é quem escreveu, o que escreveu e quando; as
+                    três etiquetas competiam justamente com a prévia da mensagem, que é a única
+                    coisa ali que muda a cada minuto.
 
-                      Ela está certa, e dá pra ver o porquê na própria tela: a etiqueta aparecia em
-                      TODAS as linhas com a mesma palavra. "Não respondido" é o estado em que uma
-                      conversa nasce e fica enquanto ninguém mexe — ou seja, é o padrão, e carimbar
-                      o padrão em toda linha não informa nada, só gasta a largura que as etiquetas
-                      que informam precisavam.
-
-                      "Finalizado", "Em conversa" e "Aguardando cliente" continuam aparecendo: esses
-                      alguém escolheu, são poucos, e é justamente por serem exceção que valem uma
-                      etiqueta.
-                    */}
-                    {encerradas.has(c.id) ? (
-                      <span className="tag">{traduzir("Finalizado")}</span>
-                    ) : c.status && c.status !== "Não respondido" ? (
-                      <span className="tag">{traduzir(c.status)}</span>
-                    ) : null}
-                    {/*
-                      A ETIQUETA DE CONEXÃO SAIU.
-
-                      "Pode tirar, que é do QR Code ou que é do Meta, porque como a gente já está na
-                      aba, então não precisa."
-
-                      Exato: com mais de um número ligado, a lista é SEMPRE a de um número só — as
-                      abas de cima não têm "Todos" (ver `numeroAtivo`). Então a etiqueta repetia,
-                      linha por linha, o nome da aba que já está acesa logo acima dela. Quem quiser
-                      conferir por onde a conversa corre tem a aba marcada e o cabeçalho do chat.
-                    */}
-                    {/*
-                      DE ONDE VEIO O LEAD.
-                      
-                      A etiqueta do RASTREIO ganha de `Conversa.origem` quando existe: a segunda é
-                      gravada como "Direto" pra todo mundo pelo webhook, e um campo que diz a mesma
-                      coisa em toda linha não informa nada. Quando não há rastreio, "Direto" volta
-                      a aparecer — ele continua sendo a verdade disponível.
-                      
-                      `classeOrigem` dá a cor pelas mesmas palavras que o CRM já usa ("Meta Ads",
-                      "Instagram"), então a etiqueta nova nasce com a cor certa sem paleta nova.
-                    */}
-                    {(() => {
-                      const daOrigem = origemPorContato[chaveDeContato(c.nome)];
-                      if (!daOrigem) {
-                        return (
-                          <span className={`tag ${classeOrigem(c.origem as Parameters<typeof classeOrigem>[0])}`}>
-                            {traduzir(c.origem)}
-                          </span>
-                        );
-                      }
-                      return (
-                        <span
-                          className={`tag ${classeOrigem(daOrigem.rotulo as Parameters<typeof classeOrigem>[0])}`}
-                          title={
-                            daOrigem.detalhe
-                              ? `${traduzir("De onde veio este lead")}: ${daOrigem.rotulo} · ${daOrigem.detalhe}`
-                              : `${traduzir("De onde veio este lead")}: ${daOrigem.rotulo}`
-                          }
-                        >
-                          {/* O ponto marca tráfego PAGO. É a leitura de relance que ela pediu —
-                              "veio direto do tráfego pago?" — sem gastar a largura da etiqueta com
-                              mais uma palavra numa linha que já tem três. */}
-                          {daOrigem.pago ? "• " : ""}
-                          {traduzir(daOrigem.rotulo)}
-                        </span>
-                      );
-                    })()}
-                    {!c.ehGrupo && etapaAtualDoContato(c.nome) ? (
-                      <span className="tag wa-etapa-funil-tag" title={traduzir("Etapa atual no funil")}>
-                        {traduzir(etapaAtualDoContato(c.nome)!)}
-                      </span>
-                    ) : null}
-                  </span>
+                    Agora elas moram no cabeçalho da conversa aberta, ao lado do nome: um lugar só,
+                    uma vez só, e no momento em que a pergunta "quem é esta pessoa" de fato aparece.
+                  */}
                   <button
                     type="button"
                     className="wa-row-menu-btn"
@@ -5399,6 +5336,61 @@ function ConversasPageInner() {
                 </p>
               </div>
             </button>
+
+            {/*
+              QUEM É ESTA PESSOA, ao lado do nome dela.
+              
+              "Tire essas tags daqui do chat e coloca na barra onde fica o nome."
+              
+              As três vinham repetidas em cada linha da lista, competindo com a prévia da mensagem
+              — a única coisa de lá que muda a cada minuto. Aqui elas aparecem uma vez, sobre a
+              conversa que está aberta, que é quando a pergunta existe de verdade.
+              
+              Fora do botão do título de propósito: aquele botão abre as mídias da conversa, e uma
+              etiqueta de etapa do funil clicável que abre a galeria de fotos é uma promessa que a
+              tela não cumpre.
+            */}
+            {conversaAbertaDeVerdade ? (
+              <span className="wa-conv-tags">
+                {/* O estado só fala quando tem o que dizer: "Não respondido" é como toda conversa
+                    nasce, e carimbar o padrão não informa nada. */}
+                {encerradas.has(aberta.id) ? (
+                  <span className="tag">{traduzir("Finalizado")}</span>
+                ) : aberta.status && aberta.status !== "Não respondido" ? (
+                  <span className="tag">{traduzir(aberta.status)}</span>
+                ) : null}
+                {(() => {
+                  /* A etiqueta do RASTREIO ganha de `Conversa.origem` quando existe: a segunda é
+                     gravada como "Direto" pra todo mundo pelo webhook. O ponto marca tráfego pago. */
+                  const daOrigem = origemPorContato[chaveDeContato(aberta.nome)];
+                  if (!daOrigem) {
+                    return (
+                      <span className={`tag ${classeOrigem(aberta.origem as Parameters<typeof classeOrigem>[0])}`}>
+                        {traduzir(aberta.origem)}
+                      </span>
+                    );
+                  }
+                  return (
+                    <span
+                      className={`tag ${classeOrigem(daOrigem.rotulo as Parameters<typeof classeOrigem>[0])}`}
+                      title={
+                        daOrigem.detalhe
+                          ? `${traduzir("De onde veio este lead")}: ${daOrigem.rotulo} · ${daOrigem.detalhe}`
+                          : `${traduzir("De onde veio este lead")}: ${daOrigem.rotulo}`
+                      }
+                    >
+                      {daOrigem.pago ? "• " : ""}
+                      {traduzir(daOrigem.rotulo)}
+                    </span>
+                  );
+                })()}
+                {!aberta.ehGrupo && etapaAtualDoContato(aberta.nome) ? (
+                  <span className="tag wa-etapa-funil-tag" title={traduzir("Etapa atual no funil")}>
+                    {traduzir(etapaAtualDoContato(aberta.nome)!)}
+                  </span>
+                ) : null}
+              </span>
+            ) : null}
             <button
               type="button"
               className={`gear-btn wa-main-gear${infoAberto ? " active" : ""}`}

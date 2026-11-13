@@ -4981,70 +4981,18 @@ table.tbl tbody tr:hover td {
    ele esticava as pontas e espremia o meio, e cada etiqueta quebrava no meio da palavra. Agora
    elas ficam juntas à esquerda, com a linha inteira quebrando quando não couber, e nenhuma
    etiqueta se parte. */
-.wa-row .cr3 {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px var(--space-2);
-}
-
 /*
- * AS ETIQUETAS SAO PILULAS, e nao caixinhas.
+ * AS ETIQUETAS DA LINHA SAÍRAM, e as regras delas foram junto.
  *
- * "Pode deixar essas caixinhas meio arredondadas e colocar uma cor diferente — fundo azulzinho
- * claro, algo assim, ta meio feio essa parte."
+ * "Tire essas tags daqui do chat e coloca na barra onde fica o nome." Eram três por linha —
+ * estado, origem e etapa do funil — e cada uma tinha a pílula dela aqui, mais as variações pra
+ * linha não lida e pra linha aberta. Nenhuma delas tem mais quem as use: o bloco `.cr3` não
+ * existe mais na lista de Conversas.
  *
- * O que estava feio tinha nome: na linha aberta elas ganhavam fundo translucido COM BORDA, e
- * borda de 1px em volta de um texto de 11px desenha um retangulo apertado, nao uma etiqueta. A
- * pilula dispensa a borda — a cor de fundo ja diz onde ela comeca e termina.
- *
- * A TINTA E NAVY E NAO BRANCA, e isso e a unica parte do pedido que eu nao segui ao pe da letra:
- * branco sobre o azul claro da 2:1, que e ilegivel. Navy sobre o mesmo azul da 13,4:1. A cor que
- * ela pediu fica; o que muda e quem vai por cima dela.
+ * Elas moram agora em `.wa-conv-tags`, no cabeçalho da conversa aberta, onde a pergunta "quem é
+ * esta pessoa" de fato aparece. Deixar as regras velhas aqui seria deixar um vocabulário inteiro
+ * esperando alguém reusá-lo por engano, com nomes que já não descrevem nada.
  */
-/*
- * CINZA, E NÃO AZUL. "Tira o azulzinho do fundo, coloca tipo um cinza, pra não ficar tão muita
- * informação."
- *
- * O azul claro é a cor que o CRM usa pra dizer "isto aqui é escolha ativa" — a linha não lida, o
- * chip de filtro ligado, a aba acesa. Numa etiqueta que só CLASSIFICA, ele promete uma ação que
- * não existe, e com três por linha a lista inteira parecia acesa. O cinza deixa a etiqueta ser o
- * que ela é: um rótulo. A cor da origem continua no TEXTO — Meta azul, Instagram rosa —, que é
- * onde ela informa sem gritar.
- */
-.wa-row .cr3 .tag {
-  white-space: nowrap;
-  padding: 2px var(--space-2);
-  border: none;
-  border-radius: 999px;
-  background: var(--navy-raised-2);
-  color: var(--text-muted);
-}
-
-/*
- * ONDE A LINHA JA TEM COR, A PILULA FICA BRANCA.
- *
- * Azul claro sobre a linha nao lida (que e azul clara) desapareceria, e sobre o dourado brigaria
- * de tom. Branco se separa dos dois sem precisar de uma terceira cor no vocabulario.
- */
-.wa-row.nao-lida .cr3 .tag,
-.wa-row.active .cr3 .tag {
-  background: #ffffff;
-  color: var(--navy-marca);
-}
-
-/* Estas duas tem cor propria porque dizem outra coisa (a etapa do funil, por qual conexao a
-   conversa fala), e a pilula generica apagaria essa diferenca. */
-.wa-row .cr3 .wa-etapa-funil-tag {
-  background: var(--blue-soft-2);
-  color: var(--blue);
-}
-
-.wa-row .cr3 .wa-conexao-tag {
-  background: transparent;
-  border: 1px solid var(--line);
-  color: var(--text-muted);
-}
 
 .origem-meta {
   color: #1877f2;
@@ -36367,4 +36315,40 @@ td.trafego-col-crm:first-of-type {
   margin-left: var(--space-2);
   font-size: 11px;
   color: var(--text-muted);
+}
+
+/* --------------------------------------------------- As etiquetas no cabeçalho da conversa
+   "Tire essas tags daqui do chat e coloca na barra onde fica o nome."
+
+   Elas saíram da lista, onde vinham três por linha competindo com a prévia da mensagem — a única
+   coisa de lá que muda a cada minuto. Aqui aparecem uma vez, sobre a conversa aberta.
+
+   `margin-left: auto` as empurra pra direita, encostando na engrenagem: o nome fica na esquerda
+   com o espaço dele, e as etiquetas não entram no meio do caminho de um nome comprido. */
+.wa-conv-tags {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-left: auto;
+  max-width: 50%;
+}
+/* Sobre o azul claro da barra, a etiqueta precisa de fundo pra não virar texto solto no meio de
+   outro texto. Os tokens aqui já são os da barra clara (ver `.wa-main > .open-conv-h`), então ela
+   acompanha o tema sem uma segunda regra. */
+.wa-conv-tags .tag {
+  padding: 3px var(--space-2);
+  border-radius: 999px;
+  background: var(--surface-elevated);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+/* A etapa do funil mantém a cor própria (`.wa-etapa-funil-tag`, lá em cima): é o que a distingue
+   das outras duas. Nenhuma regra aqui, de propósito — sobrescrevê-la apagaria a diferença. */
+@media (max-width: 860px) {
+  /* Em tela estreita o nome é o que importa: as etiquetas saem antes de espremerem o cabeçalho. */
+  .wa-conv-tags {
+    display: none;
+  }
 }
