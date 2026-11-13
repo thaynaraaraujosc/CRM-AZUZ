@@ -39,6 +39,9 @@ export default function GrupoGatilhosNode({ data, selected }: NodeProps<FlowRFNo
   const {
     gatilhosDoGrupo = [],
     palavrasDoGrupo = [],
+    /* Sem dizer nada, a linha aparece: é como o cartão sempre se comportou, e o Social Seller —
+       único a usá-lo até agora — é quem tem palavras valendo pra todos. */
+    temPalavras = true,
     aoAbrirGatilhos,
     aoAbrirPalavras,
     aoAdicionarGatilho,
@@ -126,6 +129,15 @@ export default function GrupoGatilhosNode({ data, selected }: NodeProps<FlowRFNo
         <IconSetaBaixo className="gg-seta" width={14} height={14} aria-hidden="true" />
       </button>
 
+      {/*
+        A LINHA DE PALAVRAS-CHAVE SÓ EXISTE ONDE ELAS VALEM PRA TODOS OS GATILHOS.
+        
+        No Instagram valem: a palavra filtra comentário, story e Direct do mesmo jeito, então é uma
+        pergunta só. No comercial a palavra é um GATILHO próprio ("Palavra-chave recebida"), com o
+        campo dele — uma linha dizendo "qualquer mensagem serve" num robô que dispara por etapa de
+        funil fala de um filtro que não existe ali.
+      */}
+      {temPalavras ? (
       <button
         type="button"
         className="gg-linha nodrag"
@@ -148,6 +160,7 @@ export default function GrupoGatilhosNode({ data, selected }: NodeProps<FlowRFNo
         </span>
         <IconSetaBaixo className="gg-seta" width={14} height={14} aria-hidden="true" />
       </button>
+      ) : null}
 
       {aoAdicionarGatilho ?? aoAbrirGatilhos ? (
         <button

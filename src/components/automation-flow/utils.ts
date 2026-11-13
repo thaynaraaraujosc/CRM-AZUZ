@@ -106,6 +106,8 @@ export type FlowRFNodeData = {
    */
   gatilhosDoGrupo?: { id: string; tipo: FlowNodeType; label: string; conectado: boolean }[];
   palavrasDoGrupo?: string[];
+  /** A linha de palavras-chave do cartão de gatilhos vale nesta área? Ver `GrupoGatilhosNode`. */
+  temPalavras?: boolean;
   /** Abre a gaveta na lista de gatilhos. */
   aoAbrirGatilhos?: () => void;
   /** Abre a gaveta direto na etapa das palavras-chave. */

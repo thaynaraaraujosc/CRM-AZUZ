@@ -4,6 +4,15 @@ import { useCallback, useEffect, useState } from "react";
 
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
 import {
+  comoFunciona,
+  etapaDeConfiguracao,
+  gatilhosDaArea,
+  perguntaDaResposta,
+  temEtapaDePalavras,
+} from "@/lib/automation-flow/gaveta-de-gatilhos";
+import type { AreaAutomacao } from "@/lib/canais/capacidades";
+import { FormularioDoNode } from "./ConfigPanel";
+import {
   gatilhoTemAlcance,
   gravarAlcance,
   lerAlcance,
@@ -18,7 +27,24 @@ import { useFecharMenuDeLinha } from "@/lib/menu-de-linha";
 import { useIdioma } from "@/lib/idioma-context";
 
 /**
- * A GAVETA DE GATILHOS DO SOCIAL SELLER: escolher vários, e configurar um por vez.
+ * A GAVETA DE GATILHOS: escolher vários, e configurar um por vez.
+ *
+ * ──────────────────────────────────────────────────────────────────────────────
+ * SERVE AS DUAS ÁREAS. Nasceu no Social Seller e chamava-se `GatilhosDoSocial`, com o Instagram
+ * escrito por dentro: a lista dos principais, a explicação de cada gatilho e as etapas de
+ * configuração eram constantes com nomes de gatilho de Instagram.
+ *
+ * "Deixa essa automação idêntica à do Social Selling. Só não precisa colocar as coisas que é pro
+ * Instagram aqui, mas o resto deixa idêntico."
+ *
+ * O que muda por área saiu pra `lib/automation-flow/gaveta-de-gatilhos.ts`; aqui ficou o desenho,
+ * que é um só. Copiar a gaveta seria o caminho curto e o errado: duas cópias de uma tela de quatro
+ * etapas é como se chega, meses depois, numa que tem "Adicionar outra resposta" e na outra não.
+ *
+ * A diferença que sobra é a ETAPA DE CONFIGURAÇÃO de cada gatilho. No Instagram ela é a grade de
+ * publicações e stories; no comercial é o formulário do PRÓPRIO BLOCO — o mesmo que o painel da
+ * direita abre. Nenhum campo novo foi inventado pro comercial: "em qual etapa?" já tem uma tela
+ * certa, e repeti-la aqui criaria duas respostas pra mesma pergunta.
  *
  * VÁRIOS GATILHOS NA MESMA AUTOMAÇÃO. Antes era um só, e as linhas eram `radio` por isso: o motor
  * guardava um bloco de gatilho por fluxo. Quem queria responder a comentário E a resposta de story
@@ -36,75 +62,7 @@ import { useIdioma } from "@/lib/idioma-context";
  * filtra nada, a gaveta fecha logo depois das palavras.
  */
 
-/** Os cinco que a referência mostra primeiro, nesta ordem. O resto vai pra "Opções avançadas". */
-const PRINCIPAIS: FlowNodeType[] = [
-  "comentario_instagram",
-  "instagram_story_respondido",
-  "instagram_direct_recebido",
-  "instagram_comentario_live",
-  "instagram_mencao_story",
-];
-
-/**
- * A explicação de cada gatilho em uma frase: o que a pessoa faz e o que a automação faz em
- * seguida. É o conteúdo do "Como funciona cada gatilho?".
- */
-const COMO_FUNCIONA: Partial<Record<FlowNodeType, string>> = {
-  comentario_instagram: "Comentam no seu post ou Reels → a automação chama a pessoa no Direct.",
-  instagram_story_respondido: "Respondem a um story seu → a automação continua a conversa no Direct.",
-  instagram_direct_recebido: "Te mandam mensagem no Direct → a automação responde na hora.",
-  instagram_mencao_story: "Marcam você em um story → a automação responde no Direct.",
-  instagram_comentario_live:
-    "Comentam durante a sua live → a automação chama a pessoa no Direct, e a conversa continua depois que a live acaba.",
-  instagram_midia_recebida: "Mandam foto, vídeo ou áudio no Direct → a automação responde na hora.",
-  instagram_publicacao_compartilhada: "Encaminham uma publicação pra você no Direct → a automação responde.",
-  instagram_reacao_recebida: "Reagem com emoji a uma mensagem sua → a automação segue dali.",
-  instagram_resposta_comentario: "Respondem a um comentário na sua publicação → a automação entra na conversa.",
-};
-
-/**
- * Quais gatilhos têm uma pergunta de alcance ("em quais publicações?", "em quais stories?").
- *
- * Só estes ganham etapa própria. Um gatilho de Direct recebido não escolhe nada: criar uma etapa
- * pra ele seria uma tela em branco com um botão "Continuar".
- */
-const ALCANCE: Partial<Record<FlowNodeType, { titulo: string; pergunta: string }>> = {
-  comentario_instagram: {
-    // As palavras são as da referência, e isso importa mais do que parece: a tela anterior chama
-    // o gatilho de "Comentário no Feed ou Reels" e a pergunta falava em "publicações". Duas
-    // palavras pra mesma coisa, em telas seguidas, fazem a pessoa procurar a diferença.
-    titulo: "Comentário em Posts ou Reels",
-    pergunta: "Em quais Posts ou Reels a automação deve funcionar?",
-  },
-  instagram_story_respondido: {
-    titulo: "Resposta nos stories",
-    pergunta: "Em quais stories a automação deve funcionar?",
-  },
-};
-
 export type EscolhaDeGatilho = { tipo: FlowNodeType; data: Record<string, unknown> };
-
-/**
- * A PERGUNTA DA ÚLTIMA ETAPA, pelo gatilho que manda.
- *
- * "Responda quem comentar no seu feed" e "Responda quem responder seu story" são pessoas em
- * momentos diferentes, e a frase que se escreve pra uma não serve pra outra. Com vários gatilhos
- * marcados, vale o primeiro da lista — que é a ordem em que eles aparecem na tela anterior.
- */
-function perguntaDaResposta(marcados: FlowNodeType[]): string {
-  const porGatilho: Partial<Record<FlowNodeType, string>> = {
-    comentario_instagram: "Responda quem comentar no seu feed",
-    instagram_comentario_live: "Responda quem comentar na sua live",
-    instagram_story_respondido: "Responda quem responder seu story",
-    instagram_mencao_story: "Responda quem mencionar você num story",
-    instagram_direct_recebido: "Responda quem mandar mensagem no Direct",
-  };
-  for (const tipo of marcados) {
-    const frase = porGatilho[tipo];
-    if (frase) return frase;
-  }
-  return "O que o robô responde";
-}
 
 type ModoDePalavra = "qualquer" | "exata" | "contem" | "comeco" | "sem_texto";
 
@@ -161,13 +119,21 @@ function modoNaTela(modo: ModoDePalavra): ModoDePalavra {
   return modo === "exata" || modo === "comeco" ? modo : "contem";
 }
 
-export function GatilhosDoSocial({
+export function GavetaDeGatilhos({
+  area,
   gatilhosAtuais,
   respostasIniciais,
   etapaInicial = "lista",
   onEscolher,
   onFechar,
 }: {
+  /**
+   * Comercial ou social: decide QUAIS gatilhos a gaveta oferece e como cada um se configura.
+   *
+   * Ver `lib/automation-flow/gaveta-de-gatilhos.ts`. O desenho da gaveta não muda com isto — é a
+   * mesma tela, com o conteúdo da área.
+   */
+  area: AreaAutomacao;
   /** Os gatilhos que o fluxo já tem, com a configuração de cada um. */
   gatilhosAtuais?: EscolhaDeGatilho[];
   /**
@@ -256,27 +222,42 @@ export function GatilhosDoSocial({
   const [erroDasMidias, setErroDasMidias] = useState<string | null>(null);
   const [explicacaoAberta, setExplicacaoAberta] = useState(false);
 
-  const doInstagram = BLOCOS_DISPONIVEIS.filter((b) => b.categoria === "gatilho" && b.grupo === "instagram");
-  const principais = PRINCIPAIS.map((t) => doInstagram.find((b) => b.tipo === t)).filter(
-    (b): b is (typeof doInstagram)[number] => Boolean(b),
-  );
-  const avancados = doInstagram.filter((b) => !PRINCIPAIS.includes(b.tipo));
+  const { principais, avancados } = gatilhosDaArea(area);
+  /** Todos os gatilhos da área, na ordem em que a gaveta os mostra. */
+  const daArea = [...principais, ...avancados];
 
   /*
    * AS ETAPAS SÃO CALCULADAS DO QUE FOI MARCADO.
    *
-   * A primeira é sempre as palavras-chave, porque elas valem pra todos os gatilhos. Depois vem
-   * uma etapa por gatilho que tenha uma pergunta de alcance, na ordem em que foram marcados.
+   * No Instagram a primeira é as palavras-chave, porque elas valem pra todos os gatilhos de lá. No
+   * comercial não existe essa etapa: ali a palavra é um GATILHO com campo próprio, e uma etapa de
+   * palavras valendo pra todos escreveria um campo que "Lead entrou na etapa" não tem.
+   *
+   * Depois vem uma etapa por gatilho que tenha o que configurar, na ordem em que foram marcados.
+   * Quem não configura nada não ganha etapa: seria uma tela em branco com um botão "Continuar".
    */
-  const etapas: { chave: string; tipo?: FlowNodeType; titulo: string; pergunta: string }[] = [
-    {
-      chave: "palavras",
-      titulo: "Palavras-chave",
-      pergunta: "Quais palavras ou frases ativam a automação?",
-    },
-    ...marcados
-      .filter((t) => ALCANCE[t])
-      .map((t) => ({ chave: t, tipo: t, titulo: ALCANCE[t]!.titulo, pergunta: ALCANCE[t]!.pergunta })),
+  const etapas: {
+    chave: string;
+    tipo?: FlowNodeType;
+    titulo: string;
+    pergunta: string;
+    desenho?: "alcance" | "formulario";
+  }[] = [
+    ...(temEtapaDePalavras(area)
+      ? [
+          {
+            chave: "palavras",
+            titulo: "Palavras-chave",
+            pergunta: "Quais palavras ou frases ativam a automação?",
+          },
+        ]
+      : []),
+    ...marcados.flatMap((t) => {
+      const config = etapaDeConfiguracao(t);
+      return config
+        ? [{ chave: t, tipo: t, titulo: config.titulo, pergunta: config.pergunta, desenho: config.tipo }]
+        : [];
+    }),
     /*
      * A ÚLTIMA ETAPA É A RESPOSTA, e ela é a razão de tudo o que veio antes.
      *
@@ -327,6 +308,39 @@ export function GatilhosDoSocial({
     onEscolher(
       marcados.map((tipo) => ({ tipo, data: { ...(dados[tipo] ?? {}) } })),
       limpas,
+    );
+  }
+
+  /**
+   * A CONFIGURAÇÃO DE UM GATILHO COMERCIAL: o formulário do PRÓPRIO BLOCO.
+   *
+   * O mesmo que o painel da direita abre quando se clica no gatilho no quadro — não uma cópia
+   * dele. "Em qual etapa do funil?" já tem uma tela certa, com os funis carregados e as etapas
+   * daquele funil; redesenhá-la aqui criaria duas respostas pra mesma pergunta, e a segunda
+   * envelheceria sozinha.
+   *
+   * O nó é montado na hora, a partir do que já está marcado: a gaveta guarda `dados[tipo]` e o
+   * formulário escreve de volta ali. Ele ainda não é um bloco do quadro — vira um quando a gaveta
+   * fecha, em `aplicarGatilhos`.
+   */
+  function formularioDoGatilho(tipo: FlowNodeType) {
+    const bloco = BLOCOS_DISPONIVEIS.find((b) => b.tipo === tipo);
+    const no = {
+      id: `gaveta-${tipo}`,
+      type: tipo,
+      category: "gatilho" as const,
+      position: { x: 0, y: 0 },
+      data: { ...((bloco?.dataPadrao?.() ?? {}) as Record<string, unknown>), ...(dados[tipo] ?? {}) },
+    };
+    return (
+      <FormularioDoNode
+        node={no}
+        area={area}
+        onUpdateNodeData={(_id, novo) => mudarDados(tipo, { ...(dados[tipo] ?? {}), ...novo })}
+        /* Saídas e troca de tipo são coisas do quadro: aqui o gatilho ainda não tem aresta
+           nenhuma, e trocar o tipo é desmarcar e marcar outro na lista. */
+        onRemoverOpcaoAresta={() => {}}
+      />
     );
   }
 
@@ -431,7 +445,9 @@ export function GatilhosDoSocial({
         {lista.filter((r) => r.trim()).length > 1 ? (
           <p className="gat-nota">
             {traduzir(
-              "O robô manda uma delas, sorteada a cada vez. Repetir a mesma frase embaixo do mesmo post é o que o Instagram lê como spam.",
+              area === "social"
+                ? "O robô manda uma delas, sorteada a cada vez. Repetir a mesma frase embaixo do mesmo post é o que o Instagram lê como spam."
+                : "O robô manda uma delas, sorteada a cada vez. Variar a frase é o que faz a automação não soar automática.",
             )}
           </p>
         ) : null}
@@ -537,7 +553,7 @@ export function GatilhosDoSocial({
    * exigir leitura. A explicação não sumiu: ela está inteira no "Como funciona cada gatilho?", que
    * é onde se vai quando a dúvida aparece, e não antes dela.
    */
-  function Linha({ bloco }: { bloco: (typeof doInstagram)[number] }) {
+  function Linha({ bloco }: { bloco: (typeof daArea)[number] }) {
     const escolhido = marcados.includes(bloco.tipo);
     return (
       <button
@@ -564,7 +580,7 @@ export function GatilhosDoSocial({
    * O `limite=100` existe pro "Meu próximo post": ele guarda os ids que já existem, e quanto mais
    * completa essa foto, menor a chance de um post antigo ser confundido com um novo.
    */
-  const precisaDeMidias = marcados.some((t) => ALCANCE[t]);
+  const precisaDeMidias = marcados.some((t) => etapaDeConfiguracao(t)?.tipo === "alcance");
   useEffect(() => {
     if (!precisaDeMidias || publicacoes !== null || stories !== null) return;
     let cancelado = false;
@@ -860,7 +876,7 @@ export function GatilhosDoSocial({
 
             <div className="pg-lista">
               {marcados.map((tipo) => {
-                const bloco = doInstagram.find((b) => b.tipo === tipo);
+                const bloco = daArea.find((b) => b.tipo === tipo);
                 const abertoAqui = respostaAberta === tipo;
                 return (
                   <div
@@ -915,7 +931,7 @@ export function GatilhosDoSocial({
                       </button>
                       {menuDoGatilho === tipo ? (
                         <div className="pg-menu" role="menu">
-                          {ALCANCE[tipo] ? (
+                          {etapaDeConfiguracao(tipo)?.tipo === "alcance" ? (
                             /* Abre a troca AQUI DENTRO, e não numa etapa à parte: o painel agora
                                mostra e edita o alcance no próprio cartão, e mandar pra outra tela
                                seria um segundo caminho pro mesmo lugar — o tipo de coisa que faz
@@ -927,7 +943,7 @@ export function GatilhosDoSocial({
                                 setRespostaAberta(tipo);
                               }}
                             >
-                              {traduzir(ALCANCE[tipo]!.pergunta)}
+                              {traduzir(etapaDeConfiguracao(tipo)!.pergunta)}
                             </button>
                           ) : null}
                           <button
@@ -1092,12 +1108,15 @@ export function GatilhosDoSocial({
               Por isso o texto termina no caminho que existe, e que o CRM agora cumpre inteiro:
               chamada pra comentar, comentário, resposta privada, Direct aberto.
             */}
+            {/* Só no Instagram: é sobre o que a API da Meta não oferece. */}
+            {area === "social" ? (
             <p className="gat-ausente">
               <strong>{traduzir("Procurando \u201ccomeçou a me seguir\u201d?")}</strong>
               {traduzir(
                 "O Instagram não avisa quem passou a te seguir, e a API não deixa começar conversa com quem nunca te escreveu — nem a Meta oferece isso nas ferramentas dela. O caminho que funciona é pedir um comentário: \u201ccomenta AZUZ que eu te mando\u201d. Aí o CRM responde no Direct, e a conversa abre.",
               )}
             </p>
+            ) : null}
           </>
         ) : (
           <div className="gat-etapa" key={etapaAtual.chave}>
@@ -1111,8 +1130,10 @@ export function GatilhosDoSocial({
 
                 {blocoDaPalavra}
               </>
-            ) : etapaAtual.tipo === "comentario_instagram" ? (
-              escolhaDeAlcance("comentario_instagram")
+            ) : etapaAtual.desenho === "alcance" && etapaAtual.tipo ? (
+              escolhaDeAlcance(etapaAtual.tipo)
+            ) : etapaAtual.desenho === "formulario" && etapaAtual.tipo ? (
+              formularioDoGatilho(etapaAtual.tipo)
             ) : etapaAtual.chave === "resposta" ? (
               /*
                 UMA RESPOSTA POR GATILHO.
@@ -1126,7 +1147,9 @@ export function GatilhosDoSocial({
                 {marcados.length > 1 ? (
                   <p className="gat-nota">
                     {traduzir(
-                      "Cada gatilho tem a sua resposta: quem comentou no feed e quem respondeu um story estão em momentos diferentes.",
+                      area === "social"
+                        ? "Cada gatilho tem a sua resposta: quem comentou no feed e quem respondeu um story estão em momentos diferentes."
+                        : "Cada gatilho tem a sua resposta: quem acabou de entrar na etapa e quem sumiu há dois dias estão em momentos diferentes.",
                     )}
                   </p>
                 ) : null}
@@ -1140,8 +1163,6 @@ export function GatilhosDoSocial({
                   </div>
                 ))}
               </div>
-            ) : etapaAtual.tipo === "instagram_story_respondido" ? (
-              escolhaDeAlcance("instagram_story_respondido")
             ) : null}
           </div>
         )}
@@ -1297,10 +1318,10 @@ export function GatilhosDoSocial({
               </button>
             </header>
             <div className="gat-modal-corpo">
-              {doInstagram.map((b) => (
+              {daArea.map((b) => (
                 <div key={b.tipo} className="gat-modal-item">
                   <strong>{traduzir(b.label)}</strong>
-                  <span>{traduzir(COMO_FUNCIONA[b.tipo] ?? b.descricao ?? "")}</span>
+                  <span>{traduzir(comoFunciona(b.tipo) ?? b.descricao ?? "")}</span>
                 </div>
               ))}
               <p className="gat-modal-fim">

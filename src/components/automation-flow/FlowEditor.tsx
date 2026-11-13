@@ -20,6 +20,7 @@ import "@xyflow/react/dist/style.css";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { useFecharMenuDeLinha } from "@/lib/menu-de-linha";
 import { useBibliotecaDocumentos } from "@/lib/biblioteca-documentos-context";
+import { IconAlerta, IconCheck, IconErro } from "@/components/icons";
 import { ModalConfirmacao } from "@/components/ui";
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
 import { resumoNo, saidasDoNo } from "@/lib/automation-flow/resumo";
@@ -38,7 +39,6 @@ import type {
 
 import { FLOW_DND_MIME } from "./BlockLibrary";
 import { canalPadraoDaArea } from "./forms/canais";
-import { blocoApareceNaArea } from "@/lib/canais/capacidades";
 import { ConfigPanel } from "./ConfigPanel";
 import { HistoricoExecucoes } from "./HistoricoExecucoes";
 import { HistoricoVersoes } from "./HistoricoVersoes";
@@ -46,13 +46,13 @@ import { Simulador } from "./Simulador";
 import { ToolbarSocial } from "./ToolbarSocial";
 import { BarraFerramentasSocial } from "./BarraFerramentasSocial";
 import { ArestaSocial } from "./ArestaSocial";
-import { GatilhosDoSocial } from "./GatilhosDoSocial";
+import { GavetaDeGatilhos } from "./GavetaDeGatilhos";
+import { temEtapaDePalavras } from "@/lib/automation-flow/gaveta-de-gatilhos";
 import { ListaDePassos } from "./ListaDePassos";
 import { ProximoPassoJuntoAoInicio } from "./ProximoPassoJuntoAoInicio";
 import { ProximoPassoJuntoAoBloco } from "./ProximoPassoJuntoAoBloco";
 import { PainelProximoPasso } from "./PainelProximoPasso";
 import { nodeTypes } from "./nodes";
-import { IconCheck, IconClose } from "@/components/icons";
 import { useIdioma } from "@/lib/idioma-context";
 import {
   CORES_CATEGORIA,
@@ -112,6 +112,18 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const router = useRouter();
   /** A confirmação de apagar o robô. Nada some sem passar por ela. */
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
+  /**
+   * O PAINEL DE "O QUE FALTA PRA PUBLICAR".
+   *
+   * O editor do funil tinha uma aba "Problemas" no painel da direita, e o do Social Seller não
+   * tinha lugar nenhum: a pendência aparecia como etiqueta no bloco, e a que não é de bloco
+   * nenhum ("nada dispara esta automação") não aparecia até a publicação ser recusada.
+   *
+   * Com os dois editores usando o mesmo painel — que abre direto no bloco, sem abas —, a lista
+   * precisava de casa própria. Ela ficou ao lado do quadro, e não dentro do formulário de um
+   * bloco: é uma pergunta sobre o robô inteiro.
+   */
+  const [problemasAbertos, setProblemasAbertos] = useState(false);
   const fluxo = fluxos.find((f) => f.id === fluxoId);
   // Fluxo sem área é comercial: é o que todo fluxo criado antes desta coluna é.
   const area = fluxo?.area ?? "comercial";
@@ -285,10 +297,22 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
    * guarda que a pessoa fechou a lista, pra ela não voltar sozinha no quadro seguinte.
    */
   const quadroVazio = carregado && modoConstrucao && rfNodes.length === 0;
-  // No Instagram o fluxo começa escolhendo o GATILHO; num robô de funil o gatilho já está na
-  // etapa, então o que falta escolher é o primeiro passo.
-  const abrirGatilhoSozinho = quadroVazio && !dispensouAbertura && ehSocial;
-  const abrirPassoSozinho = quadroVazio && !dispensouAbertura && !ehSocial;
+  /*
+   * O QUADRO VAZIO ABRE NA PERGUNTA QUE FALTA — e qual é ela depende do robô, não da área.
+   *
+   * Era pela área: Instagram abria na escolha do gatilho, funil abria no primeiro passo, porque
+   * "num robô de funil o gatilho já está na etapa". Só que isso vale pros robôs criados PELO
+   * funil, não pros criados na aba Automações — e esses abriam direto nos passos, sem nunca
+   * oferecer um gatilho, que é como se monta um robô que não dispara.
+   *
+   * Agora a conta é a certa: se alguma etapa já manda executar este robô, o gatilho existe e o
+   * que falta é o primeiro passo. Se não, falta o gatilho. Enquanto a busca não volta
+   * (`undefined`), nada abre sozinho — abrir a gaveta errada e fechá-la na cara de quem está
+   * lendo é pior do que esperar meio segundo.
+   */
+  const jaTemQuemDispare = gatilhosDeEtapa === undefined ? undefined : gatilhosDeEtapa.length > 0;
+  const abrirGatilhoSozinho = quadroVazio && !dispensouAbertura && jaTemQuemDispare === false;
+  const abrirPassoSozinho = quadroVazio && !dispensouAbertura && jaTemQuemDispare === true;
   const escolhendoGatilho = escolherGatilhoAberto || abrirGatilhoSozinho;
   const escolhendoProximoPasso = acaoRapida ?? (abrirPassoSozinho ? { nodeId: "", handleId: undefined } : null);
 
@@ -316,7 +340,6 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   /** O bloco que está piscando agora, depois de alguém clicar num problema. */
   const [nodePiscando, setNodePiscando] = useState<string | null>(null);
   /** Qual aba o painel deve mostrar, quando alguém pede do canvas (o "!" de um bloco). */
-  const [abaPedida, setAbaPedida] = useState<{ aba: "configurar" | "problemas"; token: number } | undefined>(undefined);
   const piscarRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /**
@@ -511,7 +534,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   }
   function onConnect(connection: Connection) {
     // Arrastar a partir de uma saída do cartão: a ligação é do BLOCO daquele gatilho.
-    const origem = origemDaLigacao(rfNodes, ehSocial, connection.source, connection.sourceHandle ?? undefined);
+    const origem = origemDaLigacao(rfNodes, connection.source, connection.sourceHandle ?? undefined);
     const novaEdge: FlowRFEdge = {
       id: novoIdAresta(),
       source: origem.source,
@@ -829,7 +852,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   /** Tira a ligação que sai desta saída. Uma saída tem no máximo um caminho. */
   function desligarSaida(nodeId: string, handleId: string | undefined) {
     // A saída do cartão é a saída de UM gatilho: o `handleId` diz qual.
-    const origem = origemDaLigacao(rfNodes, ehSocial, nodeId, handleId);
+    const origem = origemDaLigacao(rfNodes, nodeId, handleId);
     const novoEdges = rfEdges.filter(
       (e) => !(e.source === origem.source && (e.sourceHandle ?? undefined) === origem.sourceHandle),
     );
@@ -878,9 +901,10 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     /* O passo seguinte nasce AO LADO no Social Seller e ABAIXO no funil: no mesmo sentido em que
        a pessoa lê o fluxo. Nascer no sentido errado obriga a arrastar todo bloco criado. */
     const pos = posicaoLivre(
-      ehSocial ? { x: origem.position.x + 380, y: origem.position.y } : { x: origem.position.x, y: origem.position.y + 170 },
+      /* Sempre à direita: as duas áreas leem da esquerda pra direita desde que o editor do funil
+         passou a usar o mesmo desenho do Social Seller. */
+      { x: origem.position.x + 380, y: origem.position.y },
       rfNodes,
-      ehSocial,
     );
     const novoDomain: DomainFlowNode = {
       id: novoIdNo(),
@@ -890,7 +914,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
       data: dadosIniciais(bloco, ehSocial),
     };
     const novoRF: FlowRFNode = { id: novoDomain.id, type: novoDomain.category, position: pos, data: { flowNode: novoDomain, problemas: [] } };
-    const deOnde = origemDaLigacao(rfNodes, ehSocial, nodeOrigemId, handleId);
+    const deOnde = origemDaLigacao(rfNodes, nodeOrigemId, handleId);
     const novaEdge: FlowRFEdge = {
       id: novoIdAresta(),
       source: deOnde.source,
@@ -1044,7 +1068,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
 
   function organizarAutomaticamente() {
     // O Social Seller lê da esquerda pra direita; o funil, de cima pra baixo. Ver `autoLayout`.
-    const novo = autoLayout(rfNodes, rfEdges, ehSocial ? "LR" : "TB");
+    const novo = autoLayout(rfNodes, rfEdges, "LR");
     setRfNodes(novo);
     /*
      * ORGANIZAR TAMBÉM SOLTA A PASTILHA DE INÍCIO.
@@ -1280,8 +1304,15 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
         category: "mensagem",
         position,
         data: {
-          ...(bloco?.dataPadrao() as Record<string, unknown> | undefined),
-          canal: "instagram",
+          /*
+           * O CANAL VEM DA ÁREA, não escrito à mão.
+           *
+           * Era `canal: "instagram"` fixo — certo enquanto a gaveta só existia no Social Seller, e
+           * errado no minuto em que ela passou a montar robô de WhatsApp: a mensagem nascia
+           * prometendo sair pelo Direct num robô que fala por WhatsApp. `dadosIniciais` é a mesma
+           * função que todo bloco criado no quadro usa, e ela já sabe disso.
+           */
+          ...dadosIniciais(bloco!, ehSocial),
           texto: principal,
           variacoes,
         },
@@ -1664,7 +1695,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     return new Set(rfEdges.filter((e) => e.source === alvo || e.target === alvo).map((e) => e.id));
   }, [selectedNodeIds, rfEdges]);
   const nodesParaRenderizar = useMemo(() => {
-    const idsGatilho = idsDeGatilho(rfNodes, ehSocial);
+    const idsGatilho = idsDeGatilho(rfNodes);
     /** O bloco que DESENHA o cartão de gatilhos: o primeiro do fluxo. */
     const host = idsGatilho.length ? idsGatilho[0] : null;
     /** Os que existem, estão ligados e não são desenhados. */
@@ -1740,12 +1771,9 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
             : undefined,
           // Só no funil: no Social Seller o painel não tem abas, e as pendências ficam no
           // cabeçalho do editor (ver `ConfigPanel`).
-          aoAbrirProblemas: ehSocial
-            ? undefined
-            : () => {
-                setSelectedNodeIds([n.id]);
-                setAbaPedida({ aba: "problemas", token: Date.now() });
-              },
+          /* Sem aba de problemas em nenhuma das duas áreas: clicar no bloco abre o painel DELE,
+             que é onde a pendência daquele bloco se resolve. A lista inteira fica no cabeçalho. */
+          aoAbrirProblemas: undefined,
           /* O cronômetro só aparece no modo de tempo puro: "até a resposta" e "até tal data" não
              têm minutos pra editar, e um campo de minutos ali mentiria sobre o que o bloco faz. */
           aoMudarCronometro:
@@ -1765,6 +1793,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
             ? {
                 gatilhosDoGrupo: doGrupo,
                 palavrasDoGrupo,
+                temPalavras: temEtapaDePalavras(area),
                 /*
                  * O CARTÃO ABRE O PAINEL, não o passo a passo.
                  *
@@ -1794,7 +1823,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                    invisível vivo depois de "tirar os gatilhos" é um robô que continua disparando
                    sem nada na tela dizendo por quê. */
                 aoRemover: modoConstrucao
-                  ? () => removerNodes(idsDeGatilho(rfNodes, ehSocial))
+                  ? () => removerNodes(idsDeGatilho(rfNodes))
                   : undefined,
               }
             : {}),
@@ -1960,7 +1989,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
      * O que está gravado não muda: a aresta continua saindo do bloco de verdade, que é quem o
      * motor casa com o evento.
      */
-    const ids = idsDeGatilho(rfNodes, ehSocial);
+    const ids = idsDeGatilho(rfNodes);
     const host = ids.length ? ids[0] : null;
     const doGrupo = new Set(ids);
     return rfEdges.map((e) => ({
@@ -1969,22 +1998,21 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
       className: arestasRelacionadas && !arestasRelacionadas.has(e.id) ? "flow-edge-apagada" : undefined,
       zIndex: arestasRelacionadas?.has(e.id) ? 1 : 0,
     }));
-  }, [rfEdges, rfNodes, ehSocial, arestasRelacionadas]);
+  }, [rfEdges, rfNodes, arestasRelacionadas]);
 
   const edgesComInicio = useMemo(
     () => (inicioDesenhado?.aresta ? [inicioDesenhado.aresta, ...edgesParaRenderizar] : edgesParaRenderizar),
     [inicioDesenhado, edgesParaRenderizar],
   );
 
-  /* A lixeira do hover da ligação. Só no Social Seller: no funil a seta se apaga pela seleção. */
+  /* A lixeira que aparece ao passar o mouse na ligação. Nas duas áreas: no funil a seta só se
+     apagava pela seleção, que é um gesto a mais pra desfazer uma linha ligada no lugar errado. */
   const edgeTypes = useMemo(() => ({ social: ArestaSocial }), []);
   const edgesDesenhadas = useMemo(
     () =>
-      ehSocial
-        ? edgesComInicio.map((e) => ({ ...e, type: "social", data: { aoApagar: removerAresta } }) as FlowRFEdge)
-        : edgesComInicio,
+      edgesComInicio.map((e) => ({ ...e, type: "social", data: { aoApagar: removerAresta } }) as FlowRFEdge),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [edgesComInicio, ehSocial],
+    [edgesComInicio],
   );
 
   /**
@@ -2030,7 +2058,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
       if (escolhendoProximoPasso?.nodeId)
         adicionarBlocoConectado(tipo, escolhendoProximoPasso.nodeId, escolhendoProximoPasso.handleId);
       // Ao lado da pastilha, e não numa coordenada fixa: ver `posicaoDoInicio`.
-      else adicionarBloco(tipo, posicaoLivre({ x: posicaoDoInicio.x + 300, y: posicaoDoInicio.y - 6 }, rfNodes, ehSocial));
+      else adicionarBloco(tipo, posicaoLivre({ x: posicaoDoInicio.x + 300, y: posicaoDoInicio.y - 6 }, rfNodes));
       setAcaoRapida(null);
     },
     onFollowUp: () => {
@@ -2058,7 +2086,9 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   }
 
   return (
-    <div className={`flow-shell${ehSocial ? " flow-shell-social" : ""}`}>
+    /* `flow-shell-novo` é o DESENHO, igual nas duas áreas. `flow-shell-social` é só a COR da
+       referência do Instagram, que não vai pro editor do funil: lá vale a identidade da AZUZ. */
+    <div className={`flow-shell flow-shell-novo${ehSocial ? " flow-shell-social" : ""}`}>
       {/*
         UMA BARRA SÓ, pros dois editores.
         
@@ -2226,6 +2256,9 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                 botões que ficava na barra de cima do funil. */}
             <Panel position="top-right">
               <BarraFerramentasSocial
+                  problemas={problemas.length}
+                  problemasAbertos={problemasAbertos}
+                  onAlternarProblemas={() => setProblemasAbertos((v) => !v)}
                   podeDesfazer={historyIndex > 0}
                   podeRefazer={historyIndex < historyLen - 1}
                   habilitado={modoConstrucao}
@@ -2242,6 +2275,80 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                 onAlternarEntenderFluxo={() => setEntenderFluxoAtivo((v) => !v)}
               />
             </Panel>
+
+            {/*
+              O QUE FALTA PRA PUBLICAR, ao lado do quadro.
+              
+              Encostado na coluna de ferramentas, que é de onde ele abre. Cada linha leva ao bloco
+              que tem a pendência — a lista que só diz o nome do problema faz procurar no quadro
+              o que ela já sabe onde está.
+            */}
+            {problemasAbertos ? (
+              <Panel position="top-right" className="ss-problemas-painel-ancora">
+                <div className="ss-problemas-painel">
+                  <header>
+                    <h4>{traduzir("O que falta pra publicar")}</h4>
+                    <button
+                      type="button"
+                      className="cfg-fechar"
+                      aria-label={traduzir("Fechar")}
+                      onClick={() => setProblemasAbertos(false)}
+                    >
+                      ×
+                    </button>
+                  </header>
+
+                  {/*
+                    QUEM DISPARA ESTE ROBÔ, antes da lista.
+                    
+                    "Tá falando que nada dispara essa automação, sendo que quando eu vou criar o
+                    gatilho eu já falo quando que é pra executar." O gatilho de etapa mora do lado
+                    do funil, e o editor não tinha onde dizer que ele existe.
+                  */}
+                  {gatilhosDeEtapa?.length ? (
+                    <div className="flow-disparado-por">
+                      <span className="flow-disparado-por-t">{traduzir("Disparado por")}</span>
+                      <ul>
+                        {gatilhosDeEtapa.map((g) => (
+                          <li key={g.id}>
+                            {g.etapaTitulo ? `${traduzir("Etapa")} ${g.etapaTitulo}` : traduzir("Uma etapa do funil")}
+                            {g.funilNome ? <span className="s"> · {g.funilNome}</span> : null}
+                            {/* Gatilho desligado não dispara nada, e isso é diferente de não existir. */}
+                            {g.ativo ? null : <span className="s"> · {traduzir("desligado")}</span>}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+
+                  {problemas.length === 0 ? (
+                    <p className="hint">{traduzir("Nada pendente: esse robô está pronto pra publicar.")}</p>
+                  ) : (
+                    problemas.map((p) => (
+                      <button
+                        type="button"
+                        key={p.id}
+                        className={`flow-problema${p.severidade === "erro" ? " erro" : " aviso"}`}
+                        onClick={() => {
+                          if (!p.nodeId) return;
+                          irParaONode(p.nodeId);
+                        }}
+                        disabled={!p.nodeId}
+                      >
+                        <span className="flow-problema-sev">
+                          {p.severidade === "erro" ? (
+                            <IconErro width={13} height={13} />
+                          ) : (
+                            <IconAlerta width={13} height={13} />
+                          )}
+                        </span>
+                        <span>{traduzir(p.mensagem)}</span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </Panel>
+            ) : null}
 
             {/* "Salvo em…" longe dos botões: é informação, não controle. */}
             <Panel position="bottom-right">
@@ -2298,8 +2405,21 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
             </div>
           ) : null}
 
-          {escolhendoGatilho && ehSocial ? (
-            <GatilhosDoSocial
+          {/*
+            A MESMA GAVETA NAS DUAS ÁREAS.
+            
+            "Deixa essa automação idêntica à do Social Selling." No funil o gatilho abria numa
+            lista simples — um clique, um bloco, e a configuração dele só depois, no painel da
+            direita, se a pessoa soubesse que faltava. A gaveta pergunta uma coisa por vez, deixa
+            marcar VÁRIOS gatilhos e termina na mensagem, que é o passo em que se desistia.
+            
+            O conteúdo vem da área (ver `lib/automation-flow/gaveta-de-gatilhos.ts`): no comercial
+            não há etapa de palavras-chave — ali a palavra é um gatilho com campo próprio — e a
+            etapa de cada gatilho é o formulário do próprio bloco.
+          */}
+          {escolhendoGatilho ? (
+            <GavetaDeGatilhos
+              area={area}
               etapaInicial={etapaDaGaveta}
               /* O que o fluxo já responde: a gaveta reabre com o texto na tela, em vez de pedir
                  de novo o que já está escrito no primeiro bloco. */
@@ -2349,49 +2469,6 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                 setEtapaDaGaveta("lista");
               }}
             />
-          ) : null}
-
-          {escolhendoGatilho && !ehSocial ? (
-            <div className="modal-overlay" onClick={fecharEscolha}>
-              <div className="modal flow-escolher-gatilho" onClick={(e) => e.stopPropagation()}>
-                <div className="panel-h">
-                  <h4>{traduzir("Quando isso deve acontecer?")}</h4>
-                  <button
-                    type="button"
-                    className="modal-close-btn"
-                    aria-label={traduzir("Fechar")}
-                    onClick={fecharEscolha}
-                  >
-                    <IconClose width={13} height={13} />
-                  </button>
-                </div>
-                {/*
-                  TODOS OS GATILHOS DA ÁREA, e não só os comuns com um "ver todos" embaixo.
-                  
-                  O "ver todos" abria a biblioteca fixa da esquerda, que não existe mais. Em vez
-                  de um segundo lugar pra procurar, a lista inteira fica aqui — ela tem dezesseis
-                  linhas, cabe, e some a pergunta "onde está o resto?".
-                */}
-                <div className="flow-escolher-gatilho-lista">
-                  {BLOCOS_DISPONIVEIS.filter(
-                    (b) => b.categoria === "gatilho" && blocoApareceNaArea(b, area),
-                  ).map((bloco) => (
-                    <button
-                      type="button"
-                      key={bloco.tipo}
-                      className="flow-escolher-gatilho-item"
-                      onClick={() => {
-                        adicionarBloco(bloco.tipo, { x: posicaoDoInicio.x + 260, y: posicaoDoInicio.y - 6 });
-                        fecharEscolha();
-                      }}
-                    >
-                      <span className="n">{traduzir(bloco.label)}</span>
-                      <span className="r">{traduzir(bloco.descricao)}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
           ) : null}
 
           {escolhendoProximoPasso ? (
@@ -2522,9 +2599,9 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           onRemoverOpcaoAresta={removerOpcaoAresta}
           onTrocarTipo={trocarTipoDoNode}
           onSelecionarNode={irParaONode}
-          abaPedida={abaPedida}
-          ehSocial={ehSocial}
-          gatilhosDeEtapa={gatilhosDeEtapa}
+          /* O painel abre direto no bloco nas duas áreas, sem as abas Configurar/Problemas. As
+             pendências ficam no cabeçalho do editor e nos próprios blocos. */
+          ehSocial
           onAbrirGatilhos={() => {
             setEtapaDaGaveta("painel");
             setEscolherGatilhoAberto(true);
@@ -2644,8 +2721,14 @@ function dadosIniciais(bloco: { tipo: FlowNodeType; dataPadrao: () => unknown },
   return { ...comCanal, modo: "segundos", valor: 5, interromperSeResponder: true };
 }
 
-function idsDeGatilho(nodes: FlowRFNode[], ehSocial: boolean): string[] {
-  if (!ehSocial) return [];
+/**
+ * OS GATILHOS, QUE O CARTÃO ÚNICO REPRESENTA.
+ *
+ * Deixou de perguntar a área: o cartão de gatilhos passou a ser o desenho das duas. Antes o funil
+ * desenhava um bloco por gatilho e esta função devolvia lista vazia pra ele — o que, na prática,
+ * desligava o cartão único, a ligação que sai do bloco certo e a limpeza em lote.
+ */
+function idsDeGatilho(nodes: FlowRFNode[]): string[] {
   return nodes.filter((n) => n.data.flowNode.category === "gatilho").map((n) => n.id);
 }
 
@@ -2659,11 +2742,10 @@ function idsDeGatilho(nodes: FlowRFNode[], ehSocial: boolean): string[] {
  */
 function origemDaLigacao(
   nodes: FlowRFNode[],
-  ehSocial: boolean,
   nodeId: string,
   handleId: string | undefined,
 ): { source: string; sourceHandle: string | undefined } {
-  const ids = idsDeGatilho(nodes, ehSocial);
+  const ids = idsDeGatilho(nodes);
   if (handleId && ids[0] === nodeId && ids.includes(handleId)) {
     return { source: handleId, sourceHandle: undefined };
   }
@@ -2680,19 +2762,16 @@ function retanguloDoNo(nodeId: string): DOMRect | undefined {
 /**
  * UM LUGAR LIVRE PRO BLOCO NOVO, a partir de onde ele deveria nascer.
  *
- * O passo seguinte nascia num deslocamento fixo — 380 à direita no Social Seller, 170 abaixo no
- * funil — e, quando aquele lugar já estava ocupado, o bloco novo nascia EM CIMA do que já estava
- * lá. Com um bloco alto (uma condição com quatro caminhos é alta), isso acontece sempre que o
- * fluxo tem mais de um ramo.
+ * O passo seguinte nascia num deslocamento fixo e, quando aquele lugar já estava ocupado, o bloco
+ * novo nascia EM CIMA do que já estava lá. Com um bloco alto (uma condição com quatro caminhos é
+ * alta), isso acontece sempre que o fluxo tem mais de um ramo.
  *
- * A busca anda no sentido perpendicular ao da leitura: no Social Seller, que lê da esquerda pra
- * direita, o bloco desce; no funil, que lê de cima pra baixo, ele vai pra direita. Assim a linha
- * continua saindo na direção em que a pessoa lê, sem volta por cima.
+ * A busca anda PRA BAIXO, perpendicular à leitura: os dois editores leem da esquerda pra direita,
+ * então a linha continua saindo na direção em que a pessoa lê, sem volta por cima.
  */
 function posicaoLivre(
   desejada: { x: number; y: number },
   nodes: FlowRFNode[],
-  ehSocial: boolean,
 ): { x: number; y: number } {
   const LARGURA = 300;
   const ALTURA = 170;
@@ -2713,9 +2792,7 @@ function posicaoLivre(
   // Vinte tentativas e desiste: num canvas tão cheio assim, insistir só joga o bloco pra longe
   // demais pra ser encontrado. Melhor nascer encostado e a pessoa arrastar.
   for (let i = 1; i <= 20 && cruza(tentativa); i++) {
-    tentativa = ehSocial
-      ? { x: desejada.x, y: desejada.y + i * (ALTURA + FOLGA) }
-      : { x: desejada.x + i * (LARGURA + FOLGA), y: desejada.y };
+    tentativa = { x: desejada.x, y: desejada.y + i * (ALTURA + FOLGA) };
   }
   return tentativa;
 }

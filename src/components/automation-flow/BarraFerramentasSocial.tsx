@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  IconAlerta,
   IconDesfazer,
   IconExpandir,
   IconHistorico,
@@ -39,6 +40,9 @@ export function BarraFerramentasSocial({
   onExecucoes,
   onHistorico,
   onAlternarEntenderFluxo,
+  problemas,
+  problemasAbertos,
+  onAlternarProblemas,
 }: {
   podeDesfazer: boolean;
   podeRefazer: boolean;
@@ -55,6 +59,19 @@ export function BarraFerramentasSocial({
   onExecucoes: () => void;
   onHistorico: () => void;
   onAlternarEntenderFluxo: () => void;
+  /**
+   * QUANTAS PENDÊNCIAS O ROBÔ TEM, pro contador do botão.
+   *
+   * O editor do funil tinha uma aba "Problemas" no painel da direita; o do Social Seller não tinha
+   * lugar nenhum — a pendência aparecia só como etiqueta no bloco, e a que não é de bloco nenhum
+   * ("nada dispara esta automação") não aparecia em canto algum até a publicação ser recusada.
+   *
+   * Agora os dois têm o mesmo lugar, e ele fica aqui: ao lado do quadro, não dentro do formulário
+   * de um bloco.
+   */
+  problemas: number;
+  problemasAbertos: boolean;
+  onAlternarProblemas: () => void;
 }) {
   const { t: traduzir } = useIdioma();
 
@@ -71,6 +88,20 @@ export function BarraFerramentasSocial({
         onClick={onAlternarEntenderFluxo}
       >
         <IconLampada width={16} height={16} />
+      </button>
+
+      {/* O contador some quando está tudo certo: um "0" permanente é ruído, e a ausência dele já
+          diz o que precisa ser dito. O botão fica, pra quem quiser conferir. */}
+      <button
+        type="button"
+        className={`ss-ferramenta destaque${problemasAbertos ? " on" : ""}${problemas > 0 ? " com-pendencia" : ""}`}
+        aria-pressed={problemasAbertos}
+        title={traduzir("O que falta pra publicar")}
+        aria-label={traduzir("O que falta pra publicar")}
+        onClick={onAlternarProblemas}
+      >
+        <IconAlerta width={16} height={16} />
+        {problemas > 0 ? <span className="ss-ferramenta-contador">{problemas}</span> : null}
       </button>
 
       <div className="ss-ferramentas-grupo">

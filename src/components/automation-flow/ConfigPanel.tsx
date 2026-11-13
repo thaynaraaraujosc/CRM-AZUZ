@@ -122,7 +122,7 @@ const ALCANCE_NA_GAVETA = new Set<string>([
   "instagram_mencao_story",
 ]);
 
-function FormularioDoNode({
+export function FormularioDoNode({
   node,
   area,
   fluxoAtualId,
@@ -347,7 +347,6 @@ export function ConfigPanel({
   abaPedida,
   ehSocial,
   onAbrirGatilhos,
-  gatilhosDeEtapa,
   onFechar,
   onSalvar,
   temPendencia,
@@ -387,16 +386,6 @@ export function ConfigPanel({
   ehSocial?: boolean;
   /** Abre a gaveta dos gatilhos: no Social Seller é lá que palavra-chave e alcance moram. */
   onAbrirGatilhos?: () => void;
-  /**
-   * AS ETAPAS DE FUNIL QUE MANDAM EXECUTAR ESTE ROBÔ.
-   *
-   * A aba Problemas é onde a pessoa vai conferir se a automação vai rodar, e a pergunta que ela
-   * faz ali é "quem dispara isso?". A resposta mora do lado do funil (`GatilhoEtapa.fluxoId`), e
-   * a aba só sabia dizer o que FALTAVA no quadro — nunca o que já estava ligado.
-   *
-   * `undefined` = a busca não voltou; nada é afirmado.
-   */
-  gatilhosDeEtapa?: { id: string; etapaTitulo: string | null; funilNome: string | null; ativo: boolean }[];
   onFechar?: () => void;
   onSalvar?: () => void;
   temPendencia?: boolean;
@@ -445,32 +434,6 @@ export function ConfigPanel({
       <div className="flow-config-body">
         {aba === "problemas" && !ehSocial ? (
           <div className="flow-form">
-            {/*
-              QUEM DISPARA ESTE ROBÔ, dito antes da lista de pendências.
-
-              "Tá falando que nada dispara essa automação, sendo que quando eu vou criar o gatilho
-              eu já falo quando que é pra executar." A aba só sabia falar do que estava no quadro,
-              e o gatilho de etapa mora do lado do funil — então a tela negava uma ligação que
-              existia. Aqui ela é dita por extenso, com a etapa e o funil: "dispara" sem dizer de
-              onde deixa a mesma dúvida pela metade.
-            */}
-            {gatilhosDeEtapa?.length ? (
-              <div className="flow-disparado-por">
-                <span className="flow-disparado-por-t">{traduzir("Disparado por")}</span>
-                <ul>
-                  {gatilhosDeEtapa.map((g) => (
-                    <li key={g.id}>
-                      {g.etapaTitulo
-                        ? `${traduzir("Etapa")} ${g.etapaTitulo}`
-                        : traduzir("Uma etapa do funil")}
-                      {g.funilNome ? <span className="s"> · {g.funilNome}</span> : null}
-                      {/* Gatilho desligado não dispara nada, e isso é diferente de não existir. */}
-                      {g.ativo ? null : <span className="s"> · {traduzir("desligado")}</span>}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
             {problemas.length === 0 ? (
               <p className="hint">{traduzir("Nenhum problema encontrado: esse fluxo está pronto pra publicar.")}</p>
             ) : (

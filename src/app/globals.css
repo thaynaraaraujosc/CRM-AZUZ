@@ -11282,52 +11282,6 @@ button.camp-row:hover {
   margin: 0 0 var(--space-2);
 }
 
-.flow-escolher-gatilho {
-  width: min(440px, 100%);
-  max-height: 80vh;
-  display: flex;
-  flex-direction: column;
-  padding: 0;
-}
-
-.flow-escolher-gatilho-lista {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding: var(--space-2) var(--space-3);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-.flow-escolher-gatilho-item {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  text-align: left;
-  padding: var(--space-3) var(--space-3);
-  border-radius: var(--radius-md);
-  border: 1px solid transparent;
-  background: none;
-  cursor: pointer;
-}
-
-.flow-escolher-gatilho-item:hover {
-  background: var(--navy-raised);
-  border-color: var(--line);
-}
-
-.flow-escolher-gatilho-item .n {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--ink);
-}
-
-.flow-escolher-gatilho-item .r {
-  font-size: 13px;
-  color: var(--text-faint);
-}
-
 /* ---------------- Bloco "enviar mídia": biblioteca de arquivos (itens 3-9) ---------------- */
 
 /*
@@ -27049,10 +27003,45 @@ td.trafego-col-crm:first-of-type {
  * a dona do produto pediu a MESMA identidade da referência, não uma tradução dela. Em navy e
  * dourado, "Selecionado" e "Testar e publicar" leem como outro produto colado dentro deste.
  *
- * Por isso o azul entra como token LOCAL (`--ss-azul`), preso a `.flow-shell-social`. Ele não
+ * Por isso o azul entra como token LOCAL (`--ss-azul`), preso a `.flow-shell-novo`. Ele não
  * vaza: nenhuma outra tela do CRM muda de cor por causa desta regra, e trocar o azul do editor é
  * mexer em duas linhas.
  * ========================================================================== */
+/* ==========================================================================
+ * A MESMA ESTRUTURA, DUAS IDENTIDADES.
+ *
+ * `.flow-shell-novo` é o DESENHO do editor — blocos, ligações, canvas, coluna de ferramentas — e
+ * vale nas duas áreas desde que o editor do funil passou a usar o mesmo. `.flow-shell-social` é
+ * só a COR, e continua presa ao Instagram.
+ *
+ * A separação existe porque "deixa idêntico" era sobre como o editor funciona, não sobre trocar a
+ * identidade do produto. O azul da referência (#0028fe) entrou no editor de Instagram porque
+ * aquele editor foi desenhado contra uma referência azul; levá-lo pro editor do funil faria o CRM
+ * ter duas identidades de cor convivendo, que é exatamente o que a unificação visual desfez.
+ *
+ * Então o editor do WhatsApp recebe os MESMOS tokens, com os valores da AZUZ: o ouro de ação com
+ * navy em cima, que é o par que o resto do CRM já usa em todo botão cheio.
+ * ========================================================================== */
+.flow-shell-novo {
+  /*
+   * `--acao` e nao `--blue`: estes tokens pintam BOTOES CHEIOS ("Testar e publicar", o "+" da
+   * coluna), e botao cheio precisa do par fundo/texto que ja foi medido. `--acao` e o ouro da
+   * AZUZ, `--acao-texto` e o navy que vai em cima dele, e o par da 7,27:1 nos dois temas.
+   * `--blue` vira ouro no tema escuro e levaria texto BRANCO sobre ouro, que e 2,29:1.
+   */
+  --ss-azul: var(--acao);
+  --ss-azul-forte: var(--acao-hover);
+  --ss-azul-texto: var(--acao-texto);
+  --ss-azul-suave: var(--azul-claro-2);
+  --ss-papel: var(--canvas);
+  --ss-linha: var(--line);
+  --ss-tinta: var(--ink);
+  --ss-tinta-fraca: var(--text-muted);
+  --ss-suave: var(--surface-2);
+  --ss-cinza-300: var(--line);
+  --ss-cinza-400: var(--text-faint);
+}
+
 .flow-shell-social {
   /*
    * Os valores saem de `docs/referencia-gaio.md`, lidos do CSS computado da referência — não são
@@ -27061,6 +27050,8 @@ td.trafego-col-crm:first-of-type {
    */
   --ss-azul: #0028fe;
   --ss-azul-forte: #0024d4;
+  /* Azul cheio e escuro: o texto em cima dele e branco (#0028fe com #fff = 7,68:1). */
+  --ss-azul-texto: #fff;
   --ss-azul-suave: #e7e8ff;
   --ss-papel: #fafafa;
   --ss-linha: #e2e8f0;
@@ -27079,6 +27070,9 @@ td.trafego-col-crm:first-of-type {
 :root[data-theme="dark"] .flow-shell-social {
   --ss-azul: #657bff;
   --ss-azul-forte: #8b97ff;
+  /* No escuro o azul clareia, e branco em cima dele cai pra 4,0:1. O navy sobe pra 4,62:1 e e
+     o mesmo par que o botao ja usa no resto do CRM. */
+  --ss-azul-texto: #002037;
   --ss-azul-suave: rgba(101, 123, 255, 0.18);
   --ss-papel: var(--canvas);
   --ss-linha: var(--line);
@@ -27181,7 +27175,7 @@ td.trafego-col-crm:first-of-type {
  * "Testar e publicar" SUMIA no editor do funil.
  *
  * Ele pintava com `var(--ss-azul)`, que é um token LOCAL do Social Seller — definido só dentro de
- * `.flow-shell-social`. Enquanto a barra era só de lá, funcionava. Quando ela passou a servir os
+ * `.flow-shell-novo`. Enquanto a barra era só de lá, funcionava. Quando ela passou a servir os
  * dois editores, no funil o token não existia: sem valor, a regra inteira é inválida, o botão
  * ficou sem fundo e sobrou texto branco sobre barra branca.
  *
@@ -27208,10 +27202,9 @@ td.trafego-col-crm:first-of-type {
   background: var(--ss-azul-forte, var(--acao-hover));
 }
 
-/* No Social Seller o botão é azul cheio, e aí o texto é branco. */
-.flow-shell-social .ss-toolbar-publicar {
-  color: #fff;
-}
+/* O texto do botao vem do par do fundo (`--ss-azul-texto`): branco sobre o azul da referencia,
+   navy sobre o ouro da AZUZ. Era `color: #fff` fixo aqui, e no editor do funil isso poria
+   branco sobre ouro. */
 
 /* O menu dos dois botões do canto. Cada item com a explicação embaixo: "Publicar agora" e
    "Salvar rascunho" são irreversíveis de jeitos diferentes, e o nome sozinho não conta qual. */
@@ -27320,6 +27313,74 @@ td.trafego-col-crm:first-of-type {
   color: var(--ink);
 }
 
+/*
+ * O BOTÃO DE "O QUE FALTA PRA PUBLICAR", com o contador.
+ *
+ * Ouro e não vermelho: pendência não é falha, é trabalho que falta. O vermelho fica pro erro que
+ * já aconteceu, e usá-lo aqui faria o robô pela metade parecer quebrado.
+ */
+.ss-ferramenta {
+  position: relative;
+}
+
+.ss-ferramenta.com-pendencia {
+  color: var(--ouro-hover);
+}
+
+.ss-ferramenta-contador {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: var(--ouro);
+  /* Navy fixo: a família do ouro não é redefinida no tema escuro, então o contraste é o mesmo
+     nos dois (navy sobre #D2A366 = 7,27:1). */
+  color: #002037;
+  font-size: 10px;
+  font-weight: var(--fw-semibold);
+  line-height: 15px;
+  text-align: center;
+}
+
+/*
+ * O PAINEL DE PENDÊNCIAS, encostado na coluna de ferramentas.
+ *
+ * Fica ao lado do quadro e não dentro do formulário de um bloco: é uma pergunta sobre o robô
+ * inteiro, e a pendência que mais importa ("nada dispara esta automação") não é de bloco nenhum.
+ */
+.ss-problemas-painel-ancora {
+  margin-right: 60px !important;
+}
+
+.ss-problemas-painel {
+  width: 320px;
+  max-height: min(60vh, 460px);
+  overflow-y: auto;
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+}
+
+.ss-problemas-painel header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.ss-problemas-painel h4 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
+}
+
 .ss-ferramenta:disabled {
   opacity: 0.38;
   cursor: not-allowed;
@@ -27332,13 +27393,15 @@ td.trafego-col-crm:first-of-type {
      Seller, e a coluna de ferramentas passou a servir os dois editores. Sem valor, a regra é
      inválida e o botão some. */
   background: var(--ss-azul, var(--acao));
-  color: #fff;
+  /* Era `#fff` fixo. No editor do funil o fundo cai no ouro da AZUZ, e branco sobre ouro
+     e 2,29:1: o "+" mais visivel da tela era o mais dificil de ler. O par vem com o fundo. */
+  color: var(--ss-azul-texto, var(--acao-texto));
   margin-bottom: 4px;
 }
 
 .ss-ferramenta.principal:hover:not(:disabled) {
   background: var(--ss-azul-forte, var(--acao-hover));
-  color: #fff;
+  color: var(--ss-azul-texto, var(--acao-texto));
 }
 
 /* Separado do grupo, em cima: muda o que a tela MOSTRA, não o que ela faz. */
@@ -27392,7 +27455,7 @@ td.trafego-col-crm:first-of-type {
  * largura, cabeçalho de 44px) são da caixa SEM borda. Com borda, cada bloco fica 2px mais largo e
  * o alinhamento das linhas de ligação sai do lugar.
  */
-.flow-shell-social .flow-node {
+.flow-shell-novo .flow-node {
   width: 300px;
   min-width: 300px;
   max-width: 300px;
@@ -27403,17 +27466,17 @@ td.trafego-col-crm:first-of-type {
   box-shadow: var(--ss-tinta-fraca, #64748b) 0 0 0 1px inset;
 }
 
-:root[data-theme="dark"] .flow-shell-social .flow-node {
+:root[data-theme="dark"] .flow-shell-novo .flow-node {
   background: var(--surface);
 }
 
 /* O anel azul fica no CABEÇALHO, não no cartão inteiro: é assim na referência, e é o que separa
    "este bloco está aberto no painel" de "este bloco tem problema" (que pinta a aba de laranja). */
-.flow-shell-social .flow-node.is-selected {
+.flow-shell-novo .flow-node.is-selected {
   box-shadow: var(--ss-azul) 0 0 0 1px inset;
 }
 
-.flow-shell-social .flow-node.is-selected .flow-node-header {
+.flow-shell-novo .flow-node.is-selected .flow-node-header {
   box-shadow: var(--ss-azul) 0 0 0 1px inset;
 }
 
@@ -27557,7 +27620,7 @@ td.trafego-col-crm:first-of-type {
  * encostado nas bordas de dentro. Sem isso o cartão é um parágrafo solto embaixo de um título.
  */
 /* Cabeçalho de 44px, raio só em cima, padding 12/16, gap 12 — medidas da referência. */
-.flow-shell-social .flow-node-header {
+.flow-shell-novo .flow-node-header {
   min-height: 44px;
   align-items: center;
   gap: 12px;
@@ -27568,7 +27631,7 @@ td.trafego-col-crm:first-of-type {
 
 /* O miolo é uma caixa clara encostada nas bordas de dentro, com 44px de respiro embaixo pro
    rodapé "Próximo passo" caber sem empurrar o conteúdo. */
-.flow-shell-social .flow-node-body {
+.flow-shell-novo .flow-node-body {
   /* 16px dos dois lados, igual ao cabeçalho: era 20px por dentro e 16 por fora, e a diferença de
      4px fazia o miolo parecer desalinhado com o título logo acima. */
   margin: 0 16px;
@@ -27585,7 +27648,7 @@ td.trafego-col-crm:first-of-type {
 }
 
 /* A bolha da mensagem JÁ é a caixa clara: aninhar uma na outra daria duas molduras cinza. */
-.flow-shell-social .flow-node-body:has(.flow-bolha) {
+.flow-shell-novo .flow-node-body:has(.flow-bolha) {
   margin: 0 16px;
   padding: 0;
   background: none;
@@ -27596,14 +27659,14 @@ td.trafego-col-crm:first-of-type {
 /* As saídas (Sim/Não, Sucesso/Falha, as opções da pergunta) também num bloco claro, com cada
    saída numa pastilha branca — é o desenho da referência, e é o que faz "Sim" e "Não" lerem
    como dois caminhos e não como duas linhas de texto. */
-.flow-shell-social .flow-node-handles {
+.flow-shell-novo .flow-node-handles {
   margin: 12px 16px 0;
   padding: 12px;
   border-radius: 8px;
   background: var(--ss-suave, #f1f5f9);
 }
 
-.flow-shell-social .flow-node-handle-row {
+.flow-shell-novo .flow-node-handle-row {
   background: var(--surface);
   border: 1px solid var(--line-soft);
   border-radius: 8px;
@@ -27611,13 +27674,13 @@ td.trafego-col-crm:first-of-type {
 }
 
 /* O rodapé, com o "Próximo passo" alinhado à direita e o ponto de saída na borda. */
-.flow-shell-social .flow-node-saida-unica {
+.flow-shell-novo .flow-node-saida-unica {
   min-height: 28px;
   margin-top: 12px;
   padding: 0 16px;
 }
 
-.flow-shell-social .flow-node-proximo {
+.flow-shell-novo .flow-node-proximo {
   font-size: 12px;
   line-height: 15.6px;
   font-weight: 500;
@@ -27625,19 +27688,19 @@ td.trafego-col-crm:first-of-type {
 }
 
 /* O canvas é papel liso: `#FAFAFA`, sem grade e sem pontos. */
-.flow-shell-social .flow-canvas,
-.flow-shell-social .react-flow__pane {
+.flow-shell-novo .flow-canvas,
+.flow-shell-novo .react-flow__pane {
   background: var(--ss-papel, #fafafa);
 }
 
 /* A ligação: 2px em `#94A3B8`, contínua. */
-.flow-shell-social .react-flow__edge-path {
+.flow-shell-novo .react-flow__edge-path {
   stroke: var(--ss-cinza-400, #94a3b8);
   stroke-width: 2;
 }
 
 /* Ponto de entrada à esquerda do cabeçalho: 20px, cinza 300, anel branco de 3px. */
-.flow-shell-social .react-flow__handle {
+.flow-shell-novo .react-flow__handle {
   width: 20px;
   height: 20px;
   background: var(--ss-cinza-300, #cbd5e1);
@@ -27645,7 +27708,7 @@ td.trafego-col-crm:first-of-type {
   box-shadow: rgba(0, 0, 0, 0.15) 0 0 3px 0;
 }
 
-.flow-shell-social .react-flow__handle.flow-handle-inline {
+.flow-shell-novo .react-flow__handle.flow-handle-inline {
   width: 10px;
   height: 10px;
   border-width: 2px;
@@ -27660,7 +27723,7 @@ td.trafego-col-crm:first-of-type {
  * competindo com os próprios títulos. Em cinza, e sem caixa alta, ela volta a ser o que é: a
  * linha de cima do título.
  */
-.flow-shell-social .flow-node-categoria {
+.flow-shell-novo .flow-node-categoria {
   color: var(--text-muted);
   text-transform: none;
   letter-spacing: 0;
@@ -27668,12 +27731,12 @@ td.trafego-col-crm:first-of-type {
   font-weight: 500;
 }
 
-.flow-shell-social .flow-node-label {
+.flow-shell-novo .flow-node-label {
   font-size: 13.5px;
   white-space: normal;
 }
 
-.flow-shell-social .flow-node {
+.flow-shell-novo .flow-node {
   min-width: 260px;
   max-width: 300px;
 }
@@ -27689,7 +27752,7 @@ td.trafego-col-crm:first-of-type {
  * fallback é a mesma pilha de sistema do resto: se a fonte não chegar, a tela continua legível.
  */
 .social-layout,
-.flow-shell-social,
+.flow-shell-novo,
 .tpl-janela,
 .gat-modal,
 .pp-caixa {
@@ -27707,7 +27770,7 @@ td.trafego-col-crm:first-of-type {
  * Os tokens são redefinidos só dentro do módulo. O resto do CRM continua no cinza-azulado dele.
  */
 .content.social-layout,
-.flow-shell-social {
+.flow-shell-novo {
   --canvas: #fafafa;
   --surface: #ffffff;
   --surface-1: #ffffff;
@@ -27733,7 +27796,7 @@ td.trafego-col-crm:first-of-type {
  * usar as superfícies do tema, e quem carrega a identidade lá é o azul, não o papel.
  */
 :root[data-theme="dark"] .content.social-layout,
-:root[data-theme="dark"] .flow-shell-social {
+:root[data-theme="dark"] .flow-shell-novo {
   --canvas: #000d17;
   --surface: var(--navy-raised);
   --surface-1: var(--navy-raised);
@@ -28313,7 +28376,7 @@ td.trafego-col-crm:first-of-type {
  * do fluxo não se mexe quando a gaveta abre e fecha — e um fluxo que pula de lugar a cada clique
  * em bloco é a forma mais rápida de perder de vista onde se estava.
  */
-.flow-shell-social .flow-config {
+.flow-shell-novo .flow-config {
   position: absolute;
   top: 0;
   left: 0;
@@ -30904,7 +30967,7 @@ td.trafego-col-crm:first-of-type {
  * pra saber onde a linha começa. Mexer aqui move o ponto E a ligação junto, sem tocar no cálculo
  * de rota de nenhuma aresta.
  */
-.flow-shell-social .flow-node-saida-unica {
+.flow-shell-novo .flow-node-saida-unica {
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -30916,7 +30979,7 @@ td.trafego-col-crm:first-of-type {
 }
 
 /* O ponto de saída deixa de ser o do rodapé centralizado e passa a viver nesta linha. */
-.flow-shell-social .flow-node-saida-unica .react-flow__handle {
+.flow-shell-novo .flow-node-saida-unica .react-flow__handle {
   position: relative;
   top: auto;
   left: auto;
@@ -30930,7 +30993,7 @@ td.trafego-col-crm:first-of-type {
 }
 
 /* O "+" sai de cima da borda e vira um quadrado ao lado do ponto, como na referência. */
-.flow-shell-social .flow-node-saida-unica .flow-node-add-btn {
+.flow-shell-novo .flow-node-saida-unica .flow-node-add-btn {
   position: static;
   transform: none;
   width: 24px;
@@ -30943,7 +31006,7 @@ td.trafego-col-crm:first-of-type {
   flex: none;
 }
 
-.flow-shell-social .flow-node-saida-unica .flow-node-add-btn:hover {
+.flow-shell-novo .flow-node-saida-unica .flow-node-add-btn:hover {
   border-color: var(--ss-azul);
   color: var(--ss-azul);
   background: var(--ss-azul-suave, #e7e8ff);
@@ -30959,7 +31022,7 @@ td.trafego-col-crm:first-of-type {
  * O "+" só é renderizado quando a saída está desconectada (ver `NodeShell`), então ele serve de
  * sinal: se ele está na linha, o ponto é oco.
  */
-.flow-shell-social .flow-node-saida-unica:has(.flow-node-add-btn) .react-flow__handle {
+.flow-shell-novo .flow-node-saida-unica:has(.flow-node-add-btn) .react-flow__handle {
   background: #fff;
   border: 2px solid var(--ss-cinza-400, #94a3b8);
   box-shadow: none;
@@ -30967,7 +31030,7 @@ td.trafego-col-crm:first-of-type {
 
 /* ---------------- A gaveta de gatilhos: caixas, etapas e palavras ----------------
  *
- * Ver `GatilhosDoSocial`. A escolha virou múltipla, e o que vem depois dela é uma etapa por
+ * Ver `GavetaDeGatilhos`. A escolha virou múltipla, e o que vem depois dela é uma etapa por
  * pergunta em aberto. O que está aqui é só o que a versão de um gatilho só não precisava.
  */
 
