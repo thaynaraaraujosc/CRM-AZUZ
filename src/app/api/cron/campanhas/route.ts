@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { rodarRodadaDeCampanhas } from "@/lib/campanhas/worker";
 import { retomarEsperasVencidas } from "@/lib/automacoes/iniciar";
 import { rodarGatilhosDeTempo } from "@/lib/automacoes/gatilhos-tempo";
-import { rodarGatilhosProgramados } from "@/lib/funil/gatilhos-etapa";
+import { rodarGatilhosAgendados, rodarGatilhosProgramados } from "@/lib/funil/gatilhos-etapa";
 import { adotarOrfasDeTodosOsWorkspaces } from "@/lib/conversas/adotar-orfas";
 import { rodarHistoricosPendentes } from "@/lib/integracoes/historico-passo";
 import { padronizarNomesDeTodosOsWorkspaces } from "@/lib/funis/consolidar";
@@ -90,6 +90,18 @@ export async function GET(request: Request) {
   const diarios = await rodarGatilhosProgramados().catch((erro) => {
     console.error("[cron] falha nos gatilhos programados do funil:", erro);
     return { gatilhos: 0, leads: 0 };
+  });
+
+  /*
+   * A FILA DOS GATILHOS COM ESPERA: "depois de 5 minutos", "um dia".
+   *
+   * Em TODA batida. Um gatilho de etapa com atraso não roda na hora em que o card se mexe — a
+   * intenção vira linha em `GatilhoAgendado` e é aqui que ela é cumprida. A varredura pega tudo
+   * que já venceu, não só o minuto exato: batida perdida atrasa a execução, não a cancela.
+   */
+  const agendados = await rodarGatilhosAgendados().catch((erro) => {
+    console.error("[cron] falha na fila de gatilhos com espera:", erro);
+    return 0;
   });
 
   /*
@@ -291,5 +303,5 @@ export async function GET(request: Request) {
         })
       : { workspaces: 0, chats: 0 };
 
-  return NextResponse.json({ ok: true, ...resultado, automacoes, porTempo, diarios, confirmacoes, orfas, historico, nomes, reconciliacao, canalQrCode, qrCodeMudo, donos, grupos, espelhamentosIniciados, assinaturas, conversoes, filaDeConversoes, tokensInstagram });
+  return NextResponse.json({ ok: true, ...resultado, automacoes, porTempo, diarios, agendados, confirmacoes, orfas, historico, nomes, reconciliacao, canalQrCode, qrCodeMudo, donos, grupos, espelhamentosIniciados, assinaturas, conversoes, filaDeConversoes, tokensInstagram });
 }

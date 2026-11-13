@@ -1,4 +1,7 @@
 import { prisma } from "@/lib/prisma";
+import { minutosDeAtraso, quandoRodar } from "@/lib/funil/atraso-do-gatilho";
+import { deveRodarAgora } from "@/lib/funil/repeticao-do-gatilho";
+import { CAMPO_NASCIMENTO, ehOMinutoDoCampo } from "@/lib/funil/campo-de-data-do-gatilho";
 import { avaliarGrupoCondicoes } from "@/lib/automation-flow/avaliacao";
 import { iniciarFluxoComEstado } from "@/lib/automacoes/iniciar";
 import { rastreioParaCondicoes } from "@/lib/rastreio/para-condicoes";
@@ -184,6 +187,29 @@ export async function dispararGatilhosDaEtapa(params: {
   for (const linha of linhas) {
     // Aqui a janela VALE: o lead entrou na etapa fora do horário em que a pessoa quis automatizar.
     if (!dentroDaJanelaDoGatilho(linha as unknown as GatilhoEtapaVisao, agora)) continue;
+
+    /*
+     * GATILHO COM ESPERA NÃO RODA AGORA: ENTRA NA FILA.
+     *
+     * "Imediatamente quando movido para esta etapa, ou depois de 5 minutos, ou depois de 10
+     * minutos, ou um dia."
+     *
+     * Não dá pra resolver com `setTimeout`: o processo que atendeu a requisição morre em
+     * segundos, e num servidor sem estado não existe "daqui a um dia" na memória. A intenção vira
+     * linha em `GatilhoAgendado` e quem a cumpre é a varredura de minuto, que já roda.
+     */
+    const atraso = minutosDeAtraso(linha.atrasoMinutos);
+    if (atraso > 0) {
+      await agendarGatilho({
+        workspaceId: params.workspaceId,
+        gatilhoId: linha.id,
+        etapaId: params.etapaId,
+        contatoNome: params.contatoNome,
+        rodarEm: quandoRodar(agora, atraso),
+      }).catch((erro) => console.error(`[gatilho-etapa] ${linha.id} não entrou na fila:`, erro));
+      continue;
+    }
+
     await executarUmGatilho({
       workspaceId: params.workspaceId,
       contatoNome: params.contatoNome,
@@ -193,6 +219,100 @@ export async function dispararGatilhosDaEtapa(params: {
       return false;
     });
   }
+}
+
+/**
+ * Põe (ou reinicia) a espera de UM lead num gatilho.
+ *
+ * `upsert` pela chave (gatilho, contato) porque entrar na etapa DE NOVO durante a espera reinicia
+ * a contagem, em vez de somar uma segunda execução: duas mensagens iguais com um minuto de
+ * diferença é o que a pessoa veria do outro lado.
+ */
+async function agendarGatilho(params: {
+  workspaceId: string;
+  gatilhoId: string;
+  etapaId: string;
+  contatoNome: string;
+  rodarEm: Date;
+}): Promise<void> {
+  const { workspaceId, gatilhoId, etapaId, contatoNome, rodarEm } = params;
+  await prisma.gatilhoAgendado.upsert({
+    where: { gatilhoId_contatoNome: { gatilhoId, contatoNome } },
+    create: {
+      id: `age-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      workspaceId,
+      gatilhoId,
+      etapaId,
+      contatoNome,
+      rodarEm,
+    },
+    update: { rodarEm, etapaId },
+  });
+}
+
+/**
+ * RODA O QUE JÁ VENCEU NA FILA DE ESPERA.
+ *
+ * `rodarEm <= agora`, e não "igual a este minuto": uma batida perdida (um deploy, uma fila cheia)
+ * precisa atrasar a execução, não cancelá-la. É a diferença entre uma automação que escorrega
+ * cinco minutos e uma que simplesmente não aconteceu — e a segunda ninguém descobre.
+ */
+export async function rodarGatilhosAgendados(agora: Date = new Date()): Promise<number> {
+  const vencidos = await prisma.gatilhoAgendado.findMany({
+    where: { rodarEm: { lte: agora } },
+    orderBy: { rodarEm: "asc" },
+    // Um teto por batida pra uma fila represada não estourar o tempo da função. O resto sai na
+    // batida seguinte, que é daqui a um minuto.
+    take: 200,
+    include: { gatilho: true },
+  });
+  if (!vencidos.length) return 0;
+
+  let feitos = 0;
+  for (const agendado of vencidos) {
+    /*
+     * A LINHA SAI DA FILA ANTES DE RODAR.
+     *
+     * Se a execução falhar no meio, a alternativa seria tentar de novo na batida seguinte — e com
+     * um erro permanente (robô apagado, webhook fora do ar) isso vira uma tentativa por minuto,
+     * pra sempre. Uma automação que não aconteceu aparece no registro de execução; uma que
+     * acontece mil vezes aparece no WhatsApp do lead.
+     */
+    await prisma.gatilhoAgendado.delete({ where: { id: agendado.id } }).catch(() => {});
+
+    const gatilho = agendado.gatilho;
+    // Gatilho desligado durante a espera não dispara: desligar precisa valer pro que já está na
+    // fila, senão "desliguei e continuou mandando" é verdade por um dia inteiro.
+    if (!gatilho || !gatilho.ativo) continue;
+
+    /*
+     * O LEAD AINDA ESTÁ NA ETAPA?
+     *
+     * "Cinco minutos depois de entrar em Proposta, mande a mensagem" não vale pra quem já foi
+     * movido pra Ganho no meio do caminho: a etapa é a dona do gatilho, e quem saiu dela saiu do
+     * alcance dele. Sem esta conferência, a espera manda a mensagem da etapa errada.
+     */
+    const aindaAqui = await prisma.negocioCard.findFirst({
+      where: {
+        workspaceId: agendado.workspaceId,
+        etapaId: agendado.etapaId,
+        nome: agendado.contatoNome,
+      },
+      select: { id: true },
+    });
+    if (!aindaAqui) continue;
+
+    const feito = await executarUmGatilho({
+      workspaceId: agendado.workspaceId,
+      contatoNome: agendado.contatoNome,
+      gatilho,
+    }).catch((erro) => {
+      console.error(`[gatilho-etapa] agendado ${agendado.id} falhou:`, erro);
+      return false;
+    });
+    if (feito) feitos++;
+  }
+  return feitos;
 }
 
 /** A linha do banco, como o executor precisa dela. */
@@ -375,6 +495,47 @@ async function leadsEmSilencio(params: {
 }
 
 /**
+ * Quem está nesta etapa e cuja data da ficha vence AGORA, com o deslocamento aplicado.
+ *
+ * "Vou programar que ele vai ativar tal hora antes ou depois." A data é de cada lead — a consulta
+ * da Ana é quinta, a do Bruno é no mês que vem —, então aqui não dá pra responder uma vez pra
+ * etapa inteira: cada ficha tem o seu instante.
+ *
+ * O campo é lido de `camposExtras` (os campos que a empresa criou) ou da coluna `nascimento`.
+ * Contato sem aquele campo preenchido simplesmente não entra: ausência de data é ausência de
+ * evento, nunca "hoje".
+ */
+async function leadsComCampoDeDataVencendo(params: {
+  workspaceId: string;
+  etapaId: string;
+  campoDeData: string;
+  offsetHoras: number;
+  agora: Date;
+}): Promise<string[]> {
+  const cards = await prisma.negocioCard.findMany({
+    where: { workspaceId: params.workspaceId, etapaId: params.etapaId },
+    select: { nome: true },
+    take: 500,
+  });
+  if (!cards.length) return [];
+
+  const contatos = await prisma.contato.findMany({
+    where: { workspaceId: params.workspaceId, nome: { in: cards.map((c) => c.nome) } },
+    select: { nome: true, nascimento: true, camposExtras: true },
+  });
+
+  return contatos
+    .filter((c) => {
+      const valor =
+        params.campoDeData === CAMPO_NASCIMENTO
+          ? c.nascimento
+          : ((c.camposExtras as Record<string, unknown> | null)?.[params.campoDeData] as string | undefined);
+      return ehOMinutoDoCampo(typeof valor === "string" ? valor : null, params.offsetHoras, params.agora);
+    })
+    .map((c) => c.nome);
+}
+
+/**
  * A varredura dos gatilhos de RELÓGIO da etapa ("diariamente", data marcada, silêncio do lead).
  * Chamada pela batida do cron.
  *
@@ -402,13 +563,27 @@ export async function rodarGatilhosProgramados(agora: Date = new Date()): Promis
    */
   const conferirSilencio = agora.getMinutes() % 10 === 0;
 
+  /*
+   * O CAMPO DE DATA SÓ É CONFERIDO NA VIRADA DA HORA, e isso não perde precisão nenhuma.
+   *
+   * O alvo é uma data da ficha (sem hora: `<input type="date">`) mais um deslocamento em HORAS
+   * inteiras. Meia-noite mais um número inteiro de horas cai sempre no minuto zero — não existe
+   * alvo às 14h37. Conferir nos outros 59 minutos seria varrer os leads da etapa 59 vezes pra
+   * responder "não" com certeza.
+   */
+  const conferirCampoDeData = agora.getMinutes() === 0;
+
   const linhas = await prisma.gatilhoEtapa.findMany({
     where: {
       ativo: true,
       OR: [
+        /* A HORA CONTINUA FILTRANDO NO BANCO, em toda repetição: semanal, mensal e anual também
+           têm hora marcada, e o que muda entre elas é só o DIA. Trazer todos os programados do
+           workspace pra decidir em memória seria uma varredura por minuto sem necessidade. */
         { quando: "diariamente", horarioDiario: hora },
         { quando: "data_hora" },
         ...(conferirSilencio ? [{ quando: "sem_resposta" }] : []),
+        ...(conferirCampoDeData ? [{ quando: "campo_de_data" }] : []),
       ],
     },
   });
@@ -429,6 +604,71 @@ export async function rodarGatilhosProgramados(agora: Date = new Date()): Promis
         workspaceId: linha.workspaceId,
         gatilhoId: linha.id,
       }).catch(() => 0);
+      continue;
+    }
+
+    /*
+     * A REPETIÇÃO DECIDE O DIA; a hora já foi filtrada no banco.
+     *
+     * "Diariamente, uma vez por semana, uma vez por mês, uma vez por ano." Gatilho gravado antes
+     * desta coluna tem `repeticao` nula, que `deveRodarAgora` lê como diária — exatamente o que
+     * ele sempre fez.
+     */
+    if (linha.quando === "diariamente") {
+      if (
+        !deveRodarAgora(
+          { ...linha, diasAtivos: Array.isArray(linha.diasAtivos) ? (linha.diasAtivos as number[]) : null },
+          agora,
+        )
+      ) {
+        continue;
+      }
+      gatilhos++;
+      leads += await rodarGatilhoNosLeadsDaEtapa({
+        workspaceId: linha.workspaceId,
+        gatilhoId: linha.id,
+      }).catch(() => 0);
+      continue;
+    }
+
+    /*
+     * O GATILHO PRESO A UMA DATA DA FICHA: aqui cada lead tem o SEU instante.
+     *
+     * Os outros programados perguntam "chegou a hora?" uma vez e agem em todo mundo da etapa.
+     * Este precisa perguntar por lead, porque a resposta vem do campo de cada um — a consulta da
+     * Ana é quinta, a do Bruno é no mês que vem.
+     */
+    if (linha.quando === "campo_de_data") {
+      if (!linha.campoDeData) continue;
+      if (!dentroDaJanelaDoGatilho(linha as unknown as GatilhoEtapaVisao, agora)) continue;
+      const alvos = await leadsComCampoDeDataVencendo({
+        workspaceId: linha.workspaceId,
+        etapaId: linha.etapaId,
+        campoDeData: linha.campoDeData,
+        offsetHoras: linha.campoOffsetHoras ?? 0,
+        agora,
+      }).catch(() => []);
+      if (!alvos.length) continue;
+      gatilhos++;
+      for (const contatoNome of alvos) {
+        /* Uma vez por lead por dia: a varredura roda de hora em hora e o alvo pode cair no mesmo
+           minuto de duas batidas se o relógio escorregar. */
+        const primeiraVez = await primeiraVezPara({
+          workspaceId: linha.workspaceId,
+          fluxoId: `gatilho:${linha.id}`,
+          chaveEvento: `campo_de_data:${contatoNome}:${dia}`,
+        });
+        if (!primeiraVez) continue;
+        const feito = await executarUmGatilho({
+          workspaceId: linha.workspaceId,
+          contatoNome,
+          gatilho: linha,
+        }).catch((erro) => {
+          console.error(`[gatilho-etapa] ${linha.id} falhou no lead ${contatoNome}:`, erro);
+          return false;
+        });
+        if (feito) leads++;
+      }
       continue;
     }
 

@@ -33,6 +33,7 @@ export type QuandoGatilho =
   | "diariamente"
   | "data_hora"
   | "sem_resposta"
+  | "campo_de_data"
   // Conversa
   | "mensagem_recebida"
   // Ações
@@ -121,6 +122,23 @@ export type GatilhoEtapaVisao = {
   /** Só pro quando = "sem_resposta": quanto tempo de silêncio, e em que unidade. */
   esperaValor?: number | null;
   esperaUnidade?: string | null;
+  /**
+   * Só nos gatilhos de ENTRADA na etapa: quantos minutos esperar antes de agir.
+   *
+   * Nulo ou zero = imediatamente, que é como todo gatilho gravado antes desta coluna se comporta.
+   * Ver `atraso-do-gatilho.ts` e a fila `GatilhoAgendado`.
+   */
+  atrasoMinutos?: number | null;
+  /** Só pro quando = "diariamente": "diaria" | "semanal" | "mensal" | "anual". Ver `repeticao-do-gatilho.ts`. */
+  repeticao?: string | null;
+  /** Só pra repeticao = "mensal": o dia do mês (1–31). */
+  diaDoMes?: number | null;
+  /** Só pra repeticao = "anual": "MM-DD". */
+  dataAnual?: string | null;
+  /** Só pro quando = "campo_de_data": o id do campo de data, ou "nascimento". */
+  campoDeData?: string | null;
+  /** Só pro quando = "campo_de_data": horas antes (negativo) ou depois (positivo). */
+  campoOffsetHoras?: number | null;
   ativo: boolean;
   ordem: number;
 };
@@ -134,9 +152,10 @@ export const QUANDO_ROTULO: Record<QuandoGatilho, string> = {
   etiqueta_adicionada: "Quando uma etiqueta for adicionada",
   etiqueta_removida: "Quando uma etiqueta for removida",
   campo_alterado: "Quando um campo for alterado",
-  diariamente: "Diariamente, numa hora",
+  diariamente: "Numa hora, repetindo",
   data_hora: "Numa data e hora exatas, uma vez",
   sem_resposta: "Quando passar um tempo sem resposta do lead",
+  campo_de_data: "Antes ou depois de uma data da ficha",
   mensagem_recebida: "Quando o lead mandar uma mensagem",
   formulario_enviado: "Quando um formulário for enviado",
 };
@@ -156,7 +175,7 @@ export const CATEGORIAS_GATILHO: { titulo: string; quandos: QuandoGatilho[] }[] 
       "campo_alterado",
     ],
   },
-  { titulo: "Gatilhos programados", quandos: ["diariamente", "data_hora", "sem_resposta"] },
+  { titulo: "Gatilhos programados", quandos: ["diariamente", "campo_de_data", "data_hora", "sem_resposta"] },
   { titulo: "Gatilhos de conversação", quandos: ["mensagem_recebida"] },
   { titulo: "Gatilhos baseados em ações", quandos: ["formulario_enviado"] },
 ];
@@ -169,7 +188,12 @@ export const CATEGORIAS_GATILHO: { titulo: string; quandos: QuandoGatilho[] }[] 
  * teste usa pra cobrar `EVENTO_DO_QUANDO` de todos os OUTROS: um gatilho novo ou está nesta lista,
  * ou tem evento do CRM que o aciona. Fora disso, ele existiria só na tela.
  */
-export const QUANDOS_VARRIDOS: QuandoGatilho[] = ["diariamente", "data_hora", "sem_resposta"];
+export const QUANDOS_VARRIDOS: QuandoGatilho[] = [
+  "diariamente",
+  "data_hora",
+  "sem_resposta",
+  "campo_de_data",
+];
 
 /** Os que acontecem quando o lead CHEGA na etapa: o disparo sai de quem moveu o card. */
 export const QUANDOS_DE_ENTRADA: QuandoGatilho[] = ["movido", "criado", "movido_ou_criado"];

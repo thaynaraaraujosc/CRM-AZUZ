@@ -704,6 +704,7 @@ model Workspace {
   fluxosAutomacao       FluxoAutomacao[]
   pastasAutomacao       PastaAutomacao[]
   gatilhosEtapa         GatilhoEtapa[]
+  gatilhosAgendados     GatilhoAgendado[]
   expediente            Expediente?
   documentos            Documento[]
   modelosPersonalizados ModeloPersonalizado[]
@@ -2028,13 +2029,99 @@ model GatilhoEtapa {
   esperaValor   Int?
   esperaUnidade String?
 
+  /// ESPERAR ANTES DE AGIR, nos gatilhos de entrada na etapa.
+  ///
+  /// "Imediatamente quando movido para esta etapa, ou depois de 5 minutos, ou depois de 10
+  /// minutos, ou um dia. Ou eu posso selecionar o intervalo."
+  ///
+  /// Nulo ou zero = imediatamente, que é como todo gatilho existente se comporta e continua se
+  /// comportando. Maior que zero, a execução vai pra `GatilhoAgendado` e quem a roda é a varredura
+  /// de minuto.
+  ///
+  /// Em MINUTOS, e não um par valor+unidade como o `espera*` acima: a tela oferece atalhos (5
+  /// min, 10 min, um dia) e um campo de horas+minutos, e todos cabem num número só. Guardar duas
+  /// colunas pra representar "1440" seria duas chances de divergirem.
+  atrasoMinutos Int?
+
+  /// A REPETIÇÃO DO GATILHO PROGRAMADO: "diaria" | "semanal" | "mensal" | "anual".
+  ///
+  /// Só vale pro quando = "diariamente", que até aqui só sabia repetir todo dia. Nulo = "diaria",
+  /// que é o que todo gatilho já gravado significa.
+  ///
+  /// Cada repetição lê um campo diferente pra saber QUANDO dentro do período: a semanal usa
+  /// `diasAtivos` (que já existe e já é a lista de dias), a mensal usa `diaDoMes`, a anual usa
+  /// `dataAnual`. A hora é sempre `horarioDiario`.
+  repeticao String?
+
+  /// Só pra repeticao = "mensal": o dia do mês (1–31). Mês que não tem o dia escolhido roda no
+  /// último dia dele — 31 em fevereiro é dia 28, não é "não roda".
+  diaDoMes Int?
+
+  /// Só pra repeticao = "anual": o dia do ano em "MM-DD" ("12-25").
+  dataAnual String?
+
+  /// Só pro quando = "campo_de_data": qual campo de data do contato serve de âncora.
+  ///
+  /// O id de um campo personalizado de tipo "data" (ver `contatos/campos-do-contato.ts`), ou
+  /// "nascimento", que é coluna do contato e não campo criado pela empresa.
+  campoDeData String?
+
+  /// Só pro quando = "campo_de_data": quantas HORAS antes (negativo) ou depois (positivo) da data
+  /// do campo. Zero = na hora exata que o campo marca.
+  campoOffsetHoras Int?
+
   ativo Boolean @default(true)
   ordem Int     @default(0)
 
   criadoEm DateTime @default(now())
 
+  /// As execuções que este gatilho deixou pra depois (ver `atrasoMinutos`).
+  agendados GatilhoAgendado[]
+
   @@index([workspaceId, etapaId])
   @@index([workspaceId, funilId])
+}
+
+/**
+ * UMA EXECUÇÃO DE GATILHO QUE FICOU PRA DEPOIS.
+ * "Imediatamente quando movido para esta etapa, ou depois de 5 minutos, ou depois de 10 minutos,
+ * ou um dia."
+ * Um gatilho com atraso não pode rodar na hora em que o card se mexe — e também não pode viver
+ * num `setTimeout`: o processo que atendeu a requisição morre em segundos, e num servidor sem
+ * estado não existe "daqui a um dia" na memória. Então a intenção vira LINHA, e quem a cumpre é a
+ * varredura de minuto que já roda pros gatilhos programados.
+ * A linha é apagada depois de rodar. Esta tabela é uma fila, não um histórico: o que aconteceu
+ * fica no registro de execução da automação, que é onde se vai olhar.
+ */
+model GatilhoAgendado {
+  id String @id
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  /// Apagar o gatilho cancela o que ele tinha agendado: uma automação desligada não pode disparar
+  /// amanhã porque alguém entrou na etapa ontem.
+  gatilhoId String
+  gatilho   GatilhoEtapa @relation(fields: [gatilhoId], references: [id], onDelete: Cascade)
+
+  /// O lead, pelo nome — a mesma chave que o resto do CRM usa pra casar contato, card e conversa.
+  contatoNome String
+
+  /// A etapa em que o lead estava quando entrou na fila. Conferida de novo na hora de rodar: quem
+  /// saiu da etapa no meio da espera não recebe o que a etapa mandava fazer.
+  etapaId String
+
+  /// Quando rodar. A varredura pega tudo que já venceu, não só o minuto exato: uma batida perdida
+  /// (deploy, fila cheia) atrasa a execução, não a cancela.
+  rodarEm DateTime
+
+  criadoEm DateTime @default(now())
+
+  /// Um lead só tem uma execução pendente por gatilho. Entrar na etapa de novo durante a espera
+  /// reinicia a contagem em vez de somar uma segunda execução — duas mensagens iguais com um
+  /// minuto de diferença é o que a pessoa veria.
+  @@unique([gatilhoId, contatoNome])
+  @@index([rodarEm])
 }
 
 /**

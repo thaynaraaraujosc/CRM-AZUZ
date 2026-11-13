@@ -34,6 +34,8 @@ export const ORDEM_DE_EXCLUSAO = [
   "execucaoAutomacao",
   "versaoAutomacao",
   "automacaoExecucao",
+  // Antes do gatilho: a fila de espera aponta pra ele.
+  "gatilhoAgendado",
   "gatilhoEtapa",
   "negocioCard",
   "tarefaCard",

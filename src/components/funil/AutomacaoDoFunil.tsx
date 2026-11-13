@@ -17,9 +17,26 @@ import type { DicasDaEtapa } from "@/lib/data";
 import type { GrupoCondicoes } from "@/lib/automation-flow/types";
 import { useIdioma } from "@/lib/idioma-context";
 import {
+  ATALHOS_DE_ATRASO,
+  ehAtalho,
+  intervaloEmHorasEMinutos,
+  minutosDeAtraso,
+  minutosDoIntervalo,
+  rotuloDoAtraso,
+} from "@/lib/funil/atraso-do-gatilho";
+import {
+  REPETICOES,
+  repeticaoGravada,
+  rotuloDaRepeticao,
+  type Repeticao,
+} from "@/lib/funil/repeticao-do-gatilho";
+import { CAMPO_NASCIMENTO, rotuloDoCampoDeData } from "@/lib/funil/campo-de-data-do-gatilho";
+import { lerCamposDoContato, type CampoDoContato } from "@/lib/contatos/campos-do-contato";
+import {
   ACAO_ROTULO,
   CATEGORIAS_GATILHO,
   QUANDO_ROTULO,
+  QUANDOS_DE_ENTRADA,
   type AcaoDados,
   type GatilhoEtapaVisao,
   type QuandoGatilho,
@@ -111,6 +128,17 @@ type Rascunho = {
   /** Só pro "sem resposta": quanto tempo de silêncio, e em que unidade. */
   esperaValor: number;
   esperaUnidade: string;
+  /** Só nos gatilhos de ENTRADA: quantos minutos esperar antes de agir. 0 = imediatamente. */
+  atrasoMinutos: number;
+  /** Só pro programado por hora: "diaria" | "semanal" | "mensal" | "anual". */
+  repeticao: Repeticao;
+  diaDoMes: number;
+  /** "MM-DD". */
+  dataAnual: string;
+  /** Só pro "campo de data": o id do campo, ou "nascimento". */
+  campoDeData: string;
+  /** Horas ANTES (negativo) ou DEPOIS (positivo) da data do campo. */
+  campoOffsetHoras: number;
   ativo: boolean;
   /** Não é campo do gatilho: é o "rodar agora nos leads que já estão aqui". */
   aplicarAosAtuais: boolean;
@@ -133,6 +161,15 @@ function rascunhoNovo(etapaId: string, tipoAcao: TipoAcaoGatilho): Rascunho {
     // campo vazio que não dispara nada e parece configurado.
     esperaValor: 2,
     esperaUnidade: "horas",
+    // Zero: todo gatilho nasce imediato, que é como o CRM inteiro se comportava até aqui.
+    atrasoMinutos: 0,
+    repeticao: "diaria",
+    diaDoMes: 1,
+    dataAnual: "",
+    campoDeData: "",
+    // Vinte e quatro horas ANTES: é o lembrete de consulta, que é pra isso que o campo serve na
+    // clínica. Um número já escolhido evita o campo vazio que parece configurado e não é.
+    campoOffsetHoras: -24,
     ativo: true,
     aplicarAosAtuais: false,
   };
@@ -154,6 +191,12 @@ function doGatilho(g: GatilhoEtapaVisao): Rascunho {
     dataHora: g.dataHora ?? "",
     esperaValor: g.esperaValor ?? 2,
     esperaUnidade: g.esperaUnidade ?? "horas",
+    atrasoMinutos: minutosDeAtraso(g.atrasoMinutos),
+    repeticao: repeticaoGravada(g.repeticao),
+    diaDoMes: g.diaDoMes ?? 1,
+    dataAnual: g.dataAnual ?? "",
+    campoDeData: g.campoDeData ?? "",
+    campoOffsetHoras: g.campoOffsetHoras ?? -24,
     ativo: g.ativo,
     aplicarAosAtuais: false,
   };
@@ -166,9 +209,18 @@ function doGatilho(g: GatilhoEtapaVisao): Rascunho {
  * hora e sem o prazo são três gatilhos idênticos na grade, e abrir um por um pra saber qual é
  * qual é exatamente o que a grade existe pra evitar.
  */
-function linhaDoQuando(g: GatilhoEtapaVisao): string {
+function linhaDoQuando(g: GatilhoEtapaVisao, camposDeData: CampoDoContato[] = []): string {
   const base = QUANDO_ROTULO[g.quando];
-  if (g.quando === "diariamente" && g.horarioDiario) return `Diariamente às ${g.horarioDiario}`;
+  // A repetição escreve a frase inteira: "Toda segunda às 09:00", "Todo dia 5 às 08:00".
+  if (g.quando === "diariamente" && g.horarioDiario) {
+    return rotuloDaRepeticao({
+      repeticao: g.repeticao,
+      horarioDiario: g.horarioDiario,
+      diasAtivos: g.diasAtivos ?? null,
+      diaDoMes: g.diaDoMes ?? null,
+      dataAnual: g.dataAnual ?? null,
+    });
+  }
   if (g.quando === "data_hora" && g.dataHora) {
     const [dia, hora] = g.dataHora.split("T");
     const [a, m, d] = dia.split("-");
@@ -176,6 +228,26 @@ function linhaDoQuando(g: GatilhoEtapaVisao): string {
   }
   if (g.quando === "sem_resposta" && g.esperaValor) {
     return `Depois de ${g.esperaValor} ${g.esperaUnidade ?? "horas"} sem resposta`;
+  }
+  if (g.quando === "campo_de_data" && g.campoDeData) {
+    const nome =
+      g.campoDeData === CAMPO_NASCIMENTO
+        ? "Data de nascimento"
+        : (camposDeData.find((c) => c.id === g.campoDeData)?.nome ?? "um campo de data");
+    return rotuloDoCampoDeData(nome, g.campoOffsetHoras);
+  }
+  /*
+   * A ESPERA ENTRA NA FRASE DO GATILHO DE ENTRADA.
+   *
+   * "Imediatamente quando movido para esta etapa" e "Depois de 5 minutos" são dois gatilhos
+   * idênticos na grade se o cartão não disser o tempo — e abrir um por um pra saber qual é qual é
+   * exatamente o que a grade existe pra evitar.
+   */
+  const atraso = minutosDeAtraso(g.atrasoMinutos);
+  if (atraso > 0 && QUANDOS_DE_ENTRADA.includes(g.quando)) {
+    // "Imediatamente quando movido para esta etapa" vira "Depois de 5 minutos, quando movido…".
+    const semImediatamente = base.replace(/^Imediatamente\s+/, "");
+    return `${rotuloDoAtraso(atraso)}, ${semImediatamente}`;
   }
   return base;
 }
@@ -281,6 +353,30 @@ export function AutomacaoDoFunil({
   /** Sobe a cada gatilho apagado. É o que manda o aviso de migração perguntar de novo. */
   const [versaoDosGatilhos, setVersaoDosGatilhos] = useState(0);
   const [robos, setRobos] = useState<RoboResumo[]>([]);
+  /*
+   * OS CAMPOS DE DATA DA FICHA, pro gatilho que se prende a um deles.
+   *
+   * Só os de tipo "data": um gatilho ancorado num campo de texto não teria o que calcular. O
+   * `nascimento` não vem daqui — é coluna do contato, e entra na lista escrito à mão.
+   *
+   * Buscados uma vez ao montar o painel. Campo novo criado em Configurações aparece na próxima
+   * abertura, que é o ritmo em que campo de contato muda.
+   */
+  const [camposDeData, setCamposDeData] = useState<CampoDoContato[]>([]);
+  useEffect(() => {
+    let vivo = true;
+    fetch("/api/contatos/campos")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((dados) => {
+        if (vivo) setCamposDeData(lerCamposDoContato(dados).filter((c) => c.tipo === "data"));
+      })
+      .catch(() => {
+        /* Sem a lista, o seletor mostra só a data de nascimento. Melhor que travar o painel. */
+      });
+    return () => {
+      vivo = false;
+    };
+  }, []);
   const [canais, setCanais] = useState<CanalConectado[]>([]);
   const [escolhendoAcao, setEscolhendoAcao] = useState<string | null>(null);
   const [rascunho, setRascunho] = useState<Rascunho | null>(null);
@@ -470,6 +566,20 @@ export function AutomacaoDoFunil({
     if (r.quando === "diariamente" && !r.horarioDiario) return "Escolha a hora da varredura diária.";
     if (r.quando === "data_hora" && !r.dataHora) return "Escolha a data e a hora do gatilho.";
     if (r.quando === "sem_resposta" && !(r.esperaValor > 0)) return "Diga quanto tempo de silêncio o gatilho espera.";
+    /* Repetição pela metade parece configurada e nunca dispara — e descobrir isso leva uma
+       semana. A rota também cobra; aqui é pra pessoa ver antes de salvar. */
+    if (r.quando === "diariamente" && r.repeticao === "semanal" && !r.diasAtivos.length) {
+      return "Marque em “Ativo” os dias da semana em que o gatilho roda.";
+    }
+    if (r.quando === "diariamente" && r.repeticao === "mensal" && !(r.diaDoMes >= 1 && r.diaDoMes <= 31)) {
+      return "Escolha o dia do mês, de 1 a 31.";
+    }
+    if (r.quando === "diariamente" && r.repeticao === "anual" && !/^\d{2}-\d{2}$/.test(r.dataAnual)) {
+      return "Escreva o dia e o mês no formato MM-DD (12-25 é 25 de dezembro).";
+    }
+    if (r.quando === "campo_de_data" && !r.campoDeData) {
+      return "Escolha de qual data da ficha o gatilho depende.";
+    }
     return null;
   }
 
@@ -505,6 +615,12 @@ export function AutomacaoDoFunil({
         dataHora: rascunho.dataHora || null,
         esperaValor: rascunho.quando === "sem_resposta" ? rascunho.esperaValor : null,
         esperaUnidade: rascunho.quando === "sem_resposta" ? rascunho.esperaUnidade : null,
+        atrasoMinutos: QUANDOS_DE_ENTRADA.includes(rascunho.quando) ? rascunho.atrasoMinutos : 0,
+        repeticao: rascunho.quando === "diariamente" ? rascunho.repeticao : null,
+        diaDoMes: rascunho.quando === "diariamente" ? rascunho.diaDoMes : null,
+        dataAnual: rascunho.quando === "diariamente" ? rascunho.dataAnual : null,
+        campoDeData: rascunho.quando === "campo_de_data" ? rascunho.campoDeData : null,
+        campoOffsetHoras: rascunho.quando === "campo_de_data" ? rascunho.campoOffsetHoras : null,
         ativo: rascunho.ativo,
       };
       const resposta = rascunho.id
@@ -844,7 +960,7 @@ export function AutomacaoDoFunil({
                         >
                           <IconAutomacoes width={15} height={15} aria-hidden="true" />
                           <span>
-                            <span className="fauto-gat-quando">{linhaDoQuando(gatilho)}</span>
+                            <span className="fauto-gat-quando">{linhaDoQuando(gatilho, camposDeData)}</span>
                             <span className="fauto-gat-acao">{linhaDaAcao(gatilho, colunas)}</span>
                           </span>
                         </button>
@@ -1089,17 +1205,224 @@ export function AutomacaoDoFunil({
                   </optgroup>
                 ))}
               </select>
-              {rascunho.quando === "diariamente" ? (
+              {/*
+                A ESPERA, nos gatilhos de ENTRADA na etapa.
+
+                "Imediatamente quando movido para esta etapa, ou depois de 5 minutos, ou depois de
+                10 minutos, ou um dia. Ou eu posso selecionar o intervalo."
+
+                Só aqui porque só aqui ela quer dizer alguma coisa: "depois de 5 minutos" de um
+                gatilho diário já é o próprio horário, e de um gatilho de data marcada seria uma
+                segunda data escondida atrás da primeira.
+              */}
+              {QUANDOS_DE_ENTRADA.includes(rascunho.quando) ? (
                 <div className="fauto-horas mt8">
-                  <SeletorDeHora
-                    valor={rascunho.horarioDiario}
-                    aoMudar={(v) => setRascunho({ ...rascunho, horarioDiario: v })}
-                    rotuloVazio="Escolha a hora"
-                    aria-label={traduzir("Hora da varredura diária")}
-                  />
+                  <select
+                    className="input"
+                    aria-label={traduzir("Esperar antes de agir")}
+                    value={ehAtalho(rascunho.atrasoMinutos) ? String(rascunho.atrasoMinutos) : "intervalo"}
+                    onChange={(e) => {
+                      /* "intervalo" não é um valor de atraso: é a escolha de digitar um. Começa em
+                         uma hora pra os dois campos não abrirem zerados, que é igual a imediato. */
+                      if (e.target.value === "intervalo") {
+                        setRascunho({ ...rascunho, atrasoMinutos: 60 });
+                        return;
+                      }
+                      setRascunho({ ...rascunho, atrasoMinutos: Number(e.target.value) });
+                    }}
+                  >
+                    {ATALHOS_DE_ATRASO.map((atalho) => (
+                      <option key={atalho.minutos} value={atalho.minutos}>
+                        {traduzir(atalho.label)}
+                      </option>
+                    ))}
+                    <option value="intervalo">{traduzir("Selecione o intervalo")}</option>
+                  </select>
+                  {!ehAtalho(rascunho.atrasoMinutos) ? (
+                    <>
+                      <input
+                        type="number"
+                        min={0}
+                        max={720}
+                        className="input fauto-numero"
+                        aria-label={traduzir("Horas de espera")}
+                        value={intervaloEmHorasEMinutos(rascunho.atrasoMinutos).horas}
+                        onChange={(e) =>
+                          setRascunho({
+                            ...rascunho,
+                            atrasoMinutos: minutosDoIntervalo(
+                              e.target.value,
+                              intervaloEmHorasEMinutos(rascunho.atrasoMinutos).minutos,
+                            ),
+                          })
+                        }
+                      />
+                      <span className="hint">h</span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={59}
+                        className="input fauto-numero"
+                        aria-label={traduzir("Minutos de espera")}
+                        value={intervaloEmHorasEMinutos(rascunho.atrasoMinutos).minutos}
+                        onChange={(e) =>
+                          setRascunho({
+                            ...rascunho,
+                            atrasoMinutos: minutosDoIntervalo(
+                              intervaloEmHorasEMinutos(rascunho.atrasoMinutos).horas,
+                              e.target.value,
+                            ),
+                          })
+                        }
+                      />
+                      <span className="hint">m</span>
+                    </>
+                  ) : null}
                   <Ajuda
                     texto={traduzir(
-                      "Todo dia nessa hora, para cada lead que estiver nesta etapa. Serve pra cobrança e lembrete de quem está parado.",
+                      "O lead entra na etapa e o CRM espera esse tempo antes de agir. Quem sair da etapa durante a espera não recebe nada — a etapa é a dona do gatilho. Entrar de novo reinicia a contagem.",
+                    )}
+                  />
+                </div>
+              ) : null}
+
+              {rascunho.quando === "diariamente" ? (
+                <>
+                  <div className="fauto-horas mt8">
+                    {/*
+                      DE QUANTO EM QUANTO TEMPO. "Diariamente, uma vez por semana, uma vez por mês,
+                      uma vez por ano." A hora é a mesma nas quatro; o que muda é o dia.
+                    */}
+                    <select
+                      className="input"
+                      aria-label={traduzir("Repetição")}
+                      value={rascunho.repeticao}
+                      onChange={(e) =>
+                        setRascunho({ ...rascunho, repeticao: e.target.value as Repeticao })
+                      }
+                    >
+                      {REPETICOES.map((r) => (
+                        <option key={r.valor} value={r.valor}>
+                          {traduzir(r.label)}
+                        </option>
+                      ))}
+                    </select>
+                    <SeletorDeHora
+                      valor={rascunho.horarioDiario}
+                      aoMudar={(v) => setRascunho({ ...rascunho, horarioDiario: v })}
+                      rotuloVazio="Escolha a hora"
+                      aria-label={traduzir("Hora da varredura")}
+                    />
+                    <Ajuda
+                      texto={traduzir(
+                        "Nessa hora, para cada lead que estiver nesta etapa. Serve pra cobrança e lembrete de quem está parado.",
+                      )}
+                    />
+                  </div>
+
+                  {/* A semanal usa os MESMOS dias da janela "Ativo" logo abaixo — é a mesma
+                      pergunta, e dois lugares pra respondê-la seriam duas respostas. */}
+                  {rascunho.repeticao === "semanal" ? (
+                    <p className="hint mt8">
+                      {rascunho.diasAtivos.length
+                        ? traduzir("Roda nos dias marcados em “Ativo”, logo abaixo.")
+                        : traduzir("Escolha os dias em “Ativo”, logo abaixo: sem dia marcado, o gatilho não roda.")}
+                    </p>
+                  ) : null}
+
+                  {rascunho.repeticao === "mensal" ? (
+                    <div className="fauto-horas mt8">
+                      <span className="hint">{traduzir("Todo dia")}</span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={31}
+                        className="input fauto-numero"
+                        aria-label={traduzir("Dia do mês")}
+                        value={rascunho.diaDoMes}
+                        onChange={(e) => setRascunho({ ...rascunho, diaDoMes: Number(e.target.value) })}
+                      />
+                      <Ajuda
+                        texto={traduzir(
+                          "Mês que não tem o dia escolhido roda no último dia dele: 31 em fevereiro é dia 28. Quem escolhe 31 quer dizer “no fim do mês”, não “só nos meses de 31 dias”.",
+                        )}
+                      />
+                    </div>
+                  ) : null}
+
+                  {rascunho.repeticao === "anual" ? (
+                    <div className="fauto-horas mt8">
+                      <span className="hint">{traduzir("Todo dia e mês")}</span>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="MM-DD"
+                        maxLength={5}
+                        className="input fauto-numero"
+                        aria-label={traduzir("Dia e mês")}
+                        value={rascunho.dataAnual}
+                        onChange={(e) => setRascunho({ ...rascunho, dataAnual: e.target.value })}
+                      />
+                      <Ajuda texto={traduzir("No formato mês-dia: 12-25 é 25 de dezembro.")} />
+                    </div>
+                  ) : null}
+                </>
+              ) : null}
+
+              {/*
+                O GATILHO PRESO A UMA DATA DA FICHA.
+
+                "Vou programar que ele vai ativar tal hora antes ou depois." A hora não é do
+                relógio: é relativa a uma data que está na ficha de cada lead, e cada lead tem a
+                sua — a consulta da Ana é quinta, a do Bruno é no mês que vem.
+              */}
+              {rascunho.quando === "campo_de_data" ? (
+                <div className="fauto-horas mt8">
+                  <input
+                    type="number"
+                    min={0}
+                    max={8760}
+                    className="input fauto-numero"
+                    aria-label={traduzir("Quantas horas")}
+                    value={Math.abs(rascunho.campoOffsetHoras)}
+                    onChange={(e) => {
+                      const horas = Math.abs(Number(e.target.value) || 0);
+                      const sinal = rascunho.campoOffsetHoras < 0 ? -1 : 1;
+                      setRascunho({ ...rascunho, campoOffsetHoras: horas * sinal });
+                    }}
+                  />
+                  <select
+                    className="input"
+                    aria-label={traduzir("Antes ou depois")}
+                    value={rascunho.campoOffsetHoras < 0 ? "antes" : "depois"}
+                    onChange={(e) =>
+                      setRascunho({
+                        ...rascunho,
+                        campoOffsetHoras:
+                          Math.abs(rascunho.campoOffsetHoras) * (e.target.value === "antes" ? -1 : 1),
+                      })
+                    }
+                  >
+                    <option value="antes">{traduzir("horas antes de")}</option>
+                    <option value="depois">{traduzir("horas depois de")}</option>
+                  </select>
+                  <select
+                    className="input"
+                    aria-label={traduzir("Campo de data")}
+                    value={rascunho.campoDeData}
+                    onChange={(e) => setRascunho({ ...rascunho, campoDeData: e.target.value })}
+                  >
+                    <option value="">{traduzir("selecionar campo")}</option>
+                    <option value={CAMPO_NASCIMENTO}>{traduzir("Data de nascimento")}</option>
+                    {camposDeData.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.nome}
+                      </option>
+                    ))}
+                  </select>
+                  <Ajuda
+                    texto={traduzir(
+                      "O campo é uma data da ficha do contato, sem hora — então ela vale como meia-noite daquele dia. Lead com o campo em branco não entra. Crie campos de data em Configurações › Campos do contato.",
                     )}
                   />
                 </div>

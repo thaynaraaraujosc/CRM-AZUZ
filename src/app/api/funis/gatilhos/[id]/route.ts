@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 
+import { minutosDeAtraso } from "@/lib/funil/atraso-do-gatilho";
+import { repeticaoGravada } from "@/lib/funil/repeticao-do-gatilho";
+import { horasDeDeslocamento } from "@/lib/funil/campo-de-data-do-gatilho";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { dispensarFluxos } from "@/lib/funil/gatilhos-dispensados";
@@ -48,6 +51,18 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       // varredura teria que interpretar.
       ...("esperaValor" in patch ? { esperaValor: Number(patch.esperaValor) > 0 ? Number(patch.esperaValor) : null } : {}),
       ...("esperaUnidade" in patch ? { esperaUnidade: patch.esperaUnidade ?? null } : {}),
+      /* A espera dos gatilhos de entrada, e as três formas do programado. Mesma regra dos de
+         cima: só entra o que veio no patch, e zero/vazio vira `null`. */
+      ...("atrasoMinutos" in patch
+        ? { atrasoMinutos: minutosDeAtraso(Number(patch.atrasoMinutos)) || null }
+        : {}),
+      ...("repeticao" in patch ? { repeticao: patch.repeticao ? repeticaoGravada(patch.repeticao) : null } : {}),
+      ...("diaDoMes" in patch ? { diaDoMes: Number(patch.diaDoMes) || null } : {}),
+      ...("dataAnual" in patch ? { dataAnual: patch.dataAnual ?? null } : {}),
+      ...("campoDeData" in patch ? { campoDeData: patch.campoDeData ?? null } : {}),
+      ...("campoOffsetHoras" in patch
+        ? { campoOffsetHoras: horasDeDeslocamento(Number(patch.campoOffsetHoras)) }
+        : {}),
       ...(typeof patch.ativo === "boolean" ? { ativo: patch.ativo } : {}),
       ...(typeof patch.ordem === "number" ? { ordem: patch.ordem } : {}),
   };

@@ -2,7 +2,16 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import type { AcaoDados, GatilhoEtapaVisao, TipoAcaoGatilho } from "@/lib/funil/gatilhos-etapa-tipos";
+import {
+  QUANDOS_DE_ENTRADA,
+  type AcaoDados,
+  type GatilhoEtapaVisao,
+  type QuandoGatilho,
+  type TipoAcaoGatilho,
+} from "@/lib/funil/gatilhos-etapa-tipos";
+import { minutosDeAtraso } from "@/lib/funil/atraso-do-gatilho";
+import { repeticaoGravada } from "@/lib/funil/repeticao-do-gatilho";
+import { horasDeDeslocamento } from "@/lib/funil/campo-de-data-do-gatilho";
 
 /**
  * Os gatilhos que moram nas etapas do funil.
@@ -27,6 +36,12 @@ function paraVisao(linha: {
   dataHora: string | null;
   esperaValor: number | null;
   esperaUnidade: string | null;
+  atrasoMinutos: number | null;
+  repeticao: string | null;
+  diaDoMes: number | null;
+  dataAnual: string | null;
+  campoDeData: string | null;
+  campoOffsetHoras: number | null;
   ativo: boolean;
   ordem: number;
   grupoId: string | null;
@@ -115,6 +130,28 @@ export async function POST(request: Request) {
   if (dados.quando === "diariamente" && !String(dados.horarioDiario ?? "").trim()) {
     return NextResponse.json({ erro: "Escolha a hora da varredura diária." }, { status: 400 });
   }
+  /*
+   * REPETIÇÃO PELA METADE NÃO É SALVA.
+   *
+   * "Uma vez por semana" sem dia escolhido, ou "uma vez por mês" sem o dia do mês, é uma regra
+   * que parece configurada e nunca dispara — e descobrir isso leva uma semana. A tela já cobra;
+   * aqui é a guarda, porque a tela não é guarda de nada.
+   */
+  if (dados.quando === "diariamente") {
+    const rep = repeticaoGravada(dados.repeticao);
+    if (rep === "semanal" && !(Array.isArray(dados.diasAtivos) && dados.diasAtivos.length)) {
+      return NextResponse.json({ erro: "Escolha em qual dia da semana o gatilho roda." }, { status: 400 });
+    }
+    if (rep === "mensal" && !(Number(dados.diaDoMes) >= 1 && Number(dados.diaDoMes) <= 31)) {
+      return NextResponse.json({ erro: "Escolha o dia do mês." }, { status: 400 });
+    }
+    if (rep === "anual" && !/^\d{2}-\d{2}$/.test(String(dados.dataAnual ?? ""))) {
+      return NextResponse.json({ erro: "Escolha o dia e o mês." }, { status: 400 });
+    }
+  }
+  if (dados.quando === "campo_de_data" && !String(dados.campoDeData ?? "").trim()) {
+    return NextResponse.json({ erro: "Escolha de qual data da ficha o gatilho depende." }, { status: 400 });
+  }
 
   // As etapas e o robô têm que ser DESTE workspace. Sem esta checagem, um id chutado ligaria um
   // gatilho no funil de outro cliente.
@@ -174,6 +211,17 @@ export async function POST(request: Request) {
     dataHora: dados.dataHora ?? null,
     esperaValor: Number(dados.esperaValor) > 0 ? Number(dados.esperaValor) : null,
     esperaUnidade: dados.esperaUnidade ?? null,
+    /* A espera só existe nos gatilhos de ENTRADA: "depois de 5 minutos" de um gatilho diário não
+       quer dizer nada, e gravar o número lá deixaria um valor que a tela não mostra. */
+    atrasoMinutos: QUANDOS_DE_ENTRADA.includes(dados.quando as QuandoGatilho)
+      ? minutosDeAtraso(Number(dados.atrasoMinutos))
+      : null,
+    repeticao: dados.quando === "diariamente" ? repeticaoGravada(dados.repeticao) : null,
+    diaDoMes: dados.quando === "diariamente" ? (Number(dados.diaDoMes) || null) : null,
+    dataAnual: dados.quando === "diariamente" ? (dados.dataAnual ?? null) : null,
+    campoDeData: dados.quando === "campo_de_data" ? (dados.campoDeData ?? null) : null,
+    campoOffsetHoras:
+      dados.quando === "campo_de_data" ? horasDeDeslocamento(Number(dados.campoOffsetHoras)) : null,
     ativo: dados.ativo ?? true,
     ordem: proximaOrdem,
     grupoId,
