@@ -1299,7 +1299,7 @@ table {
    reprovaria). */
 :root[data-theme="dark"] .seletor-idioma button.ativo {
   background: var(--acao);
-  color: #002037;
+  color: var(--ink);
 }
 
 /* A landing tem paleta própria (`--lp-*`) e é sempre escura, então ela não herda nem o tema claro
@@ -4867,7 +4867,7 @@ table.tbl tbody tr:hover td {
   --navy-raised: rgba(0, 32, 55, 0.06);
   --navy-raised-2: rgba(0, 32, 55, 0.1);
   --blue: #002037;
-  color: #002037;
+  color: var(--ink);
 }
 
 /* Hover não altera o cartão aberto: ele já está no estado mais forte que existe, e mudar no passar
@@ -5177,13 +5177,13 @@ table.tbl tbody tr:hover td {
   --blue: #002037;
   --blue-soft: rgba(0, 32, 55, 0.1);
   --blue-soft-2: rgba(0, 32, 55, 0.06);
-  color: #002037;
+  color: var(--ink);
 }
 
 /* O avatar volta a ter fundo próprio: sobre o azul claro, o translúcido branco sumia. */
 .wa-main > .open-conv-h .avatar {
   background: rgba(0, 32, 55, 0.1);
-  color: #002037;
+  color: var(--ink);
 }
 
 /* A engrenagem segue a tinta, não o branco que a barra marinho exigia. */
@@ -5193,7 +5193,7 @@ table.tbl tbody tr:hover td {
 
 .wa-main > .open-conv-h .wa-main-gear:hover {
   background: rgba(0, 32, 55, 0.1);
-  color: #002037;
+  color: var(--ink);
 }
 
 :root[data-theme="dark"] .wa-main > .open-conv-h {
@@ -12683,6 +12683,50 @@ button.flow-node-warn:hover {
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
+}
+
+/*
+ * "DISPARADO POR", no topo da aba Problemas.
+ *
+ * Afirmação, não pendência: por isso o azul claro da casa e não a borda de alerta. É a resposta à
+ * pergunta que leva a pessoa a abrir essa aba — "quem dispara isso?" —, e ela vinha faltando
+ * porque o gatilho de etapa mora do lado do funil.
+ */
+.flow-disparado-por {
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-3);
+  border: 1px solid var(--azul-claro-linha);
+  border-radius: var(--radius-md);
+  background: var(--azul-claro-2);
+  font-size: 13px;
+}
+
+.flow-disparado-por-t {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.flow-disparado-por ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.flow-disparado-por li {
+  padding: 1px 0;
+  color: var(--ink);
+}
+
+/* O funil e o "desligado" são contexto do que vem antes, não outra linha: menores e mais claros,
+   na mesma linha da etapa. */
+.flow-disparado-por .s {
+  color: var(--text-muted);
+  font-size: 12px;
 }
 
 .flow-problema {
@@ -26403,20 +26447,20 @@ td.trafego-col-crm:first-of-type {
   --blue: #002037;
   --blue-soft: rgba(0, 32, 55, 0.1);
   --blue-soft-2: rgba(0, 32, 55, 0.06);
-  color: #002037;
+  color: var(--ink);
 }
 
 /* O avatar tinha fundo translúcido branco, que sobre branco não existe. */
 .contato-painel .open-conv-h .avatar {
   background: rgba(0, 32, 55, 0.1);
-  color: #002037;
+  color: var(--ink);
 }
 
 /* O "Editar": superfície e contorno ditos, pra ele parecer botão em repouso e não texto solto. */
 .contato-painel .open-conv-h .btn.ghost {
   background: rgba(0, 32, 55, 0.06);
   border-color: rgba(0, 32, 55, 0.14);
-  color: #002037;
+  color: var(--ink);
 }
 
 .contato-painel .open-conv-h .btn.ghost:hover {
@@ -36341,6 +36385,6 @@ td.trafego-col-crm:first-of-type {
    * `--ouro` não é redefinida no escuro), então um token que inverte deixaria texto quase branco
    * sobre fundo quase branco no tema escuro.
    */
-  color: #002037;
+  color: var(--ink);
   border: 1px solid var(--ouro-linha);
 }

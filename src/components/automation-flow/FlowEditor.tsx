@@ -194,6 +194,38 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
    * onde as condições de Instagram existem.
    */
   const [instagramConectado, setInstagramConectado] = useState<boolean | undefined>(undefined);
+  /**
+   * QUAIS ETAPAS DO FUNIL MANDAM EXECUTAR ESTE ROBÔ.
+   *
+   * "Tô tentando fazer uma automação simples, que é mandar uma mensagem quando o lead entra na
+   * etapa, e tá falando que nada dispara essa automação — sendo que quando eu vou criar o gatilho
+   * eu já falo quando que é pra executar. Não faz sentido."
+   *
+   * Não fazia. Um robô dispara por um bloco de gatilho no quadro OU por uma etapa que manda
+   * executá-lo, e a segunda ligação mora do lado do funil (`GatilhoEtapa.fluxoId`). O editor só
+   * olhava pra dentro do quadro, então dizia que nada disparava um robô ligado e configurado.
+   *
+   * `undefined` enquanto a busca não volta: nesse estado a validação usa a reserva antiga e não
+   * inventa pendência nenhuma — o mesmo cuidado do `instagramConectado` logo acima.
+   */
+  const [gatilhosDeEtapa, setGatilhosDeEtapa] = useState<
+    { id: string; etapaTitulo: string | null; funilNome: string | null; ativo: boolean }[] | undefined
+  >(undefined);
+  useEffect(() => {
+    if (!fluxoId) return;
+    let vivo = true;
+    fetch(`/api/automacoes-fluxos/${encodeURIComponent(fluxoId)}/gatilhos-de-etapa`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((dados: { gatilhos?: typeof gatilhosDeEtapa } | null) => {
+        if (vivo && Array.isArray(dados?.gatilhos)) setGatilhosDeEtapa(dados.gatilhos);
+      })
+      .catch(() => {
+        /* Sem resposta, segue sem saber: nenhuma pendência é inventada. */
+      });
+    return () => {
+      vivo = false;
+    };
+  }, [fluxoId]);
   useEffect(() => {
     if (!ehSocial) return;
     let vivo = true;
@@ -1553,9 +1585,9 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     if (!fluxo) return [];
     return validarFluxo(
       { ...fluxo, nodes: domainNodesAtuais, edges: domainEdgesAtuais },
-      { instagramConectado },
+      { instagramConectado, gatilhosDeEtapa: gatilhosDeEtapa?.length },
     );
-  }, [fluxo, domainNodesAtuais, domainEdgesAtuais, instagramConectado]);
+  }, [fluxo, domainNodesAtuais, domainEdgesAtuais, instagramConectado, gatilhosDeEtapa]);
   const problemasPorNode = useMemo(() => {
     const m = new Map<string, ProblemaValidacao[]>();
     problemas.forEach((p) => {
@@ -2492,6 +2524,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           onSelecionarNode={irParaONode}
           abaPedida={abaPedida}
           ehSocial={ehSocial}
+          gatilhosDeEtapa={gatilhosDeEtapa}
           onAbrirGatilhos={() => {
             setEtapaDaGaveta("painel");
             setEscolherGatilhoAberto(true);

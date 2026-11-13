@@ -72,6 +72,18 @@ const TIPOS_MENSAGEM_MIDIA = new Set(["mensagem_imagem", "mensagem_video", "mens
  */
 export type ContextoDeValidacao = {
   instagramConectado?: boolean;
+  /**
+   * QUANTAS ETAPAS DE FUNIL MANDAM EXECUTAR ESTE ROBÔ.
+   *
+   * A outra forma de disparar um robô, e a mais usada: a etapa é a dona do gatilho e o quadro só
+   * descreve o que o robô faz. Essa ligação mora em `GatilhoEtapa.fluxoId`, do lado do funil, e o
+   * editor a busca em `/api/automacoes-fluxos/[id]/gatilhos-de-etapa`.
+   *
+   * `undefined` quer dizer "ainda não se sabe" — a busca não voltou, ou quem chamou não tinha como
+   * perguntar. Nesse estado vale a reserva (`fluxo.funilId`/`etapaId`), que é o que os robôs
+   * antigos têm preenchido.
+   */
+  gatilhosDeEtapa?: number;
 };
 
 /**
@@ -115,8 +127,20 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
    * (`primeiroNoDepoisDoGatilho` em `src/lib/automacoes/iniciar.ts`: sem bloco de gatilho, começa
    * pelo único nó em que ninguém entra). A validação é que não sabia disso e exigia um bloco de
    * gatilho no canvas, então esses robôs nunca conseguiam ser publicados.
+   *
+   * ONDE ESTÁ ESSA VERDADE. Em `GatilhoEtapa.fluxoId`, do lado do funil — é a tabela que o motor
+   * lê pra disparar. O contexto traz a contagem; `fluxo.funilId`/`etapaId` são a reserva de quando
+   * ninguém perguntou, e só eles é que havia antes.
+   *
+   * Era por isso que "o lead entra na etapa e nada dispara" aparecia num robô ligado e
+   * configurado: o robô criado pelo funil nasce sem bloco de gatilho de propósito, e aquelas duas
+   * colunas nunca eram preenchidas por esse caminho. O editor olhava só pra dentro do quadro e
+   * concluía que nada o disparava, na aba que a pessoa abre justamente pra conferir se está certo.
    */
-  const gatilhoNaEtapa = Boolean(fluxo.funilId && fluxo.etapaId);
+  const gatilhoNaEtapa =
+    contexto.gatilhosDeEtapa === undefined
+      ? Boolean(fluxo.funilId && fluxo.etapaId)
+      : contexto.gatilhosDeEtapa > 0 || Boolean(fluxo.funilId && fluxo.etapaId);
 
   const raizes = nodes.filter((n) => (entradasPorNo.get(n.id)?.length ?? 0) === 0);
 
@@ -126,7 +150,15 @@ export function validarFluxo(fluxo: FluxoAutomacao, contexto: ContextoDeValidaca
     problemas.push({
       id: proximoIdProblema(),
       severidade: "erro",
-      mensagem: "O fluxo não tem nenhum gatilho. Nada vai disparar essa automação.",
+      /*
+       * A FRASE DIZ OS DOIS CAMINHOS, porque são dois mesmo.
+       *
+       * "Nada vai disparar essa automação" mandava procurar um bloco de gatilho no quadro, e
+       * quem monta pelo funil não quer um: quer que a ETAPA execute o robô. Sem dizer isso, a
+       * pendência empurra pro caminho errado — e depois reclama do caminho certo.
+       */
+      mensagem:
+        "Nada dispara esta automação ainda. Adicione um gatilho ao quadro, ou mande uma etapa do funil executar este robô (no funil, em Automatizar).",
     });
   }
 

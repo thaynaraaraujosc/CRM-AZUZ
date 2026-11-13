@@ -318,7 +318,7 @@ describe("bloco sem nada antes dele", () => {
   it("fluxo sem gatilho continua sendo erro", () => {
     const problemas = validarFluxo(fluxo([condicaoSolta]));
     expect(
-      problemas.some((p) => p.severidade === "erro" && p.mensagem.includes("não tem nenhum gatilho")),
+      problemas.some((p) => p.severidade === "erro" && p.mensagem.includes("Nada dispara esta automação")),
     ).toBe(true);
   });
 

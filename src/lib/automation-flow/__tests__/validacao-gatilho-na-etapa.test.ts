@@ -25,7 +25,8 @@ function fluxo(parcial: Partial<FluxoAutomacao>): FluxoAutomacao {
   return { nodes: [], edges: [], ...parcial } as FluxoAutomacao;
 }
 
-const erros = (f: FluxoAutomacao) => validarFluxo(f).filter((p) => p.severidade === "erro");
+const erros = (f: FluxoAutomacao, contexto?: Parameters<typeof validarFluxo>[1]) =>
+  validarFluxo(f, contexto).filter((p) => p.severidade === "erro");
 
 describe("validação de robô cujo gatilho está na etapa do funil", () => {
   it("publica sem bloco de gatilho quando há uma entrada só", () => {
@@ -64,6 +65,57 @@ describe("validação de robô cujo gatilho está na etapa do funil", () => {
     });
     (f.nodes[0] as FlowNode).data = { canal: "whatsapp", texto: "Oi" };
 
-    expect(erros(f).some((p) => p.mensagem.includes("não tem nenhum gatilho"))).toBe(true);
+    expect(erros(f).some((p) => p.mensagem.includes("Nada dispara esta automação"))).toBe(true);
+  });
+
+  /*
+   * A ETAPA QUE EXECUTA O ROBÔ, VINDA DA TABELA DE GATILHOS.
+   *
+   * "Tô tentando fazer uma automação simples, que é mandar uma mensagem quando o lead entra na
+   * etapa, e tá falando que nada dispara essa automação — sendo que quando eu vou criar o gatilho
+   * eu já falo quando que é pra executar."
+   *
+   * O robô criado pelo funil nasce sem bloco de gatilho E sem `funilId`/`etapaId` preenchidos: a
+   * ligação mora só em `GatilhoEtapa.fluxoId`. Com as duas colunas vazias, a validação antiga
+   * concluía que nada disparava um robô que estava ligado e configurado.
+   */
+  it("aceita o robô que uma etapa do funil manda executar, mesmo sem funilId no fluxo", () => {
+    const f = fluxo({
+      nodes: [no("a", "mensagem", "mensagem_texto"), no("z", "fim", "encerrar_fluxo")],
+      edges: [aresta("a", "z")],
+    });
+    (f.nodes[0] as FlowNode).data = { canal: "whatsapp", texto: "Oi" };
+
+    expect(erros(f, { gatilhosDeEtapa: 1 }).map((p) => p.mensagem)).toEqual([]);
+  });
+
+  it("nenhuma etapa executando: a pendência volta, e diz os dois caminhos", () => {
+    const f = fluxo({
+      nodes: [no("a", "mensagem", "mensagem_texto"), no("z", "fim", "encerrar_fluxo")],
+      edges: [aresta("a", "z")],
+    });
+    (f.nodes[0] as FlowNode).data = { canal: "whatsapp", texto: "Oi" };
+
+    const mensagens = erros(f, { gatilhosDeEtapa: 0 }).map((p) => p.mensagem);
+    expect(mensagens.some((m) => m.includes("Nada dispara esta automação"))).toBe(true);
+    // Diz que dá pra resolver pelo funil, não só adicionando bloco: era o empurrão pro caminho
+    // errado que a frase antiga dava.
+    expect(mensagens.some((m) => m.includes("Automatizar"))).toBe(true);
+  });
+
+  it("sem resposta da busca, a reserva antiga continua valendo", () => {
+    const f = fluxo({
+      funilId: "funil-principal",
+      etapaId: "proposta",
+      nodes: [no("a", "mensagem", "mensagem_texto"), no("z", "fim", "encerrar_fluxo")],
+      edges: [aresta("a", "z")],
+    });
+    (f.nodes[0] as FlowNode).data = { canal: "whatsapp", texto: "Oi" };
+
+    // `gatilhosDeEtapa` ausente = ainda não se sabe. Robô antigo, com as colunas preenchidas,
+    // não pode passar a acusar pendência só porque a busca não voltou.
+    expect(erros(f, {}).map((p) => p.mensagem)).toEqual([]);
+    // E zero vindo da busca não apaga a reserva: o robô antigo segue válido.
+    expect(erros(f, { gatilhosDeEtapa: 0 }).map((p) => p.mensagem)).toEqual([]);
   });
 });
