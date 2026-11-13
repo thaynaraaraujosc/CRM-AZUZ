@@ -45,7 +45,12 @@ async function cardsDoContato(workspaceId: string, contatoNome: string) {
  * A pergunta do workspace inteiro continua existindo (`cardDoContato`), porque ela é a certa pra
  * quem quer MOVER o card da pessoa; ela só não é a certa pra quem quer saber se falta criar um.
  */
-async function cardDoContatoNoFunil(workspaceId: string, contatoNome: string, funilId: string) {
+/*
+ * Exportada porque a lista do Flow faz exatamente esta pergunta antes de decidir entre "manter" e
+ * "mover". Uma segunda implementação divergiria na primeira correção — e a comparação por nome
+ * normalizado, que mora aqui, é justamente o que impediu a mesma pessoa de ganhar dois cards.
+ */
+export async function cardDoContatoNoFunil(workspaceId: string, contatoNome: string, funilId: string) {
   const exato = await prisma.negocioCard.findFirst({
     where: { workspaceId, nome: contatoNome, etapa: { funilId } },
   });

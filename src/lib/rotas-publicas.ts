@@ -79,6 +79,15 @@ const PREFIXOS_PUBLICOS = [
    * do sintoma descrito no topo deste arquivo.
    */
   "/api/integracoes/azuz-flow/formularios",
+  /*
+   * A coluna do quadro de Leads do Flow virando leads do CRM, e o menu de destinos que a precede.
+   *
+   * Mesma chave, mesma direção, mesma defesa. E a mesma armadilha: a lista aqui é por CAMINHO, e
+   * uma rota nova que esqueça esta linha recebe 307 pro /login — o Flow leria o 2xx da página de
+   * login como entrega feita, e a coluna inteira "entraria" sem nunca ter chegado.
+   */
+  "/api/integracoes/azuz-flow/funis",
+  "/api/integracoes/azuz-flow/lista",
 
   // O link rastreado que fica no botão de WhatsApp do site do cliente. Quem clica nele é um
   // visitante do site de outra empresa: não tem conta no CRM, nunca vai ter, e exigir sessão
