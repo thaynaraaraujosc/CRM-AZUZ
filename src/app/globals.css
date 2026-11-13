@@ -21372,9 +21372,23 @@ table.tbl .name-cell .r {
 .fauto-painel {
   position: relative;
   z-index: 61;
-  width: min(420px, 100%);
+  /*
+   * 560px, e não 420.
+   *
+   * "Não dá, porque está comendo espaço. Deixa essa pop-up um pouco maior, mais organizada."
+   *
+   * Com 420px o "Executar" não cabia: a frase são dois seletores lado a lado — o tempo e o evento
+   * —, e o segundo vazava pra fora da janela. Dava pra resolver espremendo os dois, e aí nenhum
+   * dos rótulos caberia: "Quando movido para ou criado nesta etapa" não cabe em 180px.
+   *
+   * O limite segue sendo uma JANELA, não uma tela: 560px é o que as duas frases mais longas desta
+   * caixa pedem, e nada além disso.
+   */
+  width: min(560px, 100%);
   max-height: min(86vh, 820px);
   overflow-y: auto;
+  /* Nada escapa na horizontal: a janela cresce ou o conteúdo encolhe, nunca sangra pro lado. */
+  overflow-x: hidden;
   background: var(--surface-elevated);
   border: 1px solid var(--line);
   border-radius: 14px;
@@ -21506,20 +21520,6 @@ table.tbl .name-cell .r {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-}
-
-.fauto-quando > select {
-  min-width: 0;
-}
-
-.fauto-quando-tempo {
-  flex: 0 0 auto;
-  width: auto;
-  max-width: 190px;
-}
-
-.fauto-quando > select:last-child {
-  flex: 1 1 auto;
 }
 
 @media (max-width: 560px) {
@@ -31668,6 +31668,38 @@ td.trafego-col-crm:first-of-type {
   flex: 1 1 0;
 }
 
+/*
+ * A FRASE DO "EXECUTAR" DIVIDE A LINHA PELA MESMA RAZÃO — e precisa da mesma especificidade.
+ *
+ * Esta foi a correção que eu errei da primeira vez: escrevi as regras como `.fauto-quando-tempo`,
+ * um seletor de uma classe só, e elas perderam pro `.fauto-painel select.input` logo acima, que
+ * tem duas classes e um elemento. O resultado foi o primeiro seletor com 100% da linha e o
+ * segundo empurrado pra fora da janela — exatamente o que ela viu na tela.
+ *
+ * Regra desta casa, e ela está escrita três blocos acima: dentro do painel, quem muda a largura de
+ * um `.input` escreve a partir de `.fauto-painel`.
+ */
+.fauto-painel .fauto-quando .input {
+  /* O evento ocupa o que sobrar e ENCOLHE quando não sobra: base zero, não `auto` — com `auto` o
+     navegador respeita a largura da opção mais longa da lista e o campo estoura. */
+  width: auto;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.fauto-painel .fauto-quando .fauto-quando-tempo {
+  /* O tempo é a primeira palavra da frase: tem o tamanho do texto dele e não disputa espaço. */
+  flex: 0 0 auto;
+  width: auto;
+  max-width: 210px;
+}
+
+@media (max-width: 560px) {
+  .fauto-painel .fauto-quando .fauto-quando-tempo {
+    max-width: none;
+  }
+}
+
 /* ================= A ESTÉTICA DO UMBLER NO SOCIAL SELLER =================
  *
  * A Thaynara escolheu o Umbler Talk como referência de acabamento pra este módulo: papel
@@ -32210,11 +32242,14 @@ td.trafego-col-crm:first-of-type {
 
 /* Um recuo só, o da caixa. O campo cuida do espaço vertical. */
 .fauto-painel {
-  padding: var(--space-4) 18px;
+  /* 22px agora que a janela tem 560: o recuo acompanha a largura, senão o conteúdo encosta nas
+     bordas e a caixa maior fica parecendo mais cheia em vez de mais folgada. */
+  padding: var(--space-4) 22px;
 }
 
 .fauto-painel .field {
-  padding: 13px 0;
+  /* 15px: com um campo a mais na frase do "Executar", o ritmo de 13 colava as seções. */
+  padding: 15px 0;
   border-bottom: 1px solid var(--line-soft);
 }
 
@@ -32242,13 +32277,13 @@ td.trafego-col-crm:first-of-type {
 
 /* O cabeçalho e o rodapé acompanham o recuo novo, senão o título fica desalinhado dos campos. */
 .fauto-painel-topo {
-  margin: calc(var(--space-4) * -1) -18px var(--space-3);
-  padding: 14px 18px;
+  margin: calc(var(--space-4) * -1) -22px var(--space-3);
+  padding: 14px 22px;
 }
 
 .fauto-painel-fim {
-  margin: var(--space-3) -18px calc(var(--space-4) * -1);
-  padding: 12px 18px;
+  margin: var(--space-3) -22px calc(var(--space-4) * -1);
+  padding: 12px 22px;
   gap: 10px;
 }
 
