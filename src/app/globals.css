@@ -29635,6 +29635,34 @@ td.trafego-col-crm:first-of-type {
   color: var(--ink);
 }
 
+/*
+ * AS DUAS CHAVES DA PAUSA, dentro do cartão da frase.
+ *
+ * "Eu posso deixar a opção de ter 2 caminhos ou não." A primeira linha é essa opção, e ela fica no
+ * cartão — não só no painel da direita — porque muda o DESENHO do bloco: ligada, nascem as duas
+ * saídas embaixo. O que muda o desenho se decide olhando o quadro.
+ *
+ * Separadas da frase por uma linha, e com o texto menor: a frase é o que o bloco FAZ, estas são
+ * ajustes dela. Sem a separação, o cartão vira uma lista de três coisas do mesmo peso.
+ */
+.no-espera-chaves {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  gap: 4px;
+  width: 100%;
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line-soft);
+}
+
+/* Dentro do cartão cinza da pausa, as linhas precisam de fundo próprio: com o mesmo
+   `--surface-2` do cartão elas sumiriam, e aí não pareceriam clicáveis. */
+.no-espera-chaves .no-cond-linha {
+  background: var(--surface);
+  text-align: left;
+}
+
 /* O número e a unidade lado a lado, no painel. `min-width: 0` porque campo em linha estoura a
    caixa: o tamanho mínimo de um input é o conteúdo dele, e sem isso a lista de unidades sai pela
    borda do painel. */

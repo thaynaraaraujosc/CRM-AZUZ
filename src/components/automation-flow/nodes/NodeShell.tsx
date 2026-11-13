@@ -157,7 +157,6 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
     aoDesligarSaida,
     aoMudarCanal,
     aoMudarCampo,
-    aoMudarCronometro,
     aoAbrirProblemas,
   } = data;
 
@@ -197,26 +196,6 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
     return `${minutos}min`;
   })();
 
-  /** O tempo do bloco de espera em minutos, quando ele é um cronômetro simples. */
-  const minutosDaEspera = (() => {
-    const d = (flowNode.data ?? {}) as {
-      modo?: string;
-      valor?: number;
-      tempoMaximo?: { valor?: number; unidade?: string };
-    };
-    const emMinutos = (valor: number, unidade?: string) =>
-      unidade === "horas" ? valor * 60 : unidade === "dias" ? valor * 1440 : valor;
-    // "Até a resposta" também tem cronômetro: é o prazo máximo de espera, e ele vive em
-    // `tempoMaximo` em vez de `valor`. É o bloco do follow-up — espera a resposta, e se ela não
-    // vier dentro do prazo, segue pela outra saída.
-    if (d.modo === "ate_resposta") {
-      return d.tempoMaximo?.valor ? emMinutos(d.tempoMaximo.valor, d.tempoMaximo.unidade) : 0;
-    }
-    if (d.modo === "minutos" || d.modo === "horas" || d.modo === "dias") {
-      return emMinutos(d.valor ?? 0, d.modo);
-    }
-    return null;
-  })();
 
   /* O tempo do bloco de espera, pra frase do cartão social. A leitura mora em `lib` porque o
      dado tem dois formatos (`modo`+`valor` e `tempoMaximo`), e cada tela que a refazia à mão
@@ -1145,22 +1124,26 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
           onAdicionarApos={onAdicionarApos}
           aoDesligarSaida={aoDesligarSaida}
         />
-      ) : flowNode.type === "aguardar" && area === "social" ? (
+      ) : flowNode.type === "aguardar" ? (
         /*
-          A PAUSA DO SOCIAL SELLER É UMA FRASE, não um painel de controle.
-          
-          No funil o bloco de espera é o follow-up: lá o cartão tem o cronômetro em campos e as
-          linhas de contagem (dias úteis, só expediente), porque um prazo de dois dias depende
-          disso. Numa automação de Instagram ele é outra coisa — a pausa entre duas mensagens, pra
-          a conversa não chegar toda de uma vez —, e ali a pergunta é uma só: quanto tempo.
-          
-          "Eu quero deixar mais simples. Eu quero que a partir do cronômetro fique igual ao do
-          Gaio, onde aparece aguardar cinco segundos." O número e a unidade se trocam no painel da
-          direita, que é onde cabe a lista de unidades sem espremer o cartão.
-          
-          Os dois caminhos continuam desenhados embaixo ("Respondeu" / "Não respondeu"): são a
-          parte que a referência NÃO tem e que ela pediu — "a pessoa respondeu antes do tempo
-          terminar... ou ela não respondeu, aí eu vou mandar outra mensagem".
+          A PAUSA É UMA FRASE, não um painel de controle.
+
+          "Eu quero que o cronômetro fique igual ao do Social Seller, porque ficou mais bonito,
+          ficou mais organizado. Coloca naquele quadrinho lá, aguardar 5 segundos, e aí eu posso
+          escolher o tempo de aguardar."
+
+          O funil tinha outro desenho: dois campos de número (horas e minutos) dentro do cartão,
+          com as linhas de contagem embaixo. Funcionava e era um painel de controle no meio do
+          quadro — seis caixinhas pra dizer uma coisa que cabe numa frase. O quadro se lê de
+          relance; o painel da direita é que é pra mexer.
+
+          Então agora é a frase nas duas áreas. O número e a unidade se trocam no painel da
+          direita, que é onde a lista de unidades cabe sem espremer o cartão.
+
+          "ANTES DO PRÓXIMO PASSO" NO FUNIL, e não "antes da próxima mensagem": num robô de
+          Instagram o passo seguinte é sempre uma mensagem, e num do funil ele pode ser mudar de
+          etapa, pôr etiqueta, avisar a equipe. Dizer "mensagem" ali seria afirmar o que a frase
+          não sabe.
         */
         <div className="no-espera-social">
           <IconRelogio width={20} height={20} aria-hidden="true" />
@@ -1168,93 +1151,69 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
             <strong>
               {traduzir("Aguardar {tempo}", { tempo: `${esperaDoCartao.valor} ${traduzir(palavraDoCartao)}` })}
             </strong>{" "}
-            {traduzir("antes da próxima mensagem")}
+            {traduzir(area === "social" ? "antes da próxima mensagem" : "antes do próximo passo")}
           </p>
-        </div>
-      ) : flowNode.type === "aguardar" && aoMudarCronometro ? (
-        /*
-          O CRONÔMETRO EDITÁVEL NO CARTÃO, como na referência.
-          
-          "Aguardar 5 minutos" era uma frase de resumo: pra trocar o tempo era preciso abrir o
-          painel da direita. Aqui os números são campos.
-          
-          SEM SEGUNDOS, e isso não é esquecimento: quem acorda as execuções paradas é uma varredura
-          que roda de minuto em minuto. Um prazo de trinta segundos seria arredondado pra cima sem
-          avisar, e o campo prometeria uma precisão que o motor não tem.
-        */
-        <div className="no-cond-lista nodrag" onClick={(e) => e.stopPropagation()}>
-        <div className="no-cronometro">
-          <IconRelogio width={13} height={13} aria-hidden="true" />
-          <span>{traduzir("Cronômetro")}:</span>
-          <input
-            type="number"
-            min={0}
-            max={720}
-            value={Math.floor((minutosDaEspera ?? 0) / 60)}
-            aria-label={traduzir("Horas")}
-            onChange={(e) => aoMudarCronometro(Number(e.target.value) * 60 + ((minutosDaEspera ?? 0) % 60))}
-          />
-          <span>{traduzir("horas")}</span>
-          <input
-            type="number"
-            min={0}
-            max={59}
-            value={(minutosDaEspera ?? 0) % 60}
-            aria-label={traduzir("Minutos")}
-            onChange={(e) => aoMudarCronometro(Math.floor((minutosDaEspera ?? 0) / 60) * 60 + Number(e.target.value))}
-          />
-          <span>{traduzir("min")}</span>
-        </div>
 
-        {/*
-          AS CONDIÇÕES DE SAÍDA DA PAUSA, embaixo do cronômetro.
-          
-          Na referência o bloco "Pausar" é uma lista: o cronômetro é a primeira linha e as outras
-          dizem o que mais pode interromper a espera. O CRM tinha as duas que importam escondidas
-          no painel da direita — "seguir antes se ele responder" e "contar só o expediente" —, e
-          quem olhava o cartão não tinha como saber que a pausa respondia a isso.
-          
-          Só o que o motor cumpre entra aqui. "Até o vídeo ser aberto" e "ser fechado", que
-          aparecem na referência, dependem de um evento de visualização de vídeo que nenhum canal
-          nosso entrega: a linha existiria na tela e não aconteceria nunca.
-        */}
-        {aoMudarCampo
-          ? (() => {
-              const d = (flowNode.data ?? {}) as { interromperSeResponder?: boolean; somenteExpediente?: boolean };
-              const linhas = [
-                {
-                  campo: "interromperSeResponder",
-                  ligado: !!d.interromperSeResponder,
-                  rotulo: traduzir("Até a mensagem recebida"),
-                  // Esta liga uma SAÍDA nova no bloco ("Respondeu"), e é por isso que ela importa
-                  // mais que as outras: muda o desenho, não só a contagem.
-                  ajuda: traduzir("O bloco ganha dois caminhos: segue na hora se ele responder, e pelo outro quando o tempo acabar."),
-                },
-                {
-                  campo: "somenteExpediente",
-                  ligado: !!d.somenteExpediente,
-                  rotulo: traduzir("Exceto fora do expediente"),
-                  ajuda: traduzir("O relógio só corre no horário de Configurações: \"2 horas\" às 17h de sexta termina na segunda de manhã."),
-                },
-              ];
-              return linhas.map((l) => (
-                <button
-                  type="button"
-                  key={l.campo}
-                  className={`no-cond-linha${l.ligado ? " on" : ""}`}
-                  title={l.ajuda}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    aoMudarCampo(l.campo, !l.ligado);
-                  }}
-                >
-                  <IconEdit width={11} height={11} aria-hidden="true" />
-                  <span>{l.rotulo}</span>
-                  <em aria-hidden="true">{l.ligado ? "×" : "+"}</em>
-                </button>
-              ));
-            })()
-          : null}
+          {/*
+            AS DUAS CHAVES DA PAUSA, embaixo da frase.
+
+            "Eu posso deixar a opção de ter 2 caminhos ou não." A primeira é essa opção: ligada, o
+            bloco ganha as duas saídas ("Respondeu antes do tempo" / "Não respondeu") que já
+            aparecem desenhadas embaixo do cartão. Ela fica AQUI, e não só no painel da direita,
+            porque muda o DESENHO do bloco — e o que muda o desenho se decide olhando o quadro.
+
+            A segunda é a contagem: "2 horas" às 17h de sexta terminando na segunda de manhã, em
+            vez de no sábado de madrugada. Ela estava escondida no painel e quem olhava o cartão
+            não tinha como saber que a pausa respondia a isso.
+
+            Só o que o motor cumpre entra aqui. "Até o vídeo ser aberto", que aparece na
+            referência, depende de um evento que nenhum canal nosso entrega: a linha existiria na
+            tela e não aconteceria nunca.
+          */}
+          {aoMudarCampo ? (
+            <div className="no-espera-chaves nodrag" onClick={(e) => e.stopPropagation()}>
+              {(() => {
+                const d = (flowNode.data ?? {}) as {
+                  interromperSeResponder?: boolean;
+                  somenteExpediente?: boolean;
+                };
+                const linhas = [
+                  {
+                    campo: "interromperSeResponder",
+                    ligado: !!d.interromperSeResponder,
+                    rotulo: traduzir("Seguir antes se ele responder"),
+                    ajuda: traduzir(
+                      "O bloco ganha dois caminhos: segue na hora se ele responder, e pelo outro quando o tempo acabar.",
+                    ),
+                  },
+                  {
+                    campo: "somenteExpediente",
+                    ligado: !!d.somenteExpediente,
+                    rotulo: traduzir("Contar só o expediente"),
+                    ajuda: traduzir(
+                      'O relógio só corre no horário de Configurações: "2 horas" às 17h de sexta termina na segunda de manhã.',
+                    ),
+                  },
+                ];
+                return linhas.map((l) => (
+                  <button
+                    type="button"
+                    key={l.campo}
+                    className={`no-cond-linha${l.ligado ? " on" : ""}`}
+                    title={l.ajuda}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      aoMudarCampo(l.campo, !l.ligado);
+                    }}
+                  >
+                    <IconEdit width={11} height={11} aria-hidden="true" />
+                    <span>{l.rotulo}</span>
+                    <em aria-hidden="true">{l.ligado ? "×" : "+"}</em>
+                  </button>
+                ));
+              })()}
+            </div>
+          ) : null}
         </div>
       ) : (
         (() => {

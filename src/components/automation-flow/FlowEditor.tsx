@@ -789,31 +789,6 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     });
   }
 
-  /**
-   * O tempo do cronômetro, gravado SEMPRE EM MINUTOS.
-   *
-   * O bloco aceita "minutos", "horas" e "dias" como unidade, e o cartão edita horas e minutos
-   * juntos. Normalizar na gravação evita o caso em que 90 minutos viram "1 hora" e os 30 minutos
-   * somem no arredondamento da unidade.
-   */
-  function definirCronometro(nodeId: string, minutos: number) {
-    const valor = Math.max(0, Math.min(43200, Math.round(minutos)));
-    const novoNodes = rfNodes.map((n) => {
-      if (n.id !== nodeId) return n;
-      const dados = (n.data.flowNode.data ?? {}) as { modo?: string };
-      /* "Até a resposta" guarda o tempo em `tempoMaximo`, e o modo NÃO muda: ele é o bloco que
-         espera a pessoa e só segue pelo outro caminho se o prazo estourar. Trocar o modo aqui
-         transformaria um follow-up ("se não responder em 2h, cobra") numa espera cega que manda
-         a cobrança mesmo pra quem já respondeu. */
-      const data =
-        dados.modo === "ate_resposta"
-          ? { ...dados, tempoMaximo: { valor, unidade: "minutos" } }
-          : { ...dados, modo: "minutos", valor };
-      return { ...n, data: { ...n.data, flowNode: { ...n.data.flowNode, data } } };
-    });
-    setRfNodes(novoNodes);
-    persistDebounced(novoNodes, rfEdges);
-  }
 
   /** Grava um campo solto nos dados do bloco (canal, por ora). */
   function editarCampoDoBloco(nodeId: string, campo: string, valor: unknown) {
@@ -1774,16 +1749,6 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           /* Sem aba de problemas em nenhuma das duas áreas: clicar no bloco abre o painel DELE,
              que é onde a pendência daquele bloco se resolve. A lista inteira fica no cabeçalho. */
           aoAbrirProblemas: undefined,
-          /* O cronômetro só aparece no modo de tempo puro: "até a resposta" e "até tal data" não
-             têm minutos pra editar, e um campo de minutos ali mentiria sobre o que o bloco faz. */
-          aoMudarCronometro:
-            modoConstrucao &&
-            n.data.flowNode.type === "aguardar" &&
-            ["minutos", "horas", "dias", "ate_resposta"].includes(
-              ((n.data.flowNode.data ?? {}) as { modo?: string }).modo ?? "",
-            )
-              ? (minutos: number) => definirCronometro(n.id, minutos)
-              : undefined,
           aoMudarOpcoes:
             modoConstrucao &&
             (n.data.flowNode.type === "mensagem_texto" || n.data.flowNode.type === "mensagem_botoes")
