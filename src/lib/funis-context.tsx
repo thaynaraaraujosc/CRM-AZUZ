@@ -11,6 +11,7 @@ import {
   type SetStateAction,
 } from "react";
 
+import { listaDaApi } from "@/lib/api/lista";
 import type { ColunaFunil, DicasDaEtapa, Funil, NegocioCard } from "@/lib/data";
 
 type FunisContextValue = {
@@ -117,7 +118,14 @@ export function FunisProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     fetch("/api/funis")
       .then((r) => r.json())
-      .then((dados: Funil[]) => {
+      .then((bruto: unknown) => {
+        /*
+         * A RESPOSTA PODE NÃO SER UMA LISTA, e já não foi: com a sessão expirada numa aba aberta
+         * a noite toda, `/api/funis` responde `{ erro: "Não autenticado" }`. Gravar esse objeto
+         * aqui fazia `funis.find(...)` morrer com "find is not a function" e levava a caixa de
+         * entrada inteira junto. Ver `listaDaApi`.
+         */
+        const dados = listaDaApi<Funil>(bruto, "/api/funis");
         // Marca a carga inicial como "veio do banco" pelo mesmo motivo que `recarregar()` faz:
         // sem isto, abrir QUALQUER tela do CRM gravava o funil inteiro de volta sem ninguém ter
         // editado nada. Era uma escrita por navegação, por usuário, com o JSON completo do funil.
@@ -219,7 +227,7 @@ export function FunisProvider({ children }: { children: ReactNode }) {
   /** Relê os funis do banco. Usado depois de uma gravação recusada e depois de cada operação
    * imediata, pra tela e banco contarem a mesma história. */
   async function recarregar() {
-    const dados = (await fetch("/api/funis").then((r) => r.json())) as Funil[];
+    const dados = listaDaApi<Funil>(await fetch("/api/funis").then((r) => r.json()), "/api/funis");
     vindoDoServidorRef.current = true;
     setFunis(dados);
     return dados;

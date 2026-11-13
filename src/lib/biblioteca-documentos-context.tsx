@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { listaDaApi } from "@/lib/api/lista";
 
 /** Tipo de mídia do arquivo. Usado pra filtrar o que aparece no seletor de cada bloco (enviar
  * documento só oferece "documento", enviar imagem só "imagem", etc). */
@@ -216,7 +217,7 @@ export function BibliotecaDocumentosProvider({ children }: { children: ReactNode
   useEffect(() => {
     fetch("/api/biblioteca-documentos")
       .then((r) => r.json())
-      .then((dados: DocumentoBiblioteca[]) => setDocumentos(dados))
+      .then((bruto: unknown) => setDocumentos(listaDaApi<DocumentoBiblioteca>(bruto, "/api/biblioteca")))
       .catch((erro) => console.error("Falha ao carregar biblioteca de documentos da API:", erro));
   }, []);
 

@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 
+import { listaDaApi } from "@/lib/api/lista";
 import { funis as funisIniciais } from "@/lib/data";
 import {
   AUTOMACOES_INICIAIS,
@@ -122,7 +123,7 @@ export function AutomationFlowProvider({ children }: { children: ReactNode }) {
   const recarregar = useCallback(async () => {
     const resposta = await fetch("/api/automacoes-fluxos", { cache: "no-store" });
     if (!resposta.ok) throw new Error(`A lista de fluxos respondeu ${resposta.status}.`);
-    setFluxos((await resposta.json()) as FluxoAutomacao[]);
+    setFluxos(listaDaApi<FluxoAutomacao>(await resposta.json(), "/api/automacoes"));
     setCarregado(true);
   }, []);
 

@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 
+import { listaDaApi } from "@/lib/api/lista";
 import type { Membro } from "@/lib/data";
 import { slugId } from "@/lib/ids";
 
@@ -60,7 +61,7 @@ export function EquipeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     fetch("/api/equipe")
       .then((r) => r.json())
-      .then((dados: Membro[]) => setMembros(dados))
+      .then((bruto: unknown) => setMembros(listaDaApi<Membro>(bruto, "/api/equipe")))
       .catch((erro) => console.error("Falha ao carregar equipe da API:", erro));
   }, []);
 

@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { useSession } from "next-auth/react";
+import { listaDaApi } from "@/lib/api/lista";
 
 export type PaginaDoc = {
   id: string;
@@ -683,11 +684,11 @@ export function DocumentosProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     fetch("/api/documentos")
       .then((r) => r.json())
-      .then((dados: Documento[]) => setDocumentos(dados))
+      .then((bruto: unknown) => setDocumentos(listaDaApi<Documento>(bruto, "/api/documentos")))
       .catch((erro) => console.error("Falha ao carregar documentos da API:", erro));
     fetch("/api/documentos-modelos")
       .then((r) => r.json())
-      .then((dados: ModeloPersonalizado[]) => setModelosPersonalizados(dados))
+      .then((bruto: unknown) => setModelosPersonalizados(listaDaApi<ModeloPersonalizado>(bruto, "/api/documentos/modelos")))
       .catch((erro) => console.error("Falha ao carregar modelos de documento da API:", erro));
   }, []);
 

@@ -10,6 +10,7 @@ import {
   type SetStateAction,
 } from "react";
 
+import { listaDaApi } from "@/lib/api/lista";
 import type { Contato } from "@/lib/data";
 import { slugId } from "@/lib/ids";
 
@@ -73,7 +74,7 @@ export function ContatosProvider({ children }: { children: ReactNode }) {
   function recarregar() {
     return fetch("/api/contatos", { cache: "no-store" })
       .then((r) => r.json())
-      .then((dados: Contato[]) => setContatos(dados))
+      .then((bruto: unknown) => setContatos(listaDaApi<Contato>(bruto, "/api/contatos")))
       .catch((erro) => console.error("Falha ao carregar contatos da API:", erro));
   }
 

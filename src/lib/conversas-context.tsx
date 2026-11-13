@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { INTERVALO_POLLING_MS } from "@/lib/conversas/polling";
+import { listaDaApi } from "@/lib/api/lista";
 
 export type ConversaReal = {
   id: string;
@@ -121,7 +122,7 @@ export function ConversasProvider({ children }: { children: ReactNode }) {
         if (r.status === 304) return;
         const etag = r.headers.get("etag");
         if (etag) etagRef.current = etag;
-        const dados = (await r.json()) as ConversaReal[];
+        const dados = listaDaApi<ConversaReal>(await r.json(), "/api/conversas");
         setConversas((prev) => mesclarConversas(prev, dados));
       })
       .catch((erro) => console.error("Falha ao carregar conversas da API:", erro));
