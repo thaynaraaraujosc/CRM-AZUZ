@@ -32,6 +32,24 @@ describe("origem do lead", () => {
     }
   });
 
+  /*
+   * "Coloca social."
+   *
+   * Quem achou a AZUZ pelo TikTok sem anúncio, por um story do Facebook ou pelo LinkedIn só tinha
+   * "Outro" — e "Outro" num relatório é a linha que não decide nada. O teste prende as duas
+   * metades: a opção existe, e ela NÃO entra no custo por lead (ninguém pagou mídia por ela).
+   */
+  it("redes sociais orgânicas têm opção própria, e não contam como mídia paga", () => {
+    const social = ORIGENS_DO_LEAD.find((o) => o.valor === "Redes sociais");
+    expect(social).toBeDefined();
+    expect(social!.paga).toBe(false);
+    expect(origemEhPaga("Redes sociais")).toBe(false);
+  });
+
+  it("'Redes sociais' é marcação de procedência, não canal: aparece como etiqueta no cartão", () => {
+    expect(origemMarcavel("Redes sociais")).toBe(true);
+  });
+
   it("não há valor repetido na lista", () => {
     const valores = ORIGENS_DO_LEAD.map((o) => o.valor);
     expect(new Set(valores).size).toBe(valores.length);

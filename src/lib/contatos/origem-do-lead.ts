@@ -24,7 +24,13 @@
 import type { Origem } from "@/lib/data";
 
 export type OpcaoDeOrigem = {
-  valor: Origem | "Indicação" | "Outro";
+  /*
+   * `Redes sociais` não está em `Origem` de propósito: aquele tipo lista o que o CRM GRAVA
+   * sozinho (o canal da primeira mensagem, o anúncio rastreado), e isto aqui só existe como
+   * marcação à mão. `Contato.origem` é texto no banco, então o valor novo entra sem migração —
+   * e `classeOrigem` já tem o fallback pra valor fora da lista conhecida.
+   */
+  valor: Origem | "Indicação" | "Outro" | "Redes sociais";
   label: string;
   /** O que esta escolha quer dizer, pra não virar adivinhação de quem marca. */
   descricao: string;
@@ -55,6 +61,23 @@ export const ORIGENS_DO_LEAD: OpcaoDeOrigem[] = [
     valor: "Instagram",
     label: "Instagram",
     descricao: "Achou o perfil sozinha, pelo conteúdo — sem anúncio no meio.",
+    paga: false,
+  },
+  {
+    /*
+     * AS OUTRAS REDES, QUE NÃO TINHAM ONDE CAIR.
+     *
+     * Quem achou a AZUZ pelo TikTok sem anúncio, por um story do Facebook ou pelo LinkedIn só
+     * tinha "Outro" — e "Outro" num relatório é a linha que ninguém consegue usar pra decidir
+     * nada. O Instagram tem opção própria porque é de onde vem a maior parte e porque ele tem um
+     * módulo inteiro no CRM; as demais cabem numa linha só, que é o tamanho da pergunta.
+     *
+     * Sem cor de plataforma, e por isso cai no cinza do fallback de `classeOrigem`: não há uma
+     * marca por trás desta linha, e pintá-la com a cor de uma delas seria dizer qual é.
+     */
+    valor: "Redes sociais",
+    label: "Redes sociais",
+    descricao: "Facebook, TikTok, LinkedIn, YouTube — pelo conteúdo, sem anúncio. Instagram tem opção própria.",
     paga: false,
   },
   {

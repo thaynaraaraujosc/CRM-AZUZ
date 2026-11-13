@@ -2775,6 +2775,7 @@ export const TRADUCOES_EN: Record<string, string> = {
   "Finalizado": "Closed",
   "Direto": "Direct",
   "Indicação": "Referral",
+  "Redes sociais": "Social media",
   "Qualificado": "Qualified",
   "Reel": "Reel",
   "Story": "Story",
