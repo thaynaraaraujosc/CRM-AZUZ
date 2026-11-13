@@ -94,3 +94,20 @@ export const ORIGENS_PAGAS: readonly string[] = ORIGENS_DO_LEAD.filter((o) => o.
 export function origemEhPaga(origem: string | null | undefined): boolean {
   return Boolean(origem) && ORIGENS_PAGAS.includes(origem as string);
 }
+
+/**
+ * Esta origem é uma MARCAÇÃO de procedência, ou só o canal por onde a mensagem chegou?
+ *
+ * `Contato.origem` guarda as duas coisas no mesmo campo: o que alguém escolheu na ficha ("Meta
+ * Ads", "Indicação") e o que o CRM gravou sozinho ao receber a primeira mensagem ("WhatsApp",
+ * "Salvo manualmente"). No quadro do funil isso importa — a primeira responde de onde a pessoa
+ * veio, a segunda não responde nada, e mostrar a segunda em destaque dourado seria dar relevo a
+ * vinte cartões dizendo a mesma palavra.
+ */
+const SO_O_CANAL: readonly string[] = ["WhatsApp", "Instagram Direct", "Salvo manualmente", "Direto", "Outro"];
+
+export function origemMarcavel(origem: string | null | undefined): boolean {
+  const limpa = origem?.trim();
+  if (!limpa) return false;
+  return !SO_O_CANAL.includes(limpa);
+}

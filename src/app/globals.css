@@ -4532,7 +4532,25 @@ table.tbl tbody tr:hover td {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  margin: var(--space-3) var(--space-3) var(--space-3) var(--space-3);
+  /*
+   * SEM MARGEM E SEM CANTO: os três painéis viram uma superfície só.
+   *
+   * "Deixar as bordas quadradas, e chegando até lá em cima, pra não ficar tipo esses quadrados
+   * separados. Se a gente deixar tudo junto, ao invés de separados, será que não fica melhor?"
+   *
+   * Fica, e dá pra dizer por quê: canto redondo com folga em volta é o desenho de um CARTÃO, e
+   * cartão quer dizer "isto aqui é um objeto separado". Esta tela não tem três objetos — tem UM
+   * (a conversa) visto por três janelas: quem escreveu, o que foi dito, quem é a pessoa. O
+   * desenho estava contando uma história que a tela não vive.
+   *
+   * E o que separava não era o canto: é a COR. Branco, azul claro, branco — a lista, a conversa
+   * e a ficha já se distinguem pelo fundo, e continuam se distinguindo encostadas. O que some com
+   * as folgas é só largura, e largura aqui é a única coisa que vira linha de mensagem lida.
+   *
+   * A borda fica só do lado que DIVIDE. A de fora virava um fio no meio do nada, a um pixel da
+   * janela.
+   */
+  margin: 0;
   /* O painel vira o CINZA e os cartões viram brancos — a troca é proposital. Com painel branco e
      cartão cinza-claro, os dois tons ficavam a um passo um do outro e a lista lia como uma mancha
      só. Invertido, cada conversa é um objeto branco sobre um fundo, igual ao balão sobre o corpo da
@@ -4540,8 +4558,9 @@ table.tbl tbody tr:hover td {
   /* A BORDA SUBSTITUI O FUNDO CINZA. O painel era cinza pra se separar do piso; com os dois
      brancos, quem marca onde a lista comeca e termina e a mesma borda de 1px que `.wa-main` ja
      usa do outro lado. Dois paineis brancos com a mesma moldura, lado a lado. */
-  border: 1px solid var(--line);
-  border-radius: var(--radius-xl);
+  border: 0;
+  border-right: 1px solid var(--line);
+  border-radius: 0;
   /* Branco, e nao o azul da area de mensagens: dentro desta lista o azul claro passou a significar
      "conversa nao lida", e fundo da mesma cor apagaria a marca. */
   background: var(--lista-fundo);
@@ -4551,9 +4570,9 @@ table.tbl tbody tr:hover td {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  /* Sem folga lateral: a linha vai de borda a borda do painel, e e o arredondamento do proprio
-     painel (`overflow: hidden`) que corta as pontas. Com folga, a faixa da conversa aberta ficava
-     flutuando no meio de duas tiras brancas. */
+  /* Sem folga lateral: a linha vai de borda a borda do painel. (O painel não arredonda mais, então
+     não há ponta a cortar; a regra fica porque com folga a faixa da conversa aberta voltaria a
+     flutuar no meio de duas tiras brancas.) */
   padding: 0 0 var(--space-2);
 }
 
@@ -5103,9 +5122,11 @@ table.tbl tbody tr:hover td {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  margin: var(--space-3) var(--space-3) var(--space-3) 0;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-xl);
+  /* Encostada na lista e na ficha, e subindo até a barra de cima. Ver `.wa-list`. */
+  margin: 0;
+  border: 0;
+  border-right: 1px solid var(--line);
+  border-radius: 0;
   /* Branco, como a area de mensagens dentro dele. O cinza aqui so aparecia nas sobras em volta do
      corpo da conversa, e eram justamente essas sobras que deixavam a tela cinza. */
   background: var(--conversa-fundo);
@@ -5219,9 +5240,10 @@ table.tbl tbody tr:hover td {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  margin: var(--space-3) var(--space-3) var(--space-3) 0;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-xl);
+  /* A última da fila: não divide nada à direita, então não tem borda nenhuma. */
+  margin: 0;
+  border: 0;
+  border-radius: 0;
   /* Branca, igual ao painel da lista do outro lado. Era cinza, e na tela de hoje ela virava a
      unica area cinza que sobrou — lida como se estivesse desligada. Branco, azul, branco: a
      conversa e a superficie colorida e as duas fichas sao papel. */
@@ -7267,9 +7289,13 @@ button.camp-row:hover {
   .wa-list,
   .wa-main,
   .wa-info {
-    flex: 0 0 calc(100% - var(--space-4));
+    /* A tela inteira pra cada painel, sem moldura. No celular a folga em volta não separava
+       nada — só um de cada vez aparece — e comia justamente a largura que faz a mensagem caber
+       em menos linhas. Mesma decisão do desktop, pelo mesmo motivo. */
+    flex: 0 0 100%;
     width: auto;
-    margin: var(--space-2);
+    margin: 0;
+    border-right: 0;
     scroll-snap-align: center;
   }
 }
@@ -36351,4 +36377,26 @@ td.trafego-col-crm:first-of-type {
   .wa-conv-tags {
     display: none;
   }
+}
+
+/* A ORIGEM MARCADA NA FICHA, no cartão do funil — dourada.
+   É a única das três procedências que alguém ESCOLHEU: o rastreio é medido (e guarda as cores
+   medidas: Meta azul, Instagram rosa) e o canal é só por onde a mensagem chegou (cinza). O ouro é
+   a cor de decisão da marca, então as três se leem sem precisar ler a palavra. */
+.tag-origem-marcada {
+  padding: 2px var(--space-2);
+  border-radius: 999px;
+  background: var(--ouro-soft);
+  /*
+   * O DOURADO É O FUNDO, A TINTA É O NAVY — e esta é a única parte do pedido que não sai ao pé da
+   * letra. Dourado sobre o creme do dourado dá 2,53:1, ilegível aos 11px de uma etiqueta; navy
+   * sobre o mesmo creme dá 14,6:1. A etiqueta continua se lendo como dourada de longe, porque o
+   * que se vê é o preenchimento; o que muda é quem vai por cima dele.
+   *
+   * Escrito à mão, e não `var(--ink)`: o creme do dourado é o MESMO nos dois temas (a família
+   * `--ouro` não é redefinida no escuro), então um token que inverte deixaria texto quase branco
+   * sobre fundo quase branco no tema escuro.
+   */
+  color: #002037;
+  border: 1px solid var(--ouro-linha);
 }

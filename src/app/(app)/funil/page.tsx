@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 
 import { createPortal } from "react-dom";
 
+import { origemMarcavel } from "@/lib/contatos/origem-do-lead";
 import { classeOrigem, type NegocioCard } from "@/lib/data";
 import { HOJE_ISO } from "@/lib/hoje";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
@@ -1607,6 +1608,47 @@ function FunilPageInner() {
                           {(() => {
                             const daOrigem = origemPorContato[chaveDeContato(card.nome)];
                             if (!daOrigem) {
+                              /*
+                                A ORIGEM QUE ELA MARCOU NA FICHA, antes de cair no canal.
+                                
+                                "Na hora que eu colocar que a pessoa veio do tráfego, sei lá, de
+                                qualquer coisa, tem que aparecer aqui na tag. Por exemplo, se eu
+                                coloquei que ele veio do Google, aparece lá: Google, indicação."
+                                
+                                São TRÊS respostas diferentes pra mesma pergunta, e elas não valem
+                                o mesmo:
+                                
+                                 1. O RASTREIO (acima) — medido: a pessoa clicou no anúncio e o
+                                    CRM viu. É a mais forte e ganha sempre.
+                                 2. A MARCAÇÃO DA FICHA — dita por quem conversou. "Ela viu o
+                                    tráfego, foi no Instagram e mandou mensagem por fora": o
+                                    algoritmo não tem como saber isso; ela tem.
+                                 3. O CANAL (`card.origem`) — por onde a mensagem chegou,
+                                    "WhatsApp". Não responde de onde a pessoa veio, e era a única
+                                    coisa que o cartão mostrava: vinte cards dizendo a mesma
+                                    palavra.
+                                
+                                Faltava a 2. Ela era gravada na ficha, contava no Tráfego, e não
+                                aparecia no quadro onde se decide a quem ligar.
+                                
+                                DOURADA porque é a única das três que alguém ESCOLHEU. O ouro é a
+                                cor de decisão da marca; o rastreio guarda as cores medidas (Meta
+                                azul, Instagram rosa) e o canal segue cinza. Três procedências,
+                                três leituras — sem precisar ler a palavra.
+                              */
+                              const daFicha = acharContato(card.nome, conversaDoCard)?.origem;
+                              const marcada =
+                                daFicha && daFicha !== card.origem && origemMarcavel(daFicha) ? daFicha : null;
+                              if (marcada) {
+                                return (
+                                  <span
+                                    className="tag tag-origem-marcada"
+                                    title={`${traduzir("De onde veio este lead")}: ${marcada} · ${traduzir("marcado na ficha do contato")}`}
+                                  >
+                                    {traduzir(marcada)}
+                                  </span>
+                                );
+                              }
                               return <span className={`tag ${classeOrigem(card.origem)}`}>{card.origem}</span>;
                             }
                             return (
