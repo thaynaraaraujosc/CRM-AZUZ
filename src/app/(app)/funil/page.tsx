@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 
 import { createPortal } from "react-dom";
 
-import { origemMarcavel } from "@/lib/contatos/origem-do-lead";
+import { origemMarcavel, rotuloCurtoDaOrigem } from "@/lib/contatos/origem-do-lead";
 import { classeOrigem, type NegocioCard } from "@/lib/data";
 import { HOJE_ISO } from "@/lib/hoje";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
@@ -48,6 +48,7 @@ import { ChipFilters, FloatingDropdown, Topbar } from "@/components/ui";
 import { IconCheck, IconClose, IconErro } from "@/components/icons";
 import { TransferirNegocio } from "@/components/funil/TransferirNegocio";
 import { SeletorDeData } from "@/components/seletor-de-data";
+import { listaDaApi } from "@/lib/api/lista";
 import { useIdioma } from "@/lib/idioma-context";
 import { LimparDemonstracao } from "@/components/configuracoes/LimparDemonstracao";
 
@@ -103,6 +104,8 @@ function FunilPageInner() {
     criarFunilPersistido,
     criarEtapaPersistida,
     salvarAparenciaDaEtapa,
+    excluirNegocioPersistido,
+    esquecerNegocioPeloNome,
     recarregar: recarregarFunis,
     erroSincronizacao,
     limparErroSincronizacao,
@@ -443,16 +446,18 @@ function FunilPageInner() {
    */
   function excluirNegocio(coluna: number, card: number) {
     if (!funilAtivo) return;
-    setFunis((prev) =>
-      prev.map((f) => {
-        if (f.id !== funilAtivo.id) return f;
-        const colunas = f.colunas.map((c, i) =>
-          i !== coluna ? c : { ...c, cards: c.cards.filter((_, j) => j !== card), total: c.cards.length - 1 },
-        );
-        return { ...f, colunas };
-      }),
-    );
+    const alvo = funilAtivo.colunas[coluna]?.cards[card];
     setDesfechoMenu(null);
+    if (!alvo) return;
+    /*
+     * Grava por rota própria, e a tela só muda quando o banco mudou.
+     *
+     * Antes era só `setFunis`, contando com o PUT do quadro inteiro pra apagar o que não voltasse
+     * no payload. Era por isso que o card voltava: PUT que falha relê o banco (onde o card ainda
+     * estava), e PUT que dá certo também RECRIA o que o navegador tem e o banco não — então o card
+     * apagado em outra tela renascia no salvamento seguinte.
+     */
+    void excluirNegocioPersistido(alvo.id);
   }
 
   /**
@@ -472,11 +477,26 @@ function FunilPageInner() {
     if (!confirmado) return;
 
     const chave = chaveDeContato(nome);
+    const alvo = funilAtivo?.colunas[coluna]?.cards[card];
+    setDesfechoMenu(null);
+
+    /*
+     * O CARD SAI POR ROTA PRÓPRIA, mesmo que a conversa também o apague no servidor.
+     *
+     * `DELETE /api/conversas/[id]` leva mensagens, card, conversa e contato numa transação — mas
+     * é disparado sem esperar resposta, e falhando deixaria o card no banco pra reaparecer na
+     * próxima leitura. Apagar o card por rota própria é uma garantia independente: a rota trata
+     * "já não existe" como sucesso, então as duas chamadas juntas não brigam.
+     */
+    if (alvo) void excluirNegocioPersistido(alvo.id);
+    // Tudo dessa pessoa sai da tela do funil, não só o card clicado: dois cards do mesmo lead em
+    // funis diferentes são o mesmo lead, e ela pediu pra apagar o lead inteiro.
+    esquecerNegocioPeloNome(nome);
+
     const contato = contatos.find((c) => chaveDeContato(c.nome) === chave);
     if (contato) excluirContato(contato.id);
     const conversa = conversas.find((c) => chaveDeContato(c.nome) === chave);
     if (conversa) excluirConversa(conversa.id);
-    excluirNegocio(coluna, card);
   }
 
   function reabrirNegocio(coluna: number, card: number) {
@@ -534,23 +554,25 @@ function FunilPageInner() {
   const numerosDesteFunil = numerosDoFunilNaTela(numerosDeWhats ?? [], funilAtivo);
 
   /*
-   * ENCAMINHAR UM NEGÓCIO PRA OUTRA ETAPA.
+   * AS ETAPAS DE DESTINO, pro seletor "Encaminhar para a etapa" do menu do cartão.
    *
-   * A lista de destinos é buscada na PRIMEIRA abertura e fica — ela muda quando alguém cria uma
-   * etapa, não entre dois cliques. Buscar a cada abertura seria uma ida ao servidor pra desenhar o
-   * mesmo menu.
+   * Buscada na PRIMEIRA abertura do menu e guardada — a lista muda quando alguém cria uma etapa,
+   * não entre dois cliques. Buscar a cada abertura seria uma ida ao servidor pra desenhar o mesmo
+   * seletor.
+   *
+   * De propósito ela NÃO aplica o recorte de etapas da pessoa (ver `/api/funis/etapas`): sem isso
+   * o recorte vira uma cela — quem só enxerga "Proposta" não enxerga "Fechado", logo não tem pra
+   * onde arrastar, e o lead avança até a etapa dela e para ali.
    */
-  const [encaminhando, setEncaminhando] = useState<{ cardId: string; rect: DOMRect } | null>(null);
   const [destinos, setDestinos] = useState<
     { id: string; titulo: string; funilId: string; funilNome: string }[] | null
   >(null);
 
-  function abrirEncaminhar(cardId: string, rect: DOMRect) {
-    setEncaminhando({ cardId, rect });
+  function carregarDestinos() {
     if (destinos) return;
     fetch("/api/funis/etapas")
       .then((r) => (r.ok ? r.json() : []))
-      .then(setDestinos)
+      .then((dados) => setDestinos(listaDaApi(dados, "/api/funis/etapas")))
       .catch((erro) => {
         console.error("Falha ao carregar as etapas de destino:", erro);
         setDestinos([]);
@@ -1468,43 +1490,6 @@ function FunilPageInner() {
                         title={traduzir("Abrir a conversa deste lead")}
                         style={{ cursor: "grab" }}
                       >
-                        {/*
-                          ENCAMINHAR PRA OUTRA ETAPA, sem precisar arrastar.
-
-                          "Vamos supor que o lead dele aceitou a proposta e quer fechar: ele pode
-                          ir lá nos três pontinhos e mandar para a etapa tal. E aí ele encaminha o
-                          lead dele e vai aparecer para o outro da equipe, lá no quadro dele."
-
-                          É o escape do recorte de etapas, e sem ele o recorte vira uma cela: quem
-                          só enxerga "Proposta" não enxerga "Fechado", logo não tem pra onde
-                          arrastar — o lead avança até a etapa dela e para ali. A lista de destinos
-                          vem de `/api/funis/etapas`, que de propósito NÃO aplica o recorte de
-                          etapas (ver o comentário lá).
-
-                          `<span role="button">` e não `<button>`: o cartão inteiro já é um botão,
-                          e botão dentro de botão é HTML inválido — o navegador desmonta a árvore e
-                          o clique de fora para de funcionar.
-                        */}
-                        <span
-                          role="button"
-                          tabIndex={0}
-                          className="lead-encaminhar"
-                          aria-label={`Encaminhar ${card.nome} para outra etapa`}
-                          title={traduzir("Encaminhar para outra etapa")}
-                          draggable={false}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            abrirEncaminhar(card.id, e.currentTarget.getBoundingClientRect());
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key !== "Enter" && e.key !== " ") return;
-                            e.preventDefault();
-                            e.stopPropagation();
-                            abrirEncaminhar(card.id, e.currentTarget.getBoundingClientRect());
-                          }}
-                        >
-                          ⋯
-                        </span>
                         <span className="lr1">
                           {/* Sem clique próprio: o nome faz o mesmo que o resto do card, que é
                               abrir a conversa. Ter um comportamento no nome e outro dois
@@ -1573,14 +1558,17 @@ function FunilPageInner() {
                           <span
                             role="button"
                             tabIndex={0}
-                            aria-label={traduzir("Marcar desfecho do negócio")}
-                            title={traduzir("Marcar como ganho/perdido")}
+                            aria-label={traduzir("Ações do negócio")}
+                            title={traduzir("Encaminhar, transferir, marcar desfecho, excluir")}
                             className="lead-card-menu-btn"
                             draggable={false}
                             onMouseDown={(e) => e.stopPropagation()}
                             onClick={(e) => {
                               e.stopPropagation();
                               setMotivoEscolhido("");
+                              // As etapas de destino do seletor "Encaminhar para a etapa", agora
+                              // que ele mora aqui dentro: buscadas na primeira abertura e guardadas.
+                              carregarDestinos();
                               setDesfechoMenu({
                                 coluna: colIndex,
                                 card: cardIndex,
@@ -1645,7 +1633,7 @@ function FunilPageInner() {
                                     className="tag tag-origem-marcada"
                                     title={`${traduzir("De onde veio este lead")}: ${marcada} · ${traduzir("marcado na ficha do contato")}`}
                                   >
-                                    {traduzir(marcada)}
+                                    {traduzir(rotuloCurtoDaOrigem(marcada))}
                                   </span>
                                 );
                               }
@@ -1731,12 +1719,82 @@ function FunilPageInner() {
           {(() => {
             const cardAtual = funilAtivo?.colunas[desfechoMenu.coluna]?.cards[desfechoMenu.card];
             if (!cardAtual) return null;
+
+            /*
+             * ENCAMINHAR PARA A ETAPA, dentro do menu do cartão.
+             *
+             * "Lá em cima também tem três pontinhos, que é para encaminhar para a etapa, e tem
+             * três pontinhos lateral, que é para transferir funil e tal. Eu acho que a gente pode
+             * fazer só três pontinhos."
+             *
+             * Eram dois menus no mesmo cartão, a dois centímetros um do outro, e nada na tela
+             * dizia qual fazia o quê — descobrir era abrir os dois. Agora é um: o que já tinha
+             * transferir de funil, ganho, perdido e excluir, com o encaminhar virando a primeira
+             * linha dele.
+             *
+             * Um `<select>` e não a lista de botões de antes: a lista crescia com o número de
+             * etapas de TODOS os funis, e com três quadros ela passava da altura da tela. O
+             * seletor tem tamanho fixo e já sabe rolar sozinho.
+             */
+            const etapaAtualId = funilAtivo?.colunas[desfechoMenu.coluna]?.id;
+            const porFunil = (destinos ?? [])
+              .filter((e) => e.id !== etapaAtualId)
+              .reduce<{ funilId: string; funilNome: string; etapas: typeof destinos }[]>(
+                (grupos, etapa) => {
+                  const grupo = grupos.find((g) => g.funilId === etapa.funilId);
+                  if (grupo) grupo!.etapas!.push(etapa);
+                  else grupos.push({ funilId: etapa.funilId, funilNome: etapa.funilNome, etapas: [etapa] });
+                  return grupos;
+                },
+                [],
+              );
+            const seletorDeEtapa = (
+              <div className="field" style={{ margin: 0 }}>
+                <label>{traduzir("Encaminhar para a etapa")}</label>
+                <select
+                  className="input"
+                  /* Volta sempre pro vazio: é um comando, não um campo. Deixar a última escolha
+                     marcada daria a entender que o card está naquela etapa. */
+                  value=""
+                  disabled={destinos === null || porFunil.length === 0}
+                  onChange={(e) => {
+                    const etapaId = e.target.value;
+                    if (!etapaId) return;
+                    setDesfechoMenu(null);
+                    void moverNegocio({ cardId: cardAtual.id, etapaId });
+                  }}
+                >
+                  <option value="">
+                    {destinos === null
+                      ? traduzir("Carregando as etapas…")
+                      : porFunil.length === 0
+                        ? traduzir("Nenhuma outra etapa disponível.")
+                        : traduzir("Selecione a etapa…")}
+                  </option>
+                  {/* Agrupado pelo nome do funil: numa conta com três quadros, "Proposta" aparece
+                      três vezes, e mandar pro quadro errado é silencioso. */}
+                  {porFunil.map((grupo) => (
+                    <optgroup key={grupo.funilId} label={grupo.funilNome}>
+                      {(grupo.etapas ?? []).map((etapa) => (
+                        <option key={etapa.id} value={etapa.id}>
+                          {etapa.titulo}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </div>
+            );
+
             if (cardAtual.statusFechamento) {
               return (
-                <div style={{ padding: 12 }}>
-                  <p className="hint" style={{ margin: "0 0 10px" }}>
+                <div style={{ padding: 12, display: "flex", flexDirection: "column", gap: 10 }}>
+                  <p className="hint" style={{ margin: 0 }}>
                     {cardAtual.statusFechamento === "ganho" ? "Marcado como ganho." : `Marcado como perdido${cardAtual.motivoPerda ? `: ${cardAtual.motivoPerda}` : ""}.`}
                   </p>
+                  {/* Negócio fechado também se encaminha: o card continua no quadro, e mover um
+                      "ganho" pra etapa de entrega é parte do trabalho depois da venda. */}
+                  {seletorDeEtapa}
                   <button
                     type="button"
                     className="btn ghost block"
@@ -1747,8 +1805,9 @@ function FunilPageInner() {
             }
             return (
               <div style={{ padding: 12, display: "flex", flexDirection: "column", gap: 10 }}>
-                {/* Transferir vem primeiro: mover o lead é o que se faz todo dia; marcar ganho ou
-                    perdido acontece uma vez por negócio, no fim. */}
+                {/* Encaminhar e transferir vêm primeiro: mover o lead é o que se faz todo dia;
+                    marcar ganho ou perdido acontece uma vez por negócio, no fim. */}
+                {seletorDeEtapa}
                 <button
                   type="button"
                   className="btn ghost block"
@@ -1850,41 +1909,6 @@ function FunilPageInner() {
         />
       ) : null}
 
-      {/* O MENU DE ENCAMINHAR. No `body`, por portal: dentro da coluna ele seria cortado pelo
-          `overflow` do quadro, que é onde os cards de baixo moram. */}
-      <FloatingDropdown
-        anchorRect={encaminhando?.rect ?? null}
-        onClose={() => setEncaminhando(null)}
-        width={260}
-        align="right"
-      >
-        <div className="encaminhar-menu">
-          <p className="encaminhar-h">{traduzir("Encaminhar para a etapa")}</p>
-          {destinos === null ? (
-            <p className="hint">{traduzir("Carregando as etapas…")}</p>
-          ) : destinos.length === 0 ? (
-            <p className="hint">{traduzir("Nenhuma outra etapa disponível.")}</p>
-          ) : (
-            destinos.map((etapa) => (
-              <button
-                type="button"
-                key={etapa.id}
-                className="dropdown-item encaminhar-item"
-                onClick={() => {
-                  const cardId = encaminhando?.cardId;
-                  setEncaminhando(null);
-                  if (cardId) void moverNegocio({ cardId, etapaId: etapa.id });
-                }}
-              >
-                <span className="n">{etapa.titulo}</span>
-                {/* O nome do funil junto: numa conta com três quadros, "Proposta" aparece três
-                    vezes, e mandar pro quadro errado é silencioso. */}
-                <span className="s">{etapa.funilNome}</span>
-              </button>
-            ))
-          )}
-        </div>
-      </FloatingDropdown>
     </>
   );
 }

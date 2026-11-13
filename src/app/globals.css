@@ -36225,82 +36225,9 @@ td.trafego-col-crm:first-of-type {
   color: var(--ink);
 }
 
-/*
- * OS TRÊS PONTINHOS DO CARTÃO.
- *
- * Canto superior direito, e só visível no hover do cartão: ele é a saída de exceção ("mandar pra
- * outra etapa"), não o gesto do dia a dia — que continua sendo arrastar. Permanente, ele
- * competiria com o nome do lead em todo cartão do quadro.
- */
+/* O cartão é a referência de posição do que se encosta nele (as etiquetas, o menu de ⋮). */
 .lead-card {
   position: relative;
-}
-
-.lead-encaminhar {
-  position: absolute;
-  top: 4px;
-  right: 6px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 999px;
-  color: var(--text-faint);
-  font-size: 15px;
-  line-height: 1;
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity var(--transition-fast), background var(--transition-fast);
-}
-
-.lead-card:hover .lead-encaminhar,
-.lead-encaminhar:focus-visible {
-  opacity: 1;
-}
-
-.lead-encaminhar:hover {
-  background: var(--surface-active);
-  color: var(--ink);
-}
-
-/* No celular não existe hover: ali ele fica sempre visível, senão a função some do aparelho em que
-   arrastar entre colunas é mais difícil — que é justamente onde ela mais serve. */
-@media (hover: none) {
-  .lead-encaminhar {
-    opacity: 1;
-  }
-}
-
-.encaminhar-menu {
-  padding: var(--space-2);
-}
-
-.encaminhar-h {
-  padding: 0 var(--space-2) var(--space-1);
-  font-size: 11px;
-  font-weight: var(--fw-semibold);
-  color: var(--text-muted);
-}
-
-.encaminhar-item {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 1px;
-  width: 100%;
-  text-align: left;
-}
-
-.encaminhar-item .n {
-  font-size: 13px;
-  font-weight: var(--fw-semibold);
-  color: var(--ink);
-}
-
-.encaminhar-item .s {
-  font-size: 11px;
-  color: var(--text-faint);
 }
 
 /* Os dois seletores de "por onde a confirmação sai", lado a lado: o número escolhe o caminho, e o
@@ -36384,7 +36311,24 @@ td.trafego-col-crm:first-of-type {
    medidas: Meta azul, Instagram rosa) e o canal é só por onde a mensagem chegou (cinza). O ouro é
    a cor de decisão da marca, então as três se leem sem precisar ler a palavra. */
 .tag-origem-marcada {
-  padding: 2px var(--space-2);
+  /*
+   * PEQUENA. "Ficou legal, só ficou muito grande, chamando muita atenção."
+   *
+   * Ela estava com o corpo de 11px das outras etiquetas MAIS fundo, borda e duas linhas — porque
+   * "Formulário: Consultoria Gratis" não cabia numa. Somados, viravam o elemento mais pesado do
+   * cartão, acima do nome da pessoa. A procedência é contexto, não manchete.
+   *
+   * Uma linha sempre, com reticências se precisar: altura de cartão que varia com o tamanho do
+   * texto é o que faz uma coluna de trinta parar de se ler de relance. O texto inteiro fica no
+   * `title`.
+   */
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 1px var(--space-2);
   border-radius: 999px;
   background: var(--ouro-soft);
   /*

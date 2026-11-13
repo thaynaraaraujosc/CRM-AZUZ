@@ -12,6 +12,7 @@ import {
 } from "react";
 
 import { listaDaApi } from "@/lib/api/lista";
+import { tirarCardPorId, tirarCardsDoContato } from "@/lib/funis/tirar-card";
 import type { ColunaFunil, DicasDaEtapa, Funil, NegocioCard } from "@/lib/data";
 
 type FunisContextValue = {
@@ -42,6 +43,24 @@ type FunisContextValue = {
     etapaId: string;
     responsavel?: string | null;
   }) => Promise<{ ok: boolean; erro?: string }>;
+  /**
+   * APAGA UM NEGÓCIO, gravando por rota própria antes de sair da tela.
+   *
+   * "Eu apago o card, às vezes eu quero apagar o contato e aí ele volta." Voltava: apagar era só
+   * mexer no estado local, e a gravação vinha no PUT do quadro inteiro — que, falhando, relê o
+   * banco e traz o card de volta, e que RECRIA o que o navegador tem e o banco não. Ver
+   * `DELETE /api/funis/cards/[id]`.
+   *
+   * Só o card. Contato e conversa continuam; apagar o lead inteiro é `excluirConversa`.
+   */
+  excluirNegocioPersistido: (cardId: string) => Promise<{ ok: boolean; erro?: string }>;
+  /**
+   * Tira um card do estado da tela SEM gravar nada: ele já saiu do banco por outro caminho.
+   *
+   * É o caso de apagar a conversa, que no servidor leva o card junto. Sem isto o card ficava na
+   * memória da tela do funil e o PUT seguinte do quadro o recriava no banco.
+   */
+  esquecerNegocioPeloNome: (nome: string) => void;
   /**
    * Relê os funis do banco e marca o resultado como "veio do servidor". Assim a tela NÃO devolve
    * num PUT o que o servidor acabou de escrever. Use depois de qualquer rota que mexe no funil do
@@ -302,6 +321,45 @@ export function FunisProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  /**
+   * Apaga o negócio no banco PRIMEIRO, e só então o tira da tela.
+   *
+   * Nesta ordem porque o contrário é o que fazia o card voltar: saindo só do estado local, quem
+   * gravava era o PUT do quadro inteiro, e esse caminho tem como desfazer a exclusão (relendo o
+   * banco depois de uma falha) e como refazer o card (recriando o que o navegador tem e o banco
+   * não). Aqui, quando a tela muda, o banco já mudou.
+   *
+   * `aplicarSemGravar` e não `setFunis`: a gravação já aconteceu por esta rota, e um `setFunis`
+   * agendaria o PUT do quadro inteiro de novo — a transação grande que estoura o prazo.
+   */
+  async function excluirNegocioPersistido(cardId: string): Promise<{ ok: boolean; erro?: string }> {
+    try {
+      const resposta = await fetch(`/api/funis/cards/${encodeURIComponent(cardId)}`, {
+        method: "DELETE",
+      });
+      if (!resposta.ok) {
+        const dados = (await resposta.json().catch(() => null)) as { erro?: string } | null;
+        setErroSincronizacao(dados?.erro ?? "Não foi possível apagar o negócio.");
+        return { ok: false, erro: dados?.erro };
+      }
+      aplicarSemGravar((prev) => tirarCardPorId(prev, cardId));
+      return { ok: true };
+    } catch {
+      setErroSincronizacao("Falha de conexão ao apagar o negócio.");
+      return { ok: false, erro: "Falha de conexão." };
+    }
+  }
+
+  /**
+   * O card já saiu do banco por outro caminho: aqui ele só sai da tela.
+   *
+   * Pelo NOME porque é assim que o resto do CRM casa card, contato e conversa — quem apagou a
+   * conversa não tem o id do card em mãos. O servidor apaga pelo mesmo critério.
+   */
+  function esquecerNegocioPeloNome(nome: string) {
+    aplicarSemGravar((prev) => tirarCardsDoContato(prev, nome));
+  }
+
   async function criarFunilPersistido(funil: Funil): Promise<{ ok: boolean; erro?: string }> {
     try {
       const resposta = await fetch("/api/funis/estrutura", {
@@ -535,6 +593,8 @@ export function FunisProvider({ children }: { children: ReactNode }) {
         criarEtapaPersistida,
         reordenarEtapas,
         salvarAparenciaDaEtapa,
+        excluirNegocioPersistido,
+        esquecerNegocioPeloNome,
         recarregar,
         aplicarSemGravar,
         reordenarFunis,

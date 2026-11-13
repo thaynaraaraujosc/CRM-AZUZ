@@ -496,7 +496,8 @@ function ConversasPageInner() {
   // português, então acrescentar idioma aqui nunca deixa a tela em branco.
   const { t: traduzir, localeNumero } = useIdioma();
   const searchParams = useSearchParams();
-  const { funis, setFunis, atribuirContatoAoFunil, reordenarFunis } = useFunis();
+  const { funis, setFunis, atribuirContatoAoFunil, reordenarFunis, esquecerNegocioPeloNome } =
+    useFunis();
 
   /** Etapa do funil onde esse contato está agora (procura em todos os funis, não só o principal):
    * `null` quando ele ainda não é um negócio em nenhum funil (ex.: grupo, ou lead que nunca entrou). */
@@ -5280,6 +5281,11 @@ function ConversasPageInner() {
                             )
                           ) {
                             excluirConversa(c.id);
+                            /* O servidor apaga o card junto, mas ele continuava na memória da tela
+                               do funil — e o salvamento seguinte do quadro RECRIA no banco o que o
+                               navegador tem e o banco não. Era um dos caminhos do "apago e volta".
+                               Tirar daqui fecha esse caminho. */
+                            esquecerNegocioPeloNome(c.nome);
                           }
                           setRowMenuAberto(null);
                         }}

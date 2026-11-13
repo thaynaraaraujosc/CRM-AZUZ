@@ -111,3 +111,26 @@ export function origemMarcavel(origem: string | null | undefined): boolean {
   if (!limpa) return false;
   return !SO_O_CANAL.includes(limpa);
 }
+
+/**
+ * O RÓTULO CURTO DA ORIGEM, pro cartão do funil.
+ *
+ * `Contato.origem` pode chegar como `"Formulário: Consultoria Gratis"` — é assim que o lead do
+ * AZUZ Flow é gravado. No cartão isso ocupa duas linhas, empurra a data e o botão de conversa pro
+ * lado e deixa a coluna com cartões de alturas diferentes. Um quadro que se lê de relance não
+ * sobrevive a isso.
+ *
+ * CORTA PELA PARTE QUE INFORMA, não pelo tamanho. "Formulário" é o genérico — a empresa tem vários
+ * — e o que distingue um cartão do outro é o NOME: "Consultoria Gratis" é aquisição, "Seleção
+ * Desing" é contratação, e são funis diferentes da mesma agência. Truncar com reticências no meio
+ * ("FORMULÁRIO: CONSUL…") perderia exatamente o pedaço que decide.
+ *
+ * O texto inteiro continua no `title`, pra quem precisar conferir.
+ */
+export function rotuloCurtoDaOrigem(origem: string): string {
+  const corte = origem.indexOf(":");
+  if (corte < 0) return origem.trim();
+  const depois = origem.slice(corte + 1).trim();
+  // Prefixo sem nada depois ("Formulário:") não vira etiqueta vazia.
+  return depois || origem.trim();
+}
