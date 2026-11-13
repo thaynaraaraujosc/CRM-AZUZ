@@ -36346,3 +36346,25 @@ td.trafego-col-crm:first-of-type {
   padding-right: 0;
   margin: 0;
 }
+
+/* O seletor de NÚMERO na barra de cima, em azul claro.
+   Entre os filtros da barra, este não é um filtro: é a caixa de entrada em que se está. A cor
+   separa a escolha que troca a tela inteira das que só recortam a lista. */
+.fsel-numero {
+  background: var(--azul-claro);
+  border-color: var(--azul-claro-linha);
+  color: var(--ink);
+  font-weight: var(--fw-semibold);
+}
+.fsel-numero:hover {
+  border-color: var(--ouro);
+}
+/* O número escolhido, dentro do menu. */
+.dropdown-item.on {
+  background: var(--azul-claro);
+}
+.dropdown-item .wa-numero-aba-canal {
+  margin-left: var(--space-2);
+  font-size: 11px;
+  color: var(--text-muted);
+}

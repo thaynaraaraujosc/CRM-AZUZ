@@ -1001,6 +1001,8 @@ function ConversasPageInner() {
 
   const [canalTopAberto, setCanalTopAberto] = useState(false);
   const [canalTopRect, setCanalTopRect] = useState<DOMRect | null>(null);
+  const [numeroTopAberto, setNumeroTopAberto] = useState(false);
+  const [numeroTopRect, setNumeroTopRect] = useState<DOMRect | null>(null);
   const [canalTopFiltro, setCanalTopFiltro] = useState("Todos");
 
   /*
@@ -1072,34 +1074,13 @@ function ConversasPageInner() {
    * lugares. Ver `numerosNaOrdemDosFunis`.
    */
   /*
-   * ARRASTAR A ABA DE NÚMERO. "Eu arrastei a barra do funil, coloquei o número dados primeiro; aí
-   * esse aqui tem que seguir a mesma lógica."
+   * ARRASTAR A ABA PRA REORDENAR SAIU COM AS ABAS.
    *
-   * O que é arrastado aqui é o FUNIL daquele número — a mesma ordem do menu lateral. Duas listas
-   * de ordem separadas seriam duas respostas pra mesma pergunta, e elas divergem no primeiro dia.
+   * Ele reordenava os FUNIS — a mesma ordem do menu lateral — arrastando as abas de número. Sem a
+   * fileira de abas não há o que arrastar, e um menu suspenso não é lugar de arrastar nada. A
+   * ordem continua sendo decidida no funil e no menu lateral, que é de onde ela sempre veio: este
+   * aqui era um atalho, não a fonte.
    */
-  const [abaArrastando, setAbaArrastando] = useState<string | null>(null);
-  const [abaAlvo, setAbaAlvo] = useState<string | null>(null);
-
-  function soltarAba(chaveAlvo: string) {
-    const de = abaArrastando;
-    setAbaArrastando(null);
-    setAbaAlvo(null);
-    if (!de || de === chaveAlvo) return;
-
-    const funilDe = funilDoNumero(funis, de);
-    const funilAlvo = funilDoNumero(funis, chaveAlvo);
-    // Só reordena o que tem onde ser gravado: número sem funil não tem posição a guardar.
-    if (!funilDe || !funilAlvo) return;
-
-    const ids = funis.map((f) => f.id);
-    const origem = ids.indexOf(funilDe.id);
-    const destino = ids.indexOf(funilAlvo.id);
-    if (origem < 0 || destino < 0) return;
-    ids.splice(destino, 0, ids.splice(origem, 1)[0]);
-    void reordenarFunis(ids);
-  }
-
   const numerosParaAba = numerosNaOrdemDosFunis(
     numerosConectados.filter((n) => n.status === "conectado" && n.chave),
     funis,
@@ -1139,6 +1120,20 @@ function ConversasPageInner() {
    * então quem não tem histórico antigo nunca a vê.
    */
   const temConversaSemNumero = conversas.some((c) => c.canal === "WhatsApp" && !c.contaCanal);
+
+  /**
+   * O QUE O BOTÃO DA BARRA ESCREVE: o nome do número em que se está.
+   *
+   * O nome, e não o telefone: é ele que a empresa reconhece ("Vendas", "Closer"), e é o que a
+   * aba mostrava. Sem apelido, o telefone; sem os dois, o canal — a mesma escada de
+   * `etiquetaDoNumero`, pro botão nunca ficar vazio.
+   */
+  const rotuloDoNumeroAtivo = (() => {
+    if (numeroAtivo === SEM_NUMERO) return traduzir("Sem número");
+    const n = numerosParaAba.find((x) => x.chave === numeroAtivo);
+    if (!n) return traduzir("Número");
+    return n.apelido?.trim() || n.numeroLegivel || n.nome;
+  })();
 
   /*
    * Quantas conversas ainda se chamam pelo número E NUNCA FORAM PROCURADAS.
@@ -4764,9 +4759,105 @@ function ConversasPageInner() {
                 </button>
               ))}
             </FloatingDropdown>
-            {/* O seletor de número SAIU daqui: ele mora no cabeçalho da lista, do lado da busca.
-                Trocar de número é a primeira coisa que se faz ao abrir a tela com dois conectados,
-                e escolha que se usa toda hora não fica num menu suspenso da barra de filtros. */}
+            {/*
+              * O SELETOR DE NÚMERO VOLTOU PRA BARRA, agora como botão.
+              *
+              * "Ao invés de ficar os números aqui, faça um botão seletor na barra superior, na cor
+              * azul claro, ao lado de Conectar WhatsApp."
+              *
+              * Ele já morou aqui, saiu pro cabeçalho da lista como uma fileira de abas, e volta —
+              * e a diferença entre as duas tentativas é a FORMA, não o lugar: a fileira crescia
+              * com o número de conexões e comia a largura da lista de conversas, que é onde se
+              * lê. Um botão ocupa o mesmo espaço com uma conexão ou com dez, e diz qual está
+              * escolhida sem precisar desenhar as outras nove.
+              *
+              * Em azul claro porque, entre os filtros da barra, este não é um filtro: é a caixa de
+              * entrada em que se está. A cor separa a escolha que muda a tela inteira das que só
+              * recortam a lista.
+              */}
+            {variosNumeros ? (
+              <>
+                <button
+                  type="button"
+                  className="fsel fsel-numero"
+                  aria-haspopup="listbox"
+                  aria-expanded={numeroTopAberto}
+                  title={traduzir("Escolha de qual número você está atendendo")}
+                  onClick={(e) => {
+                    setNumeroTopRect(e.currentTarget.getBoundingClientRect());
+                    setNumeroTopAberto((v) => !v);
+                  }}
+                >
+                  {rotuloDoNumeroAtivo} ▾
+                </button>
+                <FloatingDropdown
+                  anchorRect={numeroTopAberto ? numeroTopRect : null}
+                  onClose={() => {
+                    setNumeroTopAberto(false);
+                    setRenomeando(null);
+                  }}
+                  width={260}
+                >
+                  {numerosParaAba.map((n) =>
+                    renomeando === n.chave ? (
+                      <input
+                        key={n.chave}
+                        className="input wa-numero-nome"
+                        autoFocus
+                        defaultValue={n.apelido ?? ""}
+                        placeholder={n.numeroLegivel || traduzir("Nome deste número")}
+                        aria-label={traduzir("Nome deste número")}
+                        onBlur={(e) => salvarApelido(n, e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                          if (e.key === "Escape") setRenomeando(null);
+                        }}
+                      />
+                    ) : (
+                      <button
+                        type="button"
+                        key={n.chave}
+                        className={`dropdown-item${numeroAtivo === n.chave ? " on" : ""}`}
+                        style={{ width: "100%", textAlign: "left" }}
+                        /* Dois cliques pra renomear continua aqui: era o atalho das abas, e
+                           perdê-lo obrigaria a ir até Configurações só pra trocar um apelido. */
+                        title={`${n.numeroLegivel || n.nome} — ${traduzir("dois cliques pra renomear")}`}
+                        onDoubleClick={() => setRenomeando(n.chave)}
+                        onClick={() => {
+                          /*
+                            TROCAR DE NÚMERO FECHA O QUE ESTAVA ABERTO. A conversa aberta é do
+                            OUTRO número, e deixá-la na tela com a lista já trocada é o convite pra
+                            responder achando que se está num número e estar em outro.
+                          */
+                          setNumeroTopFiltro(n.chave);
+                          setSelectedId(null);
+                          setNumeroTopAberto(false);
+                        }}
+                      >
+                        <span className="n">{n.apelido?.trim() || n.numeroLegivel || n.nome}</span>
+                        <span className="wa-numero-aba-canal">{traduzir(canalDoNumero(n.provedor))}</span>
+                      </button>
+                    ),
+                  )}
+                  {temConversaSemNumero ? (
+                    <button
+                      type="button"
+                      className={`dropdown-item${numeroAtivo === SEM_NUMERO ? " on" : ""}`}
+                      style={{ width: "100%", textAlign: "left" }}
+                      title={traduzir("Conversas de antes de o CRM guardar de qual número elas vieram.")}
+                      onClick={() => {
+                        setNumeroTopFiltro(SEM_NUMERO);
+                        setSelectedId(null);
+                        setNumeroTopAberto(false);
+                      }}
+                    >
+                      <span className="n">{traduzir("Sem número")}</span>
+                      <span className="wa-numero-aba-canal">{traduzir("antigas")}</span>
+                    </button>
+                  ) : null}
+                </FloatingDropdown>
+              </>
+            ) : null}
             {/* Conectar um número é a primeira coisa que se quer fazer numa tela de atendimento
                 vazia: antes era preciso sair daqui e ir até Configurações → WhatsApp. */}
             <BotoesConectarWhatsApp />
@@ -4828,140 +4919,19 @@ function ConversasPageInner() {
           </div>
 
           {/*
-            * TROCAR DE NÚMERO FICA AQUI EM CIMA, e não escondido atrás do botão de filtro.
+            * A FILEIRA DE ABAS SAIU DAQUI. "Ao invés de ficar os números aqui, faça um botão
+            * seletor na barra superior."
             *
-            * Com a vendedora num número e o closer em outro, "ver o chat deste número" não é um
-            * filtro que se usa de vez em quando — é a primeira coisa que se faz ao abrir a tela.
-            * Escolha que se usa toda hora mora à vista, no cabeçalho da lista, do lado da busca.
+            * Ela ficava entre a busca e a lista, e crescia com o número de conexões: com quatro
+            * números, duas linhas de chips antes de a primeira conversa aparecer. O espaço de uma
+            * caixa de entrada é pra ler conversa. O seletor virou um botão na barra de cima, do
+            * lado de Conectar WhatsApp — mesmo tamanho com uma conexão ou com dez.
             *
-            * Só aparece com mais de um número conectado. Com um só, seria uma fileira ocupando
-            * espaço permanente pra escolher entre "todos" e "o único".
+            * O que ele levou junto: trocar de número, renomear com dois cliques e a conversa
+            * aberta fechando na troca. O que ficou pra trás: arrastar a aba pra reordenar os
+            * funis, que não cabe num menu — isso continua no funil e no menu lateral, que é onde
+            * a ordem é de fato decidida.
             */}
-          {variosNumeros ? (
-            <div className="wa-numeros-abas" role="tablist" aria-label={traduzir("Número de WhatsApp")}>
-              {/*
-                SEM "TODOS", E CADA ABA DIZ O CANAL.
-                
-                "Tira a opção todos, deixa só os números, porque eu só vou saber se eu clicar no
-                número." Com "Todos" marcado, a lista mistura as duas caixas e a coluna da
-                conversa precisa repetir de quem ela é em toda linha. Escolhendo um número, a
-                lista passa a ser uma caixa de entrada só — que é como se atende.
-                
-                O canal embaixo do nome ("API oficial", "QR Code") não é detalhe técnico: são
-                regras diferentes do lado de quem atende — o oficial tem janela de 24 horas e
-                modelo aprovado, o QR Code não tem nenhum dos dois.
-                
-                E o nome se edita aqui: um duplo clique abre o campo. Nomear o número é o que faz
-                a lista parar de falar em telefone e passar a falar em "Vendas", "Closer".
-              */}
-              {numerosConectados
-                .filter((n) => n.status === "conectado" && n.chave)
-                .map((n) =>
-                  renomeando === n.chave ? (
-                    <input
-                      key={n.chave}
-                      className="wa-numero-aba wa-numero-nome"
-                      autoFocus
-                      defaultValue={n.apelido ?? ""}
-                      placeholder={n.numeroLegivel || traduzir("Nome deste número")}
-                      aria-label={traduzir("Nome deste número")}
-                      onBlur={(e) => salvarApelido(n, e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                        if (e.key === "Escape") setRenomeando(null);
-                      }}
-                    />
-                  ) : (
-                    <button
-                      type="button"
-                      role="tab"
-                      key={n.chave}
-                      aria-selected={numeroAtivo === n.chave}
-                      className={`wa-numero-aba${numeroAtivo === n.chave ? " on" : ""}${
-                        abaAlvo === n.chave && abaArrastando !== n.chave ? " wa-numero-aba-alvo" : ""
-                      }${abaArrastando === n.chave ? " wa-numero-aba-arrastando" : ""}`}
-                      // O telefone no `title`: o nome cabe na aba, o número nem sempre — e é o
-                      // número que tira a dúvida quando dois apelidos se parecem.
-                      title={
-                        funilDoNumero(funis, n.chave)
-                          ? `${n.numeroLegivel || n.nome} — ${traduzir("dois cliques pra renomear, arraste pra reordenar")}`
-                          : `${n.numeroLegivel || n.nome} — ${traduzir("dois cliques pra renomear. Pra reordenar, este número precisa de um funil.")}`
-                      }
-                      onClick={() => {
-                        /*
-                          TROCAR DE NÚMERO FECHA O QUE ESTAVA ABERTO.
-                          
-                          "Eu estou no número final 26, aí eu cliquei no final 38. A mensagem que
-                          estava ali naquela tela tem que sumir." E tem mesmo: a conversa aberta é
-                          do OUTRO número, e deixá-la na tela com a lista já trocada é o convite
-                          pra responder achando que está num número e estar em outro.
-                          
-                          Fechar é mais honesto que escolher sozinho a primeira da lista nova: a
-                          escolha de qual conversa abrir é de quem atende.
-                        */
-                        setNumeroTopFiltro(n.chave);
-                        setSelectedId(null);
-                      }}
-                      onDoubleClick={() => setRenomeando(n.chave)}
-                      /*
-                        ARRASTAR A ABA É ARRASTAR O FUNIL. "Eu arrastei a barra do funil, coloquei
-                        o número dados primeiro; aí esse aqui tem que seguir a mesma lógica."
-                        
-                        E segue literalmente: soltar aqui grava a ordem dos FUNIS, que é a mesma
-                        que o menu lateral usa. Uma decisão, dois lugares — duas listas de ordem
-                        separadas seriam duas respostas pra mesma pergunta, e elas divergem no
-                        primeiro dia.
-                        
-                        Número sem funil não arrasta: não há onde gravar a posição dele, e um
-                        gesto que parece funcionar e não grava é pior que gesto nenhum. O `title`
-                        diz isso quando é o caso.
-                      */
-                      draggable={Boolean(funilDoNumero(funis, n.chave))}
-                      onDragStart={(e) => {
-                        setAbaArrastando(n.chave);
-                        e.dataTransfer.effectAllowed = "move";
-                        e.dataTransfer.setData("text/plain", n.chave);
-                      }}
-                      onDragOver={(e) => {
-                        if (!abaArrastando || !funilDoNumero(funis, n.chave)) return;
-                        // `preventDefault` é o que AUTORIZA o soltar: sem ele o cursor fica com o
-                        // sinal de proibido a barra inteira.
-                        e.preventDefault();
-                        e.dataTransfer.dropEffect = "move";
-                        if (abaAlvo !== n.chave) setAbaAlvo(n.chave);
-                      }}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        soltarAba(n.chave);
-                      }}
-                      onDragEnd={() => {
-                        setAbaArrastando(null);
-                        setAbaAlvo(null);
-                      }}
-                    >
-                      <span className="wa-numero-aba-nome">{n.apelido?.trim() || n.numeroLegivel || n.nome}</span>
-                      <span className="wa-numero-aba-canal">{traduzir(canalDoNumero(n.provedor))}</span>
-                    </button>
-                  ),
-                )}
-              {temConversaSemNumero ? (
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={numeroAtivo === SEM_NUMERO}
-                  className={`wa-numero-aba${numeroAtivo === SEM_NUMERO ? " on" : ""}`}
-                  title={traduzir("Conversas de antes de o CRM guardar de qual número elas vieram.")}
-                  onClick={() => {
-                    setNumeroTopFiltro(SEM_NUMERO);
-                    setSelectedId(null);
-                  }}
-                >
-                  <span className="wa-numero-aba-nome">{traduzir("Sem número")}</span>
-                  <span className="wa-numero-aba-canal">{traduzir("antigas")}</span>
-                </button>
-              ) : null}
-            </div>
-          ) : null}
           {/*
             OS NÚMEROS QUE AINDA NÃO TÊM NOME.
             
