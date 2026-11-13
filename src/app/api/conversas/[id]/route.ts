@@ -82,15 +82,32 @@ export async function DELETE(request: Request, ctx: RouteContext<"/api/conversas
    * `NegocioCard.nome`) — é a mesma chave que `renomearConversa` já move dos dois lados pelo mesmo
    * motivo: deixar um sem o outro faz as duas telas falarem de pessoas diferentes.
    *
-   * O CONTATO FICA, e isso é deliberado. Ele é a agenda da empresa: carrega etiqueta, campo
-   * próprio, origem e o histórico de quem já recebeu disparo. Apagar a conversa é dizer "não falo
-   * mais com essa pessoa aqui"; não é dizer "essa pessoa nunca existiu". Quem quer tirá-la de vez
-   * tem a tela de Contatos, onde a decisão é explícita.
+   * E O CONTATO VAI JUNTO. "O contato também tem que apagar."
+   *
+   * Eu tinha deixado ele de fora, argumentando que a agenda é patrimônio da empresa. Ela decidiu
+   * o contrário, e a decisão é dela: apagar a conversa passa a querer dizer "essa pessoa sai do
+   * CRM", não "sai só da caixa de entrada". Meia limpeza é pior que nenhuma — quem apaga pra
+   * limpar reencontra a mesma pessoa na tela seguinte e apaga de novo, agora em dois lugares.
+   *
+   * ──────────────────────────────────────────────────────────────────────────────
+   * O QUE VAI JUNTO COM O CONTATO, por cascata do banco, e não é pouco:
+   *
+   *  · `OrigemDoLead` — de qual anúncio esta pessoa veio.
+   *  · `EventoDeConversao` e `ToqueDeAnuncio` — a trilha que liga a campanha ao lead.
+   *
+   * Esses três são o que a tela de Tráfego soma pra dizer "custo por lead" e "conversões por
+   * campanha". Apagar o contato apaga a prova de que aquela campanha trouxe alguém, e os números
+   * de meses passados mudam. Não é defeito: é o preço de apagar de verdade, e está dito na frase
+   * de confirmação pra a escolha ser feita com isso à vista.
+   *
+   * `deleteMany` e não `delete`: conversa sem contato correspondente existe (nasceu de uma
+   * mensagem antes de alguém salvar a pessoa), e ali não há nada a apagar — não é erro.
    */
   await prisma.$transaction([
     prisma.mensagemExtra.deleteMany({ where: { workspaceId: sessao.user.workspaceId, contato: conversa.nome } }),
     prisma.negocioCard.deleteMany({ where: { workspaceId: sessao.user.workspaceId, nome: conversa.nome } }),
     prisma.conversa.delete({ where: { id } }),
+    prisma.contato.deleteMany({ where: { workspaceId: sessao.user.workspaceId, nome: conversa.nome } }),
   ]);
 
   return NextResponse.json({ ok: true });

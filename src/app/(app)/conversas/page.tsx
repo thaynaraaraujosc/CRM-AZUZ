@@ -5337,7 +5337,7 @@ function ConversasPageInner() {
                           if (
                             window.confirm(
                               traduzir(
-                                "Excluir a conversa com {nome}? Some a conversa, as mensagens dela e o card desta pessoa no funil. O contato continua em Contatos. Não dá pra desfazer.",
+                                "Excluir a conversa com {nome}? Some tudo desta pessoa: a conversa, as mensagens, o card no funil e o contato — junto com a origem dela em Tráfego. Não dá pra desfazer.",
                                 { nome: c.nome },
                               ),
                             )
