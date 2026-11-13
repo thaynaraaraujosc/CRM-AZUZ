@@ -21,6 +21,7 @@ import {
   type NegocioCard,
   type StatusMensagem,
 } from "@/lib/data";
+import { useNotificacoes } from "@/lib/notificacoes-context";
 import { rotuloDoDiaEmBrasilia } from "@/lib/conversas/hora-da-mensagem";
 import { useTelaEstreita } from "@/lib/tela-estreita";
 import { ehLinkDeMidia } from "@/lib/conversas/midia-mensagem";
@@ -652,8 +653,6 @@ function ConversasPageInner() {
     }
   }
 
-  const [toasts, setToasts] = useState<{ id: string; texto: string }[]>([]);
-  const proximoToastId = useRef(0);
 
   /**
    * NOMEAR UM NÚMERO, da própria aba.
@@ -728,12 +727,11 @@ function ConversasPageInner() {
     }
   }
 
+  const { mostrarAviso } = useNotificacoes();
+  /* Uma pilha só pro CRM inteiro, no canto de baixo à direita: ver `mostrarAviso` em
+     `notificacoes-context`. Eram cinco pilhas `position: fixed` no mesmo canto. */
   function avisarAutomacao(texto: string) {
-    const id = `toast-${proximoToastId.current++}`;
-    setToasts((prev) => [...prev, { id, texto }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 4000);
+    mostrarAviso(texto);
   }
   // `conversas` só chega depois do fetch no mount do ConversasProvider. A inicialização
   // preguiçosa de `useState` não serve aqui (ela rodaria antes da lista existir). Em vez de
@@ -9815,16 +9813,7 @@ function ConversasPageInner() {
         </div>
       ) : null}
 
-      {toasts.length > 0 ? (
-        <div className="toast-stack">
-          {toasts.map((toast) => (
-            <div className="toast" key={toast.id}>
-              <IconAutomacoes width={14} height={14} />
-              {toast.texto}
-            </div>
-          ))}
-        </div>
-      ) : null}
+      
     </>
   );
 }

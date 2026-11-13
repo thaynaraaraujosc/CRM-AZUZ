@@ -3281,13 +3281,6 @@ table.tbl tbody tr:hover td {
   max-width: 320px;
 }
 
-/* Sinal de notificação (sino do cabeçalho) fica no canto de cima. Nunca em
-   cima dos avisos de automação, que já usam o canto de baixo. */
-.toast-stack-top {
-  top: 20px;
-  bottom: auto;
-}
-
 .toast {
   display: flex;
   align-items: center;
@@ -3300,6 +3293,46 @@ table.tbl tbody tr:hover td {
   font-weight: 600;
   color: var(--ink);
   box-shadow: var(--shadow-md);
+  /*
+   * O AVISO ENTRA, não aparece do nada.
+   *
+   * "A forma que as notificações chegam é muito feia." Parte disso é o som e parte é isto: o
+   * cartão surgia pronto, no meio do nada, e o olho não tem como saber se ele acabou de chegar ou
+   * se já estava ali. Subindo 8px enquanto aparece, ele conta de onde veio — e 180ms é curto o
+   * bastante pra não atrasar a leitura.
+   */
+  animation: toast-entra 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes toast-entra {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Quem pediu menos movimento no sistema recebe só o aparecer, sem o deslize. */
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: toast-entra-simples 120ms linear;
+  }
+  @keyframes toast-entra-simples {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
+
+/* O botão de ouvir o som fica abaixo da grade de botões, alinhado à esquerda com eles. */
+.notif-ouvir {
+  margin-top: var(--space-3);
 }
 
 /* Camada 3: o card. Branco sobre a coluna cinza. A diferença de superfície já o separa, e a

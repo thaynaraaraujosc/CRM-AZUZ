@@ -3,6 +3,7 @@
 import { useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 
+import { useNotificacoes } from "@/lib/notificacoes-context";
 import { useFunis } from "@/lib/funis-context";
 import { useEquipe } from "@/lib/equipe-context";
 import { IconAnexo, IconCadeado, IconClose, IconEdit, IconGlobo, IconOlho, IconOlhoFechado, IconCheck } from "@/components/icons";
@@ -142,13 +143,11 @@ export default function FormulariosPage() {
 
   const [respostaAbertaId, setRespostaAbertaId] = useState<string | null>(null);
 
-  const [toasts, setToasts] = useState<{ id: string; texto: string }[]>([]);
-  const proximoToastId = useRef(0);
-
+  const { mostrarAviso } = useNotificacoes();
+  /* Uma pilha só pro CRM inteiro, no canto de baixo à direita: ver `mostrarAviso` em
+     `notificacoes-context`. Eram cinco pilhas `position: fixed` no mesmo canto. */
   function avisar(texto: string) {
-    const id = `toast-${proximoToastId.current++}`;
-    setToasts((prev) => [...prev, { id, texto }]);
-    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3200);
+    mostrarAviso(texto, 3200);
   }
 
   const formularioAberto = formularios.find((f) => f.id === formularioAbertoId) ?? null;
@@ -834,15 +833,7 @@ export default function FormulariosPage() {
         ) : null}
       </Modal>
 
-      {toasts.length > 0 ? (
-        <div className="toast-stack">
-          {toasts.map((t) => (
-            <div className="toast" key={t.id}>
-              {t.texto}
-            </div>
-          ))}
-        </div>
-      ) : null}
+      
     </div>
   );
 }

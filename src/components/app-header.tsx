@@ -226,7 +226,9 @@ export function AppHeader() {
       </div>
 
       {toasts.length > 0 || toastsCentralDia.length > 0 ? (
-        <div className="toast-stack toast-stack-top">
+        /* CANTO DE BAIXO, À DIREITA. Ficava em cima pra não cair sobre os avisos das telas, que
+           usam o canto de baixo — e agora não precisa: todas empurram pra esta mesma pilha. */
+        <div className="toast-stack">
           {toasts.map((toast) => (
             <div className="toast" key={toast.id}>
               <IconBell width={14} height={14} />

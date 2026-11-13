@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 
 import { createPortal } from "react-dom";
 
+import { useNotificacoes } from "@/lib/notificacoes-context";
 import { origemMarcavel, rotuloCurtoDaOrigem } from "@/lib/contatos/origem-do-lead";
 import { classeOrigem, type NegocioCard } from "@/lib/data";
 import { HOJE_ISO } from "@/lib/hoje";
@@ -204,8 +205,6 @@ function FunilPageInner() {
   const [transferindo, setTransferindo] = useState<{ id: string; nome: string; responsavel?: string } | null>(null);
   const [configAnchorRect, setConfigAnchorRect] = useState<AnchorRect | null>(null);
   const { ref: configPopRef, posicao: configPos } = useFloatingPosition(configAnchorRect, configAberto, 8, () => setConfigAberto(false));
-  const [toasts, setToasts] = useState<{ id: string; texto: string }[]>([]);
-  const proximoToastId = useRef(0);
 
   /** Popup de resposta rápida: lê/grava na MESMA conversa que o WhatsApp usa (ver
    * src/lib/mensagens-extra-context.tsx): Funil e WhatsApp falam com o mesmo contato, então uma
@@ -220,12 +219,11 @@ function FunilPageInner() {
 
 
 
+  const { mostrarAviso } = useNotificacoes();
+  /* Uma pilha só pro CRM inteiro, no canto de baixo à direita: ver `mostrarAviso` em
+     `notificacoes-context`. Eram cinco pilhas `position: fixed` no mesmo canto. */
   function avisarAutomacao(texto: string) {
-    const id = `toast-${proximoToastId.current++}`;
-    setToasts((prev) => [...prev, { id, texto }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 4000);
+    mostrarAviso(texto);
   }
 
   const [novoFunilAberto, setNovoFunilAberto] = useState(false);
@@ -1872,16 +1870,7 @@ function FunilPageInner() {
         </FloatingDropdown>
       ) : null}
 
-      {toasts.length > 0 ? (
-        <div className="toast-stack">
-          {toasts.map((toast) => (
-            <div className="toast" key={toast.id}>
-              <IconAutomacoes width={14} height={14} />
-              {toast.texto}
-            </div>
-          ))}
-        </div>
-      ) : null}
+      
 
       {conversaAberta ? (
         <PainelConversa

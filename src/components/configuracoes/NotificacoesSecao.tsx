@@ -1,7 +1,7 @@
 "use client";
 
 import { IconBell, IconInstagram, IconWhatsApp, IconCheck } from "@/components/icons";
-import { useNotificacoes } from "@/lib/notificacoes-context";
+import { tocarSinal, useNotificacoes } from "@/lib/notificacoes-context";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 import { useIdioma } from "@/lib/idioma-context";
 
@@ -99,6 +99,25 @@ export function NotificacoesSecao() {
             );
           })}
         </div>
+
+        {/*
+          OUVIR O SOM, sem ter que esperar alguém mandar mensagem.
+
+          "O som é muito feio." Era, e a única forma de conferir se o novo ficou melhor era
+          esperar chegar mensagem — que é justamente quando não dá pra ficar comparando. Um botão
+          resolve, e de quebra serve pra ajustar o volume do computador antes do expediente.
+
+          Fica desligado junto com o som: um botão que toca o que a pessoa acabou de desligar
+          contradiz o botão de cima.
+        */}
+        <button
+          type="button"
+          className="btn ghost pequeno notif-ouvir"
+          disabled={!prefs.som}
+          onClick={() => tocarSinal()}
+        >
+          {traduzir("Ouvir o som")}
+        </button>
 
         {/*
           O QUE O CRM AVISA HOJE, dito na tela e não só no código.

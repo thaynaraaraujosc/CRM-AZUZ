@@ -17,6 +17,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
+import { useNotificacoes } from "@/lib/notificacoes-context";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { useFecharMenuDeLinha } from "@/lib/menu-de-linha";
 import { useBibliotecaDocumentos } from "@/lib/biblioteca-documentos-context";
@@ -359,12 +360,11 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
       })
       .finally(() => setDesistiuDeAchar(true));
   }, [fluxo, carregado, recarregarFluxos]);
-  const toastIdRef = useRef(0);
-
+  const { mostrarAviso } = useNotificacoes();
+  /* Uma pilha só pro CRM inteiro, no canto de baixo à direita: ver `mostrarAviso` em
+     `notificacoes-context`. Eram cinco pilhas `position: fixed` no mesmo canto. */
   function avisar(texto: string) {
-    const id = toastIdRef.current++;
-    setToasts((prev) => [...prev, { id, texto }]);
-    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 4500);
+    mostrarAviso(texto, 4500);
   }
 
   function marcarSalvando(duracaoMs: number) {
@@ -2652,15 +2652,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
         />
       ) : null}
 
-      {toasts.length > 0 ? (
-        <div className="toast-stack">
-          {toasts.map((t) => (
-            <div className="toast" key={t.id}>
-              {t.texto}
-            </div>
-          ))}
-        </div>
-      ) : null}
+      
     </div>
   );
 }

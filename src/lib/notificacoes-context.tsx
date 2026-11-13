@@ -2,8 +2,10 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -60,31 +62,115 @@ type NotificacoesContextValue = {
   /** Dispara quando chega mensagem nova de verdade no WhatsApp. Ver `NotificacoesPonte`, que
    * detecta isso comparando o `naoLidas` real de `conversas-context.tsx` a cada nova busca. */
   notificarNovaMensagem: (nomeContato: string, canal: string) => void;
+  /**
+   * UM AVISO NA TELA, de qualquer parte do CRM.
+   *
+   * Existe porque havia CINCO pilhas de aviso — uma no cabeçalho, uma no funil, uma em
+   * Formulários, uma em Conversas e uma no editor de automação —, cada uma com o mesmo
+   * `position: fixed` no mesmo canto. Enquanto a do cabeçalho ficava em cima e as outras embaixo,
+   * dava pra fingir que não era problema. Com a de mensagem nova descendo pro canto de baixo, as
+   * duas cairiam exatamente uma sobre a outra.
+   *
+   * Então passou a ser uma pilha só, e as telas empurram pra cá. Sem som e sem entrada no sino:
+   * "formulário duplicado" não é notificação, é confirmação do que a pessoa acabou de fazer.
+   */
+  mostrarAviso: (texto: string, duracaoMs?: number) => void;
   toasts: { id: string; texto: string }[];
 };
 
 const NotificacoesContext = createContext<NotificacoesContextValue | null>(null);
 
-function tocarSinal() {
+/**
+ * O APITO DA MENSAGEM NOVA.
+ *
+ * "A forma que as notificações chegam é muito feia. O som é muito feio. Queria ver se a gente
+ * conseguia fazer o som do WhatsApp, tipo, parecido."
+ *
+ * O som do WhatsApp é um arquivo deles e não entra aqui. O que dá pra fazer — e é o que isto faz —
+ * é montar um som da MESMA FAMÍLIA: curto, macio, duas notas subindo, que é o formato que todo
+ * mensageiro usa porque funciona. Era uma senoide única de 880 Hz segurada por 350 ms: o bipe de
+ * aparelho de teste, e o motivo de soar feio não é gosto — é que uma onda pura sem harmônico e
+ * sem ataque não soa como instrumento nenhum, soa como alarme.
+ *
+ * O que mudou, em três partes:
+ *
+ *  1. DUAS NOTAS, dó e fá uma oitava acima do dó central, com 85 ms entre elas. Intervalo de
+ *     quarta justa subindo, que é o "ti-dim" que o ouvido lê como aviso e não como erro.
+ *  2. CADA NOTA LEVA O HARMÔNICO DELA (a oitava, bem mais baixa). É o que tira o gosto de onda
+ *     pura e dá o toque de sino — a diferença entre bipe e nota tocada.
+ *  3. ENVELOPE CURTO: 6 ms de ataque (sem estalo, que é o que um corte seco faz) e queda
+ *     exponencial. O som inteiro acaba em menos de 350 ms, e esse é o ponto: aviso que se demora
+ *     vira interrupção.
+ *
+ * Um filtro passa-baixa em 3,8 kHz corta o que sobra em cima. Sem ele o harmônico da segunda nota
+ * fica fino e arranha em caixa de notebook, que é onde isto vai tocar.
+ */
+
+/**
+ * UM `AudioContext` SÓ, guardado — e isto é correção de defeito, não arrumação.
+ *
+ * Era um `new AudioContext()` POR AVISO, nunca fechado. O Chrome permite seis por página: do
+ * sétimo aviso em diante o construtor lança, caía no `catch` e o CRM ficava mudo até alguém
+ * recarregar a página. Quem atende o dia todo chegava nesse ponto antes do almoço.
+ */
+let contextoDeAudio: AudioContext | null = null;
+
+function pegarContexto(): AudioContext | null {
+  if (typeof window === "undefined") return null;
+  const Classe =
+    window.AudioContext ||
+    (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!Classe) return null;
+  if (!contextoDeAudio || contextoDeAudio.state === "closed") contextoDeAudio = new Classe();
+  return contextoDeAudio;
+}
+
+/** Uma nota: senoide com ataque curto e queda exponencial, ligada no filtro comum. */
+function nota(
+  ctx: AudioContext,
+  saida: AudioNode,
+  hz: number,
+  atraso: number,
+  duracao: number,
+  volume: number,
+) {
+  const osc = ctx.createOscillator();
+  const ganho = ctx.createGain();
+  const t = ctx.currentTime + atraso;
+  osc.type = "sine";
+  osc.frequency.setValueAtTime(hz, t);
+  /* Rampa exponencial não passa pelo zero, por isso o 0.0001 nas pontas em vez de 0: com zero a
+     chamada é ignorada e o volume salta, que é exatamente o estalo que se quer evitar. */
+  ganho.gain.setValueAtTime(0.0001, t);
+  ganho.gain.exponentialRampToValueAtTime(volume, t + 0.006);
+  ganho.gain.exponentialRampToValueAtTime(0.0001, t + duracao);
+  osc.connect(ganho);
+  ganho.connect(saida);
+  osc.start(t);
+  osc.stop(t + duracao + 0.02);
+}
+
+export function tocarSinal() {
   try {
-    const AudioCtxClasse =
-      window.AudioContext ||
-      (window as unknown as { webkitAudioContext: typeof AudioContext })
-        .webkitAudioContext;
-    const ctx = new AudioCtxClasse();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = "sine";
-    osc.frequency.value = 880;
-    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.15, ctx.currentTime + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.35);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.4);
+    const ctx = pegarContexto();
+    if (!ctx) return;
+    /* O navegador cria o contexto suspenso até a primeira interação da pessoa com a página. Sem
+       este `resume` o primeiro aviso de cada sessão sairia mudo. */
+    void ctx.resume().catch(() => {});
+
+    const filtro = ctx.createBiquadFilter();
+    filtro.type = "lowpass";
+    filtro.frequency.value = 3800;
+    filtro.Q.value = 0.7;
+    filtro.connect(ctx.destination);
+
+    //       nota     atraso  duração  volume
+    nota(ctx, filtro, 1046.5, 0, 0.16, 0.16); // dó
+    nota(ctx, filtro, 2093.0, 0, 0.1, 0.04); // o harmônico dele
+    nota(ctx, filtro, 1396.9, 0.085, 0.26, 0.14); // fá
+    nota(ctx, filtro, 2793.8, 0.085, 0.14, 0.035); // o harmônico dele
   } catch {
-    // navegador sem suporte a Web Audio. Só não toca o sinal
+    // Navegador sem Web Audio: o aviso continua aparecendo na tela, só não apita.
   }
 }
 
@@ -98,7 +184,9 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
   const [prefs, setPrefs] = useState<PrefsNotificacoes>(PREFS_PADRAO);
   const notificacoesAtivas = prefs.notificacoesAtivas;
   const [toasts, setToasts] = useState<{ id: string; texto: string }[]>([]);
-  const [proximoToastId, setProximoToastId] = useState(0);
+  /* Contador em `ref`, não em estado: dois avisos no mesmo quadro liam o mesmo valor do estado e
+     nasciam com o mesmo id — e aí o `setTimeout` do primeiro apagava os dois. */
+  const proximoToastId = useRef(0);
 
   useEffect(() => {
     fetch(`/api/preferencias/${CHAVE_PREFERENCIA}`)
@@ -137,14 +225,42 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
     setItens((prev) => prev.map((n) => ({ ...n, lida: true })));
   }
 
-  function adicionarToast(texto: string) {
-    if (prefs.som) tocarSinal();
-    const id = `toast-${proximoToastId}`;
-    setProximoToastId((v) => v + 1);
-    setToasts((prev) => [...prev, { id, texto }]);
+  const empilharAviso = useCallback((texto: string, duracaoMs: number) => {
+    const id = `toast-${proximoToastId.current++}`;
+    setToasts((prev) => {
+      const proximo = [...prev, { id, texto }];
+      /* NO MÁXIMO TRÊS NA TELA. Dez avisos empilhados cobrem metade da janela e nenhum deles é
+         lido — e o que some primeiro tem que ser o mais velho, não o que acabou de chegar. */
+      return proximo.length > 3 ? proximo.slice(proximo.length - 3) : proximo;
+    });
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 4000);
+    }, duracaoMs);
+  }, []);
+
+  const mostrarAviso = useCallback(
+    (texto: string, duracaoMs = 4000) => empilharAviso(texto, duracaoMs),
+    [empilharAviso],
+  );
+
+  /*
+   * O APITO NÃO REPETE EM RAJADA.
+   *
+   * Cinco mensagens chegando na mesma busca de 5 s tocavam cinco vezes, sobrepostas — e som
+   * sobreposto não é cinco avisos, é um ruído. Um apito a cada 1,5 s basta: a pessoa olha a tela
+   * uma vez e vê os avisos empilhados, que é o que ela ia fazer de qualquer jeito.
+   */
+  const ultimoApito = useRef(0);
+
+  function adicionarToast(texto: string) {
+    if (prefs.som) {
+      const agora = Date.now();
+      if (agora - ultimoApito.current > 1500) {
+        ultimoApito.current = agora;
+        tocarSinal();
+      }
+    }
+    empilharAviso(texto, 4000);
   }
 
   /**
@@ -182,6 +298,7 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
         notificarNovaMensagem,
         prefs,
         alternarPref,
+        mostrarAviso,
         toasts,
       }}
     >
