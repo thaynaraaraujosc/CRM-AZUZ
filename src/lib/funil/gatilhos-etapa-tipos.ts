@@ -144,9 +144,21 @@ export type GatilhoEtapaVisao = {
 };
 
 export const QUANDO_ROTULO: Record<QuandoGatilho, string> = {
-  criado: "Imediatamente quando criado nesta etapa",
-  movido: "Imediatamente quando movido para esta etapa",
-  movido_ou_criado: "Imediatamente quando movido para ou criado nesta etapa",
+  /*
+   * SEM A PALAVRA "IMEDIATAMENTE" NO RÓTULO DO EVENTO.
+   *
+   * "Se lá em Executar está escrito 'imediatamente quando movido para a etapa', eu não tenho como
+   * escolher lá embaixo — porque aí um está falando imediatamente e o outro está falando depois
+   * de 5 minutos."
+   *
+   * Estava certo. O rótulo afirmava o TEMPO ("imediatamente") junto do EVENTO ("quando movido"),
+   * e quando a espera virou uma escolha própria a tela passou a dizer duas coisas sobre a mesma
+   * pergunta. O rótulo agora diz só o evento; o tempo é a outra metade da frase, escolhida ao
+   * lado — "Depois de 5 minutos · quando movido para esta etapa" se lê como uma frase só.
+   */
+  criado: "Quando criado nesta etapa",
+  movido: "Quando movido para esta etapa",
+  movido_ou_criado: "Quando movido para ou criado nesta etapa",
   saiu: "Quando sair desta etapa",
   responsavel_alterado: "Quando o responsável for alterado",
   etiqueta_adicionada: "Quando uma etiqueta for adicionada",

@@ -244,10 +244,12 @@ function linhaDoQuando(g: GatilhoEtapaVisao, camposDeData: CampoDoContato[] = []
    * exatamente o que a grade existe pra evitar.
    */
   const atraso = minutosDeAtraso(g.atrasoMinutos);
-  if (atraso > 0 && QUANDOS_DE_ENTRADA.includes(g.quando)) {
-    // "Imediatamente quando movido para esta etapa" vira "Depois de 5 minutos, quando movido…".
-    const semImediatamente = base.replace(/^Imediatamente\s+/, "");
-    return `${rotuloDoAtraso(atraso)}, ${semImediatamente}`;
+  if (QUANDOS_DE_ENTRADA.includes(g.quando)) {
+    /* A MESMA FRASE DO FORMULÁRIO, na mesma ordem: tempo e depois evento. O rótulo do evento não
+       fala mais de tempo, então aqui ele é sempre precedido por um — "Imediatamente · quando
+       movido para esta etapa". */
+    const comMinuscula = base.charAt(0).toLowerCase() + base.slice(1);
+    return `${rotuloDoAtraso(atraso)} · ${comMinuscula}`;
   }
   return base;
 }
@@ -1187,43 +1189,31 @@ export function AutomacaoDoFunil({
 
             <div className="field">
               <label>{traduzir("Executar")}</label>
-              <select
-                className="input"
-                value={rascunho.quando}
-                onChange={(e) => setRascunho({ ...rascunho, quando: e.target.value as QuandoGatilho })}
-              >
-                {/* Agrupado por categoria, como no Kommo: a lista corrida não deixa ver que
-                    "movido para esta etapa" e "quando um formulário for enviado" são coisas de
-                    naturezas diferentes. */}
-                {CATEGORIAS_GATILHO.map((categoria) => (
-                  <optgroup key={traduzir(categoria.titulo)} label={traduzir(categoria.titulo)}>
-                    {categoria.quandos.map((q) => (
-                      <option key={q} value={q}>
-                        {QUANDO_ROTULO[q]}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
               {/*
-                A ESPERA, nos gatilhos de ENTRADA na etapa.
+                UMA FRASE SÓ: O TEMPO E O EVENTO, LADO A LADO.
 
-                "Imediatamente quando movido para esta etapa, ou depois de 5 minutos, ou depois de
-                10 minutos, ou um dia. Ou eu posso selecionar o intervalo."
+                "Se lá em Executar está escrito 'imediatamente quando movido para a etapa', eu não
+                tenho como escolher lá embaixo — aí um está falando imediatamente e o outro está
+                falando depois de 5 minutos."
 
-                Só aqui porque só aqui ela quer dizer alguma coisa: "depois de 5 minutos" de um
-                gatilho diário já é o próprio horário, e de um gatilho de data marcada seria uma
-                segunda data escondida atrás da primeira.
+                Estava certo, e era culpa do desenho: a espera tinha virado um segundo seletor
+                EMBAIXO do evento, enquanto o rótulo do evento ainda afirmava "imediatamente". Duas
+                respostas pra mesma pergunta, uma contradizendo a outra.
+
+                Agora é uma linha que se lê de ponta a ponta — "Depois de 5 minutos · quando movido
+                para esta etapa" — e a palavra do tempo é o primeiro seletor, que é onde ela é
+                trocada. O rótulo do evento não fala mais de tempo nenhum.
               */}
-              {QUANDOS_DE_ENTRADA.includes(rascunho.quando) ? (
-                <div className="fauto-horas mt8">
+              <div className="fauto-quando">
+                {QUANDOS_DE_ENTRADA.includes(rascunho.quando) ? (
                   <select
-                    className="input"
-                    aria-label={traduzir("Esperar antes de agir")}
+                    className="input fauto-quando-tempo"
+                    aria-label={traduzir("Quando tempo depois")}
                     value={ehAtalho(rascunho.atrasoMinutos) ? String(rascunho.atrasoMinutos) : "intervalo"}
                     onChange={(e) => {
-                      /* "intervalo" não é um valor de atraso: é a escolha de digitar um. Começa em
-                         uma hora pra os dois campos não abrirem zerados, que é igual a imediato. */
+                      /* "Selecione o intervalo" não é um tempo: é a escolha de digitar um. Começa
+                         em uma hora pra os dois campos não abrirem zerados, que é igual a
+                         imediatamente e faria a opção parecer que não fez nada. */
                       if (e.target.value === "intervalo") {
                         setRascunho({ ...rascunho, atrasoMinutos: 60 });
                         return;
@@ -1238,46 +1228,71 @@ export function AutomacaoDoFunil({
                     ))}
                     <option value="intervalo">{traduzir("Selecione o intervalo")}</option>
                   </select>
-                  {!ehAtalho(rascunho.atrasoMinutos) ? (
-                    <>
-                      <input
-                        type="number"
-                        min={0}
-                        max={720}
-                        className="input fauto-numero"
-                        aria-label={traduzir("Horas de espera")}
-                        value={intervaloEmHorasEMinutos(rascunho.atrasoMinutos).horas}
-                        onChange={(e) =>
-                          setRascunho({
-                            ...rascunho,
-                            atrasoMinutos: minutosDoIntervalo(
-                              e.target.value,
-                              intervaloEmHorasEMinutos(rascunho.atrasoMinutos).minutos,
-                            ),
-                          })
-                        }
-                      />
-                      <span className="hint">h</span>
-                      <input
-                        type="number"
-                        min={0}
-                        max={59}
-                        className="input fauto-numero"
-                        aria-label={traduzir("Minutos de espera")}
-                        value={intervaloEmHorasEMinutos(rascunho.atrasoMinutos).minutos}
-                        onChange={(e) =>
-                          setRascunho({
-                            ...rascunho,
-                            atrasoMinutos: minutosDoIntervalo(
-                              intervaloEmHorasEMinutos(rascunho.atrasoMinutos).horas,
-                              e.target.value,
-                            ),
-                          })
-                        }
-                      />
-                      <span className="hint">m</span>
-                    </>
-                  ) : null}
+                ) : null}
+                <select
+                  className="input"
+                  value={rascunho.quando}
+                  onChange={(e) => setRascunho({ ...rascunho, quando: e.target.value as QuandoGatilho })}
+                >
+                  {/* Agrupado por categoria, como no Kommo: a lista corrida não deixa ver que
+                      "movido para esta etapa" e "quando um formulário for enviado" são coisas de
+                      naturezas diferentes. */}
+                  {CATEGORIAS_GATILHO.map((categoria) => (
+                    <optgroup key={traduzir(categoria.titulo)} label={traduzir(categoria.titulo)}>
+                      {categoria.quandos.map((q) => (
+                        <option key={q} value={q}>
+                          {QUANDO_ROTULO[q]}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </div>
+
+              {/*
+                OS DOIS CAMPOS DO INTERVALO, logo abaixo da frase e só quando ela pede.
+                
+                É a última linha da lista do Kommo: escolher "Selecione o intervalo" abre h e m ali
+                mesmo, sem mandar pra outra tela.
+              */}
+              {QUANDOS_DE_ENTRADA.includes(rascunho.quando) && !ehAtalho(rascunho.atrasoMinutos) ? (
+                <div className="fauto-horas mt8">
+                  <input
+                    type="number"
+                    min={0}
+                    max={720}
+                    className="input fauto-numero"
+                    aria-label={traduzir("Horas de espera")}
+                    value={intervaloEmHorasEMinutos(rascunho.atrasoMinutos).horas}
+                    onChange={(e) =>
+                      setRascunho({
+                        ...rascunho,
+                        atrasoMinutos: minutosDoIntervalo(
+                          e.target.value,
+                          intervaloEmHorasEMinutos(rascunho.atrasoMinutos).minutos,
+                        ),
+                      })
+                    }
+                  />
+                  <span className="hint">h</span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={59}
+                    className="input fauto-numero"
+                    aria-label={traduzir("Minutos de espera")}
+                    value={intervaloEmHorasEMinutos(rascunho.atrasoMinutos).minutos}
+                    onChange={(e) =>
+                      setRascunho({
+                        ...rascunho,
+                        atrasoMinutos: minutosDoIntervalo(
+                          intervaloEmHorasEMinutos(rascunho.atrasoMinutos).horas,
+                          e.target.value,
+                        ),
+                      })
+                    }
+                  />
+                  <span className="hint">m</span>
                   <Ajuda
                     texto={traduzir(
                       "O lead entra na etapa e o CRM espera esse tempo antes de agir. Quem sair da etapa durante a espera não recebe nada — a etapa é a dona do gatilho. Entrar de novo reinicia a contagem.",
@@ -1285,7 +1300,6 @@ export function AutomacaoDoFunil({
                   />
                 </div>
               ) : null}
-
               {rascunho.quando === "diariamente" ? (
                 <>
                   <div className="fauto-horas mt8">
