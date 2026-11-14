@@ -1,8 +1,7 @@
 "use client";
 
-import dagre from "dagre";
+import { posicoesDoFluxo, type DirecaoDoLayout } from "@/lib/automation-flow/layout";
 
-import { saidasDoNo } from "@/lib/automation-flow/resumo";
 import { MarkerType, type Edge, type Node } from "@xyflow/react";
 
 import type { AreaAutomacao } from "@/lib/canais/capacidades";
@@ -193,70 +192,32 @@ export const CORES_CATEGORIA: Record<string, string> = {
 
 // Precisa bater aproximadamente com o tamanho real do node em .flow-node (globals.css): usado só
 // pra estimar espaço no auto-layout (dagre), não define o tamanho de verdade renderizado.
-const LARGURA_NO = 280;
-/** Altura de um bloco sem ramificação. Título, resumo e uma saída. */
-const ALTURA_NO = 120;
-/** Cada saída extra desenha uma linha dentro do bloco (ver `.flow-node-handle-row`). */
-const ALTURA_POR_SAIDA = 30;
-
-/**
- * Altura REAL do bloco, contando as saídas.
- *
- * O layout automático media todo bloco por uma altura fixa. Um bloco de decisão com cinco caminhos
- * ocupa mais que o dobro disso. Então o algoritmo reservava espaço a menos e os blocos de baixo
- * subiam por cima dele. Quanto mais ramificada a automação, pior ficava: exatamente o caso em que
- * organizar automaticamente é mais necessário.
- */
-function alturaDoNo(node: FlowRFNode): number {
-  const saidas = saidasDoNo(node.data.flowNode).length;
-  return saidas > 1 ? ALTURA_NO + saidas * ALTURA_POR_SAIDA : ALTURA_NO;
-}
-
-/** Recalcula a posição de todo mundo em camadas (dagre, topo→baixo): usado pelo botão "organizar automaticamente". */
 /**
  * Organiza o fluxo. `direcao` escolhe o sentido da leitura.
  *
- * "TB" (de cima pra baixo) é o do funil, e sempre foi o único. "LR" (da esquerda pra direita) é o
- * do Social Seller, e veio da referência: no ManyChat o passo seguinte fica ao LADO, e a ligação
- * sai pela lateral do bloco. Num fluxo de atendimento, que é uma conversa, ler na horizontal é
- * ler na ordem em que as mensagens acontecem.
+ * "TB" (de cima pra baixo) era o do funil; "LR" (da esquerda pra direita) é o dos dois editores
+ * desde que viraram o mesmo. No ManyChat o passo seguinte fica ao LADO, e a ligação sai pela
+ * lateral do bloco — num fluxo de atendimento, que é uma conversa, ler na horizontal é ler na
+ * ordem em que as mensagens acontecem.
+ *
+ * A CONTA MORA EM `lib/automation-flow/layout.ts`, e não aqui: os modelos prontos precisam dela do
+ * lado do servidor, e duas cópias divergem. Era o que acontecia — o editor organizava com o
+ * `dagre` e os modelos nasciam de uma conta à mão que sobrepunha os blocos.
  */
 export function autoLayout(
   nodes: FlowRFNode[],
   edges: FlowRFEdge[],
-  direcao: "TB" | "LR" = "TB",
+  direcao: DirecaoDoLayout = "TB",
 ): FlowRFNode[] {
-  const g = new dagre.graphlib.Graph();
-  // `nodesep` sobe junto: com blocos altos lado a lado, 70px de folga lateral fazia dois ramos
-  // vizinhos parecerem colados mesmo sem se sobrepor.
-  //
-  // Na horizontal os papéis se invertem: `ranksep` passa a ser a distância ENTRE um passo e o
-  // seguinte (que precisa caber a curva da ligação) e `nodesep` a distância entre dois ramos
-  // paralelos (que são blocos altos, e por isso pedem mais folga).
-  const horizontal = direcao === "LR";
-  g.setGraph({
-    rankdir: direcao,
-    nodesep: horizontal ? 60 : 90,
-    ranksep: horizontal ? 120 : 140,
-    marginx: 40,
-    marginy: 40,
-  });
-  g.setDefaultEdgeLabel(() => ({}));
-
-  nodes.forEach((n) => g.setNode(n.id, { width: LARGURA_NO, height: alturaDoNo(n) }));
-  edges.forEach((e) => {
-    if (nodes.some((n) => n.id === e.source) && nodes.some((n) => n.id === e.target)) {
-      g.setEdge(e.source, e.target);
-    }
-  });
-
-  dagre.layout(g);
-
+  const posicoes = posicoesDoFluxo(
+    nodes.map((n) => n.data.flowNode),
+    edges
+      .filter((e) => e.source && e.target)
+      .map((e) => ({ id: e.id, source: e.source, target: e.target })),
+    direcao,
+  );
   return nodes.map((n) => {
-    const posicionado = g.node(n.id);
-    if (!posicionado) return n;
-    // O dagre devolve o CENTRO do bloco; o canvas posiciona pelo canto. Descontar a altura real (e
-    // não a fixa) é o que mantém o bloco alinhado com o espaço que foi reservado pra ele.
-    return { ...n, position: { x: posicionado.x - LARGURA_NO / 2, y: posicionado.y - alturaDoNo(n) / 2 } };
+    const p = posicoes.get(n.id);
+    return p ? { ...n, position: p } : n;
   });
 }

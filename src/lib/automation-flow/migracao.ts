@@ -8,6 +8,7 @@
  * visual substitui o editor antigo.
  */
 
+import { posicionarFluxo } from "@/lib/automation-flow/layout";
 import type { Automacao, AcaoAutomacao, RegraComentario } from "@/lib/automacoes-context";
 import type { Funil } from "@/lib/data";
 import type {
@@ -56,71 +57,22 @@ function criarFabricaDeIds(prefixo: string) {
 }
 
 /**
- * Layout em camadas: bem simples e determinístico (BFS a partir das raízes):
- * profundidade (nº de arestas até a raiz) vira posição Y, índice do nó dentro
- * da mesma profundidade vira posição X. Suficiente pro construtor visual
- * desenhar algo legível sem precisar do `dagre` de fato.
+ * Posiciona os blocos do fluxo. Delegado a `automation-flow/layout.ts`, que é a MESMA conta que o
+ * botão "organizar automaticamente" do editor usa.
+ *
+ * Era uma conta própria aqui: profundidade vira Y, índice dentro do nível vira X, 180px entre
+ * linhas e 260px entre colunas. Dois problemas, e os dois davam o mesmo sintoma — "um amontoado
+ * em cima do outro":
+ *
+ *  1. Um bloco tem 280px de largura e um de mensagem com três botões passa de 200px de altura.
+ *     Com passo de 260 e 180, a sobreposição não é azar: é garantida.
+ *  2. Ela empilhava de cima pra baixo, e o editor passou a ler da ESQUERDA PRA DIREITA quando os
+ *     dois módulos viraram o mesmo. O fluxo descia enquanto as ligações saíam pela lateral.
  */
 export function layoutFluxo(nodes: FlowNode[], edges: FlowEdge[]): void {
-  const entradas = new Map<string, number>();
-  nodes.forEach((n) => entradas.set(n.id, 0));
-  edges.forEach((e) => entradas.set(e.target, (entradas.get(e.target) ?? 0) + 1));
-
-  const adjacencia = new Map<string, string[]>();
-  edges.forEach((e) => {
-    if (!adjacencia.has(e.source)) adjacencia.set(e.source, []);
-    adjacencia.get(e.source)!.push(e.target);
-  });
-
-  const profundidade = new Map<string, number>();
-  const raizes = nodes.filter((n) => (entradas.get(n.id) ?? 0) === 0).map((n) => n.id);
-  const fila: string[] = [...raizes];
-  raizes.forEach((r) => profundidade.set(r, 0));
-
-  /*
-   * O TETO DE PROFUNDIDADE EXISTE PORQUE FLUXO VOLTA ATRÁS — e sem ele isto nunca termina.
-   *
-   * O laço empurra o bloco de novo toda vez que acha um caminho MAIS LONGO até ele. Num fluxo sem
-   * volta isso acaba: o caminho mais longo tem no máximo o número de blocos. Num fluxo com volta
-   * ("Menu principal" que retorna ao menu, "e-mail inválido" que volta pra pergunta) não acaba
-   * nunca: cada passagem pelo laço acha um caminho um nível mais longo, pra sempre.
-   *
-   * E volta no fluxo não é caso raro nem erro: é como se escreve um menu e uma revalidação. O
-   * sintoma era a aba travar ao abrir um modelo assim ou ao clicar em "organizar".
-   *
-   * Um caminho mais longo que o número de blocos só pode ter dado uma volta no laço. Parar ali
-   * não muda nada em fluxo sem volta e termina em todos.
-   */
-  const TETO = nodes.length;
-  while (fila.length) {
-    const atualId = fila.shift()!;
-    const d = profundidade.get(atualId) ?? 0;
-    if (d >= TETO) continue;
-    for (const proximoId of adjacencia.get(atualId) ?? []) {
-      const dAtual = profundidade.get(proximoId);
-      if (dAtual === undefined || dAtual < d + 1) {
-        profundidade.set(proximoId, d + 1);
-        fila.push(proximoId);
-      }
-    }
-  }
-
-  const porNivel = new Map<number, string[]>();
-  nodes.forEach((n) => {
-    const d = profundidade.get(n.id) ?? 0;
-    if (!porNivel.has(d)) porNivel.set(d, []);
-    porNivel.get(d)!.push(n.id);
-  });
-
-  const VERTICAL = 180;
-  const HORIZONTAL = 260;
-  nodes.forEach((n) => {
-    const d = profundidade.get(n.id) ?? 0;
-    const nivel = porNivel.get(d) ?? [n.id];
-    const idx = nivel.indexOf(n.id);
-    n.position = { x: idx * HORIZONTAL, y: d * VERTICAL };
-  });
+  posicionarFluxo(nodes, edges, "LR");
 }
+
 
 function novoNo<T>(
   proximoId: () => string,

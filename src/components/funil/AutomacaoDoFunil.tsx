@@ -386,6 +386,9 @@ export function AutomacaoDoFunil({
   const [canais, setCanais] = useState<CanalConectado[]>([]);
   const [escolhendoAcao, setEscolhendoAcao] = useState<string | null>(null);
   const [rascunho, setRascunho] = useState<Rascunho | null>(null);
+  /* O mesmo estado, com outro nome pro `salvar` poder receber um rascunho explícito e ainda ler o
+     do estado quando ninguém passar nada. */
+  const rascunhoDoEstado = rascunho;
   const [salvando, setSalvando] = useState(false);
   const [criandoRobo, setCriandoRobo] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -595,7 +598,13 @@ export function AutomacaoDoFunil({
    * Salvar ANTES de navegar não é detalhe: sair da tela com o rascunho aberto perderia tudo que a
    * pessoa acabou de configurar, e ela descobriria isso só ao voltar.
    */
-  async function salvar(abrirFluxogramaDepois = false) {
+  /**
+   * `forcado` existe por causa do React: `setRascunho` não aplica na mesma passagem, e quem acaba
+   * de criar um robô precisa salvar o gatilho JÁ COM ele. Sem isso, salvar logo depois de criar
+   * gravaria o gatilho com o robô anterior (ou com nenhum).
+   */
+  async function salvar(abrirFluxogramaDepois = false, forcado?: Rascunho) {
+    const rascunho = forcado ?? rascunhoDoEstado;
     if (!rascunho) return;
     const falta = faltaAlgo(rascunho);
     if (falta) {
@@ -758,7 +767,7 @@ export function AutomacaoDoFunil({
     return `Robô de ${etapa}`;
   }
 
-  async function criarRobo(modelo?: ModeloDeRobo) {
+  async function criarRobo(modelo?: ModeloDeRobo, abrirDepois = false) {
     if (!rascunho) return;
     /* Escolhendo um modelo, o nome dele é o nome do robô: "Robô de Novo lead" não diz nada e o
        nome do modelo diz tudo. Quem digitou um nome à mão continua mandando. */
@@ -777,10 +786,23 @@ export function AutomacaoDoFunil({
       // O robô nasceu direto no banco, por esta rota. Sem avisar o resto da tela, ele não existe
       // pro editor até a página inteira ser recarregada.
       await recarregarFluxos().catch(() => {});
-      setRascunho({ ...rascunho, fluxoId: robo.id });
+      const comRobo = { ...rascunho, fluxoId: robo.id };
+      setRascunho(comRobo);
       setNomeDoRoboNovo(null);
       setGaleriaAberta(false);
       setAviso(`"${robo.nome}" criado e já escolhido aqui.`);
+      /*
+       * ESCOLHER O MODELO ENTRA DIRETO NO ROBÔ.
+       *
+       * "Na hora que eu clico no bot, ele volta pra página primeiro, adiciona o bot, e depois que
+       * ele entra. Eu queria que na hora que eu escolhesse o bot ele entrasse direto."
+       *
+       * O gatilho é salvo ANTES de navegar, com o robô já dentro: sair da tela com o rascunho
+       * aberto perderia a etapa, o horário e a condição que ela acabou de configurar — e ela só
+       * descobriria ao voltar. Por isso `salvar` recebe o rascunho explícito: `setRascunho` não
+       * aplica na mesma passagem, e sem ele o gatilho iria pro banco sem o robô.
+       */
+      if (abrirDepois) await salvar(true, comRobo);
     } catch {
       setErro("Não deu pra criar o robô. Tente de novo.");
     } finally {
@@ -1813,8 +1835,10 @@ export function AutomacaoDoFunil({
               <GaleriaDeModelos
                 ocupado={criandoRobo}
                 aoFechar={() => setGaleriaAberta(false)}
-                aoEscolher={(modelo) => void criarRobo(modelo)}
-                aoComecarDoZero={() => void criarRobo()}
+                /* Os dois entram direto no editor: escolher o modelo e começar do zero levam ao
+                   mesmo lugar, que é o quadro do robô. */
+                aoEscolher={(modelo) => void criarRobo(modelo, true)}
+                aoComecarDoZero={() => void criarRobo(undefined, true)}
               />,
               document.body,
             )
