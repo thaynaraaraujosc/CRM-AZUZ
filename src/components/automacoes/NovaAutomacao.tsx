@@ -7,6 +7,7 @@ import { useFunis } from "@/lib/funis-context";
 import { useIdioma } from "@/lib/idioma-context";
 import {
   CATEGORIAS_GATILHO,
+  EXPLICACAO_DO_QUANDO,
   QUANDO_ROTULO,
   type QuandoGatilho,
 } from "@/lib/funil/gatilhos-etapa-tipos";
@@ -228,6 +229,11 @@ export function NovaAutomacao({
                   </optgroup>
                 ))}
               </select>
+              {/* O que o gatilho escolhido pega. Mesma frase da grade do funil, pela mesma razão:
+                  "movido" e "criado" parecem a mesma coisa até a automação não disparar. */}
+              {EXPLICACAO_DO_QUANDO[quando] ? (
+                <p className="hint mt8">{traduzir(EXPLICACAO_DO_QUANDO[quando]!)}</p>
+              ) : null}
               <p className="hint mt8">{traduzir("Vai valer sempre. Dias da semana, horário e condição você ajusta depois, na aba Automatizar funil.")}</p>
             </div>
 

@@ -19,6 +19,7 @@ import { nodeTypes } from "./nodes";
 import { CORES_CATEGORIA, autoLayout, domainEdgesToRF, domainNodesToRF } from "./utils";
 import { IconClose } from "@/components/icons";
 import { useIdioma } from "@/lib/idioma-context";
+import { caminhoDoEditor } from "@/lib/automation-flow/caminho-do-editor";
 
 /**
  * Lista "funcionalidades utilizadas": derivada AO VIVO dos nós reais do
@@ -78,7 +79,7 @@ export function VisualizarFluxo({ fluxo, onFechar }: { fluxo: FluxoAutomacao; on
   const funcionalidades = useMemo(() => funcionalidadesDoFluxo(fluxo), [fluxo]);
 
   function editar() {
-    router.push(`/automacoes/editor/${fluxo.id}`);
+    router.push(caminhoDoEditor(fluxo.area, fluxo.id));
   }
 
   function duplicarEUsar() {
@@ -88,7 +89,7 @@ export function VisualizarFluxo({ fluxo, onFechar }: { fluxo: FluxoAutomacao; on
     try {
       const copia = duplicarFluxo(fluxo.id);
       if (!copia) throw new Error("Não foi possível duplicar esse fluxo.");
-      router.push(`/automacoes/editor/${copia.id}`);
+      router.push(caminhoDoEditor(copia.area, copia.id));
     } catch {
       setErro("Não foi possível criar uma cópia agora. Tente novamente.");
     } finally {

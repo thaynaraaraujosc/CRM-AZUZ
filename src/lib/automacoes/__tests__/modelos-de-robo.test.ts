@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
 import { CANAIS_DA_AREA } from "@/lib/canais/capacidades";
-import { CATEGORIAS, MODELOS_DE_ROBO } from "@/lib/automacoes/modelos-de-robo";
+import { CATEGORIAS, MODELOS_DE_ROBO, canaisDoFiltro, modelosDaArea } from "@/lib/automacoes/modelos-de-robo";
 
 const TIPOS_REAIS = new Set(BLOCOS_DISPONIVEIS.map((b) => b.tipo));
 const CANAIS_REAIS = new Set([...CANAIS_DA_AREA.comercial, ...CANAIS_DA_AREA.social]);
@@ -136,6 +136,73 @@ describe("cada modelo monta um fluxo que o motor executa", () => {
           expect(temSaida, `${m.id}: o botão "${o.id}" de ${n.id} não leva a nada`).toBe(true);
         }
       }
+    }
+  });
+});
+
+describe("a separação entre a automação do funil e o Social Seller", () => {
+  /*
+   * "Instagram é num lugar e a automação do WhatsApp é em outro."
+   *
+   * A regra é sobre QUEM DISPARA, e é ela que torna a separação verdadeira em vez de cosmética:
+   * um robô do funil é acionado pela ETAPA e por isso não carrega bloco de gatilho; um robô do
+   * Social Seller é acionado por um evento do Instagram e TEM que carregar o seu.
+   *
+   * Trocar os lados não dá erro em lugar nenhum — dá uma automação que a pessoa publica e que
+   * nunca roda. Que é o defeito mais caro que existe aqui.
+   */
+  it("todo modelo do Social Seller carrega o próprio gatilho", () => {
+    const sociais = modelosDaArea("social");
+    expect(sociais.length).toBeGreaterThan(0);
+
+    for (const m of sociais) {
+      const { nodes, edges } = m.construir();
+      const gatilhos = nodes.filter((n) => n.category === "gatilho");
+      expect(gatilhos.length, `${m.id} tem ${gatilhos.length} gatilhos`).toBe(1);
+
+      // E o gatilho tem que ser o COMEÇO: um gatilho no meio do fluxo não aciona nada.
+      const comEntrada = new Set(edges.map((e) => e.target));
+      expect(comEntrada.has(gatilhos[0].id), `${m.id}: o gatilho não é o começo`).toBe(false);
+    }
+  });
+
+  it("nenhum modelo da automação do funil carrega gatilho: quem dispara é a etapa", () => {
+    for (const m of modelosDaArea("comercial")) {
+      const { nodes } = m.construir();
+      const gatilhos = nodes.filter((n) => n.category === "gatilho").map((n) => n.type);
+      expect(gatilhos, `${m.id} traz gatilho próprio e seria disparado duas vezes`).toEqual([]);
+    }
+  });
+
+  it("todo modelo está em exatamente uma das duas galerias", () => {
+    const soma = modelosDaArea("comercial").length + modelosDaArea("social").length;
+    expect(soma).toBe(MODELOS_DE_ROBO.length);
+  });
+
+  it("o Instagram saiu da galeria do funil", () => {
+    // O pedido, na letra: nenhum modelo só-de-Instagram pode aparecer na automação do funil.
+    const comercial = modelosDaArea("comercial");
+    const soInstagram = comercial.filter((m) => m.canais.length === 1 && m.canais[0] === "instagram");
+    expect(soInstagram.map((m) => m.id)).toEqual([]);
+  });
+
+  it("o filtro de canal só oferece canal que algum modelo daquela galeria usa", () => {
+    // Um filtro que sempre volta vazio é pior que filtro nenhum: faz procurar defeito onde não tem.
+    for (const area of ["comercial", "social"] as const) {
+      const canais = canaisDoFiltro(area);
+      for (const c of canais) {
+        expect(
+          modelosDaArea(area).some((m) => m.canais.includes(c)),
+          `${area}: o filtro oferece "${c}" e nenhum modelo usa`,
+        ).toBe(true);
+      }
+    }
+  });
+
+  it("os modelos de follow-up ficam na automação do funil", () => {
+    const comercial = new Set(modelosDaArea("comercial").map((m) => m.id));
+    for (const id of ["follow-up-ainda-tem-interesse", "follow-up-tres-toques", "follow-up-janela-24h", "follow-up-modelo-aprovado"]) {
+      expect(comercial.has(id), `${id} saiu da galeria do funil`).toBe(true);
     }
   });
 });

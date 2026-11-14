@@ -17,6 +17,7 @@ import { navEntries } from "@/components/sidebar";
 import { SeletorIdioma } from "@/components/seletor-idioma";
 import { useIdioma } from "@/lib/idioma-context";
 import { useDestinoDoTopo } from "@/lib/topo-da-pagina";
+import { ehCaminhoDeEditor } from "@/lib/automation-flow/caminho-do-editor";
 
 type SearchResult = { label: string; sub: string; href: string };
 
@@ -197,7 +198,8 @@ export function AppHeader() {
    * O atalho de teclado da busca continua funcionando: ele não depende deste componente estar
    * montado. E a setinha de voltar do próprio editor é o caminho de saída.
    */
-  if (pathname?.startsWith("/automacoes/editor/")) return null;
+  // Os dois editores de fluxo são tela cheia: o de Automações e o do Social Seller.
+  if (ehCaminhoDeEditor(pathname)) return null;
 
   return (
     <header className={`app-header${naTelaInicio ? " app-header-transparente" : ""}`}>

@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 
-import { dispararGatilhosDaEtapa } from "@/lib/funil/gatilhos-etapa";
+import { avisarQueEntrouNaEtapa } from "@/lib/funil/entrou-na-etapa";
 import { cardDoContatoNoFunil, entrarNaPrimeiraEtapaComoNovoLead } from "@/lib/funis/upsert";
 import { escolherCanalDoFlow } from "@/lib/integracoes/azuz-flow-canal";
 import { conexoesDeWhatsappDoWorkspace } from "@/lib/integracoes/azuz-flow-conexoes";
@@ -187,7 +187,10 @@ export function dependenciasReaisDaLista(workspaceId: string): DependenciasDaLis
      * propósito. Lista não é formulário, e ninguém marcou reunião aqui.
      */
     async dispararGatilhoDaEtapa({ etapaId, contatoNome, evento }) {
-      await dispararGatilhosDaEtapa({ workspaceId, etapaId, contatoNome, evento });
+      // Pela porta única, igual ao arrastar na tela e ao robô: a lista repete chamada por desenho
+      // (ela é idempotente de propósito), e a trava por minuto é o que impede a mesma entrada de
+      // disparar duas vezes.
+      await avisarQueEntrouNaEtapa({ workspaceId, etapaId, contatoNome, evento });
     },
   };
 }

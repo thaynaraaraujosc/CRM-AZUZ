@@ -260,7 +260,7 @@ export default function AutomacoesSociaisPage() {
           <section className="ssl-secao">
             <div className="social-secao-topo">
               <h3>
-                {traduzir("Automações")} <span className="social-contador">{visiveis.length}</span>
+                {traduzir("Automações do Instagram")} <span className="social-contador">{visiveis.length}</span>
               </h3>
             </div>
 
@@ -277,7 +277,7 @@ export default function AutomacoesSociaisPage() {
                     key={f.id}
                     type="button"
                     className="social-card"
-                    onClick={() => router.push(`/automacoes/editor/${f.id}`)}
+                    onClick={() => router.push(`/social-seller/editor/${f.id}`)}
                   >
                     <strong>{f.nome}</strong>
                     <span>{gatilhoDoFluxo(f)}</span>
@@ -304,7 +304,7 @@ export default function AutomacoesSociaisPage() {
                     <button
                       type="button"
                       className="ssl-abrir"
-                      onClick={() => router.push(`/automacoes/editor/${f.id}`)}
+                      onClick={() => router.push(`/social-seller/editor/${f.id}`)}
                     >
                       <span className="ssl-icone" aria-hidden="true">
                         <IconInstagram width={18} height={18} />
@@ -363,7 +363,7 @@ export default function AutomacoesSociaisPage() {
                             type="button"
                             onClick={() => {
                               setMenuAberto(null);
-                              router.push(`/automacoes/editor/${f.id}`);
+                              router.push(`/social-seller/editor/${f.id}`);
                             }}
                           >
                             {traduzir("Abrir")}
@@ -373,7 +373,7 @@ export default function AutomacoesSociaisPage() {
                             onClick={() => {
                               const copia = duplicarFluxo(f.id);
                               setMenuAberto(null);
-                              if (copia) router.push(`/automacoes/editor/${copia.id}`);
+                              if (copia) router.push(`/social-seller/editor/${copia.id}`);
                             }}
                           >
                             {traduzir("Duplicar")}

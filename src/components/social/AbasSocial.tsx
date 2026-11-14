@@ -28,7 +28,15 @@ import {
  */
 const PRINCIPAIS = [
   { href: "/social-seller", label: "Resumo", exato: true, Icon: IconInicio },
-  { href: "/social-seller/automacoes", label: "Automações", exato: false, Icon: IconAutomacoes },
+  /*
+   * "AUTOMAÇÕES DO INSTAGRAM", e não só "Automações".
+   *
+   * "Fica parecendo que eu estou dentro de Automações, mas automações e Social Seller são blocos
+   * separados." O endereço do editor já foi separado; o nome da aba era a outra metade: dois
+   * módulos com um item chamado "Automações" cada um, e a pessoa não tem como saber em qual está
+   * olhando pelo rótulo.
+   */
+  { href: "/social-seller/automacoes", label: "Automações do Instagram", exato: false, Icon: IconAutomacoes },
   { href: "/social-seller/respostas", label: "Lista de respostas", exato: false, Icon: IconEnviar },
   { href: "/social-seller/modelos", label: "Meus templates", exato: false, Icon: IconDoc },
 ] as const;

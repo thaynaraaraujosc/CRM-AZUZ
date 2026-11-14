@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { idDeCardSemChave, idDoCard } from "@/lib/funis/id-do-card";
+import { emSegundoPlano } from "@/lib/automacoes/segundo-plano";
+import { avisarQueEntrouNaEtapa } from "@/lib/funil/entrou-na-etapa";
 import {
   POLITICAS,
   TAMANHO_MAXIMO,
@@ -76,6 +78,22 @@ export async function POST(request: Request, ctx: RouteContext<"/api/formularios
       },
     });
   });
+
+  /*
+   * O LEAD DO FORMULÁRIO TAMBÉM ENTROU NUMA ETAPA.
+   *
+   * Esta rota criava o card direto e ia embora, então "Quando criado nesta etapa" nunca valia pra
+   * quem chegou por formulário. "Quando um formulário for enviado" é outro gatilho e responde
+   * outra pergunta: quem automatiza a ETAPA não tem por que saber por qual porta o lead veio.
+   */
+  emSegundoPlano("gatilhos de lead criado por formulário", () =>
+    avisarQueEntrouNaEtapa({
+      workspaceId,
+      etapaId: etapaDestino.id,
+      contatoNome: card.nome,
+      evento: "criado",
+    }),
+  );
 
   return NextResponse.json({ ok: true });
 }

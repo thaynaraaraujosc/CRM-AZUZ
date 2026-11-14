@@ -37,6 +37,7 @@ import { lerCamposDoContato, type CampoDoContato } from "@/lib/contatos/campos-d
 import {
   ACAO_ROTULO,
   CATEGORIAS_GATILHO,
+  EXPLICACAO_DO_QUANDO,
   QUANDO_ROTULO,
   QUANDOS_DE_ENTRADA,
   type AcaoDados,
@@ -1279,6 +1280,18 @@ export function AutomacaoDoFunil({
               </div>
 
               {/*
+                O QUE O GATILHO ESCOLHIDO PEGA, e o que ele deixa passar.
+
+                "Às vezes o movido será que atende também às necessidades quando a pessoa entra no
+                tráfego pago?" Não atende — e descobrir isso pelo silêncio da automação custa
+                caro. A lista do `<select>` do navegador não aceita explicação dentro dela, então
+                a frase vive aqui embaixo e troca junto com a escolha.
+              */}
+              {EXPLICACAO_DO_QUANDO[rascunho.quando] ? (
+                <p className="hint fauto-explicacao">{traduzir(EXPLICACAO_DO_QUANDO[rascunho.quando]!)}</p>
+              ) : null}
+
+              {/*
                 OS DOIS CAMPOS DO INTERVALO, logo abaixo da frase e só quando ela pede.
                 
                 É a última linha da lista do Kommo: escolher "Selecione o intervalo" abre h e m ali
@@ -1833,6 +1846,7 @@ export function AutomacaoDoFunil({
         {galeriaAberta
           ? createPortal(
               <GaleriaDeModelos
+                area="comercial"
                 ocupado={criandoRobo}
                 aoFechar={() => setGaleriaAberta(false)}
                 /* Os dois entram direto no editor: escolher o modelo e começar do zero levam ao

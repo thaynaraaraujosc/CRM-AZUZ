@@ -188,7 +188,7 @@ export default function SocialPage() {
                   {painel.robos.map((r) => (
                     <tr key={r.id}>
                       <td>
-                        <Link href={`/automacoes/editor/${r.id}`}>{r.nome}</Link>
+                        <Link href={`/social-seller/editor/${r.id}`}>{r.nome}</Link>
                       </td>
                       <td>
                         <span className={`badge ${r.ligado ? "badge-success" : "badge-neutral"}`}>

@@ -11,7 +11,7 @@ import type { QuandoGatilho } from "@/lib/funil/gatilhos-etapa-tipos";
 /**
  * Modelos AZUZ do funil comercial: o robô inteiro já montado, pronto pra trocar o texto e publicar.
  *
- * Mesma ideia dos modelos do Instagram (`src/lib/social/modelos-rapidos.ts`), e pela mesma razão:
+ * Mesma ideia dos modelos de robô da galeria (`modelos-de-robo.ts`), e pela mesma razão:
  * o canvas em branco é honesto e é uma parede. Quem abre a tela pela primeira vez não sabe que
  * "esperou 24 horas, não respondeu, manda a cobrança e cria tarefa pro vendedor" é possível, e
  * muito menos por onde começar.

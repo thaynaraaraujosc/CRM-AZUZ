@@ -158,7 +158,7 @@ export const QUANDO_ROTULO: Record<QuandoGatilho, string> = {
    */
   criado: "Quando criado nesta etapa",
   movido: "Quando movido para esta etapa",
-  movido_ou_criado: "Quando movido para ou criado nesta etapa",
+  movido_ou_criado: "Quando entrar nesta etapa (movido ou criado)",
   saiu: "Quando sair desta etapa",
   responsavel_alterado: "Quando o responsável for alterado",
   etiqueta_adicionada: "Quando uma etiqueta for adicionada",
@@ -172,14 +172,52 @@ export const QUANDO_ROTULO: Record<QuandoGatilho, string> = {
   formulario_enviado: "Quando um formulário for enviado",
 };
 
+/**
+ * A LINHA QUE APARECE EMBAIXO DO SELETOR, explicando o que o gatilho escolhido pega.
+ *
+ * O `<select>` do navegador não deixa pôr explicação dentro da lista, e a diferença entre "movido"
+ * e "criado" é exatamente o tipo de coisa que só se descobre quando a automação não dispara — ou
+ * pior, quando ela dispara pra quem não devia. Escrever aqui embaixo é o único lugar em que a
+ * frase cabe antes do erro acontecer.
+ *
+ * Só os gatilhos cuja diferença não está no nome. Repetir o rótulo em outras palavras seria ruído.
+ */
+export const EXPLICACAO_DO_QUANDO: Partial<Record<QuandoGatilho, string>> = {
+  movido_ou_criado:
+    "Pega as duas coisas: o lead arrastado de outra etapa e o que nasce aqui (primeira mensagem, anúncio, formulário). É a escolha certa quando tanto faz como ele chegou.",
+  movido:
+    "Só quem veio de OUTRA etapa — arrastado na tela ou movido por um robô. O lead que nasce direto aqui não dispara este.",
+  criado:
+    "Só quem NASCE nesta etapa: primeira mensagem no WhatsApp, lead de anúncio, formulário, lista do Flow. Quem foi arrastado de outra etapa não dispara este.",
+  saiu: "Dispara na etapa de onde ele saiu, não na de destino.",
+  sem_resposta: "Conta desde a última mensagem DO LEAD. Quem nunca respondeu entra na conta pela entrada na etapa.",
+  campo_de_data: "Olha uma data da ficha do contato (aniversário, vencimento) e dispara antes ou depois dela.",
+};
+
 /** As categorias do menu, na ordem em que aparecem. É a organização do Kommo. */
 export const CATEGORIAS_GATILHO: { titulo: string; quandos: QuandoGatilho[] }[] = [
   {
     titulo: "Gatilhos do pipeline",
     quandos: [
+      /*
+       * "ENTRAR" VEM PRIMEIRO, e os dois jeitos de entrar vêm logo embaixo.
+       *
+       * "Às vezes o movido será que atende também às necessidades quando a pessoa entra no
+       * tráfego pago? Porque pode ser na hora que eu vou mover ele para lá e pode ser quando ele
+       * entra. Ou ele entrou de primeiro contato. Ele entrou direto."
+       *
+       * Não atendia: "movido" é só quem veio de outra etapa. O lead de anúncio NASCE na etapa, e
+       * isso é "criado". A opção que serve pros dois já existia com o nome de "Quando movido para
+       * ou criado nesta etapa" — uma frase que descreve o mecanismo e não a pergunta de quem
+       * monta, que é "e se ele chegar aqui, de qualquer jeito?".
+       *
+       * Agora ela se chama "Quando entrar nesta etapa" e está em primeiro, que é o lugar da
+       * escolha certa pra quase todo caso. Os dois específicos ficam embaixo, pra quem precisa
+       * separar — e `EXPLICACAO_DO_QUANDO` diz na tela o que cada um pega e o que deixa passar.
+       */
+      "movido_ou_criado",
       "movido",
       "criado",
-      "movido_ou_criado",
       "saiu",
       "responsavel_alterado",
       "etiqueta_adicionada",

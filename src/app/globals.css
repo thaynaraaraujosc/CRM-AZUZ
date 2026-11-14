@@ -36665,6 +36665,26 @@ td.trafego-col-crm:first-of-type {
   line-height: 1.5;
 }
 
+/*
+  O PÉ DA COLUNA DA ESQUERDA: as notas de rodapé, juntas e ancoradas embaixo.
+
+  Cada `<p>` com `margin-top: auto` por conta própria disputava o espaço sobrando, e a primeira
+  nota parava no meio da coluna — o que lida como erro de alinhamento, não como rodapé.
+*/
+.gm-lado-notas {
+  margin-top: auto;
+  padding-top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.gm-lado-notas p {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
 .gm-conteudo {
   flex: 1 1 0;
   min-width: 0;
@@ -36877,5 +36897,44 @@ td.trafego-col-crm:first-of-type {
   }
   .gm-grade {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/*
+  A LINHA QUE EXPLICA O GATILHO ESCOLHIDO, embaixo do seletor de "quando".
+
+  Recuada e em tom de nota: ela é resposta a uma dúvida ("movido pega o lead de anúncio?"), não
+  mais um campo. Sem o recuo ela briga de igual pra igual com o rótulo do campo seguinte, e a
+  janela passa a ter duas frases do mesmo peso dizendo coisas diferentes.
+*/
+.fauto-painel .fauto-explicacao {
+  margin: 6px 2px 0;
+  line-height: 1.45;
+  max-width: 52ch;
+}
+
+/*
+  A GALERIA DESENHADA COMO PÁGINA, no "Criar automação" do Social Seller.
+
+  No funil ela é uma janela: escolher modelo é um desvio de dez segundos dentro de outra tela, e a
+  janela devolve a pessoa exatamente onde ela estava. No Social Seller, "Criar automação" É a tela
+  — e um véu escuro sobre uma página vazia é o cheiro de modal que não consegue fechar.
+
+  Muda só o enquadramento: sem véu, sem sombra de flutuar, sem animação de entrada, e a altura
+  passa a acompanhar a janela em vez de um teto fixo. O miolo (as duas colunas, as abas, a grade)
+  é o mesmo componente, e é por isso que as duas telas continuam se parecendo.
+*/
+.gm-painel.gm-painel-pagina {
+  width: 100%;
+  height: calc(100vh - 190px);
+  min-height: 460px;
+  box-shadow: none;
+  animation: none;
+}
+
+@media (max-width: 900px) {
+  .gm-painel.gm-painel-pagina {
+    height: auto;
+    min-height: 0;
   }
 }

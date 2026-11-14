@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { chaveDeContato } from "@/lib/contatos/chave-nome";
 import { ehChaveDuplicada } from "@/lib/prisma-erros";
 import { idDeCardSemChave, idDoCard } from "./id-do-card";
+import { emSegundoPlano } from "@/lib/automacoes/segundo-plano";
+import { avisarQueEntrouNaEtapa } from "@/lib/funil/entrou-na-etapa";
 
 /**
  * OS negócios daquele contato, achados pelo nome NORMALIZADO.
@@ -191,7 +193,7 @@ export async function entrarNaPrimeiraEtapaComoNovoLead(params: {
 
   const id = idDoCard(workspaceId, contatoNome, funilDestino);
   try {
-    return await prisma.negocioCard.create({
+    const card = await prisma.negocioCard.create({
       data: {
         id: id ?? idDeCardSemChave(workspaceId),
         etapaId: primeiraEtapa.id,
@@ -205,6 +207,27 @@ export async function entrarNaPrimeiraEtapaComoNovoLead(params: {
         data: new Date().toISOString().slice(0, 10),
       },
     });
+
+    /*
+     * O LEAD ACABOU DE NASCER NESTA ETAPA: os gatilhos dela precisam saber.
+     *
+     * "Ele entrou de primeiro contato. Ele entrou direto." Esse é o lead que chega por aqui — a
+     * primeira mensagem no WhatsApp, a lista do Azuz Flow — e até agora ele era o ÚNICO que não
+     * acionava "Quando criado nesta etapa". Só o card feito na mão, pela tela do funil, disparava.
+     *
+     * Em segundo plano porque isto é automação, e automação não pode atrasar nem derrubar o
+     * recebimento da mensagem: quem chamou precisa do card de volta agora.
+     */
+    emSegundoPlano("gatilhos de lead que entrou direto na etapa", () =>
+      avisarQueEntrouNaEtapa({
+        workspaceId,
+        etapaId: primeiraEtapa.id,
+        contatoNome,
+        evento: "criado",
+      }),
+    );
+
+    return card;
   } catch (erro) {
     // A chamada concorrente criou o card primeiro. Isso é a RESPOSTA, não um erro: devolve o card
     // dela, que é exatamente o que o caminho sequencial devolveria. Estourar aqui viraria 500 numa

@@ -253,7 +253,7 @@ export default function RespostasAutomaticasPage() {
                           type="button"
                           className="btn ghost"
                           title={traduzir("Este fluxo tem passos que esta tela não sabe representar. Editar aqui apagaria o resto.")}
-                          onClick={() => router.push(`/automacoes/editor/${fluxo.id}`)}
+                          onClick={() => router.push(`/social-seller/editor/${fluxo.id}`)}
                         >
                           {traduzir("Abrir no construtor")}
                         </button>

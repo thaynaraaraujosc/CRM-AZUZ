@@ -22,6 +22,7 @@ import { enviarEmailOuFalhar } from "@/lib/email";
 import { encerrarExecucao, execucoesVivasDoContato } from "./execucoes";
 import { categoriaEscolhida, conversaEmTexto, provedorDeIA } from "./ia";
 import { anotarNaLinhaDoTempo } from "@/lib/integracoes/instagram-eventos";
+import { avisarQueEntrouNaEtapa } from "@/lib/funil/entrou-na-etapa";
 import {
   MOTIVO_SEM_CONSENTIMENTO,
   bloqueadoPorFaltaDeConsentimento,
@@ -821,11 +822,29 @@ export function acoesReais(params: {
         const card =
           (await prisma.negocioCard.findFirst({
             where: { workspaceId, nome: contatoNome, etapa: { funilId } },
-            select: { id: true },
+            select: { id: true, etapaId: true },
           })) ??
-          (await prisma.negocioCard.findFirst({ where: { workspaceId, nome: contatoNome }, select: { id: true } }));
+          (await prisma.negocioCard.findFirst({
+            where: { workspaceId, nome: contatoNome },
+            select: { id: true, etapaId: true },
+          }));
         if (card) {
+          const jaEstavaAqui = card.etapaId === etapa.id;
           await prisma.negocioCard.update({ where: { id: card.id }, data: { etapaId: etapa.id, ordem: 0 } });
+          /*
+           * MOVIDO POR UM ROBÔ AINDA É MOVIDO.
+           *
+           * "Quando movido para esta etapa" não faz exceção pra quem moveu, e quem monta o funil
+           * não tem como saber que a mão conta e o robô não. Antes disto, encadear automação por
+           * etapa — que é o jeito natural de montar um funil inteiro — simplesmente não existia:
+           * o robô largava o lead na etapa nova e nada acontecia lá.
+           *
+           * `jaEstavaAqui` existe porque mover pra onde ele já está não é entrada nenhuma. A trava
+           * de `avisarQueEntrouNaEtapa` cuida do resto, inclusive de ciclo A→B→A.
+           */
+          if (!jaEstavaAqui) {
+            await avisarQueEntrouNaEtapa({ workspaceId, etapaId: etapa.id, contatoNome, evento: "movido" });
+          }
           return ok(`Movido para "${etapaTitulo}".`);
         }
         const idNovo = idDoCard(workspaceId, contatoNome, funilId);
@@ -849,8 +868,10 @@ export function acoesReais(params: {
           // deixaria a pessoa com dois cards no funil.
           if (!ehChaveDuplicada(erro) || !idNovo) throw erro;
           await prisma.negocioCard.update({ where: { id: idNovo }, data: { etapaId: etapa.id, ordem: 0 } });
+          await avisarQueEntrouNaEtapa({ workspaceId, etapaId: etapa.id, contatoNome, evento: "movido" });
           return ok(`Movido para "${etapaTitulo}".`);
         }
+        await avisarQueEntrouNaEtapa({ workspaceId, etapaId: etapa.id, contatoNome, evento: "criado" });
         return ok(`Card criado em "${etapaTitulo}".`);
       } catch (erro) {
         return falha("Falha ao mover no funil.", mensagemDoErro(erro));

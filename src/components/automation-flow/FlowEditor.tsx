@@ -2603,7 +2603,9 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
         onConfirmar={() => {
           setConfirmandoExclusao(false);
           excluirFluxo(fluxoId);
-          router.push("/automacoes");
+          // Volta pra lista da ÁREA dele: excluir um robô do Instagram não pode largar a pessoa
+          // na tela de Automações, que é o outro módulo.
+          router.push(ehSocial ? "/social-seller/automacoes" : "/automacoes");
         }}
       />
       {execucoesAbertas ? <HistoricoExecucoes fluxoId={fluxoId} onFechar={() => setExecucoesAbertas(false)} /> : null}

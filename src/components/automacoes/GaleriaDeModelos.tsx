@@ -3,10 +3,11 @@
 import { useMemo, useState } from "react";
 
 import { IconClose } from "@/components/icons";
-import { CAPACIDADES, type CanalId } from "@/lib/canais/capacidades";
+import { CAPACIDADES, type AreaAutomacao, type CanalId } from "@/lib/canais/capacidades";
 import {
   CATEGORIAS,
-  MODELOS_DE_ROBO,
+  canaisDoFiltro,
+  modelosDaArea,
   type CategoriaDeModelo,
   type IlustracaoDoModelo,
   type ModeloDeRobo,
@@ -29,7 +30,27 @@ import { useIdioma } from "@/lib/idioma-context";
  * filtro que não filtra nada é pior que filtro nenhum, porque faz procurar defeito onde não tem.
  */
 
-const CANAIS_DO_FILTRO: CanalId[] = ["whatsapp_oficial", "whatsapp_qrcode", "instagram", "email"];
+/**
+ * O QUE CADA GALERIA DIZ DE SI MESMA, e o que ela explica que NÃO está ali.
+ *
+ * "Se eu estiver fazendo uma automação lá no Social Seller, de forma alguma deve estar aparecendo
+ * que eu estou dentro de Automações. Social Seller é Social Seller, lá em Automações é automações
+ * de WhatsApp ou de outras coisas."
+ *
+ * Separar as duas sem dizer onde foi parar o que sumiu transforma a separação em sumiço: quem
+ * procurava "Responda a palavras-chave nos comentários" na automação do funil não acha e acha que
+ * quebrou. Cada lado aponta pro outro, por nome.
+ */
+const TEXTOS_DA_AREA: Record<AreaAutomacao, { titulo: string; nota: string }> = {
+  comercial: {
+    titulo: "Criar um robô",
+    nota: "Estes são os robôs de WhatsApp e e-mail, disparados por uma etapa do funil. Os modelos de Instagram ficam no Social Seller, porque lá o que dispara é um comentário, um story ou uma mensagem no Direct — e isso uma etapa do funil não enxerga.",
+  },
+  social: {
+    titulo: "Criar uma automação do Instagram",
+    nota: "Cada modelo daqui já vem com o próprio gatilho do Instagram: comentário, resposta a story, menção ou Direct. Os robôs de WhatsApp e e-mail, que quem dispara é a etapa do funil, ficam em Automações.",
+  },
+};
 
 /** As cinco pastéis da referência, no azul e no ouro da casa onde dá. */
 const FUNDOS: Record<IlustracaoDoModelo["fundo"], { fundo: string; bolha: string }> = {
@@ -80,32 +101,52 @@ function Ilustracao({ arte }: { arte: IlustracaoDoModelo }) {
 }
 
 export function GaleriaDeModelos({
+  area,
   aoEscolher,
   aoComecarDoZero,
   aoFechar,
   ocupado,
+  comoPagina,
 }: {
+  /** Qual galeria: a do funil ("comercial") ou a do Social Seller ("social"). */
+  area: AreaAutomacao;
   /** Recebe o modelo clicado. Quem chama é que cria o robô e abre o editor. */
   aoEscolher: (modelo: ModeloDeRobo) => void;
   aoComecarDoZero: () => void;
   aoFechar: () => void;
   /** Enquanto o robô está sendo criado: evita dois cliques virarem dois robôs. */
   ocupado?: boolean;
+  /**
+   * Desenha o painel direto na página, sem o véu escuro por trás.
+   *
+   * No funil a galeria é um desvio de dez segundos dentro de outra tela, e a janela é o certo: ela
+   * some sem mexer no que estava atrás. No Social Seller, "Criar automação" É a tela — um véu ali
+   * escureceria uma página vazia, que é o cheiro de modal preso.
+   */
+  comoPagina?: boolean;
 }) {
   const { t: traduzir } = useIdioma();
   const [categoria, setCategoria] = useState<CategoriaDeModelo | "todos">("todos");
   const [canais, setCanais] = useState<CanalId[]>([]);
 
+  const CANAIS_DO_FILTRO = useMemo(() => canaisDoFiltro(area), [area]);
+  const textos = TEXTOS_DA_AREA[area];
+  const daArea = useMemo(() => modelosDaArea(area), [area]);
+  const categoriasComModelo = useMemo(
+    () => CATEGORIAS.filter((c) => daArea.some((m) => m.categorias.includes(c.valor))),
+    [daArea],
+  );
+
   const visiveis = useMemo(
     () =>
-      MODELOS_DE_ROBO.filter((m) => {
+      daArea.filter((m) => {
         if (categoria !== "todos" && !m.categorias.includes(categoria)) return false;
         // Vários canais marcados = UNIÃO, como na referência: "serve pra WhatsApp OU pra
         // Instagram", e não "serve pros dois ao mesmo tempo", que quase nada atende.
         if (canais.length && !canais.some((c) => m.canais.includes(c))) return false;
         return true;
       }),
-    [categoria, canais],
+    [daArea, categoria, canais],
   );
 
   function alternarCanal(canal: CanalId) {
@@ -114,44 +155,63 @@ export function GaleriaDeModelos({
 
   const todosMarcados = canais.length === CANAIS_DO_FILTRO.length;
 
-  return (
-    <div className="gm-veu" onClick={aoFechar} role="presentation">
-      <div className="gm-painel" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+  const painel = (
+      <div
+        className={`gm-painel${comoPagina ? " gm-painel-pagina" : ""}`}
+        role={comoPagina ? undefined : "dialog"}
+        aria-modal={comoPagina ? undefined : true}
+        onClick={(e) => e.stopPropagation()}
+      >
         <aside className="gm-lado">
-          <h2>{traduzir("Criar um robô")}</h2>
+          <h2>{traduzir(textos.titulo)}</h2>
 
           <button type="button" className="btn primary block" onClick={aoComecarDoZero} disabled={ocupado}>
             {traduzir("Começar do zero")}
           </button>
 
-          <p className="gm-lado-titulo">{traduzir("Canais")}</p>
-          <label className="gm-canal">
-            <input
-              type="checkbox"
-              checked={todosMarcados}
-              onChange={() => setCanais(todosMarcados ? [] : [...CANAIS_DO_FILTRO])}
-            />
-            <span>{traduzir("Selecionar tudo")}</span>
-          </label>
-          {CANAIS_DO_FILTRO.map((c) => (
-            <label key={c} className="gm-canal">
-              <input type="checkbox" checked={canais.includes(c)} onChange={() => alternarCanal(c)} />
-              <span>{CAPACIDADES[c].label}</span>
-            </label>
-          ))}
+          {/*
+            O FILTRO DE CANAL SÓ APARECE SE HOUVER O QUE FILTRAR.
+
+            No Social Seller todo modelo é de Instagram: uma caixinha sozinha chamada "Instagram"
+            não separa nada, e só ensina a pessoa a clicar numa coisa que não muda a tela.
+          */}
+          {CANAIS_DO_FILTRO.length > 1 ? (
+            <>
+              <p className="gm-lado-titulo">{traduzir("Canais")}</p>
+              <label className="gm-canal">
+                <input
+                  type="checkbox"
+                  checked={todosMarcados}
+                  onChange={() => setCanais(todosMarcados ? [] : [...CANAIS_DO_FILTRO])}
+                />
+                <span>{traduzir("Selecionar tudo")}</span>
+              </label>
+              {CANAIS_DO_FILTRO.map((c) => (
+                <label key={c} className="gm-canal">
+                  <input type="checkbox" checked={canais.includes(c)} onChange={() => alternarCanal(c)} />
+                  <span>{CAPACIDADES[c].label}</span>
+                </label>
+              ))}
+            </>
+          ) : null}
 
           {/*
-            O QUE NÃO ESTÁ AQUI, DITO NA TELA.
+            O QUE NÃO ESTÁ AQUI, DITO NA TELA — e onde foi parar.
 
-            A referência tem modelos de TikTok, Telegram e Messenger. Quem veio de lá vai procurar
-            por eles, e não achar sem explicação parece defeito. Dizer que o canal não está
-            conectado é a diferença entre "o CRM não tem" e "eu não encontrei".
+            Quem veio da referência vai procurar os modelos de TikTok, Telegram e Messenger; quem
+            procura Instagram aqui vai achar que sumiu. Não achar sem explicação parece defeito, e
+            a diferença entre "o CRM não tem" e "eu não encontrei" é uma frase.
           */}
-          <p className="hint gm-lado-nota">
-            {traduzir(
-              "A lista mostra o que roda nos canais deste CRM. Modelos de TikTok, Telegram e Messenger não aparecem porque esses canais não existem aqui.",
-            )}
-          </p>
+          {/* As duas notas ancoradas JUNTAS no pé da coluna. Soltas, cada uma puxava o próprio
+              `margin-top: auto` e a primeira parava no meio do vazio, parecendo deslocada. */}
+          <div className="gm-lado-notas">
+            <p className="hint">{traduzir(textos.nota)}</p>
+            <p className="hint">
+              {traduzir(
+                "Modelos de TikTok, Telegram e Messenger não aparecem em lugar nenhum porque esses canais não existem neste CRM.",
+              )}
+            </p>
+          </div>
         </aside>
 
         <div className="gm-conteudo">
@@ -164,7 +224,15 @@ export function GaleriaDeModelos({
               >
                 {traduzir("Todos os modelos")}
               </button>
-              {CATEGORIAS.map((c) => (
+              {/*
+                SÓ AS CATEGORIAS QUE TÊM MODELO NESTA GALERIA.
+
+                As quatro são do catálogo inteiro. No Social Seller nenhum modelo é de
+                "Informações comerciais" nem de "Reduzir retrabalho": as duas abas abririam numa
+                tela vazia, sempre. Um filtro que nunca filtra nada faz procurar defeito onde não
+                tem — é a mesma razão por que o filtro de canal some quando há um canal só.
+              */}
+              {categoriasComModelo.map((c) => (
                 <button
                   key={c.valor}
                   type="button"
@@ -202,6 +270,13 @@ export function GaleriaDeModelos({
           </div>
         </div>
       </div>
+  );
+
+  if (comoPagina) return painel;
+
+  return (
+    <div className="gm-veu" onClick={aoFechar} role="presentation">
+      {painel}
     </div>
   );
 }

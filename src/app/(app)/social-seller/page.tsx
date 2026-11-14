@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { AcoesNoTopo } from "@/lib/topo-da-pagina";
 import { AbasSocial } from "@/components/social/AbasSocial";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
-import { MODELOS_SOCIAIS } from "@/lib/social/modelos-rapidos";
+import { modelosDaArea } from "@/lib/automacoes/modelos-de-robo";
 import {
   IconAutomacoes,
   IconCheck,
@@ -26,6 +26,23 @@ import {
 } from "@/lib/social/serie-de-interacoes";
 import { useIdioma } from "@/lib/idioma-context";
 import type { PainelSocial } from "@/app/api/social/metricas/route";
+
+/**
+ * Os modelos de Instagram, lidos do catálogo único (`modelos-de-robo.ts`).
+ *
+ * Eram uma lista paralela (`lib/social/modelos-rapidos.ts`, apagado), com outro formato. Duas listas
+ * significam um modelo novo aparecendo num lugar e não no outro, e ninguém percebe até precisar.
+ */
+const MODELOS_DO_INSTAGRAM = modelosDaArea("social");
+
+/**
+ * SÓ OS QUATRO PRIMEIROS NA ABERTURA.
+ *
+ * Esta seção é um atalho pra quem ainda não tem robô nenhum, não o catálogo. Despejar os oito na
+ * tela inicial empurraria o painel de interações pra baixo da dobra — e quem quer ver tudo tem o
+ * "Ver todos os modelos" ao lado do título.
+ */
+const ATALHOS_DE_MODELO = MODELOS_DO_INSTAGRAM.slice(0, 4);
 
 /**
  * RESUMO DA CONTA: a primeira tela do Social Seller.
@@ -139,18 +156,18 @@ export default function ResumoSocialPage() {
 
   /** Um modelo vira rascunho e abre no editor. Nunca publicado: ver `/social-seller/novo`. */
   function comecarPor(modeloId: string) {
-    const modelo = MODELOS_SOCIAIS.find((m) => m.id === modeloId);
+    const modelo = MODELOS_DO_INSTAGRAM.find((m) => m.id === modeloId);
     if (!modelo) return;
     const { nodes, edges, configuracoes } = modelo.construir();
     const novo = criarFluxo({
       nome: modelo.nome,
-      descricao: modelo.descricao,
+      descricao: modelo.objetivo,
       area: "social",
       nodes,
       edges,
       configuracoes,
     });
-    router.push(`/automacoes/editor/${novo.id}`);
+    router.push(`/social-seller/editor/${novo.id}`);
   }
 
   /* Só os agrupamentos que rendem mais de uma barra no período escolhido. Quando sobra um, ele
@@ -419,19 +436,21 @@ export default function ResumoSocialPage() {
           <section className="ss-secao">
             <div className="ss-secao-topo">
               <h3>{traduzir("Escolha um objetivo e comece em minutos")}</h3>
-              <Link className="btn ghost pequeno" href="/social-seller/automacoes">
-                {traduzir("Todas as automações")}
+              {/* O link leva pra GALERIA, e não pra lista de robôs criados: esta seção é sobre
+                  escolher um modelo, e "todas as automações" mandava pra outra pergunta. */}
+              <Link className="btn ghost pequeno" href="/social-seller/novo">
+                {traduzir("Ver todos os modelos")}
               </Link>
             </div>
             <div className="ss-objetivos">
-              {MODELOS_SOCIAIS.map((m) => (
+              {ATALHOS_DE_MODELO.map((m) => (
                 <button key={m.id} type="button" className="ss-objetivo" onClick={() => comecarPor(m.id)}>
                   <span className="ss-objetivo-icone" aria-hidden="true">
                     <IconInstagram width={17} height={17} />
                   </span>
                   <span className="ss-objetivo-textos">
                     <strong>{traduzir(m.nome)}</strong>
-                    <span>{traduzir(m.descricao)}</span>
+                    <span>{traduzir(m.objetivo)}</span>
                   </span>
                 </button>
               ))}

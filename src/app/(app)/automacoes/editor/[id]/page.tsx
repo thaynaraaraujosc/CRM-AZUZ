@@ -31,6 +31,22 @@ export default function EditorFluxoPage({ params }: { params: Promise<{ id: stri
   }, [id]);
 
   const fluxoId = id === "novo" ? idCriado : id;
+  const fluxo = fluxoId ? fluxos.find((f) => f.id === fluxoId) : null;
+
+  /*
+   * ROBÔ DO INSTAGRAM ABERTO AQUI VAI PRO ENDEREÇO DO SOCIAL SELLER.
+   *
+   * "Social Seller é Social Seller, lá em Automações é automações de WhatsApp ou de outras
+   * coisas." A barra lateral e as abas leem o começo da URL pra decidir o que acender: enquanto
+   * um robô social abrir em `/automacoes/...`, o CRM vai continuar afirmando que ela está em
+   * Automações, por mais que a tela diga outra coisa.
+   *
+   * Vale pra link velho, favorito e histórico — e é por isso que a correção mora na rota, e não
+   * em cada um dos dez lugares que levam ao editor.
+   */
+  useEffect(() => {
+    if (fluxo && fluxo.area === "social") router.replace(`/social-seller/editor/${fluxo.id}`);
+  }, [fluxo, router]);
 
   if (!fluxoId) {
     return (
@@ -40,10 +56,18 @@ export default function EditorFluxoPage({ params }: { params: Promise<{ id: stri
     );
   }
 
-  if (id !== "novo" && !fluxos.some((f) => f.id === fluxoId)) {
+  if (id !== "novo" && !fluxo) {
     return (
       <div className="flow-shell-empty">
         <p>{traduzir("Esse fluxo não existe (mais).")}</p>
+      </div>
+    );
+  }
+
+  if (fluxo && fluxo.area === "social") {
+    return (
+      <div className="flow-shell-empty">
+        <p>{traduzir("Abrindo no Social Seller…")}</p>
       </div>
     );
   }

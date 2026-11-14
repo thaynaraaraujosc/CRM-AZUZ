@@ -7,7 +7,7 @@ import { lerDicas } from "@/lib/funil/etapa-aparencia";
 import { ESCOPOS, escopoPermitido } from "@/lib/configuracoes/permissoes";
 import { numerosDoFunil } from "@/lib/funis/numeros-do-funil";
 import { montarFunilPadrao } from "@/lib/funil/funil-padrao";
-import { dispararGatilhosDaEtapa } from "@/lib/funil/gatilhos-etapa";
+import { avisarQueEntrouNaEtapa } from "@/lib/funil/entrou-na-etapa";
 import { emSegundoPlano } from "@/lib/automacoes/segundo-plano";
 import { prisma } from "@/lib/prisma";
 import { filtroConexaoDeNegocio, provedoresDeNegocio } from "@/lib/integracoes/conta-canal";
@@ -507,11 +507,11 @@ export async function PUT(request: Request) {
 
   for (const criado of criadosParaGatilho) {
     emSegundoPlano("gatilhos de card criado", () =>
-      dispararGatilhosDaEtapa({
-      workspaceId,
-      etapaId: criado.etapaId,
-      contatoNome: criado.nome,
-      evento: "criado",
+      avisarQueEntrouNaEtapa({
+        workspaceId,
+        etapaId: criado.etapaId,
+        contatoNome: criado.nome,
+        evento: "criado",
       }),
     );
   }

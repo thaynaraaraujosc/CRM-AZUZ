@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { dispararGatilhosDaEtapa } from "@/lib/funil/gatilhos-etapa";
+import { avisarQueEntrouNaEtapa } from "@/lib/funil/entrou-na-etapa";
 import { emSegundoPlano } from "@/lib/automacoes/segundo-plano";
 import { dispararAutomacoesDoCrm } from "@/lib/automation-flow/disparar-no-servidor";
 import { aoSairDaEtapa } from "@/lib/automacoes/gatilhos-crm";
@@ -132,11 +133,14 @@ export async function POST(request: Request) {
     // que têm gatilho próprio, não no lugar deles: são duas formas de ligar a mesma automação, e
     // desligar uma não pode desligar a outra.
     emSegundoPlano("gatilhos da etapa de destino", () =>
-      dispararGatilhosDaEtapa({
-      workspaceId,
-      etapaId,
-      contatoNome: card.nome,
-      evento: "movido",
+      // Pela porta única (`entrou-na-etapa.ts`): é ela que tem a trava por minuto, e é ela que o
+      // robô e o lead novo também usam. Com dois caminhos, o arrastar na tela seria o único sem
+      // proteção contra o clique repetido e o retry de rede, que chegam juntos.
+      avisarQueEntrouNaEtapa({
+        workspaceId,
+        etapaId,
+        contatoNome: card.nome,
+        evento: "movido",
       }),
     );
 

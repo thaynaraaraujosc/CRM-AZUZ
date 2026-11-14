@@ -545,6 +545,7 @@ export function ehGatilhoDeComentario(tipo: string): boolean {
    dois lugares montam o contexto do contato, e com ela escrita num só metade dos robôs enxergava
    a origem do lead. O re-export mantém quem já importava daqui. */
 import { rastreioParaCondicoes } from "@/lib/rastreio/para-condicoes";
+import { avisarQueEntrouNaEtapa } from "@/lib/funil/entrou-na-etapa";
 export { rastreioParaCondicoes } from "@/lib/rastreio/para-condicoes";
 
 /** O gatilho guarda o canal em minúsculas ("whatsapp"/"instagram"); a conversa guarda o rótulo. */
@@ -579,7 +580,10 @@ async function moverCardDeEtapa(
     (await prisma.negocioCard.findFirst({ where: { workspaceId, nome: contatoNome, etapa: { funilId } } })) ??
     (await prisma.negocioCard.findFirst({ where: { workspaceId, nome: contatoNome } }));
   if (card) {
+    if (card.etapaId === etapa.id) return;
     await prisma.negocioCard.update({ where: { id: card.id }, data: { etapaId: etapa.id } });
+    // Movido por um robô ainda é movido: ver a mesma decisão em `acoes.ts` (`moverEtapa`).
+    await avisarQueEntrouNaEtapa({ workspaceId, etapaId: etapa.id, contatoNome, evento: "movido" });
     return;
   }
 
@@ -598,10 +602,12 @@ async function moverCardDeEtapa(
         data: new Date().toISOString().slice(0, 10),
       },
     });
+    await avisarQueEntrouNaEtapa({ workspaceId, etapaId: etapa.id, contatoNome, evento: "criado" });
   } catch (erro) {
     // Chamada concorrente criou primeiro: move o card dela em vez de criar um segundo.
     if (!ehChaveDuplicada(erro) || !id) throw erro;
     await prisma.negocioCard.update({ where: { id }, data: { etapaId: etapa.id } });
+    await avisarQueEntrouNaEtapa({ workspaceId, etapaId: etapa.id, contatoNome, evento: "movido" });
   }
 }
 
