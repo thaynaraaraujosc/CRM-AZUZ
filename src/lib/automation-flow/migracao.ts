@@ -77,9 +77,25 @@ export function layoutFluxo(nodes: FlowNode[], edges: FlowEdge[]): void {
   const fila: string[] = [...raizes];
   raizes.forEach((r) => profundidade.set(r, 0));
 
+  /*
+   * O TETO DE PROFUNDIDADE EXISTE PORQUE FLUXO VOLTA ATRÁS — e sem ele isto nunca termina.
+   *
+   * O laço empurra o bloco de novo toda vez que acha um caminho MAIS LONGO até ele. Num fluxo sem
+   * volta isso acaba: o caminho mais longo tem no máximo o número de blocos. Num fluxo com volta
+   * ("Menu principal" que retorna ao menu, "e-mail inválido" que volta pra pergunta) não acaba
+   * nunca: cada passagem pelo laço acha um caminho um nível mais longo, pra sempre.
+   *
+   * E volta no fluxo não é caso raro nem erro: é como se escreve um menu e uma revalidação. O
+   * sintoma era a aba travar ao abrir um modelo assim ou ao clicar em "organizar".
+   *
+   * Um caminho mais longo que o número de blocos só pode ter dado uma volta no laço. Parar ali
+   * não muda nada em fluxo sem volta e termina em todos.
+   */
+  const TETO = nodes.length;
   while (fila.length) {
     const atualId = fila.shift()!;
     const d = profundidade.get(atualId) ?? 0;
+    if (d >= TETO) continue;
     for (const proximoId of adjacencia.get(atualId) ?? []) {
       const dAtual = profundidade.get(proximoId);
       if (dAtual === undefined || dAtual < d + 1) {

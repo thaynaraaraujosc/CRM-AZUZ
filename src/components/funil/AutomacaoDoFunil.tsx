@@ -12,6 +12,8 @@ import { SeletorDeHora } from "./SeletorDeHora";
 import { CondicaoForm } from "@/components/automation-flow/forms/CondicaoForm";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { MigrarGatilhos } from "./MigrarGatilhos";
+import { GaleriaDeModelos } from "@/components/automacoes/GaleriaDeModelos";
+import type { ModeloDeRobo } from "@/lib/automacoes/modelos-de-robo";
 import { CabecalhoDaEtapa } from "./CabecalhoDaEtapa";
 import type { DicasDaEtapa } from "@/lib/data";
 import type { GrupoCondicoes } from "@/lib/automation-flow/types";
@@ -364,6 +366,8 @@ export function AutomacaoDoFunil({
    * Buscados uma vez ao montar o painel. Campo novo criado em Configurações aparece na próxima
    * abertura, que é o ritmo em que campo de contato muda.
    */
+  /** A galeria "Criar um robô": os modelos prontos, aberta pelo "+ Criar um novo robô". */
+  const [galeriaAberta, setGaleriaAberta] = useState(false);
   const [camposDeData, setCamposDeData] = useState<CampoDoContato[]>([]);
   useEffect(() => {
     let vivo = true;
@@ -754,16 +758,18 @@ export function AutomacaoDoFunil({
     return `Robô de ${etapa}`;
   }
 
-  async function criarRobo() {
+  async function criarRobo(modelo?: ModeloDeRobo) {
     if (!rascunho) return;
-    const nome = (nomeDoRoboNovo ?? "").trim() || nomeSugeridoDoRobo();
+    /* Escolhendo um modelo, o nome dele é o nome do robô: "Robô de Novo lead" não diz nada e o
+       nome do modelo diz tudo. Quem digitou um nome à mão continua mandando. */
+    const nome = (nomeDoRoboNovo ?? "").trim() || modelo?.nome || nomeSugeridoDoRobo();
     setCriandoRobo(true);
     setErro(null);
     try {
       const resposta = await fetch("/api/funis/gatilhos/robo-novo", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nome }),
+        body: JSON.stringify({ nome, modeloId: modelo?.id }),
       });
       if (!resposta.ok) throw new Error(String(resposta.status));
       const robo = (await resposta.json()) as RoboResumo;
@@ -773,6 +779,7 @@ export function AutomacaoDoFunil({
       await recarregarFluxos().catch(() => {});
       setRascunho({ ...rascunho, fluxoId: robo.id });
       setNomeDoRoboNovo(null);
+      setGaleriaAberta(false);
       setAviso(`"${robo.nome}" criado e já escolhido aqui.`);
     } catch {
       setErro("Não deu pra criar o robô. Tente de novo.");
@@ -1520,11 +1527,15 @@ export function AutomacaoDoFunil({
                   etapa, porque na maioria das vezes serve; a diferença é poder trocar antes.
                 */}
                 {nomeDoRoboNovo === null ? (
-                  <button
-                    type="button"
-                    className="fauto-add mt8"
-                    onClick={() => setNomeDoRoboNovo(nomeSugeridoDoRobo())}
-                  >
+                  /*
+                    O BOTÃO ABRE A GALERIA, e não mais um campo de nome.
+                    
+                    "Ao clicar, abre o modal Criar um bot." O canvas em branco é uma parede: quem
+                    nunca montou um robô não sabe o que dá pra fazer, e pedir um NOME antes de
+                    saber o que vai ser feito é a pergunta na ordem errada. A galeria pergunta
+                    primeiro o que o robô faz; "Começar do zero" continua lá pra quem já sabe.
+                  */
+                  <button type="button" className="fauto-add mt8" onClick={() => setGaleriaAberta(true)}>
                     <span aria-hidden="true">+</span> {traduzir("Criar um novo robô")}
                   </button>
                 ) : (
@@ -1788,6 +1799,24 @@ export function AutomacaoDoFunil({
           </div>
           </div>,
           document.body,
+            )
+          : null}
+
+        {/*
+          A GALERIA, por portal no `body` e POR CIMA do painel do gatilho.
+          
+          Dentro do painel ela seria cortada pelo `overflow` dele, e nasceria com 560px de largura
+          — a galeria precisa de 1140 pra caber três cartões por linha.
+        */}
+        {galeriaAberta
+          ? createPortal(
+              <GaleriaDeModelos
+                ocupado={criandoRobo}
+                aoFechar={() => setGaleriaAberta(false)}
+                aoEscolher={(modelo) => void criarRobo(modelo)}
+                aoComecarDoZero={() => void criarRobo()}
+              />,
+              document.body,
             )
           : null}
       </div>

@@ -36587,3 +36587,295 @@ td.trafego-col-crm:first-of-type {
   color: var(--ink);
   border: 1px solid var(--ouro-linha);
 }
+
+/* ================= A GALERIA DE MODELOS DE ROBÔ ("Criar um bot") =================
+ *
+ * "Recriar o pop-up 'Criar um bot' do Kommo, incluindo a galeria de modelos prontos."
+ *
+ * Duas colunas: à esquerda o "Começar do zero" e o filtro por canal, à direita as abas e a grade.
+ * O painel é largo de propósito — três cartões por linha é o que faz a galeria ser uma galeria e
+ * não uma lista; com dois ela vira rolagem, e com quatro o cartão fica pequeno demais pra
+ * ilustração dizer alguma coisa.
+ */
+.gm-veu {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  background: rgba(6, 11, 28, 0.62);
+  backdrop-filter: blur(4px);
+  animation: modal-fade-in var(--transition-base);
+}
+
+.gm-painel {
+  display: flex;
+  width: min(1140px, 100%);
+  height: min(770px, 92vh);
+  overflow: hidden;
+  background: var(--surface-elevated);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 2px 6px rgba(16, 24, 40, 0.06), 0 16px 40px rgba(16, 24, 40, 0.16);
+  animation: modal-scale-in var(--transition-base);
+}
+
+.gm-lado {
+  flex: 0 0 280px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4) 22px;
+  border-right: 1px solid var(--line);
+  overflow-y: auto;
+}
+
+.gm-lado h2 {
+  margin: 0 0 var(--space-2);
+  font-size: 18px;
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
+}
+
+.gm-lado-titulo {
+  margin: var(--space-4) 0 2px;
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.gm-canal {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.gm-lado-nota {
+  margin-top: auto;
+  padding-top: var(--space-4);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.gm-conteudo {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.gm-topo {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4) 22px var(--space-3);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.gm-abas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1 1 auto;
+}
+
+/* A aba ativa com borda e texto da cor de ação; as outras em cinza-claro, como na referência. */
+.gm-aba {
+  padding: 7px 14px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.gm-aba:hover {
+  color: var(--ink);
+}
+
+.gm-aba.on {
+  border-color: var(--acao);
+  background: var(--surface);
+  color: var(--acao-hover);
+  font-weight: var(--fw-semibold);
+}
+
+.gm-grade {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  /*
+   * `max-content` nas linhas, e isto é correção de defeito: sem ele a grade dividia a altura
+   * disponível entre as linhas e espremia os cartões — a ilustração ficava inteira (ela tem
+   * altura travada) e o NOME DO MODELO era cortado fora. Uma galeria de cartões sem nome.
+   *
+   * Com `max-content` cada linha tem a altura do cartão e a grade rola, que é o que uma lista de
+   * vinte modelos precisa fazer.
+   */
+  grid-auto-rows: max-content;
+  gap: 16px;
+  padding: var(--space-4) 22px;
+  align-content: start;
+}
+
+.gm-cartao {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.gm-cartao:hover:not(:disabled) {
+  border-color: var(--acao);
+  box-shadow: var(--shadow-sm);
+}
+
+.gm-cartao:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.gm-cartao-nome {
+  padding: 11px 12px 13px;
+  font-size: 13.5px;
+  line-height: 1.35;
+  color: var(--ink);
+}
+
+/* ---- A ilustração do cartão ---- */
+.gm-arte {
+  position: relative;
+  /* `flex: 0 0 120px` e não só `height`: o cartão é uma coluna flex, e um item com altura fixa
+     ainda encolhe quando o nome embaixo pede espaço. Era por isso que a ilustração aparecia como
+     uma tira de meia altura, com as bolhas cortadas. */
+  flex: 0 0 120px;
+  height: 120px;
+  padding: 12px;
+  display: flex;
+  /* No TOPO, não no meio: com as bolhas centradas, a que tem duas linhas sai pelos dois lados e o
+     texto aparece cortado em cima — foi o que aconteceu na primeira versão. */
+  align-items: flex-start;
+  overflow: hidden;
+}
+
+.gm-arte-bolhas {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+  /* Com a arte em 120px e 12px de recuo em cima e embaixo, é o que cabe. O que passar disso some
+     por baixo, e some de propósito: o cartão tem altura fixa pra grade ficar alinhada. */
+  max-height: 96px;
+  overflow: hidden;
+}
+
+.gm-arte-bolha {
+  align-self: flex-start;
+  max-width: 80%;
+  padding: 5px 9px;
+  border-radius: 10px;
+  background: #fff;
+  color: #1e293b;
+  font-size: 10.5px;
+  line-height: 1.3;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.1);
+  /* Duas linhas e reticências. A bolha é ilustração: o que ela precisa é dar o TOM do modelo, e
+     uma frase inteira ali empurra o resto do desenho pra fora do cartão. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* A bolha da marca é a escura, e vai à direita: é a leitura de qualquer conversa. */
+.gm-arte-bolha.eu {
+  align-self: flex-end;
+  color: #fff;
+}
+
+.gm-arte-pilulas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 1px;
+}
+
+.gm-arte-pilulas span {
+  padding: 3px 7px;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  font-size: 9.5px;
+  color: #334155;
+}
+
+.gm-arte-selo {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  z-index: 1;
+  padding: 3px 7px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.92);
+  font-size: 9px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.04em;
+  color: #334155;
+}
+
+/* O emoji é o que dá a cara do cartão de relance, então ele é grande e fica atrás das bolhas. */
+.gm-arte-emoji {
+  position: absolute;
+  z-index: 0;
+  right: 10px;
+  bottom: 6px;
+  font-size: 34px;
+  line-height: 1;
+  opacity: 0.5;
+}
+
+.gm-vazio {
+  grid-column: 1 / -1;
+  padding: var(--space-5) 0;
+  text-align: center;
+}
+
+@media (max-width: 1100px) {
+  /* Abaixo disso não cabem três cartões com a coluna da esquerda: ela vira uma faixa em cima. */
+  .gm-painel {
+    flex-direction: column;
+    height: 94vh;
+  }
+  .gm-lado {
+    flex: 0 0 auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .gm-lado-nota {
+    margin-top: var(--space-3);
+  }
+  .gm-grade {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
